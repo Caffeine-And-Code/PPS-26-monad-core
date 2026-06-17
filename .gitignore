@@ -45,3 +45,7 @@ build/
 
 ### Scala ###
 .bsp/
+
+### Quarkdown ### 
+**/output/**
+**/quarkdown-output/**

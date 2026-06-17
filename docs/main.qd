@@ -2,6 +2,11 @@
 .doctype {paged}
 .theme {paperwhite} layout:{latex}
 
+.css 
+    nav,a {
+    color: black !important;
+    }
+
 .heading {MonadCore2D} depth:{1}  numbered:{no} breakpage:{no} 
 
 .tableofcontents maxdepth:{2}
