@@ -1,0 +1,11 @@
+.docname {test}
+.doctype {paged}
+.theme {paperwhite} layout:{latex}
+
+.heading {MonadCore2D} depth:{1}  numbered:{no} breakpage:{no} 
+
+.tableofcontents maxdepth:{2}
+
+.include {00_introduzione.qd}
+
+.include {01_processo_di_sviluppo.qd}
