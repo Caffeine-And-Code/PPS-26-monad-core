@@ -7,11 +7,33 @@
     color: black !important;
     }
 
-.heading {MonadCore2D} depth:{1}  numbered:{no} breakpage:{no} 
+    .container {
+    padding: 250px 0 !important;
+    }
 
-.tableofcontents maxdepth:{2}
+.container
+
+    .heading {MonadCore2D} depth:{1} numbered:{no} breakpage:{no} indexed:{no}
+
+    *Relazione di progetto per l'esame di Paradigmi di Programmazione e Sviluppo.*
+
+    **Corso**: Laurea Magistrale in Ingegneria e Scienze Informatiche
+
+    **Anno accademico**: 2025/2026
+
+    **Autori**:
+    - Mattia Senni (mattia.senni@studio.unibo.it)
+    - Fabio Fattori (fabio.fattori3@studio.unibo.it)
+    - Francesco Tonelli (francesco.tonelli9@studio.unibo.it)
+
+.tableofcontents title:{Indice} maxdepth:{2}
 
 .include {00_introduzione.qd}
+
+.pagemargin {bottomright}
+  .currentpage
+
+.resetpagenumber start:{1}
 
 .include {01_processo_di_sviluppo.qd}
 
