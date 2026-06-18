@@ -14,3 +14,15 @@
 .include {00_introduzione.qd}
 
 .include {01_processo_di_sviluppo.qd}
+
+.include {02_requirement_specification.qd}
+
+.include {03_design_architetturale.qd}
+
+.include {04_design_dettaglio.qd}
+
+.include {05_implementazione.qd}
+
+.include {06_testing.qd}
+
+.include {07_retrospettiva.qd}
