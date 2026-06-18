@@ -24,7 +24,7 @@ Durante questa fase vengono svolte le seguenti attività:
 
 Lo Sprint Planning ha una durata massima di 2 ore.
 
-### Standup Reunion
+### Daily Scrum
 
 Incontri quotidiani svolti prima dell'inizio delle attività di sviluppo giornaliere, con lo scopo di monitorare l'avanzamento del progetto, coordinare il lavoro e garantire l'allineamento all'interno del team.
 
@@ -57,7 +57,15 @@ La durata massima di una Sprint Review è di 1 ora.
 La suddivisione dei Task viene definita inizialmente durante lo Sprint Planning.  
 Tuttavia, seguendo un approccio AGILE, la pianificazione rimane flessibile e può essere modificata durante lo Sprint in base alle necessità emerse.
 
-Durante le Standup Reunion il team può ridefinire le priorità, aggiungere nuovi Task, modificare quelli esistenti o rimuovere attività non più necessarie. Di conseguenza, anche l'assegnazione dei Task ai membri del team può essere aggiornata in itinere.
+Durante i Daily Scrum il team può ridefinire le priorità, aggiungere nuovi Task, modificare quelli esistenti o rimuovere attività non più necessarie. Di conseguenza, anche l'assegnazione dei Task ai membri del team può essere aggiornata in itinere.
+
+### Valutazione dei Task
+
+Nel corso del progetto è stato adottato un sistema di **User Story** per descrivere le funzionalità del sistema dal punto di vista dell'utente, seguendo il formato "Come [ruolo], voglio [funzionalità], così da [beneficio]". Questo approccio ha permesso di mantenere il focus sul valore prodotto da ogni incremento di sviluppo.
+
+Ciascuna User Story è stata scomposta in Task, considerate come attività tecniche atomiche e concrete. Ogni Task rappresenta un'unità di lavoro indipendente, assegnabile a un membro del team e verificabile al completamento, permettendo di tracciare il progresso in modo preciso e di parallelizzare il lavoro dove possibile.
+
+La complessità di ogni Task è stata valutata tramite **Story Points**, assegnati seguendo la sequenza di Fibonacci (1, 2, 3, 5, 8, 13, 21, ...). La natura non lineare della sequenza ci ha consentito di distinguere con naturalezza Task più semplici da quelli più complessi, senza ricorrere a false precisioni: a Task di complessità simile corrispondono valori vicini, mentre Task molto più articolati ricevono un salto netto di valore, riflettendo l'incertezza crescente.
 
 ## Modalità di revisione dei Task
 
@@ -71,7 +79,7 @@ Al termine dello sviluppo di una funzionalità, il codice prodotto viene sottopo
 
 Durante questa fase, l'autore delle modifiche invia al resto del team una **Pull request** sulla repository **Github** del progetto. Uno o più degli altri membri analizzano l'implementazione realizzata, individuando possibili miglioramenti, refactoring o problemi che potrebbero compromettere la qualità del codice. Vengono quindi forniti all'autore eventuali commenti e suggerimenti volti alla correzione delle problematiche riscontrate e al miglioramento dell'implementazione.
 
-### Standup Reunion
+### Daily Scrum
 
 Durante questi incontri il team può valutare le scelte implementative, discutere eventuali problematiche e ridefinire priorità e modalità di completamento dei Task.
 
@@ -90,3 +98,7 @@ Gli strumenti adottati sono:
 - **ScalaMock** per la simulazione delle dipendenze esterne durante i test e il supporto alla realizzazione degli stessi;
 - **Github** come piattaforma per la **continuous integration**;
     - **Github Actions** come strumento di verifica del progetto ad ogni modifica effettuata del codice;
+
+### Approccio allo sviluppo
+
+Per la realizzazione del progetto viene adottato l'approccio **TDD (Test-Driven Development)**. È quindi prevista la scrittura dei test automatizzati prima dell'effettiva implementazione del codice di produzione.

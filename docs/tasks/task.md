@@ -1,0 +1,218 @@
+## User Story 1 - Gestione del Game Loop [13]
+
+**Come** sviluppatore di giochi  
+**voglio** avere un game loop funzionante  
+**così che** il motore possa aggiornare continuamente lo stato della simulazione.
+
+### Tasks
+
+- Progettare la struttura del game loop. [3]
+- Implementare il ciclo principale della simulazione. [3]
+- Gestire il concetto di tick. [3]
+- Implementare avvio e arresto dell'update. [2]
+- Permettere configurazione del tick-time. [2]
+
+## User Story 2 - CI/CD Pipeline [14]
+
+**Come** sviluppatore del progetto  
+**voglio** una pipeline CI/CD automatizzata con GitHub Actions  
+**così da** garantire la qualità del codice e automatizzare il processo di rilascio.
+
+### Tasks
+
+#### Branch *development* - Continuous Integration
+- Configurare un workflow GitHub Actions che si attiva ad ogni Pull Request su development. [3]
+- Eseguire tutti i test automatici (unit e integration). [2]
+- Bloccare il merge della PR se almeno un test fallisce. [1]
+- Riportare il risultato dei test direttamente nella PR come status check. [0]
+
+#### Branch *main* - Continuous Delivery
+- Configurare un workflow GitHub Actions che si attiva ad ogni Pull Request su main. [0]
+- Eseguire tutti i test automatici. [0]
+- Gestire il versionamento della release (tramite tag). [2]
+- Buildare il **fat JAR** con tutte le dipendenze incluse (sbt assembly). [2]
+- Generare la documentazione in formato PDF. [1]
+- Creare una **GitHub Release** con: [3]
+    - Tag di versione.
+    - Fat JAR allegato come asset.
+    - Documentazione PDF allegata come asset.
+    - Note di rilascio.
+
+## User Story 3 - Gestione delle entità [7]
+
+**Come** utente del motore  
+**voglio** creare e gestire entità 2D  
+**così da** poter costruire una scena simulabile.
+
+### Tasks
+
+- Progettare le entità. [1]
+- Implementare entità Circle. [1]
+- Implementare entità Square. [1]
+- Implementare proprietà [2]
+- Implementare creazione entità. [1]
+- Implementare modifica entità. [1]
+
+## User Story 4 - Gestione della Scena [11]
+
+**Come** utente del motore  
+**voglio** gestire una scena 2D contenente entità   
+**così da** poter organizzare e aggiornare il mondo simulabile.
+
+### Tasks
+
+- Progettare la struttura dati della scena. [2]
+- Creare un'entità scena. [1]
+- Aggiungere/rimuovere entità dalla scena a runtime. [1]
+- Implementare un sistema di lookup delle entità (per ID). [2]
+- Agganciare la scena al tick del game loop (*update(dt)*) [5]
+
+## User Story 5 - Gestione della fisica [17]
+
+**Come** utente  
+**voglio** applicare forze alle entità solide  
+**così che** esse possano muoversi nella simulazione.
+
+### Tasks
+
+- Implementare struttura Vector2D. [2]
+- Implementare gestione delle forze. [5]
+- Applicare forze esterne. [5]
+- Aggiornare posizione. [5]
+
+## User Story 6 - Collision Detection [13]
+
+**Come** utente  
+**voglio** che le entità reagiscano alle collisioni  
+**così da** simulare un ambiente fisico.
+
+### Tasks
+
+- Definire sistema di collision detection. [5]
+- Progettare e implementare collisioni (cerchio-cerchio, quadrato-quadrato, miste). [5]
+- Implementare reazioni alle collisioni. [3]
+
+## User Story 7 - Sistema di eventi [10]
+
+**Come** sviluppatore  
+**voglio** ricevere eventi dal motore  
+**così da** poter reagire ai cambiamenti della simulazione.
+
+### Tasks
+
+- Progettare e implementare Event System. [5]
+- Implementare eventi: [5]
+	- EntityCreated;
+	- EntityRemoved;
+	- EntityUpdated;
+	- CollisionDetected.
+
+## User Story 8 - Visualizzazione della scena
+
+**Come** utente  
+**voglio** visualizzare graficamente la scena  
+**così da** osservare il comportamento del motore.
+
+### Tasks
+
+- Scegliere framework grafico Scala.
+- Creare finestra principale.
+- Creare pannello simulazione.
+- Implementare rendering 2D.
+- Disegnare cerchi.
+- Disegnare quadrati.
+- Aggiornare grafica durante la simulazione.
+
+## User Story 9 - Creazione entità dalla GUI
+
+**Come** utente  
+**voglio** creare entità tramite interfaccia grafica  
+**così da** costruire una scena senza scrivere codice.
+
+### Tasks
+
+- Creare menu a tendina per tipo entità.
+- Aggiungere scelta.
+- Creare form per proprietà.
+- Collegare GUI al game engine.
+- Aggiornare lista entità visualizzate.
+
+## User Story 10 - Modifica delle entità
+
+**Come** utente  
+**voglio** modificare le proprietà delle entità  
+**così da** modificare la simulazione.
+
+### Tasks
+
+- Creare pannello proprietà.
+- Modificare proprietà delle entità.
+- Applicare forze.
+- Eliminare entità.
+- Aggiornare lo stato del motore.
+
+## User Story 11 - Gestione modalità Edit/Simulation
+
+**Come** utente  
+**voglio** passare dalla modifica alla simulazione  
+**così da** poter costruire e poi eseguire una scena.
+
+### Tasks
+
+- Implementare stato Editor.
+- Implementare stato Simulation.
+- Creare pulsante Start.
+- Creare pulsante Stop.
+- Gestire transizioni tra stati.
+- Sincronizzare GUI e motore.
+
+## User Story 12 - Comunicazione con agente LLM
+
+**Come** utente  
+**voglio** interagire con un agente LLM  
+**così da** controllare il motore tramite comandi naturali.
+
+### Tasks
+
+- Creare pannello chat.
+- Integrare modello LLM.
+- Gestire input utente.
+- Visualizzare risposta agente.
+- Gestire eventuali errori di comunicazione.
+
+## User Story 13 - Tools dell'agente LLM
+
+**Come** agente LLM  
+**voglio** richiamare funzioni del motore  
+**così da** modificare la simulazione.
+
+### Tasks
+
+- Implementare tools per le funzionalità create
+- Renderli accessibili all'agente
+
+## User Story 14 (opzionale) - Testing dell'agente LLM
+
+**Come** sviluppatore  
+**voglio** verificare il comportamento dell'agente  
+**così da** garantire chiamate corrette ai tools.
+
+### Tasks
+
+- Creare casi di test conversazionali.
+- Simulare richieste utente.
+- Verificare tools invocati.
+- Analizzare errori dell'agente.
+
+## User Story 15 (opzionale) - Stress Testing
+
+**Come** sviluppatore  
+**voglio** testare il comportamento sotto carico  
+**così da** valutare le prestazioni.
+
+### Tasks
+
+- Creare molte entità contemporaneamente.
+- Misurare tempo di aggiornamento.
+- Misurare FPS.
+- Analizzare colli di bottiglia.
