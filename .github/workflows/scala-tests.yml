@@ -25,5 +25,3 @@ jobs:
 
       - name: Run tests
         run: sbt test
-        with:
-          fail_ci_if_error: true
