@@ -8,7 +8,7 @@ on:
     branches:
       - main
 jobs:
-  generate-pdf:
+  generate-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,18 +25,11 @@ jobs:
       - name: Setup SBT
         uses: sbt/setup-sbt@v1
 
-
       - name: Build Fat JAR
         run: sbt assembly
 
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install Quarkdown
-        run: npm install -g quarkdown
+        run: curl -fsSL https://raw.githubusercontent.com/quarkdown-labs/get-quarkdown/refs/heads/main/install.sh | sudo env "PATH=$PATH" bash
 
       - name: Generate PDF Documentation
         run: quarkdown input.qd -o documentazione.pdf
