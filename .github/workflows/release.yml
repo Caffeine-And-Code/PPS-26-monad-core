@@ -20,6 +20,38 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check and Validate Version
+        id: version_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            LOCAL_VERSION=$(grep "release_version" project/build.properties | cut -d'=' -f2 | xargs)
+            echo "File's local version: $LOCAL_VERSION"
+            
+            LATEST_TAG=$(gh api repos/${{ github.repository }}/releases/latest --jq '.tag_name' 2>/dev/null | sed 's/^v//' || echo "0.0.0")
+            
+            if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "null" ]; then
+              LATEST_TAG="0.0.0"
+            fi
+            echo "Last release version on GitHub: $LATEST_TAG"
+            
+            if [ "$LOCAL_VERSION" = "$LATEST_TAG" ]; then
+              echo "❌ ERROR: The file's version ($LOCAL_VERSION) is equal to the last release version ($LATEST_TAG)!"
+              echo "Edit the build.properties to update the versione before merging in main"
+              exit 1
+            fi
+            
+            HIGHEST_VERSION=$(printf '%s\n%s' "$LOCAL_VERSION" "$LATEST_TAG" | sort -V | tail -n1)
+            
+            if [ "$HIGHEST_VERSION" != "$LOCAL_VERSION" ]; then
+              echo "❌ ERROR: The version in build.properties ($LOCAL_VERSION) is LOWER than the one of the latest release ($LATEST_TAG)!"
+              echo "Insert a valid and higher version than the current one."
+              exit 1
+            fi
+            
+            echo "✅ Executing release of v$LOCAL_VERSION"
+            echo "VERSION=$LOCAL_VERSION" >> $GITHUB_ENV
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -41,8 +73,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
           draft: false
           prerelease: false
           generate_release_notes: true
