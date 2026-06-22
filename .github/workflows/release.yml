@@ -32,7 +32,7 @@ jobs:
         run: curl -fsSL https://raw.githubusercontent.com/quarkdown-labs/get-quarkdown/refs/heads/main/install.sh | sudo env "PATH=$PATH" bash
 
       - name: Generate PDF Documentation
-        run: quarkdown input.qd -o documentazione.pdf
+        run: quarkdown c docs/main.qd --pdf --out-name="documentation"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -44,4 +44,4 @@ jobs:
           generate_release_notes: true
           files: |
             target/out/jvm/scala-3.8.4/monadcore2d/MonadCore2D-assembly-**.jar
-            documentazione.pdf
+            quarkdown-output/test/documentation.pdf
