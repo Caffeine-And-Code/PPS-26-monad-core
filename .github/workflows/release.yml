@@ -10,6 +10,10 @@ on:
 jobs:
   generate-release:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,4 +48,4 @@ jobs:
           generate_release_notes: true
           files: |
             target/out/jvm/scala-3.8.4/monadcore2d/MonadCore2D-assembly-**.jar
-            quarkdown-output/test/documentation.pdf
+            quarkdown-output/documentation.pdf
