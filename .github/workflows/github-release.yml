@@ -1,4 +1,4 @@
-name: release.yml
+name: github-release.yml
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
     branches:
       - main
 jobs:
-  generate-release:
+  generate-github-release:
     runs-on: ubuntu-latest
 
     permissions:
