@@ -8,22 +8,29 @@ class EntityTest extends AnyFunSuite with Matchers:
 
   val ValidEntityId = "entity1"
   val ValidPosition = Vector2D(1, 3)
+  val ValidRadius = 2;
+  val ValidHeight = 2;
+  val ValidLength = 2;
 
   test("can create an entity with ID, position and the shape of a circle") :
-    val radius = 2
-    val entity = Entity.circle(ValidEntityId, ValidPosition, radius)
+    val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
     entity.id shouldBe ValidEntityId
     entity.position.x shouldBe ValidPosition.x
     entity.position.y shouldBe ValidPosition.y
-    entity.shape shouldBe Circle(radius)
+    entity.shape shouldBe Circle(ValidRadius)
 
   test("can create an entity with ID, position and the shape of a rectangle") :
     val height = 2
     val length = 2
-    val entity = Entity.rectangle(ValidEntityId, ValidPosition, height, length)
+    val entity = Entity.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
 
     entity.id shouldBe ValidEntityId
     entity.position.x shouldBe ValidPosition.x
     entity.position.y shouldBe ValidPosition.y
-    entity.shape shouldBe Rectangle(height, length)
+    entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
+
+  test("cannot create an entity with an empty ID"):
+    val invalidEntityId = "    "
+    an [IllegalArgumentException] shouldBe thrownBy:
+      Entity(invalidEntityId, ValidPosition, Shape2D.circle(ValidRadius))
