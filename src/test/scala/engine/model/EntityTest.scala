@@ -8,9 +8,9 @@ class EntityTest extends AnyFunSuite with Matchers:
 
   val ValidEntityId = "entity1"
   val ValidPosition = Vector2D(1, 3)
-  val ValidRadius = 2;
-  val ValidHeight = 2;
-  val ValidLength = 2;
+  val ValidRadius = 2
+  val ValidHeight = 2
+  val ValidLength = 2
 
   test("can create an entity with ID, position and the shape of a circle") :
     val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)

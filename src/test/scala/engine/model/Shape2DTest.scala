@@ -14,8 +14,8 @@ class Shape2DTest extends AnyFunSuite with Matchers:
     circle shouldBe Circle(validRadius)
 
   test("can create a rectangle shape2D"):
-    val validHeight = 2;
-    val validLength = 2;
+    val validHeight = 2
+    val validLength = 2
 
     val rectangle = Shape2D.rectangle(validHeight, validLength)
 
@@ -27,3 +27,15 @@ class Shape2DTest extends AnyFunSuite with Matchers:
     an [IllegalArgumentException] shouldBe thrownBy:
       Shape2D.circle(invalidRadius)
 
+  test("cannot create a rectangle with invalid height and length"):
+    val invalidLength = 0
+    val validLength = 1
+    val invalidHeight = 0
+    val validHeight = 1
+
+    an[IllegalArgumentException] shouldBe thrownBy:
+      Shape2D.rectangle(invalidHeight, validLength)
+    an[IllegalArgumentException] shouldBe thrownBy:
+      Shape2D.rectangle(validHeight, invalidLength)
+    an[IllegalArgumentException] shouldBe thrownBy:
+      Shape2D.rectangle(invalidHeight, invalidLength)
