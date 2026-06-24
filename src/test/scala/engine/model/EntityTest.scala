@@ -23,6 +23,7 @@ class EntityTest extends AnyFunSuite with Matchers:
   test("can create an entity with ID, position and the shape of a rectangle") :
     val height = 2
     val length = 2
+
     val entity = Entity.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
 
     entity.id shouldBe ValidEntityId
@@ -32,6 +33,7 @@ class EntityTest extends AnyFunSuite with Matchers:
 
   test("cannot create an entity with an empty ID"):
     val invalidEntityId = "    "
+
     an [IllegalArgumentException] shouldBe thrownBy:
       Entity(invalidEntityId, ValidPosition, Shape2D.circle(ValidRadius))
 
@@ -40,9 +42,9 @@ class EntityTest extends AnyFunSuite with Matchers:
     val invalidPositionY = Vector2D(1, -1)
     val invalidPositionXY = Vector2D(1, 1)
 
-    an[IllegalArgumentException] shouldBe thrownBy:
+    an [IllegalArgumentException] shouldBe thrownBy:
       Entity(ValidEntityId, invalidPositionX, Shape2D.circle(ValidRadius))
-    an[IllegalArgumentException] shouldBe thrownBy:
+    an [IllegalArgumentException] shouldBe thrownBy:
       Entity(ValidEntityId, invalidPositionY, Shape2D.circle(ValidRadius))
-      an[IllegalArgumentException] shouldBe thrownBy:
+    an [IllegalArgumentException] shouldBe thrownBy:
         Entity(ValidEntityId, invalidPositionXY, Shape2D.circle(ValidRadius))
