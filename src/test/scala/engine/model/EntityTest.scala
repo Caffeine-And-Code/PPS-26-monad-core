@@ -27,8 +27,7 @@ class EntityTest extends AnyFunSuite with Matchers:
     val entity = Entity.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
 
     entity.id shouldBe ValidEntityId
-    entity.position.x shouldBe ValidPosition.x
-    entity.position.y shouldBe ValidPosition.y
+    entity.position shouldBe ValidPosition
     entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
 
   test("cannot create an entity with an empty ID"):
@@ -49,10 +48,25 @@ class EntityTest extends AnyFunSuite with Matchers:
     an [IllegalArgumentException] shouldBe thrownBy:
       Entity(ValidEntityId, invalidPositionXY, Shape2D.circle(ValidRadius))
 
-  test("can move an entity to a given position"):
+  test("can move entity in a given position"):
     val newPosition = Vector2D(4, 5)
     val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
     val entityInNewPosition = entity.moveTo(newPosition)
 
     entityInNewPosition.position shouldBe newPosition
+
+  test("cannot move entity in an invalid position"):
+    val invalidPosition = Vector2D(-1, -1)
+    val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
+
+    an [IllegalArgumentException] shouldBe thrownBy:
+      entity.moveTo(invalidPosition)
+
+  test("can create an entity and give it a speed"):
+    val speed = Vector2D(3, 4)
+    val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
+
+    val entityWithSpeed = entity.withSpeed(speed)
+
+    entityWithSpeed.speed shouldBe speed
