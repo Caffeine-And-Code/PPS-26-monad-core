@@ -12,12 +12,7 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
   test("can create a team"):
     val enemyTwo = "team3"
 
-    val team = for {
-      teamId <- TeamId(ValidTeamId)
-      enemy1 <- TeamId(ValidEnemy)
-      enemy2 <- TeamId(enemyTwo)
-      team <- Team(teamId, Set(enemy1, enemy2))
-    } yield team
+    val team = Team.create(ValidTeamId, Set(ValidEnemy, enemyTwo))
 
     inside(team):
       case Right(t) =>

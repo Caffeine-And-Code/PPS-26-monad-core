@@ -1,7 +1,7 @@
 package engine.model
 
 case class Surface(
-                    id: String,
+                    id: LocatableId,
                     position: Vector2D,
                     shape: Shape2D,
                     frictionIndex: Double = 0,
@@ -16,7 +16,7 @@ object Surface:
     Locatable.rectangle(id, position, height, length)((id, position, shape) => Surface(id, position, shape))
 
   private def validateAndReturn(updated: Surface): Either[String, Surface] =
-    Locatable.validate(updated.id, updated.position).map(_ => updated)
+    Locatable.validate(updated.position).map(_ => updated)
 
   extension (surface: Surface)
 

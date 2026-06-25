@@ -1,7 +1,7 @@
 package engine.model
 
 final case class Entity(
-                            id: String,
+                            id: LocatableId,
                             position: Vector2D,
                             shape: Shape2D,
                             speed: Option[Vector2D] = None,
@@ -18,7 +18,7 @@ object Entity:
 
   def validate(entity: Entity): Either[String, Unit] =
     for {
-      result <- Locatable.validate(entity.id, entity.position)
+      result <- Locatable.validate(entity.position)
     } yield result
 
   private def validateAndReturn(updated: Entity): Either[String, Entity] =

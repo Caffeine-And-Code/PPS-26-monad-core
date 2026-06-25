@@ -18,12 +18,20 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside :
   test("can create a surface with a circle shape"):
     val entity = Surface.circle(ValidEntityId, ValidPosition, ValidRadius)
 
-    entity shouldBe Right(Surface(ValidEntityId, ValidPosition, Circle(ValidRadius)))
+    inside(entity):
+      case Right(surface) =>
+        surface.id.value shouldBe ValidEntityId
+        surface.position shouldBe ValidPosition
+        surface.shape shouldBe Circle(ValidRadius)
 
   test("can create a surface with a rectangle shape"):
     val entity = Surface.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
 
-    entity shouldBe Right(Surface(ValidEntityId, ValidPosition, Rectangle(ValidHeight, ValidLength)))
+    inside(entity):
+      case Right(surface) =>
+        surface.id.value shouldBe ValidEntityId
+        surface.position shouldBe ValidPosition
+        surface.shape shouldBe Rectangle(ValidHeight, ValidLength)
 
   test("can create a surface and give it an friction index"):
     val frictionIndex = 2

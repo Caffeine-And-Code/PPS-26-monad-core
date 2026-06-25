@@ -17,19 +17,27 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("can create an entity with ID, position and the shape of a circle") :
     val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
-    entity shouldBe Right(Entity(ValidEntityId, ValidPosition, Circle(ValidRadius)))
+    inside(entity):
+      case Right(entity) =>
+        entity.id.value shouldBe ValidEntityId
+        entity.position shouldBe ValidPosition
+        entity.shape shouldBe Circle(ValidRadius)
 
   test("can create an entity with ID, position and the shape of a rectangle") :
     val entity = Entity.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
 
-    entity shouldBe Right(Entity(ValidEntityId, ValidPosition, Rectangle(ValidHeight, ValidLength)))
+    inside(entity):
+      case Right(entity) =>
+        entity.id.value shouldBe ValidEntityId
+        entity.position shouldBe ValidPosition
+        entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
 
   test("cannot create an entity with an empty ID"):
     val invalidEntityId = "    "
 
     val invalidEntity = Entity.circle(invalidEntityId, ValidPosition, ValidRadius)
 
-    invalidEntity shouldBe Left("ID cannot be empty")
+    invalidEntity shouldBe Left("LocatableId cannot be empty")
 
   test("cannot create an entity with an invalid position"):
     val invalidPositionX = Vector2D(-1, 1)

@@ -1,6 +1,6 @@
 package engine.model
 
-case class Team(
+case class Team private(
                teamId: TeamId,
                enemies: Set[TeamId] = Set.empty
                )
@@ -9,6 +9,22 @@ object Team:
 
   def apply(teamId: TeamId, enemies: Set[TeamId] = Set.empty): Either[String, Team] =
     validate(new Team(teamId, enemies))
+
+  def create(teamId: String, enemies: Set[String] = Set.empty): Either[String, Team] = {
+    val enemiesTeamId: Either[String, Set[TeamId]] =
+      enemies.foldLeft(Right(Set.empty[TeamId]): Either[String, Set[TeamId]]) {
+        case (Right(acc), nextString) =>
+          TeamId(nextString).map(teamId => acc + teamId)
+        case (Left(error), _) =>
+          Left(error)
+      }
+
+    for {
+      validEnemies <- enemiesTeamId
+      validTeamId <- TeamId(teamId)
+      team <- validate(new Team(validTeamId, validEnemies))
+    } yield team
+  }
 
   private def validate(team: Team): Either[String, Team] =
     if team.enemies.contains(team.teamId) then
