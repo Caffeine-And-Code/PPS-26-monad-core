@@ -40,3 +40,9 @@ object Entity:
 
     def withHealth(health: Int): Either[String, Entity] =
       Health(health).map(h => e.copy(health = Some(h)))
+
+    def applyDamage(damage: Int): Either[String, Entity] =
+      e.health match{
+        case None => Left("Cannot apply damage to None health entity")
+        case Some(health) => (health - damage).flatMap(health => Right(e.copy(health = Some(health))))
+      }
