@@ -1,11 +1,17 @@
 package engine.model
 
+opaque type Weight = Int
+object Weight:
+  def apply(w: Int): Either[String, Weight] =
+    Either.cond(w >= 0, w, s"Weight cannot be negative: $w")
+  extension (w: Weight) def value: Int = w
+
 final case class Entity(
                             id: String,
                             position: Vector2D,
                             shape: Shape2D,
-                            speed: Vector2D = Vector2D(0, 0),
-                            weight: Int = 0
+                            speed: Option[Vector2D] = None,
+                            weight: Option[Weight] = None
                           ) extends Locatable
 
 object Entity:
@@ -16,14 +22,11 @@ object Entity:
     Locatable.rectangle(id, position, height, length)((id, position, shape) => Entity(id, position, shape))
 
   def validate(entity: Entity): Either[String, Unit] =
-    if entity.weight < 0 then
-      Left("entity cannot have weight less than 0")
-    else
-      for {
-        result <- Locatable.validate(entity.id, entity.position)
-      } yield result
+    for {
+      result <- Locatable.validate(entity.id, entity.position)
+    } yield result
 
-  private def validateAndReturn(updated: Entity): Either[String, Entity] = 
+  private def validateAndReturn(updated: Entity): Either[String, Entity] =
     Entity.validate(updated).map(_ => updated)
 
   extension (e: Entity)
@@ -35,7 +38,7 @@ object Entity:
       validateAndReturn(e.copy(position = e.position + space))
 
     def withSpeed(speed: Vector2D): Either[String, Entity] =
-      validateAndReturn(e.copy(speed = speed))
+      validateAndReturn(e.copy(speed = Some(speed)))
 
     def withWeight(weight: Int): Either[String, Entity] =
-      validateAndReturn(e.copy(weight = weight))
+      Weight(weight).map(w => e.copy(weight = Some(w)))

@@ -75,7 +75,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val entityWithSpeed = ValidEntity.flatMap(_.withSpeed(speed))
 
     inside(entityWithSpeed) :
-      case Right(entity) => entity.speed shouldBe speed
+      case Right(entity) => entity.speed shouldBe Some(speed)
 
 
   test("can create an entity and give it a weight"):
@@ -84,7 +84,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val entityWithWeight = ValidEntity.flatMap(_.withWeight(weight))
 
     inside(entityWithWeight):
-      case Right(entity) => entity.weight shouldBe weight
+      case Right(entity) => entity.weight shouldBe Some(weight)
 
   test("cannot create an entity and give it an invalid weight"):
     val invalidWeight = -1
