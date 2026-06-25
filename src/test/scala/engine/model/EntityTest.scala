@@ -120,3 +120,28 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(entity):
       case Right(entity) => entity.health shouldBe Some(health - damage)
+
+  test("if apply a damage greater than life left, it returns Left"):
+    val health = 50
+    val damage = 60
+
+    val entity = for {
+      entity <- ValidEntity
+      entity <- entity.withHealth(health)
+      entity <- entity.applyDamage(damage)
+    } yield entity
+
+    entity.isLeft shouldBe true
+
+
+  test("cannot inflict a negative damage"):
+    val health = 50
+    val damage = -10
+
+    val entity = for {
+      entity <- ValidEntity
+      entity <- entity.withHealth(health)
+      entity <- entity.applyDamage(damage)
+    } yield entity
+
+    entity.isLeft shouldBe true

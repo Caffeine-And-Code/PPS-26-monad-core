@@ -11,7 +11,11 @@ object Health:
 
     def value: Int = h
 
-    private infix def inflict(damage: Int): Either[String, Health] =
-      Either.cond(h > damage, h-damage, "Health cannot be negative or zero")
+    private infix def inflict(damage: Int): Either[String, Health] = {
+      if damage < 0 then
+        Left("Cannot apply a negative damage")
+      else
+        Either.cond(h > damage, h-damage, "Health cannot be negative or zero")
+    }
 
     def -(damage: Int): Either[String, Health] = h inflict damage
