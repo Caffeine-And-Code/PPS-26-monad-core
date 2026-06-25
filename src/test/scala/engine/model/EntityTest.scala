@@ -76,3 +76,10 @@ class EntityTest extends AnyFunSuite with Matchers:
     val entityWithSpeed = ValidEntity.withSpeed(speed)
 
     entityWithSpeed.speed shouldBe speed
+
+  test("can create an entity and give it a weight"):
+    val weight = 5
+
+    val entityWithWeight = ValidEntity.withWeight(weight)
+
+    entityWithWeight.weight shouldBe weight
