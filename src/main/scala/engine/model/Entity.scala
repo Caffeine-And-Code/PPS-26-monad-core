@@ -35,6 +35,9 @@ object Entity:
 
     def withSpeed(speed: Vector2D): Either[String, Entity] =
       validateAndReturn(e.copy(speed = Some(speed)))
+      
+    def isFixed: Boolean =
+      e.speed.isEmpty
 
     def withWeight(weight: Int): Either[String, Entity] =
       Weight(weight).map(w => e.copy(weight = Some(w)))

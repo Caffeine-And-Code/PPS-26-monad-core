@@ -161,3 +161,8 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(entityWithHealth):
       case Right(entity) => entity.teamId shouldBe Some(teamId)
+
+  test("check if entity is fixed"):
+
+    inside(ValidEntity):
+      case Right(entity) => entity.isFixed shouldBe true
