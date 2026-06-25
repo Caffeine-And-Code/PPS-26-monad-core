@@ -1,17 +1,26 @@
 package engine.model
 
 opaque type Weight = Int
+
 object Weight:
   def apply(w: Int): Either[String, Weight] =
     Either.cond(w >= 0, w, s"Weight cannot be negative: $w")
   extension (w: Weight) def value: Int = w
+
+opaque type Health = Int
+object Health:
+  def apply(h: Int): Either[String, Health] =
+    Either.cond(h >= 0, h, s"Health cannot be negative: $h")
+
+  extension (h: Health) def value: Int = h
 
 final case class Entity(
                             id: String,
                             position: Vector2D,
                             shape: Shape2D,
                             speed: Option[Vector2D] = None,
-                            weight: Option[Weight] = None
+                            weight: Option[Weight]  = None,
+                            health: Option[Health]  = None
                           ) extends Locatable
 
 object Entity:
@@ -42,3 +51,6 @@ object Entity:
 
     def withWeight(weight: Int): Either[String, Entity] =
       Weight(weight).map(w => e.copy(weight = Some(w)))
+
+    def withHealth(health: Int): Either[String, Entity] =
+      Health(health).map(h => e.copy(health = Some(h)))
