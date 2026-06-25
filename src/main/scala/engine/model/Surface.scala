@@ -4,7 +4,8 @@ case class Surface(
                     id: String,
                     position: Vector2D,
                     shape: Shape2D,
-                    frictionIndex: Double = 0
+                    frictionIndex: Double = 0,
+                    appliedForce: Vector2D = Vector2D(0, 0)
                   ) extends Locatable
 
 object Surface:
@@ -29,3 +30,6 @@ object Surface:
 
     def withFrictionIndex(frictionIndex: Double): Either[String, Surface] =
       validateAndReturn(surface.copy(frictionIndex = frictionIndex))
+
+    def withAppliedForce(appliedForce: Vector2D): Either[String, Surface] =
+      validateAndReturn(surface.copy(appliedForce = appliedForce))

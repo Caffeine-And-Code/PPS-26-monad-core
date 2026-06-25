@@ -32,3 +32,18 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside :
 
     inside(surfaceWithFrictionIndex) :
       case Right(surface) => surface.frictionIndex shouldBe frictionIndex
+
+  test("cannot create a surface and give it an invalid friction index"):
+    val frictionIndex = -2
+
+    val surfaceWithFrictionIndex = ValidSurface.flatMap(_.withFrictionIndex(frictionIndex))
+
+    surfaceWithFrictionIndex.isLeft shouldBe true
+
+  test("can create a surface and give it an valid applied force"):
+    val appliedForce = Vector2D(10, 20)
+
+    val surfaceWithAppliedForce = ValidSurface.flatMap(_.withAppliedForce(appliedForce))
+
+    inside(surfaceWithAppliedForce) :
+      case Right(surface) => surface.appliedForce shouldBe appliedForce
