@@ -32,7 +32,7 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
       team   <- Team(teamId, Set(enemy1))
     } yield team
 
-    team.isLeft shouldBe true
+    team shouldBe Left("A team cannot be its own enemy")
 
   test("can add an enemy to the team"):
     val team = for {
@@ -54,4 +54,4 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
       team <- team.addEnemy(teamId)
     } yield team
 
-    team.isLeft shouldBe true
+    team shouldBe Left("A team cannot be its own enemy")

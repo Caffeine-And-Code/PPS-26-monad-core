@@ -11,7 +11,7 @@ object Locatable:
     if id.trim.isEmpty then
       Left("ID cannot be empty")
     else if position.x <= 0 || position.y <= 0 then
-      Left("Position cannot be empty")
+      Left("Position is invalid, x and y should be greater then 0")
     else
       Right(())
 

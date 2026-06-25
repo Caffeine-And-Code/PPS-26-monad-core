@@ -5,7 +5,7 @@ opaque type Health = Int
 object Health:
 
   def apply(h: Int): Either[String, Health] =
-    Either.cond(h > 0, h, s"Health cannot be negative or zero: $h")
+    Either.cond(h > 0, h, "Health cannot be negative or zero")
 
   extension (h: Health)
 
@@ -15,7 +15,7 @@ object Health:
       if damage < 0 then
         Left("Cannot apply a negative damage")
       else
-        Either.cond(h > damage, h-damage, "Health cannot be negative or zero")
+        Health(h.value - damage)
     }
 
     def -(damage: Int): Either[String, Health] = h inflict damage

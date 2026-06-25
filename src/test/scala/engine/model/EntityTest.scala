@@ -29,7 +29,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val invalidEntity = Entity.circle(invalidEntityId, ValidPosition, ValidRadius)
 
-    invalidEntity.isLeft shouldBe true
+    invalidEntity shouldBe Left("ID cannot be empty")
 
   test("cannot create an entity with an invalid position"):
     val invalidPositionX = Vector2D(-1, 1)
@@ -40,9 +40,9 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val invalidForYPosition = Entity.circle(ValidEntityId, invalidPositionY, ValidRadius)
     val invalidForXYPosition = Entity.circle(ValidEntityId, invalidPositionXY, ValidRadius)
 
-    invalidForXPosition.isLeft shouldBe true
-    invalidForYPosition.isLeft shouldBe true
-    invalidForXYPosition.isLeft shouldBe true
+    invalidForXPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
+    invalidForYPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
+    invalidForXYPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
 
   test("can move entity in a given position"):
     val newPosition = Vector2D(4, 5)
@@ -58,7 +58,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityInNewPosition = ValidEntity.flatMap(_.moveTo(invalidPosition))
 
-    entityInNewPosition.isLeft shouldBe true
+    entityInNewPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
 
   test("can move an entity within a space"):
     val spaceVector = Vector2D(1, 3)
@@ -91,7 +91,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityWithWeight = ValidEntity.flatMap(_.withWeight(invalidWeight))
 
-    entityWithWeight.isLeft shouldBe true
+    entityWithWeight shouldBe Left("Weight cannot be negative")
 
   test("can create an entity and give it a health"):
     val health = 5
@@ -106,7 +106,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityWithHealth = ValidEntity.flatMap(_.withHealth(invalidHealth))
 
-    entityWithHealth.isLeft shouldBe true
+    entityWithHealth shouldBe Left("Health cannot be negative or zero")
 
   test("can apply damage to an entity"):
     val health = 50
@@ -131,7 +131,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity <- entity.applyDamage(damage)
     } yield entity
 
-    entity.isLeft shouldBe true
+    entity shouldBe Left("Health cannot be negative or zero")
 
 
   test("cannot inflict a negative damage"):
@@ -144,4 +144,4 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity <- entity.applyDamage(damage)
     } yield entity
 
-    entity.isLeft shouldBe true
+    entity shouldBe Left("Cannot apply a negative damage")
