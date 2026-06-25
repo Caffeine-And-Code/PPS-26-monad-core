@@ -35,7 +35,10 @@ object Entity:
 
     def withSpeed(speed: Vector2D): Either[String, Entity] =
       validateAndReturn(e.copy(speed = Some(speed)))
-      
+
+    def withoutSpeed: Entity =
+      e.copy(speed = None)
+
     def isFixed: Boolean =
       e.speed.isEmpty
 

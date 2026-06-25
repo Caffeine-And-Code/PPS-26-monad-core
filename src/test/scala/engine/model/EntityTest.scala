@@ -166,3 +166,14 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(ValidEntity):
       case Right(entity) => entity.isFixed shouldBe true
+
+  test("can remove speed from an entity"):
+    val speed = Vector2D(3, 4)
+
+    val withoutSpeedEntity = for {
+      entity <- ValidEntity
+      entity <- entity.withSpeed(speed)
+    } yield entity.withoutSpeed
+
+    inside(withoutSpeedEntity):
+      case Right(entity) => entity.isFixed shouldBe true
