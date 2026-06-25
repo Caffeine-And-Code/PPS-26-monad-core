@@ -153,3 +153,11 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     } yield entity
 
     entity shouldBe Left("Cannot apply a negative damage")
+
+  test("can add a teamId to an entity"):
+    val teamId = "team1"
+
+    val entityWithHealth = ValidEntity.flatMap(_.withTeamId(teamId))
+
+    inside(entityWithHealth):
+      case Right(entity) => entity.teamId shouldBe Some(teamId)

@@ -6,7 +6,8 @@ final case class Entity(
                             shape: Shape2D,
                             speed: Option[Vector2D] = None,
                             weight: Option[Weight]  = None,
-                            health: Option[Health]  = None
+                            health: Option[Health]  = None,
+                            teamId: Option[TeamId]  = None
                           ) extends Locatable
 
 object Entity:
@@ -46,3 +47,6 @@ object Entity:
         case None => Left("Cannot apply damage to None health entity")
         case Some(health) => (health - damage).flatMap(health => Right(e.copy(health = Some(health))))
       }
+
+    def withTeamId(teamId: String): Either[String, Entity] =
+      TeamId(teamId).map(t => e.copy(teamId = Some(t)))
