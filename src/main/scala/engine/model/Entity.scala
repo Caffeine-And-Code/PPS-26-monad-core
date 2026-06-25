@@ -22,5 +22,8 @@ object Entity:
     def moveTo(newPosition:Vector2D): Entity =
       e.copy(position = newPosition)
 
+    def moveBy(space: Vector2D): Entity =
+      e.copy(position = e.position + space)
+
     def withSpeed(speed: Vector2D): Entity =
       e.copy(speed = speed)
