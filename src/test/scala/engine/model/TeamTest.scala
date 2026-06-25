@@ -20,6 +20,13 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
         t.enemies.size shouldBe 2
         t.enemies.map(_.value) should contain allOf(ValidEnemy, enemyTwo)
 
+  test("cannot create a team with invalid team id"):
+    val invalidTeamId = "   "
+
+    val team = Team.create(invalidTeamId)
+
+    team shouldBe Left("TeamId cannot be empty")
+
   test("cannot create a team where the team his self is the team enemy"):
     val team = Team.create(ValidTeamId, Set(ValidTeamId))
 
@@ -52,3 +59,50 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
     inside(team):
       case Right(t) =>
         t.enemies.size shouldBe 0
+
+  test("removing enemy with invalid team id leave the team not alterated"):
+    val invalidTeamId = ""
+    val team = for {
+      team <- Team.create(ValidTeamId, Set(ValidEnemy))
+    } yield team.removeEnemy(invalidTeamId)
+
+    inside(team):
+      case Right(t) =>
+        t.enemies.size shouldBe 1
+
+  test("removing not existing enemy leave the team not alterated"):
+    val enemyTeamId = "team3"
+    val team = for {
+      team <- Team.create(ValidTeamId, Set(ValidEnemy))
+    } yield team.removeEnemy(enemyTeamId)
+
+    inside(team):
+      case Right(t) =>
+        t.enemies.size shouldBe 1
+
+  test("can check that an enemy is an enemy by team id"):
+    val isEnemy = for {
+      team <- Team.create(ValidTeamId, Set(ValidEnemy))
+    } yield team.isEnemyOf(ValidEnemy)
+
+    inside(isEnemy):
+      case Right(value) => value shouldBe true
+
+  test("can check that a not enemy is not an enemy by team id"):
+    val enemyTeamId = "team3"
+    val isEnemy = for {
+      team <- Team.create(ValidTeamId, Set(ValidEnemy))
+    } yield team.isEnemyOf(enemyTeamId)
+
+    inside(isEnemy):
+      case Right(value) => value shouldBe false
+
+
+  test("can check that an invalid team id is not an enemy"):
+    val invalidTeamId = " "
+    val isEnemy = for {
+      team <- Team.create(ValidTeamId, Set(ValidEnemy))
+    } yield team.isEnemyOf(invalidTeamId)
+
+    inside(isEnemy):
+      case Right(value) => value shouldBe false

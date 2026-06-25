@@ -36,9 +36,15 @@ object Team:
     def addEnemy(teamId: String): Either[String, Team] =
       TeamId(teamId).flatMap(tId => Team(t.teamId, t.enemies + tId))
 
-    def removeEnemy(enemy: String): Team = {
-      TeamId(enemy).map(tId => t.copy(enemies = t.enemies - tId)) match {
+    def removeEnemy(enemyId: String): Team = 
+      TeamId(enemyId).map(enemyTeamId => t.copy(enemies = t.enemies - enemyTeamId)) match {
         case Left(_) => t
         case Right(team) => team
       }
-    }
+    
+    
+    def isEnemyOf(enemyId: String): Boolean =
+      TeamId(enemyId).map(enemyTeamId => t.enemies.contains(enemyTeamId)) match {
+        case Left(_) => false
+        case Right(value) => value
+      }
