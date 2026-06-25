@@ -15,10 +15,10 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
     val team = Team.create(ValidTeamId, Set(ValidEnemy, enemyTwo))
 
     inside(team):
-      case Right(t) =>
-        t.teamId.value shouldBe ValidTeamId
-        t.enemies.size shouldBe 2
-        t.enemies.map(_.value) should contain allOf(ValidEnemy, enemyTwo)
+      case Right(team) =>
+        team.teamId.value shouldBe ValidTeamId
+        team.enemies.size shouldBe 2
+        team.enemies.map(_.value) should contain allOf(ValidEnemy, enemyTwo)
 
   test("cannot create a team with invalid team id"):
     val invalidTeamId = "   "
@@ -39,9 +39,9 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
     } yield team
 
     inside(team):
-      case Right(t) =>
-        t.enemies.size shouldBe 1
-        t.enemies.map(_.value) should contain (ValidEnemy)
+      case Right(team) =>
+        team.enemies.size shouldBe 1
+        team.enemies.map(_.value) should contain (ValidEnemy)
 
   test("cannot add team teamId as enemy to the team"):
     val team = for {
@@ -67,8 +67,8 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
     } yield team.removeEnemy(invalidTeamId)
 
     inside(team):
-      case Right(t) =>
-        t.enemies.size shouldBe 1
+      case Right(team) =>
+        team.enemies.size shouldBe 1
 
   test("removing not existing enemy leave the team not alterated"):
     val enemyTeamId = "team3"
@@ -77,8 +77,8 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
     } yield team.removeEnemy(enemyTeamId)
 
     inside(team):
-      case Right(t) =>
-        t.enemies.size shouldBe 1
+      case Right(team) =>
+        team.enemies.size shouldBe 1
 
   test("can check that an enemy is an enemy by team id"):
     val isEnemy = for {

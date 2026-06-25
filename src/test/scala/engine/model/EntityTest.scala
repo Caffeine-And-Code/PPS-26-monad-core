@@ -40,6 +40,14 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.health shouldBe None
         entity.teamId shouldBe None
 
+  test("can create an entity in position 0,0"):
+    val position00 = Vector2D(0, 0)
+    val entity = Entity.rectangle(ValidEntityId, position00, ValidHeight, ValidLength)
+
+    inside(entity):
+      case Right(entity) =>
+        entity.position shouldBe position00
+
   test("cannot create an entity with an empty ID"):
     val invalidEntityId = "    "
 
@@ -145,6 +153,17 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity <- ValidEntity
       entity <- entity.withHealth(health)
       entity <- entity.applyDamage(damage)
+    } yield entity
+
+    entity shouldBe Left("Health cannot be negative or zero")
+
+  test("if apply a damage equals to life left, it returns Left"):
+    val health = 50
+
+    val entity = for {
+      entity <- ValidEntity
+      entity <- entity.withHealth(health)
+      entity <- entity.applyDamage(health)
     } yield entity
 
     entity shouldBe Left("Health cannot be negative or zero")

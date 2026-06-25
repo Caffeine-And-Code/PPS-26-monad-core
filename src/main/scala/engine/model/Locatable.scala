@@ -8,7 +8,7 @@ private [model] trait Locatable:
 
 object Locatable:
   def validate(position: Vector2D): Either[String, Unit] =
-    if position.x <= 0 || position.y <= 0 then
+    if position.x < 0 || position.y < 0 then
       Left("Position is invalid, x and y should be greater then 0")
     else
       Right(())

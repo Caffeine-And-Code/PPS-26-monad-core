@@ -1,8 +1,8 @@
 package engine.model
 
 enum Shape2D:
-  case Circle(radius: Double) extends Shape2D
-  case Rectangle(height: Double, length: Double) extends Shape2D
+  case Circle private [model] (radius: Double)
+  case Rectangle private [model] (height: Double, length: Double)
 
 object Shape2D :
   def circle(radius: Double): Either[String, Shape2D] =

@@ -1,6 +1,6 @@
 package engine.model
 
-case class Surface(
+final case class Surface private(
                     id: LocatableId,
                     position: Vector2D,
                     shape: Shape2D,

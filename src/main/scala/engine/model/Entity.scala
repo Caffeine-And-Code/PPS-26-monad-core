@@ -1,6 +1,6 @@
 package engine.model
 
-final case class Entity(
+final case class Entity private (
                             id: LocatableId,
                             position: Vector2D,
                             shape: Shape2D,
@@ -25,34 +25,34 @@ object Entity:
   private def validateAndReturn(updated: Entity): Either[String, Entity] =
     Entity.validate(updated).map(_ => updated)
 
-  extension (e: Entity)
+  extension (entity: Entity)
 
     def moveTo(newPosition: Vector2D): Either[String, Entity] =
-      validateAndReturn(e.copy(position = newPosition))
+      validateAndReturn(entity.copy(position = newPosition))
 
     def moveBy(space: Vector2D): Either[String, Entity] =
-      validateAndReturn(e.copy(position = e.position + space))
+      validateAndReturn(entity.copy(position = entity.position + space))
 
     def withSpeed(speed: Vector2D): Either[String, Entity] =
-      validateAndReturn(e.copy(speed = Some(speed)))
+      validateAndReturn(entity.copy(speed = Some(speed)))
 
     def withoutSpeed: Entity =
-      e.copy(speed = None)
+      entity.copy(speed = None)
 
     def isFixed: Boolean =
-      e.speed.isEmpty
+      entity.speed.isEmpty
 
     def withWeight(weight: Int): Either[String, Entity] =
-      Weight(weight).map(w => e.copy(weight = Some(w)))
+      Weight(weight).map(w => entity.copy(weight = Some(w)))
 
     def withHealth(health: Int): Either[String, Entity] =
-      Health(health).map(h => e.copy(health = Some(h)))
+      Health(health).map(h => entity.copy(health = Some(h)))
 
     def applyDamage(damage: Int): Either[String, Entity] =
-      e.health match{
+      entity.health match{
         case None => Left("Cannot apply damage to None health entity")
-        case Some(health) => (health - damage).flatMap(health => Right(e.copy(health = Some(health))))
+        case Some(health) => (health - damage).map(health => entity.copy(health = Some(health)))
       }
 
     def withTeamId(teamId: String): Either[String, Entity] =
-      TeamId(teamId).map(t => e.copy(teamId = Some(t)))
+      TeamId(teamId).map(t => entity.copy(teamId = Some(t)))

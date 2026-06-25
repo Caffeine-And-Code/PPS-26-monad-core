@@ -1,6 +1,6 @@
 package engine.model
 
-case class Team private(
+final case class Team private(
                teamId: TeamId,
                enemies: Set[TeamId] = Set.empty
                )
@@ -32,19 +32,18 @@ object Team:
     else
       Right(team)
 
-  extension (t: Team)
+  extension (team: Team)
     def addEnemy(teamId: String): Either[String, Team] =
-      TeamId(teamId).flatMap(tId => Team(t.teamId, t.enemies + tId))
+      TeamId(teamId).flatMap(tId => Team(team.teamId, team.enemies + tId))
 
-    def removeEnemy(enemyId: String): Team = 
-      TeamId(enemyId).map(enemyTeamId => t.copy(enemies = t.enemies - enemyTeamId)) match {
-        case Left(_) => t
-        case Right(team) => team
+    def removeEnemy(enemyId: String): Team =
+      TeamId(enemyId).map(enemyTeamId => team.copy(enemies = team.enemies - enemyTeamId)) match {
+        case Left(_) => team
+        case Right(updatedTeam) => updatedTeam
       }
-    
-    
+
     def isEnemyOf(enemyId: String): Boolean =
-      TeamId(enemyId).map(enemyTeamId => t.enemies.contains(enemyTeamId)) match {
+      TeamId(enemyId).map(enemyTeamId => team.enemies.contains(enemyTeamId)) match {
         case Left(_) => false
         case Right(value) => value
       }
