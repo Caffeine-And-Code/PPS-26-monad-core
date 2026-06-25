@@ -3,89 +3,92 @@ package engine.model
 import engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.Inside
 
-class EntityTest extends AnyFunSuite with Matchers:
+class EntityTest extends AnyFunSuite with Inside with Matchers:
 
   val ValidEntityId = "entity1"
   val ValidPosition = Vector2D(1, 3)
   val ValidRadius = 2
   val ValidHeight = 2
   val ValidLength = 2
-  val ValidEntity: Entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
+  val ValidEntity: Either[String, Entity] = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
   test("can create an entity with ID, position and the shape of a circle") :
     val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
-    entity.id shouldBe ValidEntityId
-    entity.position.x shouldBe ValidPosition.x
-    entity.position.y shouldBe ValidPosition.y
-    entity.shape shouldBe Circle(ValidRadius)
+    entity shouldBe Right(Entity(ValidEntityId, ValidPosition, Circle(ValidRadius)))
 
   test("can create an entity with ID, position and the shape of a rectangle") :
-    val height = 2
-    val length = 2
-
     val entity = Entity.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
 
-    entity.id shouldBe ValidEntityId
-    entity.position shouldBe ValidPosition
-    entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
+    entity shouldBe Right(Entity(ValidEntityId, ValidPosition, Rectangle(ValidHeight, ValidLength)))
 
   test("cannot create an entity with an empty ID"):
     val invalidEntityId = "    "
 
-    an [IllegalArgumentException] shouldBe thrownBy:
-      Entity(invalidEntityId, ValidPosition, Shape2D.circle(ValidRadius))
+    val invalidEntity = Entity.circle(invalidEntityId, ValidPosition, ValidRadius)
+
+    invalidEntity.isLeft shouldBe true
 
   test("cannot create an entity with an invalid position"):
     val invalidPositionX = Vector2D(-1, 1)
     val invalidPositionY = Vector2D(1, -1)
     val invalidPositionXY = Vector2D(-1, -1)
 
-    an [IllegalArgumentException] shouldBe thrownBy:
-      Entity(ValidEntityId, invalidPositionX, Shape2D.circle(ValidRadius))
-    an [IllegalArgumentException] shouldBe thrownBy:
-      Entity(ValidEntityId, invalidPositionY, Shape2D.circle(ValidRadius))
-    an [IllegalArgumentException] shouldBe thrownBy:
-      Entity(ValidEntityId, invalidPositionXY, Shape2D.circle(ValidRadius))
+    val invalidForXPosition = Entity.circle(ValidEntityId, invalidPositionX, ValidRadius)
+    val invalidForYPosition = Entity.circle(ValidEntityId, invalidPositionY, ValidRadius)
+    val invalidForXYPosition = Entity.circle(ValidEntityId, invalidPositionXY, ValidRadius)
+
+    invalidForXPosition.isLeft shouldBe true
+    invalidForYPosition.isLeft shouldBe true
+    invalidForXYPosition.isLeft shouldBe true
 
   test("can move entity in a given position"):
     val newPosition = Vector2D(4, 5)
-    val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
-    val entityInNewPosition = entity.moveTo(newPosition)
+    val entityInNewPosition = ValidEntity.flatMap(_.moveTo(newPosition))
 
-    entityInNewPosition.position shouldBe newPosition
+    inside(entityInNewPosition) :
+      case Right(entity) => entity.position shouldBe newPosition
+
 
   test("cannot move entity in an invalid position"):
     val invalidPosition = Vector2D(-1, -1)
 
-    an [IllegalArgumentException] shouldBe thrownBy:
-      ValidEntity.moveTo(invalidPosition)
+    val entityInNewPosition = ValidEntity.flatMap(_.moveTo(invalidPosition))
+
+    entityInNewPosition.isLeft shouldBe true
 
   test("can move an entity within a space"):
     val spaceVector = Vector2D(1, 3)
 
-    val entityInFinalPosition = ValidEntity.moveBy(spaceVector)
+    val entityInNewPosition = ValidEntity.flatMap(_.moveBy(spaceVector))
 
-    entityInFinalPosition.position shouldBe ValidEntity.position + spaceVector
+    inside(entityInNewPosition) :
+      case Right(entity) => entity.position shouldBe spaceVector + ValidPosition
+
 
   test("can create an entity and give it a speed"):
     val speed = Vector2D(3, 4)
 
-    val entityWithSpeed = ValidEntity.withSpeed(speed)
+    val entityWithSpeed = ValidEntity.flatMap(_.withSpeed(speed))
 
-    entityWithSpeed.speed shouldBe speed
+    inside(entityWithSpeed) :
+      case Right(entity) => entity.speed shouldBe speed
+
 
   test("can create an entity and give it a weight"):
     val weight = 5
 
-    val entityWithWeight = ValidEntity.withWeight(weight)
+    val entityWithWeight = ValidEntity.flatMap(_.withWeight(weight))
 
-    entityWithWeight.weight shouldBe weight
+    inside(entityWithWeight):
+      case Right(entity) => entity.weight shouldBe weight
 
   test("cannot create an entity and give it an invalid weight"):
     val invalidWeight = -1
 
-    an [IllegalArgumentException] shouldBe thrownBy:
-      ValidEntity.withWeight(invalidWeight)
+    val entityWithWeight = ValidEntity.flatMap(_.withWeight(invalidWeight))
+
+    entityWithWeight.isLeft shouldBe true

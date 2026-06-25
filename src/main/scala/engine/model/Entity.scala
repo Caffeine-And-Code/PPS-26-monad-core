@@ -1,35 +1,42 @@
 package engine.model
 
 final case class Entity(
-                       id: String,
-                       position: Vector2D,
-                       shape: Shape2D,
-                       speed: Vector2D = Vector2D(0, 0),
-                       weight: Int = 0
-                       ):
-  require(id.trim.nonEmpty, "Entity ID must not be empty")
-  require(position.x > 0 && position.y > 0, "position coordinates X and Y must be greater than 0")
-  require(weight >= 0, "weight must be greater or equals to 0")
-
-
+                            id: String,
+                            position: Vector2D,
+                            shape: Shape2D,
+                            speed: Vector2D = Vector2D(0, 0),
+                            weight: Int = 0
+                          ) extends Locatable
 
 object Entity:
-  def circle(id: String, position: Vector2D, radius: Double):Entity =
-    Entity(id, position, Shape2D.circle(radius))
+  def circle(id: String, position: Vector2D, radius: Double):Either[String, Entity] =
+    Locatable.circle(id, position, radius)((id, position, shape) => Entity(id, position, shape))
 
-  def rectangle(id: String, position: Vector2D, height: Double, length: Double):Entity =
-    Entity(id, position, Shape2D.rectangle(height, length))
+  def rectangle(id: String, position: Vector2D, height: Double, length: Double):Either[String, Entity] =
+    Locatable.rectangle(id, position, height, length)((id, position, shape) => Entity(id, position, shape))
+
+  def validate(entity: Entity): Either[String, Unit] =
+    if entity.weight < 0 then
+      Left("entity cannot have weight less than 0")
+    else
+      for {
+        result <- Locatable.validate(entity.id, entity.position)
+      } yield result
+
+  private def validateAndReturn(updated: Entity): Either[String, Entity] = {
+    Entity.validate(updated).map(_ => updated)
+  }
 
   extension (e: Entity)
 
-    def moveTo(newPosition:Vector2D): Entity =
-      e.copy(position = newPosition)
+    def moveTo(newPosition: Vector2D): Either[String, Entity] =
+      validateAndReturn(e.copy(position = newPosition))
 
-    def moveBy(space: Vector2D): Entity =
-      e.copy(position = e.position + space)
+    def moveBy(space: Vector2D): Either[String, Entity] =
+      validateAndReturn(e.copy(position = e.position + space))
 
-    def withSpeed(speed: Vector2D): Entity =
-      e.copy(speed = speed)
+    def withSpeed(speed: Vector2D): Either[String, Entity] =
+      validateAndReturn(e.copy(speed = speed))
 
-    def withWeight(weight: Int): Entity =
-      e.copy(weight = weight)
+    def withWeight(weight: Int): Either[String, Entity] =
+      validateAndReturn(e.copy(weight = weight))
