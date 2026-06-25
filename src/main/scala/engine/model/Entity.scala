@@ -11,3 +11,8 @@ object Entity:
 
   def rectangle(id: String, position: Vector2D, height: Double, length: Double):Entity =
     Entity(id, position, Shape2D.rectangle(height, length))
+
+  extension (e: Entity)
+
+    def moveTo(newPosition:Vector2D): Entity =
+      e.copy(position = newPosition)

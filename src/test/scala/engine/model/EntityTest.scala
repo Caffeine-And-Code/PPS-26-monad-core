@@ -48,3 +48,11 @@ class EntityTest extends AnyFunSuite with Matchers:
       Entity(ValidEntityId, invalidPositionY, Shape2D.circle(ValidRadius))
     an [IllegalArgumentException] shouldBe thrownBy:
       Entity(ValidEntityId, invalidPositionXY, Shape2D.circle(ValidRadius))
+
+  test("can move an entity to a given position"):
+    val newPosition = Vector2D(4, 5)
+    val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
+
+    val entityInNewPosition = entity.moveTo(newPosition)
+
+    entityInNewPosition.position shouldBe newPosition
