@@ -15,3 +15,7 @@ object Team:
       Left("A team cannot be its own enemy")
     else
       Right(team)
+
+  extension (t: Team)
+    def addEnemy(teamId: TeamId): Either[String, Team] =
+      Team(t.teamId, t.enemies + teamId)
