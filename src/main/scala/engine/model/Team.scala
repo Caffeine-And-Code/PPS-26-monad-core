@@ -33,5 +33,12 @@ object Team:
       Right(team)
 
   extension (t: Team)
-    def addEnemy(teamId: TeamId): Either[String, Team] =
-      Team(t.teamId, t.enemies + teamId)
+    def addEnemy(teamId: String): Either[String, Team] =
+      TeamId(teamId).flatMap(tId => Team(t.teamId, t.enemies + tId))
+
+    def removeEnemy(enemy: String): Team = {
+      TeamId(enemy).map(tId => t.copy(enemies = t.enemies - tId)) match {
+        case Left(_) => t
+        case Right(team) => team
+      }
+    }

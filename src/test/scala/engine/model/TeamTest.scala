@@ -20,21 +20,15 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
         t.enemies.size shouldBe 2
         t.enemies.map(_.value) should contain allOf(ValidEnemy, enemyTwo)
 
-  test("cannot create a team where he is the team enemy"):
-    val team = for {
-      teamId <- TeamId(ValidTeamId)
-      enemy1 <- TeamId(ValidTeamId)
-      team   <- Team(teamId, Set(enemy1))
-    } yield team
+  test("cannot create a team where the team his self is the team enemy"):
+    val team = Team.create(ValidTeamId, Set(ValidTeamId))
 
     team shouldBe Left("A team cannot be its own enemy")
 
   test("can add an enemy to the team"):
     val team = for {
-      teamId <- TeamId(ValidTeamId)
-      team <- Team(teamId, Set())
-      enemy <- TeamId(ValidEnemy)
-      team <- team.addEnemy(enemy)
+      team <- Team.create(ValidTeamId)
+      team <- team.addEnemy(ValidEnemy)
     } yield team
 
     inside(team):
@@ -44,9 +38,17 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
 
   test("cannot add team teamId as enemy to the team"):
     val team = for {
-      teamId <- TeamId(ValidTeamId)
-      team <- Team(teamId, Set())
-      team <- team.addEnemy(teamId)
+      team <- Team.create(ValidTeamId)
+      team <- team.addEnemy(ValidTeamId)
     } yield team
 
     team shouldBe Left("A team cannot be its own enemy")
+
+  test("can remove a enemy"):
+    val team = for {
+      team <- Team.create(ValidTeamId, Set(ValidEnemy))
+    } yield team.removeEnemy(ValidEnemy)
+
+    inside(team):
+      case Right(t) =>
+        t.enemies.size shouldBe 0

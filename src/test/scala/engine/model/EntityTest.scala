@@ -22,6 +22,10 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
         entity.shape shouldBe Circle(ValidRadius)
+        entity.speed shouldBe None
+        entity.weight shouldBe None
+        entity.health shouldBe None
+        entity.teamId shouldBe None
 
   test("can create an entity with ID, position and the shape of a rectangle") :
     val entity = Entity.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
@@ -31,6 +35,10 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
         entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
+        entity.speed shouldBe None
+        entity.weight shouldBe None
+        entity.health shouldBe None
+        entity.teamId shouldBe None
 
   test("cannot create an entity with an empty ID"):
     val invalidEntityId = "    "

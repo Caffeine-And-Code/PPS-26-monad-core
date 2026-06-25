@@ -25,4 +25,3 @@ object Locatable:
 
   def rectangle[A](id: String, position: Vector2D, height: Double, length: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[String, A] =
     createGeneric(id, position, Shape2D.Rectangle(height, length))(build)
-

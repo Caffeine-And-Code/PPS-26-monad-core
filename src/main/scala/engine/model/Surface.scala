@@ -4,8 +4,8 @@ case class Surface(
                     id: LocatableId,
                     position: Vector2D,
                     shape: Shape2D,
-                    frictionIndex: Double = 0,
-                    appliedForce: Vector2D = Vector2D(0, 0)
+                    frictionIndex: Option[Double] = None,
+                    appliedForce: Option[Vector2D] = None
                   ) extends Locatable
 
 object Surface:
@@ -21,7 +21,7 @@ object Surface:
   extension (surface: Surface)
 
     def withFrictionIndex(frictionIndex: Double): Either[String, Surface] =
-      validateAndReturn(surface.copy(frictionIndex = frictionIndex))
+      validateAndReturn(surface.copy(frictionIndex = Some(frictionIndex)))
 
     def withAppliedForce(appliedForce: Vector2D): Either[String, Surface] =
-      validateAndReturn(surface.copy(appliedForce = appliedForce))
+      validateAndReturn(surface.copy(appliedForce = Some(appliedForce)))
