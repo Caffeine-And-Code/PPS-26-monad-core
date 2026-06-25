@@ -46,3 +46,12 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
       case Right(t) =>
         t.enemies.size shouldBe 1
         t.enemies.map(_.value) should contain (ValidEnemy)
+
+  test("cannot add team teamId as enemy to the team"):
+    val team = for {
+      teamId <- TeamId(ValidTeamId)
+      team <- Team(teamId, Set())
+      team <- team.addEnemy(teamId)
+    } yield team
+
+    team.isLeft shouldBe true
