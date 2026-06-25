@@ -5,22 +5,29 @@ import org.scalatest.matchers.should.Matchers
 
 class Vector2DTest extends AnyFunSuite with Matchers:
 
+  val X = 2
+  val Y = 3
+
   test("can create a vector 2D"):
-    val x = 2
-    val y = 3
+    val vector = Vector2D(X, Y)
 
-    val vector = Vector2D(x, y)
-
-    vector.x shouldBe x
-    vector.y shouldBe y
+    vector.x shouldBe X
+    vector.y shouldBe Y
 
   test("can sum vector 2D"):
-    val x = 2
-    val y = 3
+    val vector = Vector2D(X, Y)
 
-    val firstVector = Vector2D(x, y)
+    val finalVector = vector + vector + vector
 
-    val finalVector = firstVector + firstVector + firstVector
+    finalVector.x shouldBe X * 3
+    finalVector.y shouldBe Y * 3
 
-    finalVector.x shouldBe x * 3
-    finalVector.y shouldBe y * 3
+  test("can multiply vector 2D to scalar"):
+    val scalar = 3
+    val vector = Vector2D(X, Y)
+
+    val finalVector = vector * scalar
+
+    finalVector.x shouldBe X * scalar
+    finalVector.y shouldBe Y * scalar
+
