@@ -23,9 +23,8 @@ object Entity:
         result <- Locatable.validate(entity.id, entity.position)
       } yield result
 
-  private def validateAndReturn(updated: Entity): Either[String, Entity] = {
+  private def validateAndReturn(updated: Entity): Either[String, Entity] = 
     Entity.validate(updated).map(_ => updated)
-  }
 
   extension (e: Entity)
 
