@@ -83,3 +83,9 @@ class EntityTest extends AnyFunSuite with Matchers:
     val entityWithWeight = ValidEntity.withWeight(weight)
 
     entityWithWeight.weight shouldBe weight
+
+  test("cannot create an entity and give it an invalid weight"):
+    val invalidWeight = -1
+
+    an [IllegalArgumentException] shouldBe thrownBy:
+      ValidEntity.withWeight(invalidWeight)

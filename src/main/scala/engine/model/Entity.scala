@@ -9,6 +9,7 @@ final case class Entity(
                        ):
   require(id.trim.nonEmpty, "Entity ID must not be empty")
   require(position.x > 0 && position.y > 0, "position coordinates X and Y must be greater than 0")
+  require(weight >= 0, "weight must be greater or equals to 0")
 
 
 
