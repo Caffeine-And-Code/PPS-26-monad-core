@@ -4,10 +4,6 @@ import engine.core.traits.{PhysicsEngine, RenderEngine, Scene}
 
 import scala.annotation.tailrec
 
-sealed trait EngineMode
-case object EditMode extends EngineMode
-case object SimulationMode extends EngineMode
-
 val DefaultTickTime = 16_000_000L
 val InitialTime = 0L
 val InitialAccumulatorValue = 0L
@@ -15,7 +11,7 @@ val DefaultMaxFrameTime = 250_000_000L
 val StaticAlpha = 1.0
 
 case class GameLoop(
-                     mode: EngineMode = EditMode,
+                     mode: LoopMode = EditMode,
                      tickTime: Long = DefaultTickTime,
                      isRunning: Boolean = false,
                      lastTime: Long = InitialTime,
@@ -25,7 +21,7 @@ case class GameLoop(
 
 object GameLoop:
   extension (gameLoop: GameLoop)
-    def withMode(newMode: EngineMode): GameLoop =
+    def withMode(newMode: LoopMode): GameLoop =
       gameLoop.copy(mode = newMode)
 
     def withTickTime(newTickTime: Long): GameLoop =
