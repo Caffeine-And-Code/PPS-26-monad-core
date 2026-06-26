@@ -1,11 +1,13 @@
 package engine.model
 
+import engine.errors.EngineError
+
 opaque type TeamId = String
 
 object TeamId:
 
-  def apply(teamId: String): Either[String, TeamId] =
-    Either.cond(teamId.trim.nonEmpty, teamId.trim, "TeamId cannot be empty")
+  def apply(teamId: String): Either[EngineError, TeamId] =
+    Either.cond(teamId.trim.nonEmpty, teamId.trim, TeamIdCannotBeEmpty())
 
   extension (teamId: TeamId)
 
