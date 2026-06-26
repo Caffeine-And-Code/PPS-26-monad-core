@@ -1,6 +1,6 @@
 package engine.core
 
-import engine.core.traits.{PhysicsEngine, RenderEngine, UpdaterEngine}
+import engine.core.traits.{PhysicsEngine, RenderEngine, State}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -9,7 +9,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
 
   val DefaultTickTime = 16_000_000L
   val DefaultMaxFrameTime = 250_000_000L
-  val MockUpdater: UpdaterEngine = mock[UpdaterEngine]
+  val MockUpdater: State = mock[State]
   val MockPhysics: PhysicsEngine = mock[PhysicsEngine]
   val MockRender: RenderEngine = mock[RenderEngine]
   val InitialTime = 0L
@@ -106,7 +106,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing exactly one tick period should invoke the physics engine once"):
-    val updatedScene = mock[UpdaterEngine]
+    val updatedScene = mock[State]
     val currentTime = DefaultTickTime
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
 
@@ -119,8 +119,8 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing two tick periods should invoke the physics engine twice"):
-    val sceneStep1 = mock[UpdaterEngine]
-    val sceneStep2 = mock[UpdaterEngine]
+    val sceneStep1 = mock[State]
+    val sceneStep2 = mock[State]
     val currentTime = DefaultTickTime * 2
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
 
@@ -135,7 +135,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, remaining time after fixed updates must be saved in the accumulator"):
-    val updatedScene = mock[UpdaterEngine]
+    val updatedScene = mock[State]
     val currentTime = 20_000_000L
     val correctAccumulator = 4_000_000L
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
@@ -161,7 +161,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.accumulator shouldBe correctAccumulator
 
   test("game loop must invoke the render engine passing the correct interpolation alpha"):
-    val updatedScene = mock[UpdaterEngine]
+    val updatedScene = mock[State]
     val currentTime = 20_000_000L
     val correctAlpha = 0.25 // alpha = 4ms / 16ms = 0.25
     val correctAccumulator = 4_000_000L
@@ -186,7 +186,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentScene shouldBe MockUpdater
 
   test("stopping or switching mode must freeze the simulation, which can then be resumed"):
-    val updatedScene = mock[UpdaterEngine]
+    val updatedScene = mock[State]
     val partialTime1 = 16_000_000L
     val partialTime2 = 32_000_000L
     val partialTime3 = 48_000_000L

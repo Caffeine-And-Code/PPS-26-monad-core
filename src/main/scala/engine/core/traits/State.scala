@@ -1,3 +1,3 @@
 package engine.core.traits
 
-trait UpdaterEngine 
+trait State

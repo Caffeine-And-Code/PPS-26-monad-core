@@ -1,6 +1,6 @@
 package engine.core
 
-import engine.core.traits.{PhysicsEngine, RenderEngine, UpdaterEngine}
+import engine.core.traits.{PhysicsEngine, RenderEngine, State}
 
 import scala.annotation.tailrec
 
@@ -37,24 +37,24 @@ object GameLoop:
     def stop(): GameLoop =
       gameLoop.copy(isRunning = false)
 
-    def tick(updaterEngine: UpdaterEngine, physicsEngine: PhysicsEngine, renderEngine:RenderEngine, currentTime: Long): (UpdaterEngine, GameLoop) =
+    def tick(state: State, physicsEngine: PhysicsEngine, renderEngine:RenderEngine, currentTime: Long): (State, GameLoop) =
       if !gameLoop.isRunning || gameLoop.mode == EditMode then
-        renderEngine.render(updaterEngine, StaticAlpha)
-        (updaterEngine, gameLoop.copy(lastTime = currentTime))
+        renderEngine.render(state, StaticAlpha)
+        (state, gameLoop.copy(lastTime = currentTime))
       else
         val elapsedTime = currentTime - gameLoop.lastTime
         val clampedTime = Math.min(elapsedTime, gameLoop.maxFrameTime)
         val remainingTime = gameLoop.accumulator + clampedTime
 
         @tailrec
-        def runFixedUpdate(remainingTime: Long, currentUpdater: UpdaterEngine): (UpdaterEngine, Long) =
+        def runFixedUpdate(remainingTime: Long, currentUpdater: State): (State, Long) =
           if remainingTime < gameLoop.tickTime then
             (currentUpdater, remainingTime)
           else
             val updatedScene = physicsEngine.step(currentUpdater, gameLoop.tickTime)
             runFixedUpdate(remainingTime - gameLoop.tickTime, updatedScene)
 
-        val (currentScene, currentAccumulator) = runFixedUpdate(remainingTime, updaterEngine)
+        val (currentScene, currentAccumulator) = runFixedUpdate(remainingTime, state)
 
         val alpha = currentAccumulator.toDouble / gameLoop.tickTime.toDouble
         renderEngine.render(currentScene, alpha)
