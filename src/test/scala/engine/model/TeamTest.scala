@@ -16,7 +16,7 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
 
     inside(team):
       case Right(team) =>
-        team.teamId.value shouldBe ValidTeamId
+        team.id.value shouldBe ValidTeamId
         team.enemies.size shouldBe 2
         team.enemies.map(_.value) should contain allOf(ValidEnemy, enemyTwo)
 
@@ -41,7 +41,7 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
     inside(team):
       case Right(team) =>
         team.enemies.size shouldBe 1
-        team.enemies.map(_.value) should contain (ValidEnemy)
+        team.enemies.map(_.value) should contain(ValidEnemy)
 
   test("cannot add team teamId as enemy to the team"):
     val team = for {

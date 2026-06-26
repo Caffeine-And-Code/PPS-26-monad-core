@@ -1,9 +1,9 @@
 package engine.model
 
 import engine.model.Shape2D.{Circle, Rectangle}
+import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.Inside
 
 class EntityTest extends AnyFunSuite with Inside with Matchers:
 
@@ -14,7 +14,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   val ValidLength = 2
   val ValidEntity: Either[String, Entity] = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
-  test("can create an entity with ID, position and the shape of a circle") :
+  test("can create an entity with ID, position and the shape of a circle"):
     val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
     inside(entity):
@@ -27,7 +27,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.health shouldBe None
         entity.teamId shouldBe None
 
-  test("can create an entity with ID, position and the shape of a rectangle") :
+  test("can create an entity with ID, position and the shape of a rectangle"):
     val entity = Entity.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
 
     inside(entity):
@@ -73,7 +73,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityInNewPosition = ValidEntity.flatMap(_.moveTo(newPosition))
 
-    inside(entityInNewPosition) :
+    inside(entityInNewPosition):
       case Right(entity) => entity.position shouldBe newPosition
 
 
@@ -89,7 +89,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityInNewPosition = ValidEntity.flatMap(_.moveBy(spaceVector))
 
-    inside(entityInNewPosition) :
+    inside(entityInNewPosition):
       case Right(entity) => entity.position shouldBe spaceVector + ValidPosition
 
 
@@ -98,7 +98,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityWithSpeed = ValidEntity.flatMap(_.withSpeed(speed))
 
-    inside(entityWithSpeed) :
+    inside(entityWithSpeed):
       case Right(entity) => entity.speed shouldBe Some(speed)
 
 
@@ -140,7 +140,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity <- ValidEntity
       entity <- entity.withHealth(health)
       entity <- entity.applyDamage(damage)
-    }yield entity
+    } yield entity
 
     inside(entity):
       case Right(entity) => entity.health shouldBe Some(health - damage)

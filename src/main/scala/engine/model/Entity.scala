@@ -1,29 +1,29 @@
 package engine.model
 
-final case class Entity private (
-                            id: LocatableId,
-                            position: Vector2D,
-                            shape: Shape2D,
-                            speed: Option[Vector2D] = None,
-                            weight: Option[Weight]  = None,
-                            health: Option[Health]  = None,
-                            teamId: Option[TeamId]  = None
-                          ) extends Locatable
+final case class Entity private(
+                                 id: LocatableId,
+                                 position: Vector2D,
+                                 shape: Shape2D,
+                                 speed: Option[Vector2D] = None,
+                                 weight: Option[Weight] = None,
+                                 health: Option[Health] = None,
+                                 teamId: Option[TeamId] = None
+                               ) extends Locatable
 
 object Entity:
-  def circle(id: String, position: Vector2D, radius: Double):Either[String, Entity] =
+  def circle(id: String, position: Vector2D, radius: Double): Either[String, Entity] =
     Locatable.circle(id, position, radius)((id, position, shape) => Entity(id, position, shape))
 
-  def rectangle(id: String, position: Vector2D, height: Double, length: Double):Either[String, Entity] =
+  def rectangle(id: String, position: Vector2D, height: Double, length: Double): Either[String, Entity] =
     Locatable.rectangle(id, position, height, length)((id, position, shape) => Entity(id, position, shape))
+
+  private def validateAndReturn(updated: Entity): Either[String, Entity] =
+    Entity.validate(updated).map(_ => updated)
 
   def validate(entity: Entity): Either[String, Unit] =
     for {
       result <- Locatable.validate(entity.position)
     } yield result
-
-  private def validateAndReturn(updated: Entity): Either[String, Entity] =
-    Entity.validate(updated).map(_ => updated)
 
   extension (entity: Entity)
 

@@ -5,7 +5,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class SurfaceTest extends AnyFunSuite with Matchers with Inside :
+class SurfaceTest extends AnyFunSuite with Matchers with Inside:
 
   val ValidEntityId = "entity1"
   val ValidPosition = Vector2D(1, 3)
@@ -42,7 +42,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside :
 
     val surfaceWithFrictionIndex = ValidSurface.flatMap(_.withFrictionIndex(frictionIndex))
 
-    inside(surfaceWithFrictionIndex) :
+    inside(surfaceWithFrictionIndex):
       case Right(surface) => surface.frictionIndex shouldBe Some(frictionIndex)
 
   test("can create a surface and give it a negative friction index"):
@@ -50,7 +50,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside :
 
     val surfaceWithFrictionIndex = ValidSurface.flatMap(_.withFrictionIndex(frictionIndex))
 
-    inside(surfaceWithFrictionIndex) :
+    inside(surfaceWithFrictionIndex):
       case Right(surface) => surface.frictionIndex shouldBe Some(frictionIndex)
 
   test("can create a surface and give it an valid applied force"):
@@ -58,7 +58,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside :
 
     val surfaceWithAppliedForce = ValidSurface.flatMap(_.withAppliedForce(appliedForce))
 
-    inside(surfaceWithAppliedForce) :
+    inside(surfaceWithAppliedForce):
       case Right(surface) => surface.appliedForce shouldBe Some(appliedForce)
 
   test("can create a surface and give it a negative applied force"):
