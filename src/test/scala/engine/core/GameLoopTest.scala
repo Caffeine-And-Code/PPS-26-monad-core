@@ -233,3 +233,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     }
 
     exception shouldNot be(null)
+
+  test("a game loop should throw IllegalArgumentException when max frame time is non-positive"):
+    val invalidTickTime = 0L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(maxFrameTime = invalidTickTime)
+    }
+
+    exception shouldNot be(null)

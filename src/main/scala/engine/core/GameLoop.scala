@@ -21,6 +21,7 @@ case class GameLoop(
   require(tickTime > 0, "tick time cannot be negative or zero")
   require(lastTime >= 0, "last time cannot be negative")
   require(accumulator >= 0, "accumulator cannot be negative")
+  require(maxFrameTime > 0, "max frame time cannot be negative or zero")
 
 object GameLoop:
   extension (gameLoop: GameLoop)
