@@ -1,20 +1,22 @@
 package engine.model
 
+import engine.errors.EngineError
+
 opaque type Health = Int
 
 object Health:
 
-  def apply(h: Int): Either[String, Health] =
-    Either.cond(h > 0, h, "Health cannot be negative or zero")
+  def apply(h: Int): Either[EngineError, Health] =
+    Either.cond(h > 0, h, HealthCannotBeNegativeOrZero(h))
 
   extension (h: Health)
 
     def value: Int = h
 
-    private infix def inflict(damage: Int): Either[String, Health] =
+    private infix def inflict(damage: Int): Either[EngineError, Health] =
       if damage < 0 then
-        Left("Cannot apply a negative damage")
+        Left(CannotApplyNegativeDamage(damage))
       else
         Health(h.value - damage)
 
-    def -(damage: Int): Either[String, Health] = h inflict damage
+    def -(damage: Int): Either[EngineError, Health] = h inflict damage

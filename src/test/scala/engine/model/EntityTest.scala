@@ -1,5 +1,6 @@
 package engine.model
 
+import engine.errors.EngineError
 import engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,7 +13,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   val ValidRadius = 2
   val ValidHeight = 2
   val ValidLength = 2
-  val ValidEntity: Either[String, Entity] = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
+  val ValidEntity: Either[EngineError, Entity] = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
   test("can create an entity with ID, position and the shape of a circle"):
     val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
@@ -53,7 +54,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val invalidEntity = Entity.circle(invalidEntityId, ValidPosition, ValidRadius)
 
-    invalidEntity shouldBe Left("LocatableId cannot be empty")
+    invalidEntity shouldBe Left(LocatableIdCannotBeEmpty())
 
   test("cannot create an entity with an invalid position"):
     val invalidPositionX = Vector2D(-1, 1)
@@ -64,9 +65,9 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val invalidForYPosition = Entity.circle(ValidEntityId, invalidPositionY, ValidRadius)
     val invalidForXYPosition = Entity.circle(ValidEntityId, invalidPositionXY, ValidRadius)
 
-    invalidForXPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
-    invalidForYPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
-    invalidForXYPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
+    invalidForXPosition shouldBe Left(PositionIsValid(invalidPositionX))
+    invalidForYPosition shouldBe Left(PositionIsValid(invalidPositionY))
+    invalidForXYPosition shouldBe Left(PositionIsValid(invalidPositionXY))
 
   test("can move entity in a given position"):
     val newPosition = Vector2D(4, 5)
@@ -82,7 +83,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityInNewPosition = ValidEntity.flatMap(_.moveTo(invalidPosition))
 
-    entityInNewPosition shouldBe Left("Position is invalid, x and y should be greater then 0")
+    entityInNewPosition shouldBe Left(PositionIsValid(invalidPosition))
 
   test("can move an entity within a space"):
     val spaceVector = Vector2D(1, 3)
@@ -115,7 +116,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityWithWeight = ValidEntity.flatMap(_.withWeight(invalidWeight))
 
-    entityWithWeight shouldBe Left("Weight cannot be negative")
+    entityWithWeight shouldBe Left(WeightCannotBeNegative())
 
   test("can create an entity and give it a health"):
     val health = 5
@@ -130,7 +131,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityWithHealth = ValidEntity.flatMap(_.withHealth(invalidHealth))
 
-    entityWithHealth shouldBe Left("Health cannot be negative or zero")
+    entityWithHealth shouldBe Left(HealthCannotBeNegativeOrZero(invalidHealth))
 
   test("can apply damage to an entity"):
     val health = 50
@@ -155,7 +156,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity <- entity.applyDamage(damage)
     } yield entity
 
-    entity shouldBe Left("Health cannot be negative or zero")
+    entity shouldBe Left(HealthCannotBeNegativeOrZero(health - damage))
 
   test("if apply a damage equals to life left, it returns Left"):
     val health = 50
@@ -166,7 +167,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity <- entity.applyDamage(health)
     } yield entity
 
-    entity shouldBe Left("Health cannot be negative or zero")
+    entity shouldBe Left(HealthCannotBeNegativeOrZero(0))
 
 
   test("cannot inflict a negative damage"):
@@ -179,7 +180,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity <- entity.applyDamage(damage)
     } yield entity
 
-    entity shouldBe Left("Cannot apply a negative damage")
+    entity shouldBe Left(CannotApplyNegativeDamage(damage))
 
   test("can add a teamId to an entity"):
     val teamId = "team1"

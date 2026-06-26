@@ -1,11 +1,13 @@
 package engine.model
 
+import engine.errors.EngineError
+
 opaque type LocatableId = String
 
 object LocatableId:
 
-  def apply(locatableId: String): Either[String, LocatableId] =
-    Either.cond(locatableId.trim.nonEmpty, locatableId.trim, "LocatableId cannot be empty")
+  def apply(locatableId: String): Either[EngineError, LocatableId] =
+    Either.cond(locatableId.trim.nonEmpty, locatableId.trim, LocatableIdCannotBeEmpty())
 
   extension (locatableId: LocatableId)
 

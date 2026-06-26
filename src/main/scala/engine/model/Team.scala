@@ -1,5 +1,7 @@
 package engine.model
 
+import engine.errors.EngineError
+
 final case class Team private(
                                id: TeamId,
                                enemies: Set[TeamId] = Set.empty
@@ -7,18 +9,12 @@ final case class Team private(
 
 object Team:
 
-  def apply(teamId: TeamId, enemies: Set[TeamId] = Set.empty): Either[String, Team] =
+  def apply(teamId: TeamId, enemies: Set[TeamId] = Set.empty): Either[EngineError, Team] =
     validate(new Team(teamId, enemies))
 
-  private def validate(team: Team): Either[String, Team] =
-    if team.enemies.contains(team.id) then
-      Left("A team cannot be its own enemy")
-    else
-      Right(team)
-
-  def create(teamId: String, enemies: Set[String] = Set.empty): Either[String, Team] =
-    val enemiesTeamId: Either[String, Set[TeamId]] =
-      enemies.foldLeft(Right(Set.empty[TeamId]): Either[String, Set[TeamId]]) {
+  def create(teamId: String, enemies: Set[String] = Set.empty): Either[EngineError, Team] =
+    val enemiesTeamId: Either[EngineError, Set[TeamId]] =
+      enemies.foldLeft(Right(Set.empty[TeamId]): Either[EngineError, Set[TeamId]]) {
         case (Right(acc), nextString) =>
           TeamId(nextString).map(teamId => acc + teamId)
         case (Left(error), _) =>
@@ -31,8 +27,14 @@ object Team:
       team <- validate(new Team(validTeamId, validEnemies))
     } yield team
 
+  private def validate(team: Team): Either[EngineError, Team] =
+    if team.enemies.contains(team.id) then
+      Left(ATeamCannotBeItsOwnEnemy())
+    else
+      Right(team)
+
   extension (team: Team)
-    def addEnemy(teamId: String): Either[String, Team] =
+    def addEnemy(teamId: String): Either[EngineError, Team] =
       TeamId(teamId).flatMap(tId => Team(team.id, team.enemies + tId))
 
     def removeEnemy(enemyId: String): Team =
