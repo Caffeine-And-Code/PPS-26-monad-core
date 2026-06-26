@@ -18,7 +18,7 @@ case class GameLoop(
                      accumulator: Long = InitialAccumulatorValue,
                      maxFrameTime: Long = DefaultMaxFrameTime
                    ):
-  require(tickTime >= 0, "tick time cannot be negative")
+  require(tickTime > 0, "tick time cannot be negative or zero")
   require(lastTime >= 0, "last time cannot be negative")
   require(accumulator >= 0, "accumulator cannot be negative")
 
