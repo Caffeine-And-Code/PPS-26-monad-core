@@ -1,5 +1,7 @@
 package engine.model
 
+import engine.errors.EngineError
+
 private[model] trait Locatable:
   def id: LocatableId
 
@@ -9,21 +11,21 @@ private[model] trait Locatable:
 
 
 object Locatable:
-  def circle[A](id: String, position: Vector2D, radius: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[String, A] =
+  def circle[A](id: String, position: Vector2D, radius: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
     createGeneric(id, position, Shape2D.Circle(radius))(build)
+
+  def rectangle[A](id: String, position: Vector2D, height: Double, length: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
+    createGeneric(id, position, Shape2D.Rectangle(height, length))(build)
 
   private def createGeneric[A](
                                 id: String,
                                 position: Vector2D,
                                 shape: Shape2D
-                              )(build: (LocatableId, Vector2D, Shape2D) => A): Either[String, A] =
+                              )(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
     LocatableId(id).flatMap(lId => validate(position).map(_ => build(lId, position, shape)))
 
-  def validate(position: Vector2D): Either[String, Unit] =
+  def validate(position: Vector2D): Either[EngineError, Unit] =
     if position.x < 0 || position.y < 0 then
-      Left("Position is invalid, x and y should be greater then 0")
+      Left(PositionIsValid(position))
     else
       Right(())
-
-  def rectangle[A](id: String, position: Vector2D, height: Double, length: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[String, A] =
-    createGeneric(id, position, Shape2D.Rectangle(height, length))(build)

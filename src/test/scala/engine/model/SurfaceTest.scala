@@ -1,5 +1,6 @@
 package engine.model
 
+import engine.errors.EngineError
 import engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -13,7 +14,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
   val ValidHeight = 2
   val ValidLength = 2
 
-  val ValidSurface: Either[String, Surface] = Surface.circle(ValidEntityId, ValidPosition, ValidRadius)
+  val ValidSurface: Either[EngineError, Surface] = Surface.circle(ValidEntityId, ValidPosition, ValidRadius)
 
   test("can create a surface with a circle shape"):
     val entity = Surface.circle(ValidEntityId, ValidPosition, ValidRadius)
