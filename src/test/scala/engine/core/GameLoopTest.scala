@@ -215,3 +215,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     }
 
     exception shouldNot be(null)
+  
+  test("a game loop should throw IllegalArgumentException when last time value is negative"):
+    val invalidLastTime = -1L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(lastTime = invalidLastTime)
+    }
+
+    exception shouldNot be(null)

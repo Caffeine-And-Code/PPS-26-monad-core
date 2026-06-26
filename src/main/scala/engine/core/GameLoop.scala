@@ -19,6 +19,7 @@ case class GameLoop(
                      maxFrameTime: Long = DefaultMaxFrameTime
                    ):
   require(tickTime >= 0, "tick time cannot be negative")
+  require(lastTime >= 0, "last time cannot be negative")
 
 object GameLoop:
   extension (gameLoop: GameLoop)
