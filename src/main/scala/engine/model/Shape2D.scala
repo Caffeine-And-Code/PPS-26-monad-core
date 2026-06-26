@@ -11,11 +11,10 @@ object Shape2D :
     else
       Right(Shape2D.Circle(radius))
 
-  def rectangle(height: Double, length: Double): Either[String, Shape2D] = {
+  def rectangle(height: Double, length: Double): Either[String, Shape2D] = 
     if height <= 0 then
       Left("Height must be greater than 0")
     else if length <= 0 then
       Left("Length must be greater than 0")
     else
       Right(Shape2D.Rectangle(height, length))
-  }

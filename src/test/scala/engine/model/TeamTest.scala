@@ -27,7 +27,7 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
 
     team shouldBe Left("TeamId cannot be empty")
 
-  test("cannot create a team where the team his self is the team enemy"):
+  test("Cannot create a team where the team it self is it's own enemy"):
     val team = Team.create(ValidTeamId, Set(ValidTeamId))
 
     team shouldBe Left("A team cannot be its own enemy")

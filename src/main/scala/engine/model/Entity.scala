@@ -49,10 +49,9 @@ object Entity:
       Health(health).map(h => entity.copy(health = Some(h)))
 
     def applyDamage(damage: Int): Either[String, Entity] =
-      entity.health match{
+      entity.health match
         case None => Left("Cannot apply damage to None health entity")
         case Some(health) => (health - damage).map(health => entity.copy(health = Some(health)))
-      }
 
     def withTeamId(teamId: String): Either[String, Entity] =
       TeamId(teamId).map(t => entity.copy(teamId = Some(t)))

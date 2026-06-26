@@ -11,11 +11,10 @@ object Health:
 
     def value: Int = h
 
-    private infix def inflict(damage: Int): Either[String, Health] = {
+    private infix def inflict(damage: Int): Either[String, Health] = 
       if damage < 0 then
         Left("Cannot apply a negative damage")
       else
         Health(h.value - damage)
-    }
 
     def -(damage: Int): Either[String, Health] = h inflict damage
