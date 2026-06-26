@@ -242,3 +242,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     }
 
     exception shouldNot be(null)
+
+  test("GameLoop should throw IllegalArgumentException when max frame time is less than tick time"):
+    val invalidMaxFrameTime = DefaultTickTime - 1L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(tickTime = DefaultTickTime, maxFrameTime = invalidMaxFrameTime)
+    }
+
+    exception shouldNot be(null)
