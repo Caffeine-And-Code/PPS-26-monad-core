@@ -35,15 +35,17 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
   test("Adding an entity with the same id as another entity already present in the scene returns an error"):
     val newScene = (InitializedScene addEntity GenericEntity).value
 
-    inside(newScene addEntity GenericEntity):
+    val addResult = newScene addEntity GenericEntity
+
+    inside(addResult):
       case Left(message) =>
-        message should be(s"Element with key ${GenericEntity.id} already present")
+        message should be(CannotAddAlreadyPresentElementInMap(GenericEntity.id))
 
   test("A fetch of an unknown entity id returns and error string"):
     val fetchResult = InitializedScene getEntity GenericEntity.id
 
     inside(fetchResult):
-      case Left(message) => message should be(s"Entity ${GenericEntity.id} Not Found")
+      case Left(message) => message should be(EntityNotFound(GenericEntity.id))
 
   test("An added entity can be get from the scene"):
     val newScene = (InitializedScene addEntity GenericEntity).value
@@ -64,7 +66,7 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       case Right(updatedScene) =>
         updatedScene.entities.size should be(0)
         inside(updatedScene getEntity GenericEntity.id):
-          case Left(message) => message should be(s"Entity ${GenericEntity.id} Not Found")
+          case Left(message) => message should be(EntityNotFound(GenericEntity.id))
 
 
   test("Trying to remove a non present entity returns an error"):
@@ -72,7 +74,7 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
     inside(removeResult):
       case Left(message) =>
-        message should be(s"Element with key ${GenericEntity.id} not present")
+        message should be(CannotRemoveNonPresentElementFromMap(GenericEntity.id))
 
   test("A Team can be added to the scene"):
     val newSceneEither = InitializedScene addTeam GenericTeam
@@ -86,14 +88,16 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
   test("Adding a team with the same id as another team already present in the scene returns an error"):
     val newScene = (InitializedScene addTeam GenericTeam).value
 
-    inside(newScene addTeam GenericTeam):
-      case Left(message) => message should be(s"Element with key ${GenericTeam.id} already present")
+    val addResult = newScene addTeam GenericTeam
+
+    inside(addResult):
+      case Left(message) => message should be(CannotAddAlreadyPresentElementInMap(GenericTeam.id))
 
   test("A fetch of an unknown team id returns and error string"):
     val fetchResult = InitializedScene getTeam GenericTeam.id
 
     inside(fetchResult):
-      case Left(message) => message should be(s"Team ${GenericTeam.id} Not Found")
+      case Left(message) => message should be(TeamNotFound(GenericTeam.id))
 
   test("An added team can be get from the scene"):
     val newScene = (InitializedScene addTeam GenericTeam).value
@@ -112,14 +116,14 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       case Right(updatedScene) =>
         updatedScene.teams.size should be(0)
         inside(updatedScene getTeam GenericTeam.id):
-          case Left(message) => message should be(s"Team ${GenericTeam.id} Not Found")
+          case Left(message) => message should be(TeamNotFound(GenericTeam.id))
 
   test("Trying to remove a non present team returns an error"):
     val removeResult = InitializedScene removeTeam GenericTeam.id
 
     inside(removeResult):
       case Left(message) =>
-        message should be(s"Element with key ${GenericTeam.id} not present")
+        message should be(CannotRemoveNonPresentElementFromMap(GenericTeam.id))
 
   test("A Surface can be added to the scene"):
     val newSceneEither = InitializedScene addSurface GenericSurface
@@ -136,13 +140,13 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
     val addResult = newScene addSurface GenericSurface
 
     inside(addResult):
-      case Left(message) => message should be(s"Element with key ${GenericSurface.id} already present")
+      case Left(message) => message should be(CannotAddAlreadyPresentElementInMap(GenericSurface.id))
 
   test("A fetch of an unknown surface id returns and error string"):
     val fetchResult = InitializedScene getSurface GenericSurface.id
 
     inside(fetchResult):
-      case Left(message) => message should be(s"Surface ${GenericSurface.id} Not Found")
+      case Left(message) => message should be(SurfaceNotFound(GenericSurface.id))
 
   test("An added surface can be get from the scene"):
     val newScene = (InitializedScene addSurface GenericSurface).value
@@ -163,14 +167,14 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       case Right(updatedScene) =>
         updatedScene.surfaces.size should be(0)
         inside(updatedScene getSurface GenericSurface.id):
-          case Left(message) => message should be(s"Surface ${GenericSurface.id} Not Found")
+          case Left(message) => message should be(SurfaceNotFound(GenericSurface.id))
 
   test("Trying to remove a non present surface returns an error"):
     val removeResult = InitializedScene removeSurface GenericSurface.id
 
     inside(removeResult):
       case Left(message) =>
-        message should be(s"Element with key ${GenericSurface.id} not present")
+        message should be(CannotRemoveNonPresentElementFromMap(GenericSurface.id))
 
   test("Adding an entity doesn't effect the surfaces and teams"):
     val entityToAdd = Entity.rectangle(

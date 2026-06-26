@@ -1,6 +1,7 @@
 package engine.core
 
 import engine.core.traits.UpdaterEngine
+import engine.errors.EngineError
 import engine.model.*
 
 case class Scene(
@@ -13,7 +14,11 @@ object Scene {
 
   extension (scene: Scene)
 
-    private def getFromMap[K, V](map: Map[K, V], key: K, error: => String): Either[String, V] =
+    private def getFromMap[K, V](
+                                  map: Map[K, V],
+                                  key: K,
+                                  error: => EngineError
+                                ): Either[EngineError, V] =
       map.get(key).toRight(error)
 
     private def addToMap[K, V](
@@ -21,9 +26,9 @@ object Scene {
                                 key: K,
                                 value: V,
                                 updateScene: Map[K, V] => Scene
-                              ): Either[String, Scene] =
+                              ): Either[EngineError, Scene] =
       if (map.contains(key))
-        Left(s"Element with key $key already present")
+        Left(CannotAddAlreadyPresentElementInMap(key))
       else
         Right(updateScene(map + (key -> value)))
 
@@ -31,39 +36,39 @@ object Scene {
                                      map: Map[K, V],
                                      key: K,
                                      updateScene: Map[K, V] => Scene
-                                   ): Either[String, Scene] =
+                                   ): Either[EngineError, Scene] =
       if (!map.contains(key))
-        Left(s"Element with key $key not present")
+        Left(CannotRemoveNonPresentElementFromMap(key))
       else
         Right(updateScene(map - key))
 
     // ENTITIES
-    infix def getEntity(id: LocatableId): Either[String, Entity] =
-      getFromMap(scene.entities, id, s"Entity $id Not Found")
+    infix def getEntity(id: LocatableId): Either[EngineError, Entity] =
+      getFromMap(scene.entities, id, EntityNotFound(id))
 
-    infix def addEntity(toAdd: Entity): Either[String, Scene] =
+    infix def addEntity(toAdd: Entity): Either[EngineError, Scene] =
       addToMap(scene.entities, toAdd.id, toAdd, m => scene.copy(entities = m))
 
-    infix def removeEntity(id: LocatableId): Either[String, Scene] =
+    infix def removeEntity(id: LocatableId): Either[EngineError, Scene] =
       removeFromMap(scene.entities, id, m => scene.copy(entities = m))
 
     // TEAMS
-    infix def getTeam(id: TeamId): Either[String, Team] =
-      getFromMap(scene.teams, id, s"Team $id Not Found")
+    infix def getTeam(id: TeamId): Either[EngineError, Team] =
+      getFromMap(scene.teams, id, TeamNotFound(id))
 
-    infix def addTeam(toAdd: Team): Either[String, Scene] =
+    infix def addTeam(toAdd: Team): Either[EngineError, Scene] =
       addToMap(scene.teams, toAdd.id, toAdd, m => scene.copy(teams = m))
 
-    infix def removeTeam(id: TeamId): Either[String, Scene] =
+    infix def removeTeam(id: TeamId): Either[EngineError, Scene] =
       removeFromMap(scene.teams, id, m => scene.copy(teams = m))
 
     // SURFACES
-    infix def getSurface(id: LocatableId): Either[String, Surface] =
-      getFromMap(scene.surfaces, id, s"Surface $id Not Found")
+    infix def getSurface(id: LocatableId): Either[EngineError, Surface] =
+      getFromMap(scene.surfaces, id, SurfaceNotFound(id))
 
-    infix def addSurface(toAdd: Surface): Either[String, Scene] =
+    infix def addSurface(toAdd: Surface): Either[EngineError, Scene] =
       addToMap(scene.surfaces, toAdd.id, toAdd, m => scene.copy(surfaces = m))
 
-    infix def removeSurface(id: LocatableId): Either[String, Scene] =
+    infix def removeSurface(id: LocatableId): Either[EngineError, Scene] =
       removeFromMap(scene.surfaces, id, m => scene.copy(surfaces = m))
 }
