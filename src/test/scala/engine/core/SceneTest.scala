@@ -7,161 +7,244 @@ import org.scalatest.{EitherValues, Inside}
 
 class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
-  val scene = Scene()
-  val entity: Entity = Entity.circle("Id", Vector2D(0, 0), 1).value
-  val team: Team = Team.create("id", Set.empty).value
-  val surface : Surface = Surface.circle("Id", Vector2D(0, 0), 1).value
+  val InitializedScene = Scene()
+  val GenericEntity: Entity = Entity.circle("Id", Vector2D(0, 0), 1).value
+  val GenericTeam: Team = Team.create("id", Set.empty).value
+  val GenericSurface: Surface = Surface.circle("Id", Vector2D(0, 0), 1).value
+
+  def addAnElementToEachMap(): Scene =
+    InitializedScene
+      .addEntity(GenericEntity).value
+      .addTeam(GenericTeam).value
+      .addSurface(GenericSurface).value
 
   test("A Scene upon creation has all the maps empty"):
-    scene.entities.size should be(0)
-    scene.surfaces.size should be(0)
-    scene.teams.size should be(0)
+    InitializedScene.entities.size should be(0)
+    InitializedScene.surfaces.size should be(0)
+    InitializedScene.teams.size should be(0)
 
   test("An entity can be added to the scene"):
-    val newSceneEither = scene addEntity entity
+    val newSceneEither = InitializedScene addEntity GenericEntity
 
     inside(newSceneEither):
       case Right(updatedScene) =>
-        updatedScene.entities should contain key entity.id
-        updatedScene.entities should contain value entity
+        updatedScene.entities should contain key GenericEntity.id
+        updatedScene.entities should contain value GenericEntity
         updatedScene.entities.size should be(1)
 
   test("Adding an entity with the same id as another entity already present in the scene returns an error"):
-    val newScene = (scene addEntity entity).value
+    val newScene = (InitializedScene addEntity GenericEntity).value
 
-    inside(newScene addEntity entity):
+    inside(newScene addEntity GenericEntity):
       case Left(message) =>
-        message should be(s"Element with key ${entity.id} already present")
+        message should be(s"Element with key ${GenericEntity.id} already present")
 
   test("A fetch of an unknown entity id returns and error string"):
-    val fetchResult = scene getEntity entity.id
+    val fetchResult = InitializedScene getEntity GenericEntity.id
 
     inside(fetchResult):
-      case Left(message) => message should be(s"Entity ${entity.id} Not Found")
+      case Left(message) => message should be(s"Entity ${GenericEntity.id} Not Found")
 
   test("An added entity can be get from the scene"):
-    val newScene = (scene addEntity entity).value
+    val newScene = (InitializedScene addEntity GenericEntity).value
 
-    val fetchedResult = newScene getEntity entity.id
+    val fetchedResult = newScene getEntity GenericEntity.id
 
     inside(fetchedResult):
       case Right(fetchedEntity) =>
-        fetchedEntity should be(entity)
+        fetchedEntity should be(GenericEntity)
 
   test("An added entity can be remove from the scene"):
-    val newScene = (scene addEntity entity).value
+    val newScene = (InitializedScene addEntity GenericEntity).value
 
-    val removeResult = newScene removeEntity entity.id
-    val errorFetch = removeResult.value getEntity entity.id
+    val removeResult = newScene removeEntity GenericEntity.id
+    val errorFetch = removeResult.value getEntity GenericEntity.id
 
     inside(removeResult):
       case Right(updatedScene) =>
         updatedScene.entities.size should be(0)
-        inside(updatedScene getEntity entity.id):
-          case Left(message) => message should be(s"Entity ${entity.id} Not Found")
+        inside(updatedScene getEntity GenericEntity.id):
+          case Left(message) => message should be(s"Entity ${GenericEntity.id} Not Found")
 
 
   test("Trying to remove a non present entity returns an error"):
-    val removeResult = scene removeEntity entity.id
+    val removeResult = InitializedScene removeEntity GenericEntity.id
 
     inside(removeResult):
       case Left(message) =>
-        message should be(s"Element with key ${entity.id} not present")
+        message should be(s"Element with key ${GenericEntity.id} not present")
 
   test("A Team can be added to the scene"):
-    val newSceneEither = scene addTeam team
+    val newSceneEither = InitializedScene addTeam GenericTeam
 
     inside(newSceneEither):
       case Right(updatedScene) =>
-        updatedScene.teams should contain key team.id
-        updatedScene.teams should contain value team
+        updatedScene.teams should contain key GenericTeam.id
+        updatedScene.teams should contain value GenericTeam
         updatedScene.teams.size should be(1)
 
   test("Adding a team with the same id as another team already present in the scene returns an error"):
-    val newScene = (scene addTeam team).value
+    val newScene = (InitializedScene addTeam GenericTeam).value
 
-    inside(newScene addTeam team):
-      case Left(message) => message should be(s"Element with key ${team.id} already present")
+    inside(newScene addTeam GenericTeam):
+      case Left(message) => message should be(s"Element with key ${GenericTeam.id} already present")
 
   test("A fetch of an unknown team id returns and error string"):
-    val fetchResult = scene getTeam team.id
+    val fetchResult = InitializedScene getTeam GenericTeam.id
 
     inside(fetchResult):
-      case Left(message) => message should be(s"Team ${team.id} Not Found")
+      case Left(message) => message should be(s"Team ${GenericTeam.id} Not Found")
 
   test("An added team can be get from the scene"):
-    val newScene = (scene addTeam team).value
+    val newScene = (InitializedScene addTeam GenericTeam).value
 
-    inside(newScene getTeam team.id):
+    inside(newScene getTeam GenericTeam.id):
       case Right(fetchedEntity) =>
-        fetchedEntity should be(team)
+        fetchedEntity should be(GenericTeam)
 
   test("An added team can be remove from the scene"):
-    val newScene = (scene addTeam team).value
+    val newScene = (InitializedScene addTeam GenericTeam).value
 
-    val removeResult = newScene removeTeam team.id
-    val errorFetch = removeResult.value getTeam team.id
+    val removeResult = newScene removeTeam GenericTeam.id
+    val errorFetch = removeResult.value getTeam GenericTeam.id
 
     inside(removeResult):
       case Right(updatedScene) =>
         updatedScene.teams.size should be(0)
-        inside(updatedScene getTeam team.id):
-          case Left(message) => message should be(s"Team ${team.id} Not Found")
+        inside(updatedScene getTeam GenericTeam.id):
+          case Left(message) => message should be(s"Team ${GenericTeam.id} Not Found")
 
   test("Trying to remove a non present team returns an error"):
-    val removeResult = scene removeTeam team.id
+    val removeResult = InitializedScene removeTeam GenericTeam.id
 
     inside(removeResult):
       case Left(message) =>
-        message should be(s"Element with key ${team.id} not present")
+        message should be(s"Element with key ${GenericTeam.id} not present")
 
   test("A Surface can be added to the scene"):
-    val newSceneEither = scene addSurface surface
+    val newSceneEither = InitializedScene addSurface GenericSurface
 
     inside(newSceneEither):
       case Right(updatedScene) =>
-        updatedScene.surfaces should contain key surface.id
-        updatedScene.surfaces should contain value surface
+        updatedScene.surfaces should contain key GenericSurface.id
+        updatedScene.surfaces should contain value GenericSurface
         updatedScene.surfaces.size should be(1)
 
   test("Adding a surface with the same id as another surface already present in the scene returns an error"):
-    val newScene = (scene addSurface surface).value
+    val newScene = (InitializedScene addSurface GenericSurface).value
 
-    val addResult = newScene addSurface surface
+    val addResult = newScene addSurface GenericSurface
 
     inside(addResult):
-      case Left(message) => message should be(s"Element with key ${surface.id} already present")
+      case Left(message) => message should be(s"Element with key ${GenericSurface.id} already present")
 
   test("A fetch of an unknown surface id returns and error string"):
-    val fetchResult = scene getSurface surface.id
+    val fetchResult = InitializedScene getSurface GenericSurface.id
 
     inside(fetchResult):
-      case Left(message) => message should be(s"Surface ${surface.id} Not Found")
+      case Left(message) => message should be(s"Surface ${GenericSurface.id} Not Found")
 
   test("An added surface can be get from the scene"):
-    val newScene = (scene addSurface surface).value
+    val newScene = (InitializedScene addSurface GenericSurface).value
 
-    val fetchResult = newScene getSurface surface.id
+    val fetchResult = newScene getSurface GenericSurface.id
 
     inside(fetchResult):
       case Right(fetchedEntity) =>
-        fetchedEntity should be(surface)
+        fetchedEntity should be(GenericSurface)
 
   test("An added surface can be remove from the scene"):
-    val newScene = (scene addSurface  surface).value
+    val newScene = (InitializedScene addSurface GenericSurface).value
 
-    val removeResult = newScene removeSurface  surface.id
-    val errorFetch = removeResult.value getSurface  surface.id
+    val removeResult = newScene removeSurface GenericSurface.id
+    val errorFetch = removeResult.value getSurface GenericSurface.id
 
     inside(removeResult):
       case Right(updatedScene) =>
         updatedScene.surfaces.size should be(0)
-        inside(updatedScene getSurface  surface.id):
-          case Left(message) => message should be(s"Surface ${surface.id} Not Found")
+        inside(updatedScene getSurface GenericSurface.id):
+          case Left(message) => message should be(s"Surface ${GenericSurface.id} Not Found")
 
   test("Trying to remove a non present surface returns an error"):
-    val removeResult = scene removeSurface surface.id
+    val removeResult = InitializedScene removeSurface GenericSurface.id
 
     inside(removeResult):
       case Left(message) =>
-        message should be(s"Element with key ${surface.id} not present")
+        message should be(s"Element with key ${GenericSurface.id} not present")
+
+  test("Adding an entity doesn't effect the surfaces and teams"):
+    val entityToAdd = Entity.rectangle(
+      id = "new entity",
+      position = Vector2D(0, 0),
+      height = 10,
+      length = 10
+    ).value
+    val testingScene = this.addAnElementToEachMap()
+
+    val addingResult = testingScene addEntity entityToAdd
+
+    inside(addingResult):
+      case Right(updatedScene) =>
+        updatedScene.surfaces.size should be(1)
+        updatedScene.teams.size should be(1)
+
+
+  test("removing an entity doesn't effect the surfaces and teams"):
+    val testingScene = this.addAnElementToEachMap()
+
+    val removeResult = testingScene removeEntity GenericEntity.id
+
+    inside(removeResult):
+      case Right(updatedScene) =>
+        updatedScene.surfaces.size should be(1)
+        updatedScene.teams.size should be(1)
+
+  test("Adding a team doesn't effect the surfaces and entities"):
+    val teamToAdd = Team.create("new team", Set.empty).value
+    val testingScene = this.addAnElementToEachMap()
+
+    val addingResult = testingScene addTeam teamToAdd
+
+    inside(addingResult):
+      case Right(updatedScene) =>
+        updatedScene.surfaces.size should be(1)
+        updatedScene.entities.size should be(1)
+
+
+  test("removing a team doesn't effect the surfaces and entities"):
+    val testingScene = this.addAnElementToEachMap()
+
+    val removeResult = testingScene removeTeam GenericTeam.id
+
+    inside(removeResult):
+      case Right(updatedScene) =>
+        updatedScene.surfaces.size should be(1)
+        updatedScene.entities.size should be(1)
+
+
+  test("Adding a surface doesn't effect the teams and entities"):
+    val surfaceToAdd = Surface.rectangle(
+      id = "new entity",
+      position = Vector2D(0, 0),
+      height = 10,
+      length = 10
+    ).value
+    val testingScene = this.addAnElementToEachMap()
+
+    val addingResult = testingScene addSurface surfaceToAdd
+
+    inside(addingResult):
+      case Right(updatedScene) =>
+        updatedScene.teams.size should be(1)
+        updatedScene.entities.size should be(1)
+
+
+  test("removing a surface doesn't effect the teams and entities"):
+    val testingScene = this.addAnElementToEachMap()
+
+    val removeResult = testingScene removeSurface GenericSurface.id
+
+    inside(removeResult):
+      case Right(updatedScene) =>
+        updatedScene.teams.size should be(1)
+        updatedScene.entities.size should be(1)

@@ -9,7 +9,7 @@ case class Scene(
                   teams: Map[TeamId, Team] = Map.empty
                 ) extends UpdaterEngine
 
-object Scene{
+object Scene {
 
   extension (scene: Scene)
 
