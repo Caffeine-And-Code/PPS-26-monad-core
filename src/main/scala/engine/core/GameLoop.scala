@@ -8,55 +8,56 @@ sealed trait EngineMode
 case object EditMode extends EngineMode
 case object SimulationMode extends EngineMode
 
-val defaultTickTime = 16_000_000L
-val initialTime = 0L
-val initialAccumulatorValue = 0L
-val defaultMaxFrameTime = 250_000_000L
-val staticAlpha = 1.0
+val DefaultTickTime = 16_000_000L
+val InitialTime = 0L
+val InitialAccumulatorValue = 0L
+val DefaultMaxFrameTime = 250_000_000L
+val StaticAlpha = 1.0
 
 case class GameLoop(
                      mode: EngineMode = EditMode,
-                     tickTime: Long = defaultTickTime,
+                     tickTime: Long = DefaultTickTime,
                      isRunning: Boolean = false,
-                     lastTime: Long = initialTime,
-                     accumulator: Long = initialAccumulatorValue,
-                     maxFrameTime: Long = defaultMaxFrameTime
-                   ):
+                     lastTime: Long = InitialTime,
+                     accumulator: Long = InitialAccumulatorValue,
+                     maxFrameTime: Long = DefaultMaxFrameTime
+                   )
 
-  def withMode(newMode: EngineMode): GameLoop = {
-    this.copy(mode = newMode)  
-  }
+object GameLoop:
+  extension (gameLoop: GameLoop)
+    def withMode(newMode: EngineMode): GameLoop =
+      gameLoop.copy(mode = newMode)
 
-  def withTickTime(newTickTime: Long): GameLoop =
-    this.copy(tickTime = newTickTime)
+    def withTickTime(newTickTime: Long): GameLoop =
+      gameLoop.copy(tickTime = newTickTime)
 
-  def start(): GameLoop =
-    this.copy(isRunning = true)
+    def start(): GameLoop =
+      gameLoop.copy(isRunning = true)
 
-  def stop(): GameLoop =
-    this.copy(isRunning = false)
+    def stop(): GameLoop =
+      gameLoop.copy(isRunning = false)
 
-  def tick(scene: Scene, physicsEngine: PhysicsEngine, renderEngine:RenderEngine, currentTime: Long): (Scene, GameLoop) =
-    if !isRunning || mode == EditMode then {
-      renderEngine.render(scene, staticAlpha)
-      (scene, this.copy(lastTime = currentTime))
-    } else
-      val elapsedTime = currentTime - lastTime
-      val clampedTime = Math.min(elapsedTime, maxFrameTime)
-      val remainingTime = this.accumulator + clampedTime
+    def tick(scene: Scene, physicsEngine: PhysicsEngine, renderEngine:RenderEngine, currentTime: Long): (Scene, GameLoop) =
+      if !gameLoop.isRunning || gameLoop.mode == EditMode then
+        renderEngine.render(scene, StaticAlpha)
+        (scene, gameLoop.copy(lastTime = currentTime))
+      else
+        val elapsedTime = currentTime - gameLoop.lastTime
+        val clampedTime = Math.min(elapsedTime, gameLoop.maxFrameTime)
+        val remainingTime = gameLoop.accumulator + clampedTime
 
-      @tailrec
-      def runFixedUpdate(remainingTime: Long, currentScene: Scene): (Scene, Long) =
-        if remainingTime < tickTime then
-          (currentScene, remainingTime)
-        else
-          val updatedScene = physicsEngine.step(currentScene, tickTime)
-          runFixedUpdate(remainingTime - tickTime, updatedScene)
+        @tailrec
+        def runFixedUpdate(remainingTime: Long, currentScene: Scene): (Scene, Long) =
+          if remainingTime < gameLoop.tickTime then
+            (currentScene, remainingTime)
+          else
+            val updatedScene = physicsEngine.step(currentScene, gameLoop.tickTime)
+            runFixedUpdate(remainingTime - gameLoop.tickTime, updatedScene)
 
-      val (currentScene, currentAccumulator) = runFixedUpdate(remainingTime, scene)
+        val (currentScene, currentAccumulator) = runFixedUpdate(remainingTime, scene)
 
-      val alpha = currentAccumulator.toDouble / tickTime.toDouble
-      renderEngine.render(currentScene, alpha)
+        val alpha = currentAccumulator.toDouble / gameLoop.tickTime.toDouble
+        renderEngine.render(currentScene, alpha)
 
-      (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+        (currentScene, gameLoop.copy(lastTime = currentTime, accumulator = currentAccumulator))
 
