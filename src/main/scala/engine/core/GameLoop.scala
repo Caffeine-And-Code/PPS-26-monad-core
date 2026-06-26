@@ -17,7 +17,8 @@ case class GameLoop(
                      lastTime: Long = InitialTime,
                      accumulator: Long = InitialAccumulatorValue,
                      maxFrameTime: Long = DefaultMaxFrameTime
-                   )
+                   ):
+  require(tickTime >= 0, "tick time cannot be negative")
 
 object GameLoop:
   extension (gameLoop: GameLoop)

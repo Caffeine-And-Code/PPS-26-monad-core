@@ -206,3 +206,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     scene2 shouldBe scene1
     scene3 shouldBe updatedScene
     currentLoop.isRunning shouldBe true
+
+  test("a game loop should throw IllegalArgumentException when tick time is negative"):
+    val invalidTickTime = -1L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(tickTime = invalidTickTime)
+    }
+
+    exception shouldNot be(null)
