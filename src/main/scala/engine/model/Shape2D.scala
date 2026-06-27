@@ -20,3 +20,15 @@ object Shape2D:
       Left(LengthMustBeGreaterThanZero())
     else
       Right(Shape2D.Rectangle(height, length))
+
+  extension (rectangle: Rectangle)
+
+    private def halfHeight: Double = rectangle.height / 2
+
+    private def halfLength: Double = rectangle.length / 2
+
+    def getXRange(positionX: Double): (Double, Double) =
+      (positionX - rectangle.halfLength, positionX + rectangle.halfLength)
+
+    def getYRange(positionY: Double): (Double, Double) =
+      (positionY - rectangle.halfHeight, positionY + rectangle.halfHeight)
