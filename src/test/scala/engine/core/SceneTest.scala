@@ -1,5 +1,6 @@
 package engine.core
 
+import engine.errors.EngineError
 import engine.model.{Entity, Surface, Team, Vector2D}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,11 +13,12 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
   val GenericTeam: Team = Team.create("id", Set.empty).value
   val GenericSurface: Surface = Surface.circle("Id", Vector2D(0, 0), 1).value
 
-  def addAnElementToEachMap(): Scene =
-    InitializedScene
-      .addEntity(GenericEntity).value
-      .addTeam(GenericTeam).value
-      .addSurface(GenericSurface).value
+  def addAnElementToEachMap(): Either[EngineError, Scene] =
+    for
+      s1 <- InitializedScene + GenericEntity
+      s2 <- s1 + GenericTeam
+      s3 <- s2 + GenericSurface
+    yield s3
 
   test("A Scene upon creation has all the maps empty"):
     InitializedScene.entities.size should be(0)
@@ -24,7 +26,7 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
     InitializedScene.teams.size should be(0)
 
   test("An entity can be added to the scene"):
-    val newSceneEither = InitializedScene addEntity GenericEntity
+    val newSceneEither = InitializedScene + GenericEntity
 
     inside(newSceneEither):
       case Right(updatedScene) =>
@@ -33,55 +35,54 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
         updatedScene.entities.size should be(1)
 
   test("Adding an entity with the same id as another entity already present in the scene returns an error"):
-    val newScene = (InitializedScene addEntity GenericEntity).value
     val expectedError = CannotAddEntity(CannotAddAlreadyPresentElementInMap(GenericEntity.id))
 
-    val addResult = newScene addEntity GenericEntity
+    val result = for
+      newScene <- InitializedScene + GenericEntity
+      addResult <- newScene + GenericEntity
+    yield addResult
 
-    inside(addResult):
+    inside(result):
       case Left(message) =>
         message should be(expectedError)
 
   test("A fetch of an unknown entity id returns and error string"):
-    val fetchResult = InitializedScene getEntity GenericEntity.id
+    val fetchResult = InitializedScene.getEntity(GenericEntity.id)
 
     inside(fetchResult):
       case Left(message) => message should be(EntityNotFound(GenericEntity.id))
 
   test("An added entity can be get from the scene"):
-    val newScene = (InitializedScene addEntity GenericEntity).value
+    val result = for
+      newScene <- InitializedScene + GenericEntity
+      getResult <- newScene.getEntity(GenericEntity.id)
+    yield getResult
 
-    val fetchedResult = newScene getEntity GenericEntity.id
-
-    inside(fetchedResult):
+    inside(result):
       case Right(fetchedEntity) =>
         fetchedEntity should be(GenericEntity)
 
   test("An added entity can be removed from the scene"):
     val result = for
-      newScene <- InitializedScene addEntity GenericEntity
-      updatedScene <- newScene removeEntity GenericEntity.id
-    yield updatedScene
-
-    val expectedErrorFetch = result.value getEntity GenericEntity.id
+      sceneWithEntity <- InitializedScene + GenericEntity
+      sceneWithoutEntity <- sceneWithEntity - GenericEntity
+    yield sceneWithoutEntity
 
     inside(result):
       case Right(updatedScene) =>
         updatedScene.entities.size should be(0)
-        inside(expectedErrorFetch):
-          case Left(message) => message should be(EntityNotFound(GenericEntity.id))
-
+        updatedScene.getEntity(GenericEntity.id) should be(Left(EntityNotFound(GenericEntity.id)))
 
   test("Trying to remove a non present entity returns an error"):
     val expectedError = CannotRemoveEntity(CannotRemoveNonPresentElementFromMap(GenericEntity.id))
-    val removeResult = InitializedScene removeEntity GenericEntity.id
+    val removeResult = InitializedScene - GenericEntity
 
     inside(removeResult):
       case Left(message) =>
         message should be(expectedError)
 
   test("A Team can be added to the scene"):
-    val newSceneEither = InitializedScene addTeam GenericTeam
+    val newSceneEither = InitializedScene + GenericTeam
 
     inside(newSceneEither):
       case Right(updatedScene) =>
@@ -91,53 +92,53 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
   test("Adding a team with the same id as another team already present in the scene returns an error"):
     val expectedError = CannotAddTeam(CannotAddAlreadyPresentElementInMap(GenericTeam.id))
-    val newScene = (InitializedScene addTeam GenericTeam).value
 
-    val addResult = newScene addTeam GenericTeam
+    val result = for {
+      sceneWithTeam <- InitializedScene + GenericTeam
+      error <- sceneWithTeam + GenericTeam
+    } yield error
 
-    inside(addResult):
+    inside(result):
       case Left(message) => message should be(expectedError)
 
   test("A fetch of an unknown team id returns and error string"):
-    val fetchResult = InitializedScene getTeam GenericTeam.id
+    val fetchResult = InitializedScene.getTeam(GenericTeam.id)
 
     inside(fetchResult):
       case Left(message) => message should be(TeamNotFound(GenericTeam.id))
 
   test("An added team can be get from the scene"):
-    val newScene = (InitializedScene addTeam GenericTeam).value
+    val result = for {
+      sceneWithTeam <- InitializedScene + GenericTeam
+      fetchResult <- sceneWithTeam.getTeam(GenericTeam.id)
+    } yield fetchResult
 
-    val fetchResult = newScene getTeam GenericTeam.id
-
-    inside(fetchResult):
+    inside(result):
       case Right(fetchedEntity) =>
         fetchedEntity should be(GenericTeam)
 
   test("An added team can be remove from the scene"):
     val result = for
-      newScene <- InitializedScene addTeam GenericTeam
-      updatedScene <- newScene removeTeam GenericTeam.id
-    yield updatedScene
-
-    val expectedErrorFetch = result.value getTeam GenericTeam.id
+      sceneWithTeam <- InitializedScene + GenericTeam
+      sceneWithoutTeam <- sceneWithTeam - GenericTeam
+    yield sceneWithoutTeam
 
     inside(result):
       case Right(updatedScene) =>
         updatedScene.teams.size should be(0)
-        inside(expectedErrorFetch):
-          case Left(message) => message should be(TeamNotFound(GenericTeam.id))
+        updatedScene.getTeam(GenericTeam.id) should be(Left(TeamNotFound(GenericTeam.id)))
 
   test("Trying to remove a non present team returns an error"):
     val expectedError = CannotRemoveTeam(CannotRemoveNonPresentElementFromMap(GenericTeam.id))
 
-    val removeResult = InitializedScene removeTeam GenericTeam.id
+    val removeResult = InitializedScene - GenericTeam
 
     inside(removeResult):
       case Left(message) =>
         message should be(expectedError)
 
   test("A Surface can be added to the scene"):
-    val newSceneEither = InitializedScene addSurface GenericSurface
+    val newSceneEither = InitializedScene + GenericSurface
 
     inside(newSceneEither):
       case Right(updatedScene) =>
@@ -147,23 +148,26 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
   test("Adding a surface with the same id as another surface already present in the scene returns an error"):
     val expectedError = CannotAddSurface(CannotAddAlreadyPresentElementInMap(GenericSurface.id))
-    val newScene = (InitializedScene addSurface GenericSurface).value
 
-    val addResult = newScene addSurface GenericSurface
+    val addResult = for {
+      sceneWithSurface <- InitializedScene + GenericSurface
+      error <- sceneWithSurface + GenericSurface
+    } yield error
 
     inside(addResult):
       case Left(message) => message should be(expectedError)
 
   test("A fetch of an unknown surface id returns and error string"):
-    val fetchResult = InitializedScene getSurface GenericSurface.id
+    val fetchResult = InitializedScene.getSurface(GenericSurface.id)
 
     inside(fetchResult):
       case Left(message) => message should be(SurfaceNotFound(GenericSurface.id))
 
   test("An added surface can be get from the scene"):
-    val newScene = (InitializedScene addSurface GenericSurface).value
-
-    val fetchResult = newScene getSurface GenericSurface.id
+    val fetchResult = for {
+      sceneWithSurface <- InitializedScene + GenericSurface
+      fetchRes <- sceneWithSurface.getSurface(GenericSurface.id)
+    } yield fetchRes
 
     inside(fetchResult):
       case Right(fetchedEntity) =>
@@ -171,22 +175,19 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
   test("An added surface can be remove from the scene"):
     val result = for
-      newScene <- InitializedScene addSurface GenericSurface
-      updatedScene <- newScene removeSurface GenericSurface.id
-    yield updatedScene
-
-    val expectedErrorFetch = result.value getSurface GenericSurface.id
+      sceneWithSurface <- InitializedScene + GenericSurface
+      sceneWithoutSurface <- sceneWithSurface - GenericSurface
+    yield sceneWithoutSurface
 
     inside(result):
       case Right(updatedScene) =>
         updatedScene.surfaces.size should be(0)
-        inside(expectedErrorFetch):
-          case Left(message) => message should be(SurfaceNotFound(GenericSurface.id))
+        updatedScene.getSurface(GenericSurface.id) should be(Left(SurfaceNotFound(GenericSurface.id)))
 
   test("Trying to remove a non present surface returns an error"):
     val expectedError = CannotRemoveSurface(CannotRemoveNonPresentElementFromMap(GenericSurface.id))
 
-    val removeResult = InitializedScene removeSurface GenericSurface.id
+    val removeResult = InitializedScene - GenericSurface
 
     inside(removeResult):
       case Left(message) =>
@@ -199,9 +200,11 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       height = 10,
       length = 10
     ).value
-    val testingScene = this.addAnElementToEachMap()
 
-    val addingResult = testingScene addEntity entityToAdd
+    val addingResult = for {
+      sceneWithElements <- this.addAnElementToEachMap()
+      resultScene <- sceneWithElements + entityToAdd
+    } yield resultScene
 
     inside(addingResult):
       case Right(updatedScene) =>
@@ -210,9 +213,10 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
 
   test("removing an entity doesn't effect the surfaces and teams"):
-    val testingScene = this.addAnElementToEachMap()
-
-    val removeResult = testingScene removeEntity GenericEntity.id
+    val removeResult = for {
+      sceneWithElements <- this.addAnElementToEachMap()
+      resultScene <- sceneWithElements - GenericEntity
+    } yield resultScene
 
     inside(removeResult):
       case Right(updatedScene) =>
@@ -221,9 +225,11 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
   test("Adding a team doesn't effect the surfaces and entities"):
     val teamToAdd = Team.create("new team", Set.empty).value
-    val testingScene = this.addAnElementToEachMap()
 
-    val addingResult = testingScene addTeam teamToAdd
+    val addingResult = for {
+      sceneWithElements <- this.addAnElementToEachMap()
+      resultScene <- sceneWithElements + teamToAdd
+    } yield resultScene
 
     inside(addingResult):
       case Right(updatedScene) =>
@@ -232,9 +238,10 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
 
   test("removing a team doesn't effect the surfaces and entities"):
-    val testingScene = this.addAnElementToEachMap()
-
-    val removeResult = testingScene removeTeam GenericTeam.id
+    val removeResult = for {
+      sceneWithElements <- this.addAnElementToEachMap()
+      resultScene <- sceneWithElements - GenericTeam
+    } yield resultScene
 
     inside(removeResult):
       case Right(updatedScene) =>
@@ -249,9 +256,11 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       height = 10,
       length = 10
     ).value
-    val testingScene = this.addAnElementToEachMap()
 
-    val addingResult = testingScene addSurface surfaceToAdd
+    val addingResult = for {
+      sceneWithElements <- this.addAnElementToEachMap()
+      resultScene <- sceneWithElements + surfaceToAdd
+    } yield resultScene
 
     inside(addingResult):
       case Right(updatedScene) =>
@@ -260,9 +269,10 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
 
 
   test("removing a surface doesn't effect the teams and entities"):
-    val testingScene = this.addAnElementToEachMap()
-
-    val removeResult = testingScene removeSurface GenericSurface.id
+    val removeResult = for {
+      sceneWithElements <- this.addAnElementToEachMap()
+      resultScene <- sceneWithElements - GenericSurface
+    } yield resultScene
 
     inside(removeResult):
       case Right(updatedScene) =>

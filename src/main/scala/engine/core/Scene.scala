@@ -4,10 +4,14 @@ import engine.core.traits.State
 import engine.errors.EngineError
 import engine.model.*
 
+type EntityMap = Map[LocatableId, Entity]
+type SurfaceMap = Map[LocatableId, Surface]
+type TeamMap = Map[TeamId, Team]
+
 case class Scene(
-                  entities: Map[LocatableId, Entity] = Map.empty,
-                  surfaces: Map[LocatableId, Surface] = Map.empty,
-                  teams: Map[TeamId, Team] = Map.empty
+                  entities: EntityMap = Map.empty,
+                  surfaces: SurfaceMap = Map.empty,
+                  teams: TeamMap = Map.empty
                 ) extends State
 
 object Scene {
@@ -44,45 +48,45 @@ object Scene {
 
   extension (scene: Scene)
 
-    // ENTITIES
-    infix def getEntity(id: LocatableId): Either[EngineError, Entity] =
+    // Gets
+    def getEntity(id: LocatableId): Either[EngineError, Entity] =
       getFromMap(scene.entities, id, EntityNotFound(id))
 
-    infix def addEntity(toAdd: Entity): Either[EngineError, Scene] =
+    def getTeam(id: TeamId): Either[EngineError, Team] =
+      getFromMap(scene.teams, id, TeamNotFound(id))
+
+    def getSurface(id: LocatableId): Either[EngineError, Surface] =
+      getFromMap(scene.surfaces, id, SurfaceNotFound(id))
+
+    // Adds
+    def +(toAdd: Entity): Either[EngineError, Scene] =
       addToMap(scene.entities, toAdd.id, toAdd)
         .leftMap(CannotAddEntity(_))
         .map(m => scene.copy(entities = m))
 
-    infix def removeEntity(id: LocatableId): Either[EngineError, Scene] =
-      removeFromMap(scene.entities, id)
-        .leftMap(CannotRemoveEntity(_))
-        .map(m => scene.copy(entities = m))
-
-    // TEAMS
-    infix def getTeam(id: TeamId): Either[EngineError, Team] =
-      getFromMap(scene.teams, id, TeamNotFound(id))
-
-    infix def addTeam(toAdd: Team): Either[EngineError, Scene] =
+    def +(toAdd: Team): Either[EngineError, Scene] =
       addToMap(scene.teams, toAdd.id, toAdd)
         .leftMap(CannotAddTeam(_))
         .map(m => scene.copy(teams = m))
 
-    infix def removeTeam(id: TeamId): Either[EngineError, Scene] =
-      removeFromMap(scene.teams, id)
-        .leftMap(CannotRemoveTeam(_))
-        .map(m => scene.copy(teams = m))
-
-    // SURFACES
-    infix def getSurface(id: LocatableId): Either[EngineError, Surface] =
-      getFromMap(scene.surfaces, id, SurfaceNotFound(id))
-
-    infix def addSurface(toAdd: Surface): Either[EngineError, Scene] =
+    def +(toAdd: Surface): Either[EngineError, Scene] =
       addToMap(scene.surfaces, toAdd.id, toAdd)
         .leftMap(CannotAddSurface(_))
         .map(m => scene.copy(surfaces = m))
 
-    infix def removeSurface(id: LocatableId): Either[EngineError, Scene] =
-      removeFromMap(scene.surfaces, id)
+    // Removes
+    def -(entity: Entity): Either[EngineError, Scene] =
+      removeFromMap(scene.entities, entity.id)
+        .leftMap(CannotRemoveEntity(_))
+        .map(m => scene.copy(entities = m))
+
+    def -(team: Team): Either[EngineError, Scene] =
+      removeFromMap(scene.teams, team.id)
+        .leftMap(CannotRemoveTeam(_))
+        .map(m => scene.copy(teams = m))
+
+    def -(surface: Surface): Either[EngineError, Scene] =
+      removeFromMap(scene.surfaces, surface.id)
         .leftMap(CannotRemoveSurface(_))
         .map(m => scene.copy(surfaces = m))
 }
