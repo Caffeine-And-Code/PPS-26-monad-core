@@ -1,4 +1,4 @@
 package engine.core.traits
 
-trait PhysicsEngine :
+trait Physics :
   def step(scene: Scene, dt: Long): Scene

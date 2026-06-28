@@ -1,6 +1,6 @@
 package engine.core
 
-import engine.core.traits.{PhysicsEngine, RenderEngine, Scene}
+import engine.core.traits.{Physics, RenderEngine, Scene}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalamock.scalatest.MockFactory
@@ -10,7 +10,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
   val DefaultTickTime = 16_000_000L
   val DefaultMaxFrameTime = 250_000_000L
   val MockScene: Scene = mock[Scene]
-  val MockPhysics: PhysicsEngine = mock[PhysicsEngine]
+  val MockPhysics: Physics = mock[Physics]
   val MockRender: RenderEngine = mock[RenderEngine]
   val InitialTime = 0L
 
