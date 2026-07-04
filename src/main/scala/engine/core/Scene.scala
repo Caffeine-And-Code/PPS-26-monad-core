@@ -15,14 +15,15 @@ case class Scene(
                   teams: TeamMap = Map.empty
                 )
 
-object Scene {
-  private val entitiesLens: Lens[Scene, EntityMap] =
+object Scene:
+
+  given entitiesLens: Lens[Scene, EntityMap] =
     Lens(_.entities, (s, m) => s.copy(entities = m))
 
-  private val teamsLens: Lens[Scene, TeamMap] =
+  given teamsLens: Lens[Scene, TeamMap] =
     Lens(_.teams, (s, m) => s.copy(teams = m))
 
-  private val surfacesLens: Lens[Scene, SurfaceMap] =
+  given surfacesLens: Lens[Scene, SurfaceMap] =
     Lens(_.surfaces, (s, m) => s.copy(surfaces = m))
 
   private def getFromMap[K, V](
@@ -67,28 +68,27 @@ object Scene {
       getFromMap(surfacesLens, scene, id, SurfaceNotFound(id))
 
     // Adds
-    def +(toAdd: Entity): Either[EngineError, Scene] =
-      addToMap(entitiesLens, scene, toAdd.id, toAdd,
+    def addEntity(entity: Entity): Either[EngineError, Scene] =
+      addToMap(entitiesLens, scene, entity.id, entity,
         k => CannotAddEntity(CannotAddAlreadyPresentElementInMap(k)))
 
-    def +(toAdd: Team): Either[EngineError, Scene] =
-      addToMap(teamsLens, scene, toAdd.id, toAdd,
+    def addTeam(team: Team): Either[EngineError, Scene] =
+      addToMap(teamsLens, scene, team.id, team,
         k => CannotAddTeam(CannotAddAlreadyPresentElementInMap(k)))
 
-    def +(toAdd: Surface): Either[EngineError, Scene] =
-      addToMap(surfacesLens, scene, toAdd.id, toAdd,
+    def addSurface(surface: Surface): Either[EngineError, Scene] =
+      addToMap(surfacesLens, scene, surface.id, surface,
         k => CannotAddSurface(CannotAddAlreadyPresentElementInMap(k)))
 
     // Removes
-    def -(entity: Entity): Either[EngineError, Scene] =
+    def removeEntity(entity: Entity): Either[EngineError, Scene] =
       removeFromMap(entitiesLens, scene, entity.id,
         k => CannotRemoveEntity(CannotRemoveNonPresentElementFromMap(k)))
 
-    def -(team: Team): Either[EngineError, Scene] =
+    def removeTeam(team: Team): Either[EngineError, Scene] =
       removeFromMap(teamsLens, scene, team.id,
         k => CannotRemoveTeam(CannotRemoveNonPresentElementFromMap(k)))
 
-    def -(surface: Surface): Either[EngineError, Scene] =
+    def removeSurface(surface: Surface): Either[EngineError, Scene] =
       removeFromMap(surfacesLens, scene, surface.id,
         k => CannotRemoveSurface(CannotRemoveNonPresentElementFromMap(k)))
-}
