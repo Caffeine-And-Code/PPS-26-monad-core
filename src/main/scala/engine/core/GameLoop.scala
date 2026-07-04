@@ -47,11 +47,11 @@ object GameLoop:
         val remainingTime = gameLoop.accumulator + clampedTime
 
         @tailrec
-        def runFixedUpdate(remainingTime: Long, currentUpdater: State): (State, Long) =
+        def runFixedUpdate(remainingTime: Long, currentState: State): (State, Long) =
           if remainingTime < gameLoop.tickTime then
-            (currentUpdater, remainingTime)
+            (currentState, remainingTime)
           else
-            val updatedScene = physicsEngine.step(currentUpdater, gameLoop.tickTime)
+            val updatedScene = physicsEngine.step(currentState, gameLoop.tickTime)
             runFixedUpdate(remainingTime - gameLoop.tickTime, updatedScene)
 
         val (currentScene, currentAccumulator) = runFixedUpdate(remainingTime, state)
