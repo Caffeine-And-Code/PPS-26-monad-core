@@ -1,16 +1,17 @@
 package engine.core.events
 
-import engine.core.Scene
-import engine.model.LocatableId
+import engine.model.{Entity, LocatableId, Surface}
+
+type CollidableModels = Entity | Surface
 
 sealed trait Event
 
 object Event:
 
-  case class EntityCreatedEvent(scene: Scene, createdEntityId: LocatableId) extends Event
+  case class EntityCreatedEvent(entityToAdd: Entity) extends Event
 
-  case class EntityRemovedEvent(scene: Scene, removedEntityId: LocatableId) extends Event
+  case class EntityRemovedEvent(entityToRemove: Entity) extends Event
 
-  case class EntityUpdatedEvent(scene: Scene, updatedEntityId: LocatableId) extends Event
+  case class EntityUpdatedEvent(entityToUpdate: Entity) extends Event
 
-  case class EntityCollisionDetectedEvent[M](scene: Scene, entityId: LocatableId, modelCollidedWith: M) extends Event
+  case class EntityCollisionDetectedEvent(entityId: LocatableId, modelCollidedWith: CollidableModels) extends Event

@@ -1,7 +1,9 @@
 package engine.core
 
 import engine.core.events.Event
+import engine.errors.EngineError
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -9,7 +11,17 @@ import scala.collection.immutable.Queue
 
 class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
+  trait TestScene
+
   val mockedEvent: Event = mock[Event]
+  val mockedScene: TestScene = mock[TestScene]
+  val mockedError: EngineError = mock[EngineError]
+
+  def errorReturningHandleFunction(event: Event, scene: TestScene): Either[EngineError, TestScene] =
+    Left(mockedError)
+
+  def correctHandleFunction(event: Event, scene: TestScene): Either[EngineError, TestScene] =
+    Right(scene)
 
   val defaultManager = EventManager()
 
@@ -32,3 +44,21 @@ class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
     populatedQueueManager.queue should be(expectedQueue)
 
+  test("an enqueued event is processed correctly"):
+    val populatedManager = defaultManager.registerEvent(mockedEvent)
+
+    val (dispatchResult, updatedManager) = populatedManager.dispatchEvents(mockedScene)(correctHandleFunction)
+
+    inside(dispatchResult):
+      case Right(_) =>
+        updatedManager.queue.length should be(0)
+
+  test("when a error occurs during dispatch, it is curried and the manager is updated correctly"):
+    val populatedManager = defaultManager.registerEvent(mockedEvent)
+
+    val (dispatchResult, updatedManager) = populatedManager.dispatchEvents(mockedScene)(errorReturningHandleFunction)
+
+    inside(dispatchResult):
+      case Left(curriedError) =>
+        curriedError should be(mockedError)
+        updatedManager.queue.length should be(0)
