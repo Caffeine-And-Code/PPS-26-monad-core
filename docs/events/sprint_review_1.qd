@@ -35,6 +35,7 @@ Durante lo sprint sono stati sottostimati i tempi necessari a prendere confidenz
 
 #### Backlog
 
+- Stesura dei requirement specifications
 - Collision Detection:
   - implementare il comportamento *is colliding with*
   - completare il sistema di collision detection
