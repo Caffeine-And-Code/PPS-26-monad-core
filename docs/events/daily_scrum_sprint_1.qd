@@ -13,7 +13,7 @@
 | Membro | Ore | Riepilogo giorno precedente | Prospettiva odierna | Problemi riscontrati |
 |-|-|-|-|-|
 |Senni|8|Implementazione entity circle e rectangle|Entità di dominio|Quali campi hanno le entity?|
-|Fattori|6|Sviluppo di Github Actions|Ingegnerizzazione della scena|Come testare le actions delle release|
+|Fattori|6|Sviluppo di Github Actions, branch policies|Ingegnerizzazione della scena|Come testare le actions delle release|
 |Tonelli|6|Inizializzazione del game loop|Testing del game loop con dipendenze|-|
 
 **Data**: 26/06/2026
