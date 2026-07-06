@@ -1,5 +1,3 @@
-## User Story e Task (Sprint 1)
-
 ### User Story 1 - Gestione del Game Loop [13]
 
 **Come** sviluppatore di giochi  
@@ -107,7 +105,7 @@
 	- EntityUpdated;
 	- CollisionDetected.
 
-### User Story 8 - Visualizzazione della scena
+### User Story 8 - Visualizzazione della scena [21]
 
 **Come** utente  
 **voglio** visualizzare graficamente la scena  
@@ -115,15 +113,15 @@
 
 #### Tasks
 
-- Scegliere framework grafico Scala.
-- Creare finestra principale.
-- Creare pannello simulazione.
-- Implementare rendering 2D.
-- Disegnare cerchi.
-- Disegnare quadrati.
-- Aggiornare grafica durante la simulazione.
+- Scegliere framework grafico Scala. [2]
+- Creare finestra principale. [2]
+- Creare pannello simulazione. [2]
+- Disegnare cerchi. [2]
+- Disegnare quadrati. [2]
+- Aggiornare grafica durante la simulazione. [3]
+- Eventi della GUI (click singolo, doppio, destro su entità o superfici, on-key-press) [8]
 
-### User Story 9 - Creazione entità dalla GUI
+### User Story 9 - Creazione entità dalla GUI [13]
 
 **Come** utente  
 **voglio** creare entità tramite interfaccia grafica  
@@ -131,13 +129,11 @@
 
 #### Tasks
 
-- Creare menu a tendina per tipo entità.
-- Aggiungere scelta.
-- Creare form per proprietà.
-- Collegare GUI al game engine.
-- Aggiornare lista entità visualizzate.
+- Creare menu a tendina per tipo entità. [2]
+- Creare form per proprietà. [8]
+- Aggiornare lista entità visualizzate. [3]
 
-### User Story 10 - Modifica delle entità
+### User Story 10 - Modifica delle entità [8]
 
 **Come** utente  
 **voglio** modificare le proprietà delle entità  
@@ -145,13 +141,11 @@
 
 #### Tasks
 
-- Creare pannello proprietà.
-- Modificare proprietà delle entità.
-- Applicare forze.
-- Eliminare entità.
-- Aggiornare lo stato del motore.
+- Precompilazione del form con proprietà delle entità. [2]
+- Eliminare entità. [3]
+- Aggiornare lo stato del motore. [3]
 
-### User Story 11 - Gestione modalità Edit/Simulation
+### User Story 11 - Gestione modalità Edit/Simulation [23]
 
 **Come** utente  
 **voglio** passare dalla modifica alla simulazione  
@@ -159,14 +153,12 @@
 
 #### Tasks
 
-- Implementare stato Editor.
-- Implementare stato Simulation.
-- Creare pulsante Start.
-- Creare pulsante Stop.
-- Gestire transizioni tra stati.
-- Sincronizzare GUI e motore.
+- Implementare stato Editor-Simulation. [8]
+- Creare pulsante Start e Stop. [2]
+- Implentazione Reset della Scena [8]
+- Sincronizzare GUI e motore. [5]
 
-### User Story 12 - Comunicazione con agente LLM
+### User Story 12 - Comunicazione con agente LLM [24]
 
 **Come** utente  
 **voglio** interagire con un agente LLM  
@@ -174,13 +166,13 @@
 
 #### Tasks
 
-- Creare pannello chat.
-- Integrare modello LLM.
-- Gestire input utente.
-- Visualizzare risposta agente.
-- Gestire eventuali errori di comunicazione.
+- Creare pannello chat. [3]
+- Integrare modello LLM. [8]
+- Gestire input utente. [3]
+- Visualizzare risposta agente (real-time). [5]
+- Gestire eventuali errori di comunicazione. [5]
 
-### User Story 13 - Tools dell'agente LLM
+### User Story 13 - Tools dell'agente LLM 
 
 **Come** agente LLM  
 **voglio** richiamare funzioni del motore  
@@ -216,3 +208,16 @@
 - Misurare tempo di aggiornamento.
 - Misurare FPS.
 - Analizzare colli di bottiglia.
+
+### User Story 16 (opzionale) - Rotazione delle entità
+
+**Come** sviluppatore  
+**voglio** permettere alle entità di ruotare  
+**così da** aumentare il grado di realtà della scena.
+
+#### Tasks
+
+- Rotazione delle entità grafica.
+- Rotazione delle entità logica.
+- Aggiornamento sistema di collisioni.
+- Aggiornamento reazioni fisiche.
