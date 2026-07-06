@@ -86,3 +86,34 @@ class PhysicsEngineTest extends AnyFunSuite with Matchers with MockFactory :
 
     updatedEntity.speed.get shouldBe expectedSpeed
     updatedEntity.position shouldBe expectedPosition
+
+  test("a fixed entity should not move or change speed even if a surface applies a force"):
+
+    val entityId = "fixed-player"
+    val entityPosition = Vector2D(0, 0)
+    val entityRadius = 5.0
+    val entityWeight = 10
+    val surfaceId = "surface"
+    val surfacePosition = Vector2D(0, 0)
+    val surfaceRadius = 20.0
+    val surfaceForce = Vector2D(100, 50)
+
+    val entity = Entity.circle(entityId, entityPosition, entityRadius)
+      .flatMap(_.withWeight(entityWeight))
+      .getOrElse(fail("Error creating the entity"))
+
+    val surface = Surface.circle(surfaceId, surfacePosition, surfaceRadius)
+      .flatMap(_.withAppliedForce(surfaceForce))
+      .getOrElse(fail("Error creating the surface"))
+
+    val initialScene = Scene(
+      entities = Map(entity.id -> entity),
+      surfaces = Map(surface.id -> surface)
+    )
+
+    val resultScene = Physics.step(initialScene, CurrentNanoTime)
+    val updatedEntity = resultScene.entities(entity.id)
+
+    updatedEntity.position shouldBe entityPosition
+    updatedEntity.speed shouldBe None
+    updatedEntity.isFixed shouldBe true
