@@ -1,5 +1,6 @@
-package engine.model
+package units.engine.model
 
+import engine.model.*
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

@@ -1,5 +1,6 @@
-package engine.model
+package units.engine.model
 
+import engine.model.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -31,3 +32,10 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     finalVector.x shouldBe X * scalar
     finalVector.y shouldBe Y * scalar
 
+  test("can calculate euclidean distance to another vector"):
+    val vector1 = Vector2D(3, 4)
+    val vector2 = Vector2D(6, 8)
+
+    val distance = vector1 --> vector2
+
+    distance shouldBe 5

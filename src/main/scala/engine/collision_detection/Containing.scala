@@ -1,20 +1,14 @@
 package engine.collision_detection
 
-import engine.model.Shape2D.{Circle, Rectangle}
-import engine.model.*
+import engine.geometry.Contains.contains
+import engine.geometry.Contains
+import engine.geometry.Placed
+import engine.model.{Locatable, Shape2D, Vector2D}
 
-object Containing {
+import scala.annotation.targetName
 
-  extension (position: Vector2D)
-
-    private def isInsideCircle(otherPosition: Vector2D, circle: Circle): Boolean =
-      (position --> otherPosition) <= circle.radius
+object Containing:
 
   extension (locatable: Locatable)
-
-    infix def isInside(other: Locatable): Boolean =
-      other.shape match
-        case circle: Circle => locatable.position.isInsideCircle(other.position, circle)
-        case rectangle: Rectangle => ???
-}
-
+    infix def isInside(container: Locatable)(using Contains[Shape2D]): Boolean =
+      Placed(container.position, container.shape) contains locatable.position

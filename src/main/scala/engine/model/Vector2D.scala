@@ -8,9 +8,6 @@ extension (value: Double)
   def **(other: Double): Double =
     math.pow(value, other)
 
-  infix def inside(range: (Double, Double)): Boolean =
-    value > range._1 && value < range._2
-
 extension (v: Vector2D)
   infix def add(toAdd: Vector2D): Vector2D =
     Vector2D(v.x + toAdd.x, v.y + toAdd.y)

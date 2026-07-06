@@ -1,11 +1,12 @@
-package engine.core
+package units.engine.core
 
+import engine.core.*
 import engine.core.traits.{PhysicsEngine, RenderEngine, Scene}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalamock.scalatest.MockFactory
 
-class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
+class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   val DefaultTickTime = 16_000_000L
   val DefaultMaxFrameTime = 250_000_000L
@@ -125,7 +126,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
 
     MockRender.render.expects(*, *).anyNumberOfTimes()
-    inSequence :
+    inSequence:
       MockPhysics.step.expects(MockScene, DefaultTickTime).returning(sceneStep1).once()
       MockPhysics.step.expects(sceneStep1, DefaultTickTime).returning(sceneStep2).once()
 
@@ -193,7 +194,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
 
     MockRender.render.expects(*, *).anyNumberOfTimes()
-    inSequence :
+    inSequence:
       MockPhysics.step.expects(MockScene, DefaultTickTime).returning(updatedScene).once()
       MockPhysics.step.expects(*, DefaultTickTime).returning(updatedScene).once()
 
