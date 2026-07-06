@@ -4,6 +4,8 @@
 
 .include {events/sprint_planning_1.qd}
 
+.include {events/daily_scrum_sprint_1.qd}
+
 ## Backlog
 
 ## Iterazioni
