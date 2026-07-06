@@ -10,6 +10,8 @@ class PhysicsEngineTest extends AnyFunSuite with Matchers with MockFactory :
 
   val Physics = PhysicsEngine()
   val CurrentNanoTime = 1_000_000_000L
+  val NanoInSeconds = 1_000_000_000.0
+  val CurrentSecondTime: Double = CurrentNanoTime.toDouble / NanoInSeconds
   val EmptyScene = Scene()
 
   test("step should throw IllegalArgumentException when time is negative") :
@@ -47,3 +49,40 @@ class PhysicsEngineTest extends AnyFunSuite with Matchers with MockFactory :
     val resultScene = Physics.step(initialScene, zeroTime)
 
     resultScene shouldBe initialScene
+
+  test("a surface should apply its force to the entity inside it updating speed and position") :
+
+    val entityId = "player"
+    val entityPosition = Vector2D(0, 0)
+    val entityRadius = 5.0
+    val entityWeight = 10
+    val entitySpeed = Vector2D(0, 0)
+    val surfaceId = "surface"
+    val surfacePosition = Vector2D(0, 0)
+    val surfaceRadius = 20.0
+    val surfaceForce = Vector2D(100, 0)
+
+    val expectedAcceleration = surfaceForce times (1.0 / entityWeight.toDouble)
+    val expectedSpeed = entitySpeed add (expectedAcceleration times CurrentSecondTime)
+    val expectedDisplacement = expectedSpeed times CurrentSecondTime
+    val expectedPosition = entityPosition add expectedDisplacement
+
+    val entity = Entity.circle(entityId, entityPosition, entityRadius)
+      .flatMap(_.withWeight(entityWeight))
+      .flatMap(_.withSpeed(entitySpeed))
+      .getOrElse(fail("Error creating the entity"))
+
+    val surface = Surface.circle(surfaceId, surfacePosition, surfaceRadius)
+      .flatMap(_.withAppliedForce(surfaceForce))
+      .getOrElse(fail("Error creating the surface"))
+
+    val initialScene = Scene(
+      entities = Map(entity.id -> entity),
+      surfaces = Map(surface.id -> surface)
+    )
+
+    val finalScene = Physics.step(initialScene, CurrentNanoTime)
+    val updatedEntity = finalScene.entities(entity.id)
+
+    updatedEntity.speed.get shouldBe expectedSpeed
+    updatedEntity.position shouldBe expectedPosition
