@@ -15,6 +15,7 @@ Durante lo sprint sono stati completati i seguenti elementi:
 - Prima implementazione della collision detection, limitata al comportamento *is inside*.
 - Prima implementazione della fisica, con introduzione della struttura `Vector2D`.
 - Aggiunta della gestione del team e di alcune utility di supporto.
+- Avvio dell'implementazione della gestione degli eventi
 
 #### Stato dei task
 
@@ -26,8 +27,9 @@ Durante lo sprint sono stati completati i seguenti elementi:
 | Collision Detection | Senni | Parzialmente completata |
 | Gestione del Game Loop | Tonelli | Completata |
 | Gestione della fisica | Tonelli | Parzialmente completata |
+| Sistema degli eventi | Fattori | Inizializzata |
 
-Tutto ciò che non è stato completato durante lo Sprint 1 viene riportato nello Sprint 2.
+Tutto ciò che non è stato completato durante lo Sprint 1 viene riportato nello Sprint 2. Visto un anticipo rispetto ai pronostici, Fattori inizia l'implementazione del sistema degli eventi.
 
 #### Problemi riscontrati
 
