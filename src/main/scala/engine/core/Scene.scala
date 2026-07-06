@@ -1,6 +1,6 @@
 package engine.core
 
-import engine.core.Scene.*
+import engine.core.Scene.{entitiesLens, surfacesLens, teamsLens, *}
 import engine.core.traits.State
 import engine.errors.EngineError
 import engine.model.*
