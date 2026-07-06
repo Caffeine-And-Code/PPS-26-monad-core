@@ -1,6 +1,6 @@
 package engine.core
 
-import engine.core.traits.{PhysicsEngine, RenderEngine}
+import engine.core.traits.{Physics, RenderEngine}
 
 import scala.annotation.tailrec
 
@@ -38,7 +38,7 @@ object GameLoop:
     def stop(): GameLoop =
       gameLoop.copy(isRunning = false)
 
-    def tick[S](scene: S, physicsEngine: PhysicsEngine, renderEngine: RenderEngine, currentTime: Long): (S, GameLoop) =
+    def tick[S](scene: S, physicsEngine: Physics, renderEngine: RenderEngine, currentTime: Long): (S, GameLoop) =
       if !gameLoop.isRunning || gameLoop.mode == EditMode then
         renderEngine.render(scene, StaticAlpha)
         (scene, gameLoop.copy(lastTime = currentTime))
