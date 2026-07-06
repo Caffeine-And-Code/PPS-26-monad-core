@@ -1,7 +1,7 @@
 package engine.core.events
 
-import engine.core.events.Event.{EntityCreatedEvent, EntityRemovedEvent}
 import engine.core.*
+import engine.core.events.Event.{EntityCreatedEvent, EntityRemovedEvent, EntityUpdatedEvent}
 import engine.errors.EngineError
 import engine.model.{Entity, Vector2D}
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -30,22 +30,26 @@ class EventDispatcherTest extends AnyFunSuite with Matchers:
 
   test("EntityCreatedEvent errors are curried throughout the handle function"):
     val creationEvent = EntityCreatedEvent(entity)
-    val populatedScene: Scene = scene.addEntity(entity).value
     val expectedError = CannotAddEntity(CannotAddAlreadyPresentElementInMap(entity.id))
 
-    val result = EventDispatcher.handle(creationEvent, populatedScene)
+    val dispatchResult = for {
+      populatedScene <- scene.addEntity(entity)
+      result <- EventDispatcher.handle(creationEvent, populatedScene)
+    } yield result
 
-    inside(result):
+    inside(dispatchResult):
       case Left(error) =>
         error should be(expectedError)
 
   test("EntityRemovedEvent is dispatched correctly"):
     val removeEvent = EntityRemovedEvent(entity)
-    val populatedScene: Scene = scene.addEntity(entity).value
 
-    val result = EventDispatcher.handle(removeEvent, populatedScene)
+    val dispatchResult = for {
+      populatedScene <- scene.addEntity(entity)
+      result <- EventDispatcher.handle(removeEvent, populatedScene)
+    } yield result
 
-    inside(result):
+    inside(dispatchResult):
       case Right(updatedScene) =>
         updatedScene.entities.size should be(0)
 
@@ -58,3 +62,28 @@ class EventDispatcherTest extends AnyFunSuite with Matchers:
     inside(result):
       case Left(error) =>
         error should be(expectedError)
+
+  test("EntityUpdatedEvent is dispatched correctly"):
+    val updatedEvent = EntityUpdatedEvent(entity)
+
+    val dispatchResult = for {
+      populatedScene <- scene.addEntity(entity)
+      result <- EventDispatcher.handle(updatedEvent, populatedScene)
+    } yield result
+
+    inside(dispatchResult):
+      case Right(updatedScene) =>
+        updatedScene.entities.size should be(1)
+        updatedScene.entities should contain value entity
+
+  test("EntityUpdatedEvent errors are curried throughout the handle function"):
+    val updatedEvent = EntityUpdatedEvent(entity)
+    val expectedError = EntityNotFound(entity.id)
+
+    val result = EventDispatcher.handle(updatedEvent, scene)
+
+    inside(result):
+      case Left(error) =>
+        error should be(expectedError)
+
+//TODO: add test and integration for the EntityCollisionDetectedEvent when the team decided what needs to be done

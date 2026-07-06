@@ -7,7 +7,7 @@ type EntityMap = Map[LocatableId, Entity]
 type SurfaceMap = Map[LocatableId, Surface]
 type TeamMap = Map[TeamId, Team]
 
-case class Lens[S, A](get: S => A, set: (S, A) => S)
+private case class Lens[S, A](get: S => A, set: (S, A) => S)
 
 case class Scene(
                   entities: EntityMap = Map.empty,
@@ -55,6 +55,17 @@ object Scene:
     if m.contains(key) then Right(lens.set(scene, m - key))
     else Left(error(key))
 
+  private def updateInMap[K, V](
+                                 lens: Lens[Scene, Map[K, V]],
+                                 scene: Scene,
+                                 key: K,
+                                 newValue: V,
+                                 notFoundError: K => EngineError
+                               ): Either[EngineError, Scene] =
+    val m = lens.get(scene)
+    if m.contains(key) then Right(lens.set(scene, m.updated(key, newValue)))
+    else Left(notFoundError(key))
+
   extension (scene: Scene)
 
     // Gets
@@ -92,3 +103,13 @@ object Scene:
     def removeSurface(surface: Surface): Either[EngineError, Scene] =
       removeFromMap(surfacesLens, scene, surface.id,
         k => CannotRemoveSurface(CannotRemoveNonPresentElementFromMap(k)))
+
+    //Updates
+    def updateEntity(updatedEntity: Entity): Either[EngineError, Scene] =
+      updateInMap(entitiesLens, scene, updatedEntity.id, updatedEntity, EntityNotFound(_))
+
+    def updateTeam(updatedTeam: Team): Either[EngineError, Scene] =
+      updateInMap(teamsLens, scene, updatedTeam.id, updatedTeam, TeamNotFound(_))
+
+    def updateSurface(updatedSurface: Surface): Either[EngineError, Scene] =
+      updateInMap(surfacesLens, scene, updatedSurface.id, updatedSurface, SurfaceNotFound(_))

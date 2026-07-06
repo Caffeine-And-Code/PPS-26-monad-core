@@ -236,7 +236,6 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
         updatedScene.surfaces.size should be(1)
         updatedScene.entities.size should be(1)
 
-
   test("removing a team doesn't effect the surfaces and entities"):
     val removeResult = for {
       sceneWithElements <- this.addAnElementToEachMap()
@@ -247,7 +246,6 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       case Right(updatedScene) =>
         updatedScene.surfaces.size should be(1)
         updatedScene.entities.size should be(1)
-
 
   test("Adding a surface doesn't effect the teams and entities"):
     val surfaceToAdd = Surface.rectangle(
@@ -267,7 +265,6 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
         updatedScene.teams.size should be(1)
         updatedScene.entities.size should be(1)
 
-
   test("removing a surface doesn't effect the teams and entities"):
     val removeResult = for {
       sceneWithElements <- this.addAnElementToEachMap()
@@ -278,3 +275,75 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       case Right(updatedScene) =>
         updatedScene.teams.size should be(1)
         updatedScene.entities.size should be(1)
+
+  test("An entity can be updated"):
+    val result: Either[EngineError, (Scene, Entity)] = for {
+      //TODO: speak with team about this
+      updatedGenericEntity <- Entity.rectangle(GenericEntity.id.toString, Vector2D(1, 2), 100, 10)
+      populatedScene <- InitializedScene.addEntity(GenericEntity)
+      finalScene <- populatedScene.updateEntity(updatedGenericEntity)
+    } yield (finalScene, updatedGenericEntity)
+
+    inside(result):
+      case Right((updatedScene, updatedGenericEntity)) =>
+        updatedScene.entities should contain key updatedGenericEntity.id
+        updatedScene.entities should contain value updatedGenericEntity
+        updatedScene.entities.size should be(1)
+
+  test("An entity not already present cannot be update"):
+    val updatedGenericEntity = Entity.rectangle(GenericEntity.id.toString, Vector2D(1, 2), 100, 10).value
+    val expectedError = EntityNotFound(updatedGenericEntity.id)
+
+    val updateResult = InitializedScene.updateEntity(updatedGenericEntity)
+
+    inside(updateResult):
+      case Left(error) =>
+        error should be(expectedError)
+
+  test("A Team can be updated"):
+    val updatedGenericTeam = Team(GenericTeam.id, Set.empty).value
+
+    val updateResult = for {
+      populatedScene <- InitializedScene.addTeam(GenericTeam)
+      finalScene <- populatedScene.updateTeam(updatedGenericTeam)
+    } yield finalScene
+
+    inside(updateResult):
+      case Right(updatedScene) =>
+        updatedScene.teams should contain key updatedGenericTeam.id
+        updatedScene.teams should contain value updatedGenericTeam
+        updatedScene.teams.size should be(1)
+
+  test("A Team not already present cannot be update"):
+    val updatedGenericTeam = Team(GenericTeam.id, Set.empty).value
+    val expectedError = TeamNotFound(updatedGenericTeam.id)
+
+    val updateResult = InitializedScene.updateTeam(updatedGenericTeam)
+
+    inside(updateResult):
+      case Left(error) =>
+        error should be(expectedError)
+
+  test("A Surface can be updated"):
+    val updatedGenericSurface = Surface.rectangle(GenericSurface.id.toString, Vector2D(1, 2), 100, 10).value
+
+    val updateResult = for {
+      populatedScene <- InitializedScene.addSurface(GenericSurface)
+      finalScene <- populatedScene.updateSurface(updatedGenericSurface)
+    } yield finalScene
+
+    inside(updateResult):
+      case Right(updatedScene) =>
+        updatedScene.surfaces should contain key updatedGenericSurface.id
+        updatedScene.surfaces should contain value updatedGenericSurface
+        updatedScene.surfaces.size should be(1)
+
+  test("A Surface not already present cannot be update"):
+    val updatedGenericSurface = Surface.rectangle(GenericSurface.id.toString, Vector2D(1, 2), 100, 10).value
+    val expectedError = SurfaceNotFound(updatedGenericSurface.id)
+
+    val updateResult = InitializedScene.updateSurface(updatedGenericSurface)
+
+    inside(updateResult):
+      case Left(error) =>
+        error should be(expectedError)

@@ -7,5 +7,4 @@ import engine.errors.EngineError
 object EntityUpdatedEventHandler:
 
   def handle(event: EntityUpdatedEvent, currentScene: Scene): Either[EngineError, Scene] =
-    //handle the event
-    Right(currentScene)
+    currentScene.updateEntity(event.entityToUpdate)
