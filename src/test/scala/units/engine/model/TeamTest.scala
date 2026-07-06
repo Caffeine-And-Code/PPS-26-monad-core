@@ -33,6 +33,11 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
 
     team shouldBe Left(ATeamCannotBeItsOwnEnemy())
 
+  test("Cannot create a team where one enemy is an invalid team id"):
+    val team = Team.create(ValidTeamId, Set("", ValidTeamId))
+
+    team shouldBe Left(TeamIdCannotBeEmpty())
+
   test("can add an enemy to the team"):
     val team = for {
       team <- Team.create(ValidTeamId)
