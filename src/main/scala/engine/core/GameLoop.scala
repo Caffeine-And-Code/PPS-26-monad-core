@@ -1,12 +1,8 @@
 package engine.core
 
-import engine.core.traits.{Physics, RenderEngine, Scene}
+import engine.core.traits.{PhysicsEngine, RenderEngine}
 
 import scala.annotation.tailrec
-
-sealed trait EngineMode
-case object EditMode extends EngineMode
-case object SimulationMode extends EngineMode
 
 val DefaultTickTime = 16_000_000L
 val InitialTime = 0L
@@ -15,17 +11,22 @@ val DefaultMaxFrameTime = 250_000_000L
 val StaticAlpha = 1.0
 
 case class GameLoop(
-                     mode: EngineMode = EditMode,
+                     mode: LoopMode = EditMode,
                      tickTime: Long = DefaultTickTime,
                      isRunning: Boolean = false,
                      lastTime: Long = InitialTime,
                      accumulator: Long = InitialAccumulatorValue,
                      maxFrameTime: Long = DefaultMaxFrameTime
-                   )
+                   ):
+  require(tickTime > 0, "tick time cannot be negative or zero")
+  require(lastTime >= 0, "last time cannot be negative")
+  require(accumulator >= 0, "accumulator cannot be negative")
+  require(maxFrameTime > 0, "max frame time cannot be negative or zero")
+  require(maxFrameTime >= tickTime, "max frame time cannot be less than tick time")
 
 object GameLoop:
   extension (gameLoop: GameLoop)
-    def withMode(newMode: EngineMode): GameLoop =
+    def withMode(newMode: LoopMode): GameLoop =
       gameLoop.copy(mode = newMode)
 
     def withTickTime(newTickTime: Long): GameLoop =
@@ -37,7 +38,7 @@ object GameLoop:
     def stop(): GameLoop =
       gameLoop.copy(isRunning = false)
 
-    def tick(scene: Scene, physicsEngine: Physics, renderEngine:RenderEngine, currentTime: Long): (Scene, GameLoop) =
+    def tick[S](scene: S, physicsEngine: PhysicsEngine, renderEngine: RenderEngine, currentTime: Long): (S, GameLoop) =
       if !gameLoop.isRunning || gameLoop.mode == EditMode then
         renderEngine.render(scene, StaticAlpha)
         (scene, gameLoop.copy(lastTime = currentTime))
@@ -47,7 +48,7 @@ object GameLoop:
         val remainingTime = gameLoop.accumulator + clampedTime
 
         @tailrec
-        def runFixedUpdate(remainingTime: Long, currentScene: Scene): (Scene, Long) =
+        def runFixedUpdate(remainingTime: Long, currentScene: S): (S, Long) =
           if remainingTime < gameLoop.tickTime then
             (currentScene, remainingTime)
           else

@@ -1,5 +1,7 @@
 package engine.core
 
+import engine.core.traits.{PhysicsEngine, RenderEngine}
+import org.scalamock.scalatest.MockFactory
 import engine.core.traits.{Physics, RenderEngine, Scene}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -7,10 +9,12 @@ import org.scalamock.scalatest.MockFactory
 
 class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
 
+  trait TestScene
+  
   val DefaultTickTime = 16_000_000L
   val DefaultMaxFrameTime = 250_000_000L
-  val MockScene: Scene = mock[Scene]
-  val MockPhysics: Physics = mock[Physics]
+  val MockScene: TestScene = mock[TestScene]
+  val MockPhysics: PhysicsEngine = mock[PhysicsEngine]
   val MockRender: RenderEngine = mock[RenderEngine]
   val InitialTime = 0L
 
@@ -106,7 +110,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing exactly one tick period should invoke the physics engine once"):
-    val updatedScene = mock[Scene]
+    val updatedScene = mock[TestScene]
     val currentTime = DefaultTickTime
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
 
@@ -119,8 +123,8 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing two tick periods should invoke the physics engine twice"):
-    val sceneStep1 = mock[Scene]
-    val sceneStep2 = mock[Scene]
+    val sceneStep1 = mock[TestScene]
+    val sceneStep2 = mock[TestScene]
     val currentTime = DefaultTickTime * 2
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
 
@@ -135,7 +139,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, remaining time after fixed updates must be saved in the accumulator"):
-    val updatedScene = mock[Scene]
+    val updatedScene = mock[TestScene]
     val currentTime = 20_000_000L
     val correctAccumulator = 4_000_000L
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
@@ -161,7 +165,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentLoop.accumulator shouldBe correctAccumulator
 
   test("game loop must invoke the render engine passing the correct interpolation alpha"):
-    val updatedScene = mock[Scene]
+    val updatedScene = mock[TestScene]
     val currentTime = 20_000_000L
     val correctAlpha = 0.25 // alpha = 4ms / 16ms = 0.25
     val correctAccumulator = 4_000_000L
@@ -186,7 +190,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     currentScene shouldBe MockScene
 
   test("stopping or switching mode must freeze the simulation, which can then be resumed"):
-    val updatedScene = mock[Scene]
+    val updatedScene = mock[TestScene]
     val partialTime1 = 16_000_000L
     val partialTime2 = 32_000_000L
     val partialTime3 = 48_000_000L
@@ -206,3 +210,48 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     scene2 shouldBe scene1
     scene3 shouldBe updatedScene
     currentLoop.isRunning shouldBe true
+
+  test("a game loop should throw IllegalArgumentException when tick time is non-positive"):
+    val invalidTickTime = 0L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(tickTime = invalidTickTime)
+    }
+
+    exception shouldNot be(null)
+
+  test("a game loop should throw IllegalArgumentException when last time value is negative"):
+    val invalidLastTime = -1L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(lastTime = invalidLastTime)
+    }
+
+    exception shouldNot be(null)
+
+  test("a game loop should throw IllegalArgumentException when accumulator is negative"):
+    val invalidAccumulator = -1L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(accumulator = invalidAccumulator)
+    }
+
+    exception shouldNot be(null)
+
+  test("a game loop should throw IllegalArgumentException when max frame time is non-positive"):
+    val invalidTickTime = 0L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(maxFrameTime = invalidTickTime)
+    }
+
+    exception shouldNot be(null)
+
+  test("GameLoop should throw IllegalArgumentException when max frame time is less than tick time"):
+    val invalidMaxFrameTime = DefaultTickTime - 1L
+
+    val exception = intercept[IllegalArgumentException] {
+      GameLoop(tickTime = DefaultTickTime, maxFrameTime = invalidMaxFrameTime)
+    }
+
+    exception shouldNot be(null)
