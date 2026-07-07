@@ -1,6 +1,7 @@
 package units.engine.collision_detection
 
 import engine.collision_detection.Containing.isInside
+import engine.geometry.Placed.placed
 import engine.geometry.{Contains, Placed}
 import engine.model.*
 import org.scalamock.scalatest.MockFactory
@@ -17,7 +18,7 @@ class ContainingTest extends AnyFunSuite with Inside with Matchers with MockFact
     val containsInstance = mock[Contains[Shape2D]]
 
     containsInstance.contains
-      .expects(Placed(surface.position, surface.shape), entity.position)
+      .expects(surface.placed, entity.position)
       .returning(true)
       .once()
 
@@ -31,7 +32,7 @@ class ContainingTest extends AnyFunSuite with Inside with Matchers with MockFact
     val containsInstance = mock[Contains[Shape2D]]
 
     containsInstance.contains
-      .expects(Placed(surface.position, surface.shape), entity.position)
+      .expects(surface.placed, entity.position)
       .returning(false)
       .once()
 
