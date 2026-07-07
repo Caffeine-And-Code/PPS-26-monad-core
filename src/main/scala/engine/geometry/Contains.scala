@@ -1,6 +1,5 @@
 package engine.geometry
 
-import engine.model.Shape2D
 import engine.model.Vector2D
 
 trait Contains[A]:

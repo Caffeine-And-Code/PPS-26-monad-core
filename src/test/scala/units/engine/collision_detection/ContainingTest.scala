@@ -1,14 +1,13 @@
 package units.engine.collision_detection
 
-import engine.collision_detection.Containing
+import engine.collision_detection.Containing.isInside
 import engine.geometry.{Contains, Placed}
 import engine.model.*
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.EitherValues.*
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import engine.collision_detection.Containing.isInside
-import org.scalatest.EitherValues.*
 
 class ContainingTest extends AnyFunSuite with Inside with Matchers with MockFactory:
 
