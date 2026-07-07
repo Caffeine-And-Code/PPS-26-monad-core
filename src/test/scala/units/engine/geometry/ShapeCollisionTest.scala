@@ -129,4 +129,48 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers {
       val result = ShapeCollision.circleCollidesWithRectangle.collision(circle, rectangle)
 
       result shouldBe Some(collision)
+
+  test("circle not collides with another rectangle"):
+    val circle = Placed(Vector2D(0, 0), Shape2D.circle(2.9).value)
+    val rectangle = Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value)
+
+    val result = ShapeCollision.circleCollidesWithRectangle.collision(circle, rectangle)
+
+    result shouldBe None
+
+  test("circle collides with another rectangle too if it is fully inside it"):
+
+    val cases = Table(
+      (
+        "circle",
+        "rectangle",
+        "collision"
+      ),
+      (
+        Placed(Vector2D(7, 0), Shape2D.circle(2).value),
+        Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
+        Collision(Vector2D(1, 0), 2)
+      ),
+      (
+        Placed(Vector2D(6, 1), Shape2D.circle(2).value),
+        Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
+        Collision(Vector2D(0, 1), 2)
+      ),
+      (
+        Placed(Vector2D(5, 0), Shape2D.circle(2).value),
+        Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
+        Collision(Vector2D(-1, 0), 2)
+      ),
+      (
+        Placed(Vector2D(6, -1), Shape2D.circle(2).value),
+        Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
+        Collision(Vector2D(0, -1), 2)
+      )
+    )
+
+    forAll(cases): (circle, rectangle, collision) =>
+
+      val result = ShapeCollision.circleCollidesWithRectangle.collision(circle, rectangle)
+
+      result shouldBe Some(collision)
 }

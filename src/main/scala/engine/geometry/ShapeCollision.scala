@@ -45,7 +45,7 @@ object ShapeCollision:
         Option.when(penetrationDepth >= 0):
           Collision(circleToClosestPoint.normalized, penetrationDepth)
       else
-        None
+        Some(collisionFromCircleInsideRectangle(circle, rectangle))
 
   given shapeCollidesWIthShape: Collides[Shape2D, Shape2D] with
 
@@ -59,6 +59,21 @@ object ShapeCollision:
           circleCollidesWithRectangle.collision(Placed(first.center, circle), Placed(second.center, rectangle))
         case (_, _) => ???
       }
+
+  private def collisionFromCircleInsideRectangle(circle: Placed[Circle], rectangle: Placed[Rectangle]): Collision =
+    val distanceToRightEdge = rectangle.center.x + halfLength(rectangle.value) - circle.center.x
+    val distanceToLeftEdge = circle.center.x - (rectangle.center.x - halfLength(rectangle.value))
+    val distanceToTopEdge = rectangle.center.y + halfHeight(rectangle.value) - circle.center.y
+    val distanceToBottomEdge = circle.center.y - (rectangle.center.y - halfHeight(rectangle.value))
+
+    val nearestEdge = Seq(
+      (distanceToRightEdge, Vector2D(1, 0)),
+      (distanceToLeftEdge, Vector2D(-1, 0)),
+      (distanceToTopEdge, Vector2D(0, 1)),
+      (distanceToBottomEdge, Vector2D(0, -1))
+    ).minBy(_._1)
+
+    Collision(nearestEdge._2, nearestEdge._1)
 
   private def calculateNorm(firstPoint: Vector2D, secondPoint: Vector2D): Vector2D =
     (secondPoint - firstPoint).normalized
