@@ -1,9 +1,8 @@
 package engine.geometry
 
 import engine.geometry.Contains.contains
-import engine.model.Shape2D
-import engine.model.Shape2D.{Circle, Rectangle}
 import engine.model.*
+import engine.model.Shape2D.{Circle, Rectangle}
 
 object ShapeContainment:
 
@@ -17,7 +16,7 @@ object ShapeContainment:
     override def contains(container: Placed[Rectangle], point: Vector2D): Boolean =
       Interval(container.center.x - container.value.length / 2, container.center.x + container.value.length / 2).contains(point.x)
         && Interval(container.center.y - container.value.height / 2, container.center.y + container.value.height / 2).contains(point.y)
-  
+
   given shapeContainsPoint: Contains[Shape2D] with
 
     override def contains(container: Placed[Shape2D], point: Vector2D): Boolean =

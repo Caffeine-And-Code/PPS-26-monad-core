@@ -1,13 +1,13 @@
 package units.engine.geometry
 
+import engine.geometry.Interval
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks._
-import engine.geometry.Interval
+import org.scalatest.prop.TableDrivenPropertyChecks.*
 
-class IntervalTest extends AnyFunSuite with Inside with Matchers with MockFactory :
+class IntervalTest extends AnyFunSuite with Inside with Matchers with MockFactory:
 
   test("an Interval contains a value"):
     val cases = Table(
@@ -18,12 +18,12 @@ class IntervalTest extends AnyFunSuite with Inside with Matchers with MockFactor
     )
 
     forAll(cases): (min, max, value) =>
-      val interval:Interval = Interval(min, max)
+      val interval: Interval = Interval(min, max)
 
       val result = interval contains value
-      
+
       result shouldBe true
-      
+
   test("an Interval does not contains values outside of it"):
     val cases = Table(
       ("min", "max", "value"),

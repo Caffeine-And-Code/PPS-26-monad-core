@@ -13,9 +13,6 @@ object Locatable:
   def circle[A](id: String, position: Vector2D, radius: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
     Shape2D.circle(radius).flatMap(circle => createGeneric(id, position, circle)(build))
 
-  def rectangle[A](id: String, position: Vector2D, height: Double, length: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
-    Shape2D.rectangle(height, length).flatMap(rectangle => createGeneric(id, position, rectangle)(build))
-
   private def createGeneric[A](
                                 id: String,
                                 position: Vector2D,
@@ -28,3 +25,6 @@ object Locatable:
       Left(PositionIsValid(position))
     else
       Right(())
+
+  def rectangle[A](id: String, position: Vector2D, height: Double, length: Double)(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
+    Shape2D.rectangle(height, length).flatMap(rectangle => createGeneric(id, position, rectangle)(build))
