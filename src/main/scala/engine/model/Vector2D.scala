@@ -31,6 +31,9 @@ extension (v: Vector2D)
     else
       Vector2D(v.x / currentMagnitude, v.y / currentMagnitude)
 
+  def flip: Vector2D =
+    v.copy(-v.x, -v.y)
+
   def +(toAdd: Vector2D): Vector2D = v add toAdd
 
   def -(toSubtract: Vector2D): Vector2D = v subtract toSubtract

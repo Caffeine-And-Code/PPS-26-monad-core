@@ -71,3 +71,10 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     val result = vector.normalized
 
     result shouldBe Vector2D(0, 0)
+
+  test("can flip a vector"):
+    val vector = Vector2D(1, 2)
+
+    val result = vector.flip
+
+    result shouldBe Vector2D(-1, -2)

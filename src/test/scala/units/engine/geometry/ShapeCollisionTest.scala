@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.*
 
-class ShapeCollisionTest extends AnyFunSuite with Matchers {
+class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
   test("circle collides with another circle"):
     val cases = Table(
@@ -105,22 +105,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers {
       (
         Placed(Vector2D(6, 0), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(1, 0), 1)
+        Collision(Vector2D(-1, 0), 1)
       ),
       (
         Placed(Vector2D(0, 6), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, 1), 1)
+        Collision(Vector2D(0, -1), 1)
       ),
       (
         Placed(Vector2D(-6, 0), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(-1, 0), 1)
+        Collision(Vector2D(1, 0), 1)
       ),
       (
         Placed(Vector2D(0, -6), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, -1), 1)
+        Collision(Vector2D(0, 1), 1)
       )
     )
 
@@ -149,22 +149,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers {
       (
         Placed(Vector2D(7, 0), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(1, 0), 2)
+        Collision(Vector2D(-1, 0), 2)
       ),
       (
         Placed(Vector2D(6, 1), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, 1), 2)
+        Collision(Vector2D(0, -1), 2)
       ),
       (
         Placed(Vector2D(5, 0), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(-1, 0), 2)
+        Collision(Vector2D(1, 0), 2)
       ),
       (
         Placed(Vector2D(6, -1), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, -1), 2)
+        Collision(Vector2D(0, 1), 2)
       )
     )
 
@@ -173,4 +173,38 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers {
       val result = ShapeCollision.circleCollidesWithRectangle.collision(circle, rectangle)
 
       result shouldBe Some(collision)
-}
+
+  test("rectangle collides with a circle"):
+    val cases = Table(
+      (
+        "rectangle",
+        "circle",
+        "collision"
+      ),
+      (
+        Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
+        Placed(Vector2D(6, 0), Shape2D.circle(4).value),
+        Collision(Vector2D(1, 0), 1)
+      ),
+      (
+        Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
+        Placed(Vector2D(0, 6), Shape2D.circle(4).value),
+        Collision(Vector2D(0, 1), 1)
+      ),
+      (
+        Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
+        Placed(Vector2D(-6, 0), Shape2D.circle(4).value),
+        Collision(Vector2D(-1, 0), 1)
+      ),
+      (
+        Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
+        Placed(Vector2D(0, -6), Shape2D.circle(4).value),
+        Collision(Vector2D(0, -1), 1)
+      )
+    )
+
+    forAll(cases): (rectangle, circle, collision) =>
+
+      val result = ShapeCollision.rectangleCollidesWithCircle.collision(rectangle, circle)
+
+      result shouldBe Some(collision)

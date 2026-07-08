@@ -12,10 +12,10 @@ object ShapeCollision:
     val distanceToBottomEdge = circle.center.y - (rectangle.center.y - halfHeight(rectangle.value))
 
     val nearestEdge = Seq(
-      (distanceToRightEdge, Vector2D(1, 0)),
-      (distanceToLeftEdge, Vector2D(-1, 0)),
-      (distanceToTopEdge, Vector2D(0, 1)),
-      (distanceToBottomEdge, Vector2D(0, -1))
+      (distanceToRightEdge, Vector2D(-1, 0)),
+      (distanceToLeftEdge, Vector2D(1, 0)),
+      (distanceToTopEdge, Vector2D(0, -1)),
+      (distanceToBottomEdge, Vector2D(0, 1))
     ).minBy(_._1)
 
     Collision(nearestEdge._2, nearestEdge._1)
@@ -67,7 +67,7 @@ object ShapeCollision:
         clamp(circle.center.x, rectangle.center.x - halfLength(rectangle.value), rectangle.center.x + halfLength(rectangle.value)),
         clamp(circle.center.y, rectangle.center.y - halfHeight(rectangle.value), rectangle.center.y + halfHeight(rectangle.value))
       )
-      val circleToClosestPoint = circle.center - closestPoint
+      val circleToClosestPoint = closestPoint - circle.center
       val distance = circleToClosestPoint.magnitude
 
       if distance > 0 then
@@ -81,6 +81,7 @@ object ShapeCollision:
 
     override def collision(rectangle: Placed[Rectangle], circle: Placed[Circle]): Option[Collision] =
       circleCollidesWithRectangle.collision(circle, rectangle)
+        .map(collision => collision.copy(normal = collision.normal.flip))
 
   given shapeCollidesWIthShape: Collides[Shape2D, Shape2D] with
 
