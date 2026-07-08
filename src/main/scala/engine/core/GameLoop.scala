@@ -1,6 +1,6 @@
 package engine.core
 
-import engine.core.traits.{PhysicsEngine, RenderEngine, State}
+import engine.core.traits.{PhysicsEngine, RenderEngine}
 
 import scala.annotation.tailrec
 

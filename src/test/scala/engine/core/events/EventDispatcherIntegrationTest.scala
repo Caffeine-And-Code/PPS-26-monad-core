@@ -9,7 +9,7 @@ import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class EventDispatcherTest extends AnyFunSuite with Matchers:
+class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
 
   val scene: Scene = Scene()
   val entity: Entity = Entity.circle("genericEntity", Vector2D(0, 0), 2).value

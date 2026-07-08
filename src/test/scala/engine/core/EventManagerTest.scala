@@ -10,17 +10,15 @@ import org.scalatest.matchers.should.Matchers
 import scala.collection.immutable.Queue
 
 class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
-
-  trait TestScene
-
+  
   val mockedEvent: Event = mock[Event]
-  val mockedScene: TestScene = mock[TestScene]
+  val mockedScene: Scene = Scene()
   val mockedError: EngineError = mock[EngineError]
 
-  def errorReturningHandleFunction(event: Event, scene: TestScene): Either[EngineError, TestScene] =
+  def errorReturningHandleFunction(event: Event, scene: Scene): Either[EngineError, Scene] =
     Left(mockedError)
 
-  def correctHandleFunction(event: Event, scene: TestScene): Either[EngineError, TestScene] =
+  def correctHandleFunction(event: Event, scene: Scene): Either[EngineError, Scene] =
     Right(scene)
 
   val defaultManager = EventManager()
@@ -43,6 +41,15 @@ class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val populatedQueueManager = defaultManager.registerEvent(mockedEvent)
 
     populatedQueueManager.queue should be(expectedQueue)
+    
+  test("processing an empty queue doesn't change the given state"):
+    val (dispatchResult, updatedManager) = defaultManager.dispatchEvents(mockedScene)(correctHandleFunction)
+
+    inside(dispatchResult):
+      case Right(processedScene) =>
+        updatedManager.queue.length should be(0)
+        processedScene should be(mockedScene)
+
 
   test("an enqueued event is processed correctly"):
     val populatedManager = defaultManager.registerEvent(mockedEvent)
