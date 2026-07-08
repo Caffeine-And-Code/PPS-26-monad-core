@@ -4,7 +4,15 @@
 
 .include {events/sprint_planning_1.qd}
 
+.include {events/daily_scrum_sprint_1.qd}
+
+.include {events/sprint_review_1.qd}
+
+.include {events/sprint_planning_2.qd}
+
 ## Backlog
+
+.include {tasks/user_stories.qd}
 
 ## Iterazioni
 
