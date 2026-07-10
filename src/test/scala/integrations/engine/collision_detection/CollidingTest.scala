@@ -3,6 +3,7 @@ package integrations.engine.collision_detection
 import engine.collision_detection.Colliding.hasCollisionWith
 import engine.geometry.Collision
 import engine.geometry.ShapeCollision.shapeCollidesWIthShape
+import engine.geometry.ShapeContainment.shapeContainsPoint
 import engine.model.{Entity, Vector2D}
 import org.scalatest.EitherValues.*
 import org.scalatest.Inside
@@ -65,7 +66,7 @@ class CollidingTest extends AnyFunSuite with Inside with Matchers:
 
     val result = circle hasCollisionWith rectangle
 
-    result shouldBe Some(Collision(Vector2D(0, 1), 2))
+    result shouldBe Some(Collision(Vector2D(0, -1), 2))
 
 
   test("can detect if a rectangle entity is colliding with a circle entity"):

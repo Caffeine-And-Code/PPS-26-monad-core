@@ -1,8 +1,8 @@
 package units.engine.collision_detection
 
 import engine.collision_detection.Colliding.hasCollisionWith
-import engine.geometry.Placed.placed
-import engine.geometry.{Collides, Collision, Placed}
+import engine.collision_detection.CollisionDetector
+import engine.geometry.Collision
 import engine.model.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.*
@@ -12,7 +12,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks.*
 
 class CollidingTest extends AnyFunSuite with Matchers with MockFactory:
 
-  test("collisionWith returns the collision produced by Collides"):
+  test("hasCollisionWith returns the collision produced by CollisionDetector"):
 
     val cases = Table(
       ("firstEntity", "secondEntity", "expectedCollision"),
@@ -22,13 +22,13 @@ class CollidingTest extends AnyFunSuite with Matchers with MockFactory:
     )
 
     forAll(cases): (firstEntity, secondEntity, expectedCollision) =>
-      val collidesInstance = mock[Collides[Shape2D, Shape2D]]
+      val detector = mock[CollisionDetector]
 
-      collidesInstance.collision
-        .expects(firstEntity.placed, secondEntity.placed)
+      detector.collision
+        .expects(firstEntity, secondEntity)
         .returning(expectedCollision)
         .once()
 
-      val result = firstEntity.hasCollisionWith(secondEntity)(using collidesInstance)
+      val result = firstEntity.hasCollisionWith(secondEntity)(using detector)
 
       result shouldBe expectedCollision
