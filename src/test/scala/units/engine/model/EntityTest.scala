@@ -147,6 +147,13 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     inside(entity):
       case Right(entity) => entity.health shouldBe Some(health - damage)
 
+  test("cannot apply damage to an entity without health"):
+    val damage = 20
+
+    val entity = ValidEntity.flatMap(_.applyDamage(damage))
+
+    entity shouldBe Left(CannotApplyDamageToNoneHealthEntity())
+
   test("if apply a damage greater than life left, it returns Left"):
     val health = 50
     val damage = 60

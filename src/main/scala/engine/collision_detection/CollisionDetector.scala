@@ -12,9 +12,6 @@ trait CollisionDetector:
 
 object CollisionDetector:
 
-  def apply(using detector: CollisionDetector): CollisionDetector =
-    detector
-
   given fromGeometry(using
                      collides: Collides[Shape2D, Shape2D],
                      contains: Contains[Shape2D]
