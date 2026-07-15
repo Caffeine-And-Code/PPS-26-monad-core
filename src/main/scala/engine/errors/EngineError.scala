@@ -1,3 +1,3 @@
 package engine.errors
 
-trait EngineError(message: String)
+trait EngineError(val message: String)

@@ -1,18 +1,40 @@
 package graphics.panels
 
-import graphics.panels.support.{BaseLabelStyle, BasePanelStyle}
-import scalafx.scene.control.Label
-import scalafx.scene.layout.VBox
+import engine.errors.EngineError
+import graphics.CannotBuildPanel
+import graphics.components.IconButton
+import graphics.panels.support.BasePanelStyle
+import graphics.resources.Image.{PauseIcon, PlayIcon, StopIcon}
+import graphics.resources.ImageLoader
+import scalafx.geometry.Pos
+import scalafx.scene.layout.{HBox, Priority, VBox}
 
 object GameEngineModePanel {
-  def build():VBox =
-    new VBox {
-      children = Seq(
-        new Label("Top Panel To Handle The GameEngine Status") {
-          style = BaseLabelStyle.h1
-        }
-      )
-      style =
-        BasePanelStyle.get()
-    }
+  def build(): Either[EngineError, VBox] =
+    val playPauseBtnEither = IconButton.buildToggle(PlayIcon(), PauseIcon())
+    val stopBtnEither = IconButton.build(StopIcon(), isDisabled = true)
+
+    (playPauseBtnEither, stopBtnEither) match
+      case (Right(builtPlayPauseBtn), Right(builtStopBtn)) =>
+        Right(
+          new VBox {
+            val buttonsRow: HBox = new HBox {
+              spacing = 8
+              alignment = Pos.CenterRight
+              children = Seq(
+                builtPlayPauseBtn,
+                builtStopBtn
+              )
+            }
+
+            VBox.setVgrow(buttonsRow, Priority.Always)
+
+            children = Seq(buttonsRow)
+            alignment = Pos.BottomRight
+            style = BasePanelStyle.get()
+          }
+        )
+
+      case (Left(playPauseError), _) => Left(CannotBuildPanel(playPauseError, GameEngineModePanel.toString))
+      case (_, Left(stopError)) => Left(CannotBuildPanel(stopError, GameEngineModePanel.toString))
 }

@@ -36,3 +36,7 @@ lazy val root = rootProject
       "org.openjfx" % s"javafx-$m" % javaFXVersion classifier osClassifier
     )
   )
+
+ThisBuild / scalacOptions ++= Seq(
+  "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
+)

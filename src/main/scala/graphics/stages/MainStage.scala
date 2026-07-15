@@ -1,5 +1,7 @@
 package graphics.stages
 
+import engine.errors.EngineError
+import graphics.CannotBuildStage
 import graphics.panels.{AiModelChatPanel, GameEnginePanel}
 import scalafx.application.Platform
 import scalafx.beans.property.ReadOnlyDoubleProperty
@@ -8,6 +10,8 @@ import scalafx.scene.Scene
 import scalafx.scene.layout.{HBox, VBox}
 import scalafx.scene.paint.Color
 import scalafx.stage.Stage
+
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 object MainStage {
 
@@ -20,7 +24,9 @@ object MainStage {
   private val MinStageWidth = 1024.0
   private val MinStageHeight = 720.0
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Option[EngineError] =
+    val latch = new CountDownLatch(1)
+    @volatile var startupError: Option[EngineError] = None
 
     Platform.startup(() => {
       val mainStage = new Stage {
@@ -29,40 +35,52 @@ object MainStage {
         minWidth = MinStageWidth
         minHeight = MinStageHeight
       }
-
       val mainScene = new Scene(900, 600) {
         fill = Color.rgb(25, 26, 28)
       }
 
-      val rootContent = buildRootContent(mainScene.width, mainScene.height)
+      buildRootContent(mainScene.width, mainScene.height) match
+        case Right(rootContent) =>
+          mainScene.content = rootContent
+          mainStage.scene = mainScene
+          mainStage.show()
+        case Left(error) =>
+          startupError = Some(error)
 
-      mainScene.content = rootContent
-      mainStage.scene = mainScene
-
-      mainStage.show()
+      latch.countDown() // sblocca il thread chiamante SOLO dopo aver scritto il risultato
     })
-  }
+
+    // wait for setup to finish
+    latch.await(10, TimeUnit.SECONDS)
+    startupError
 
   private def buildRootContent(
                                 stageWidth: ReadOnlyDoubleProperty,
                                 stageHeight: ReadOnlyDoubleProperty
-                              ): HBox =
-    val sceneDrawerPanel = GameEnginePanel.build()
+                              ): Either[EngineError, HBox] =
+    val sceneDrawerPanelEither = GameEnginePanel.build()
     val modelChatPanel = AiModelChatPanel.build()
 
-    val rootContent = new HBox {
-      children = Seq(modelChatPanel, sceneDrawerPanel)
-    }
+    sceneDrawerPanelEither match
+      case Right(sceneDrawerPanel) =>
+        val rootContent = new HBox {
+          children = Seq(modelChatPanel, sceneDrawerPanel)
+        }
 
-    bindResponsivePadding(rootContent, stageWidth, stageHeight)
+        bindResponsivePadding(rootContent, stageWidth, stageHeight)
 
-    assignPanelsSize(
-      stageWidth = stageWidth,
-      stageHeight = stageHeight,
-      rootContent = rootContent,
-      leftPanel = modelChatPanel,
-      rightPanel = sceneDrawerPanel
-    )
+        Right(
+          assignPanelsSize(
+            stageWidth = stageWidth,
+            stageHeight = stageHeight,
+            rootContent = rootContent,
+            leftPanel = modelChatPanel,
+            rightPanel = sceneDrawerPanel
+          )
+        )
+
+      case Left(error) => Left(CannotBuildStage(error, MainStage.toString))
+
 
   private def bindResponsivePadding(
                                      rootContent: HBox,
