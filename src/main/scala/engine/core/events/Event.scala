@@ -1,5 +1,6 @@
 package engine.core.events
 
+import engine.geometry.Collision
 import engine.model.{Entity, LocatableId, Surface}
 
 type CollidableModels = Entity | Surface
@@ -14,4 +15,8 @@ object Event:
 
   case class EntityUpdatedEvent(entityToUpdate: Entity) extends Event
 
-  case class EntityCollisionDetectedEvent(entityId: LocatableId, modelCollidedWith: CollidableModels) extends Event
+  case class EntityCollisionDetectedEvent(
+                                           entityId: LocatableId,
+                                           modelCollidedWith: CollidableModels,
+                                           collisionData: Collision
+                                         ) extends Event
