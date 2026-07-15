@@ -1,4 +1,4 @@
-package units.engine.geometry
+package engine.geometry
 
 import engine.geometry.{Placed, ShapeContainment}
 import engine.model.*

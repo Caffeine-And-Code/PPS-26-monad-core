@@ -1,4 +1,4 @@
-package units.engine.model
+package engine.model
 
 import engine.model.*
 import engine.model.Shape2D.{Circle, Rectangle}

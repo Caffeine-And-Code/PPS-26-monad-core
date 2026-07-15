@@ -1,10 +1,10 @@
-package units.engine.core
+package engine.core
 
 import engine.core.*
 import engine.core.traits.{PhysicsEngine, RenderEngine, Scene}
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalamock.scalatest.MockFactory
 
 class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 

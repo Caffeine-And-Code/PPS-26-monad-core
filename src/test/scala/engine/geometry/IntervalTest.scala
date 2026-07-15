@@ -1,4 +1,4 @@
-package units.engine.geometry
+package engine.geometry
 
 import engine.geometry.Interval
 import org.scalamock.scalatest.MockFactory

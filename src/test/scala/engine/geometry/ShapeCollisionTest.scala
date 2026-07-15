@@ -1,4 +1,4 @@
-package units.engine.geometry
+package engine.geometry
 
 import engine.geometry.{Collision, Placed, ShapeCollision}
 import engine.model.{Shape2D, Vector2D}

@@ -1,4 +1,4 @@
-package units.engine.collision_detection
+package engine.collision_detection
 
 import engine.collision_detection.CollisionDetector
 import engine.collision_detection.Containing.isInside
