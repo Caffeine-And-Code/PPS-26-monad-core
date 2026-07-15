@@ -1,30 +1,40 @@
 package graphics.stages
 
-import graphics.panels.{ModelChat, SceneDrawer}
-import graphics.stages.support.{-, Padding, Size, toInsets}
+import graphics.panels.{AiModelChatPanel, GameEnginePanel}
 import scalafx.application.Platform
 import scalafx.beans.property.ReadOnlyDoubleProperty
+import scalafx.geometry.Insets
 import scalafx.scene.Scene
 import scalafx.scene.layout.{HBox, VBox}
 import scalafx.scene.paint.Color
 import scalafx.stage.Stage
 
 object MainStage {
+
+  private val HorizontalPaddingRatio = 0.02
+  private val VerticalPaddingRatio = 0.02
+  private val SpacingRatio = 0.015
+  private val LeftPanelWidthRatio = 0.40
+  private val RightPanelWidthRatio = 0.58
+
+  private val MinStageWidth = 1024.0
+  private val MinStageHeight = 720.0
+
   def main(args: Array[String]): Unit = {
 
     Platform.startup(() => {
       val mainStage = new Stage {
         title = "MonadCore2D"
         fullScreen = true
+        minWidth = MinStageWidth
+        minHeight = MinStageHeight
       }
 
       val mainScene = new Scene(900, 600) {
         fill = Color.rgb(25, 26, 28)
       }
 
-      val mainStageSize = Size(mainScene.width, mainScene.height)
-
-      val rootContent = buildRootContent(mainStageSize)
+      val rootContent = buildRootContent(mainScene.width, mainScene.height)
 
       mainScene.content = rootContent
       mainStage.scene = mainScene
@@ -33,40 +43,63 @@ object MainStage {
     })
   }
 
-  private def buildRootContent(stageSize: Size[ReadOnlyDoubleProperty]): HBox =
-    val verticalSpacing = 20
-    val horizontalSpacing = 50
-    val stagePadding = Padding.symmetrical(horizontalSpacing, verticalSpacing)
-
-    val sceneDrawerPanel = SceneDrawer.build()
-    val modelChatPanel = ModelChat.build()
+  private def buildRootContent(
+                                stageWidth: ReadOnlyDoubleProperty,
+                                stageHeight: ReadOnlyDoubleProperty
+                              ): HBox =
+    val sceneDrawerPanel = GameEnginePanel.build()
+    val modelChatPanel = AiModelChatPanel.build()
 
     val rootContent = new HBox {
-      padding = stagePadding.toInsets
       children = Seq(modelChatPanel, sceneDrawerPanel)
     }
 
+    bindResponsivePadding(rootContent, stageWidth, stageHeight)
+
     assignPanelsSize(
-      stagePadding = stagePadding,
-      stageSize = stageSize,
+      stageWidth = stageWidth,
+      stageHeight = stageHeight,
       rootContent = rootContent,
       leftPanel = modelChatPanel,
       rightPanel = sceneDrawerPanel
     )
 
+  private def bindResponsivePadding(
+                                     rootContent: HBox,
+                                     stageWidth: ReadOnlyDoubleProperty,
+                                     stageHeight: ReadOnlyDoubleProperty
+                                   ): Unit =
+    def updatePadding(): Unit =
+      val h = stageWidth.value * HorizontalPaddingRatio
+      val v = stageHeight.value * VerticalPaddingRatio
+      rootContent.padding = Insets(v, h, v, h)
+
+    stageWidth.onChange {
+      updatePadding()
+    }
+    stageHeight.onChange {
+      updatePadding()
+    }
+    // required for initial set up
+    updatePadding()
+
   private def assignPanelsSize(
-                                stagePadding: Padding,
-                                stageSize: Size[ReadOnlyDoubleProperty],
+                                stageWidth: ReadOnlyDoubleProperty,
+                                stageHeight: ReadOnlyDoubleProperty,
                                 rootContent: HBox,
                                 leftPanel: VBox,
                                 rightPanel: VBox
                               ): HBox =
-    val (availableWidth, availableHeight) = stageSize - stagePadding
+    val calculateInvertPercentage: Double => Double =
+      (paddingRatio: Double) => 1.0 - 2 * paddingRatio
 
-    rootContent.spacing <== availableWidth * 0.02
+    val availableWidth = stageWidth * calculateInvertPercentage(HorizontalPaddingRatio)
+    val availableHeight = stageHeight * calculateInvertPercentage(VerticalPaddingRatio)
 
-    leftPanel.prefWidth <== availableWidth * 0.40
-    rightPanel.prefWidth <== availableWidth * 0.58
+    rootContent.spacing <== availableWidth * SpacingRatio
+
+    leftPanel.prefWidth <== availableWidth * LeftPanelWidthRatio
+    rightPanel.prefWidth <== availableWidth * RightPanelWidthRatio
 
     leftPanel.prefHeight <== availableHeight
     rightPanel.prefHeight <== availableHeight
