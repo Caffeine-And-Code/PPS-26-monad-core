@@ -1,14 +1,11 @@
 package graphics.stages
 
 import graphics.panels.{ModelChat, SceneDrawer}
-import graphics.stages.support.{-, Padding, Size, horizontalSpacing, toInsets, verticalSpacing}
-import scalafx.Includes.*
+import graphics.stages.support.{-, Padding, Size, toInsets}
 import scalafx.application.Platform
-import scalafx.beans.property.{DoubleProperty, ReadOnlyDoubleProperty}
-import scalafx.geometry.Insets
+import scalafx.beans.property.ReadOnlyDoubleProperty
 import scalafx.scene.Scene
-import scalafx.scene.control.{Button, Label}
-import scalafx.scene.layout.{Border, HBox, VBox}
+import scalafx.scene.layout.{HBox, VBox}
 import scalafx.scene.paint.Color
 import scalafx.stage.Stage
 
