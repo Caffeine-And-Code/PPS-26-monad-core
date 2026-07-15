@@ -1,0 +1,11 @@
+package engine.geometry
+
+import engine.model.Vector2D
+
+final case class Interval(min: Double, max: Double)
+
+object Interval:
+
+  extension (interval: Interval)
+    infix def contains(value: Double): Boolean =
+      interval.min <= value && value <= interval.max

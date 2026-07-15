@@ -1,7 +1,8 @@
-package engine.core.events
+package integrations.engine.events
 
 import engine.core.*
 import engine.core.events.Event.{EntityCreatedEvent, EntityRemovedEvent, EntityUpdatedEvent}
+import engine.core.events.EventDispatcher
 import engine.errors.EngineError
 import engine.model.{Entity, Vector2D}
 import org.scalatest.EitherValues.convertEitherToValuable

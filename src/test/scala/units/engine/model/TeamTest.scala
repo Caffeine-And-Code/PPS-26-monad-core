@@ -1,5 +1,6 @@
-package engine.model
+package units.engine.model
 
+import engine.model.*
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -31,6 +32,11 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
     val team = Team.create(ValidTeamId, Set(ValidTeamId))
 
     team shouldBe Left(ATeamCannotBeItsOwnEnemy())
+
+  test("Cannot create a team where one enemy is an invalid team id"):
+    val team = Team.create(ValidTeamId, Set("", ValidTeamId))
+
+    team shouldBe Left(TeamIdCannotBeEmpty())
 
   test("can add an enemy to the team"):
     val team = for {

@@ -1,5 +1,6 @@
-package engine.model
+package units.engine.model
 
+import engine.model.*
 import engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -44,4 +45,3 @@ class Shape2DTest extends AnyFunSuite with Matchers with Inside:
 
     rectangleWithInvalidHeight shouldBe Left(HeightMustBeGreaterThanZero())
     rectangleWithInvalidLength shouldBe Left(LengthMustBeGreaterThanZero())
-

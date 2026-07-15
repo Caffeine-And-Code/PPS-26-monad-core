@@ -1,6 +1,7 @@
-package engine.model
+package units.engine.model
 
 import engine.errors.EngineError
+import engine.model.*
 import engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -22,7 +23,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       case Right(entity) =>
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
-        entity.shape shouldBe Circle(ValidRadius)
+        entity.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
         entity.speed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
@@ -35,7 +36,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       case Right(entity) =>
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
-        entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
+        entity.shape shouldBe Shape2D.rectangle(ValidHeight, ValidLength).toOption.get
         entity.speed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None

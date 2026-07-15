@@ -1,5 +1,6 @@
-package engine.core
+package units.engine.core
 
+import engine.core.{EditMode, GameLoop, Scene, SimulationMode}
 import engine.core.traits.{PhysicsEngine, RenderEngine, State}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite

@@ -1,5 +1,6 @@
-package engine.core
+package units.engine.core
 
+import engine.core.{EventManager, Scene, dispatchEvents, registerEvent}
 import engine.core.events.Event
 import engine.errors.EngineError
 import org.scalamock.scalatest.MockFactory

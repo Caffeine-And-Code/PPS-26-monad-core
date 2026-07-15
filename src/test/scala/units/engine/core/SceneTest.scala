@@ -1,5 +1,6 @@
-package engine.core
+package units.engine.core
 
+import engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotAddSurface, CannotAddTeam, CannotRemoveEntity, CannotRemoveNonPresentElementFromMap, CannotRemoveSurface, CannotRemoveTeam, EntityNotFound, Scene, SurfaceNotFound, TeamNotFound}
 import engine.errors.EngineError
 import engine.model.{Entity, Surface, Team, Vector2D}
 import org.scalatest.funsuite.AnyFunSuite

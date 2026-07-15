@@ -1,5 +1,6 @@
-package engine.core
+package units.engine.core
 
+import engine.core.Lens
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
