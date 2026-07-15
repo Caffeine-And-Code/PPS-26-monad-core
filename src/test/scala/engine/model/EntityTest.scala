@@ -1,6 +1,7 @@
 package engine.model
 
 import engine.errors.EngineError
+import engine.model.*
 import engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -22,7 +23,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       case Right(entity) =>
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
-        entity.shape shouldBe Circle(ValidRadius)
+        entity.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
         entity.speed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
@@ -35,7 +36,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       case Right(entity) =>
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
-        entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
+        entity.shape shouldBe Shape2D.rectangle(ValidHeight, ValidLength).toOption.get
         entity.speed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
@@ -145,6 +146,13 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(entity):
       case Right(entity) => entity.health shouldBe Some(health - damage)
+
+  test("cannot apply damage to an entity without health"):
+    val damage = 20
+
+    val entity = ValidEntity.flatMap(_.applyDamage(damage))
+
+    entity shouldBe Left(CannotApplyDamageToNoneHealthEntity())
 
   test("if apply a damage greater than life left, it returns Left"):
     val health = 50
