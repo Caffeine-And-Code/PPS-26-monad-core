@@ -1,6 +1,7 @@
 package engine.model
 
 import engine.errors.EngineError
+import engine.model.*
 import engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -23,7 +24,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
       case Right(surface) =>
         surface.id.value shouldBe ValidEntityId
         surface.position shouldBe ValidPosition
-        surface.shape shouldBe Circle(ValidRadius)
+        surface.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
 
@@ -34,7 +35,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
       case Right(surface) =>
         surface.id.value shouldBe ValidEntityId
         surface.position shouldBe ValidPosition
-        surface.shape shouldBe Rectangle(ValidHeight, ValidLength)
+        surface.shape shouldBe Shape2D.rectangle(ValidHeight, ValidLength).toOption.get
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
 

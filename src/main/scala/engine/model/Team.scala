@@ -4,7 +4,7 @@ import engine.errors.EngineError
 
 final case class Team private(
                                id: TeamId,
-                               enemies: Set[TeamId] = Set.empty
+                               enemies: Set[TeamId]
                              )
 
 object Team:

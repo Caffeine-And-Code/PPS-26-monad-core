@@ -25,5 +25,5 @@ jobs:
       - name: Setup SBT
         uses: sbt/setup-sbt@v1
 
-      - name: Run tests
-        run: sbt test
+      - name: Run unit and integration tests
+        run: sbt "Test / testFull ; IntegrationTests / testFull"
