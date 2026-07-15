@@ -26,6 +26,7 @@ extension (v: Vector2D)
 
   def normalized: Vector2D =
     val currentMagnitude = v.magnitude
+
     if currentMagnitude == 0 then
       Vector2D(0, 0)
     else

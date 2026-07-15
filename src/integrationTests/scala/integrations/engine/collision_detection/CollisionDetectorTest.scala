@@ -2,7 +2,7 @@ package integrations.engine.collision_detection
 
 import engine.collision_detection.CollisionDetector
 import engine.geometry.Collision
-import engine.geometry.ShapeCollision.shapeCollidesWIthShape
+import engine.geometry.ShapeCollision.shapeCollidesWithShape
 import engine.geometry.ShapeContainment.shapeContainsPoint
 import engine.model.*
 import org.scalatest.EitherValues.*

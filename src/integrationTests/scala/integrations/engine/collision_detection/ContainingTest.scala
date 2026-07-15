@@ -1,7 +1,7 @@
 package integrations.engine.collision_detection
 
 import engine.collision_detection.Containing.isInside
-import engine.geometry.ShapeCollision.shapeCollidesWIthShape
+import engine.geometry.ShapeCollision.shapeCollidesWithShape
 import engine.geometry.ShapeContainment.given
 import engine.model.*
 import org.scalatest.Inside

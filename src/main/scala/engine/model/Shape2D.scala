@@ -20,3 +20,7 @@ object Shape2D:
       Left(LengthMustBeGreaterThanZero())
     else
       Right(Shape2D.Rectangle(height, length))
+
+  extension (rectangle:Rectangle)
+    def halfLength: Double = rectangle.length / 2
+    def halfHeight: Double = rectangle.height / 2

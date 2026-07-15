@@ -19,7 +19,7 @@ class CollisionDetectorTest extends AnyFunSuite with Matchers with MockFactory:
     val contains = mock[Contains[Shape2D]]
     val detector = CollisionDetector.fromGeometry(using collides, contains)
 
-    collides.collision
+    collides.checkCollision
       .expects(first.placed, second.placed)
       .returning(expectedCollision)
       .once()
@@ -35,7 +35,7 @@ class CollisionDetectorTest extends AnyFunSuite with Matchers with MockFactory:
     val contains = mock[Contains[Shape2D]]
     val detector = CollisionDetector.fromGeometry(using collides, contains)
 
-    contains.contains
+    contains.checkIfContains
       .expects(container.placed, target.position)
       .returning(true)
       .once()

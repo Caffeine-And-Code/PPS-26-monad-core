@@ -13,12 +13,12 @@ trait CollisionDetector:
 object CollisionDetector:
 
   given fromGeometry(using
-                     collides: Collides[Shape2D, Shape2D],
-                     contains: Contains[Shape2D]
+                     collidesInstance: Collides[Shape2D, Shape2D],
+                     containsInstance: Contains[Shape2D]
                     ): CollisionDetector with
 
     override def collision(first: Locatable, second: Locatable): Option[Collision] =
-      collides.collision(first.placed, second.placed)
+      collidesInstance.checkCollision(first.placed, second.placed)
 
     override def isInside(target: Locatable, container: Locatable): Boolean =
-      contains.contains(container.placed, target.position)
+      containsInstance.checkIfContains(container.placed, target.position)

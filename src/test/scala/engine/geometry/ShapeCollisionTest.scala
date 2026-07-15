@@ -40,7 +40,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     forAll(cases): (firstCircle, secondCircle, collision) =>
 
-      val result = ShapeCollision.circleCollidesWithCircle.collision(firstCircle, secondCircle)
+      val result = ShapeCollision.circleCollidesWithCircle.checkCollision(firstCircle, secondCircle)
 
       result shouldBe Some(collision)
 
@@ -48,7 +48,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     val firstCircle = Placed(Vector2D(3, 3), Shape2D.circle(9).value)
     val secondCircle = Placed(Vector2D(15, 3), Shape2D.circle(2).value)
 
-    val result = ShapeCollision.circleCollidesWithCircle.collision(firstCircle, secondCircle)
+    val result = ShapeCollision.circleCollidesWithCircle.checkCollision(firstCircle, secondCircle)
 
     result shouldBe None
 
@@ -83,7 +83,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     forAll(cases): (firstRectangle, secondRectangle, collision) =>
 
-      val result = ShapeCollision.rectangleCollidesWithRectangle.collision(firstRectangle, secondRectangle)
+      val result = ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
 
       result shouldBe Some(collision)
 
@@ -91,7 +91,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     val firstRectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(5.9, 5.9).value)
     val secondRectangle = Placed(Vector2D(6, 0), Shape2D.rectangle(5.9, 5.9).value)
 
-    val result = ShapeCollision.rectangleCollidesWithRectangle.collision(firstRectangle, secondRectangle)
+    val result = ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
 
     result shouldBe None
 
@@ -126,7 +126,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     forAll(cases): (circle, rectangle, collision) =>
 
-      val result = ShapeCollision.circleCollidesWithRectangle.collision(circle, rectangle)
+      val result = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle)
 
       result shouldBe Some(collision)
 
@@ -134,7 +134,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     val circle = Placed(Vector2D(0, 0), Shape2D.circle(2.9).value)
     val rectangle = Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value)
 
-    val result = ShapeCollision.circleCollidesWithRectangle.collision(circle, rectangle)
+    val result = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle)
 
     result shouldBe None
 
@@ -170,7 +170,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     forAll(cases): (circle, rectangle, collision) =>
 
-      val result = ShapeCollision.circleCollidesWithRectangle.collision(circle, rectangle)
+      val result = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle)
 
       result shouldBe Some(collision)
 
@@ -205,6 +205,6 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     forAll(cases): (rectangle, circle, collision) =>
 
-      val result = ShapeCollision.rectangleCollidesWithCircle.collision(rectangle, circle)
+      val result = ShapeCollision.rectangleCollidesWithCircle.checkCollision(rectangle, circle)
 
       result shouldBe Some(collision)

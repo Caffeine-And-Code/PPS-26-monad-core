@@ -2,7 +2,7 @@ package integrations.engine.collision_detection
 
 import engine.collision_detection.Colliding.hasCollisionWith
 import engine.geometry.Collision
-import engine.geometry.ShapeCollision.shapeCollidesWIthShape
+import engine.geometry.ShapeCollision.shapeCollidesWithShape
 import engine.geometry.ShapeContainment.shapeContainsPoint
 import engine.model.{Entity, Vector2D}
 import org.scalatest.EitherValues.*

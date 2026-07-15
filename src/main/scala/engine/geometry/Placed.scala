@@ -2,7 +2,7 @@ package engine.geometry
 
 import engine.model.{Locatable, Shape2D, Vector2D}
 
-final case class Placed[+A](center: Vector2D, value: A)
+final case class Placed[A](center: Vector2D, shape: A)
 
 object Placed:
   extension (locatable: Locatable)

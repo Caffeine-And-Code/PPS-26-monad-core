@@ -17,8 +17,12 @@ object Locatable:
                                 id: String,
                                 position: Vector2D,
                                 shape: Shape2D
-                              )(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
-    LocatableId(id).flatMap(lId => validate(position).map(_ => build(lId, position, shape)))
+                              )(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] = {
+    for {
+      locatableId <- LocatableId(id)
+      _ <- validate(position)
+    }yield build(locatableId, position, shape)
+  }
 
   def validate(position: Vector2D): Either[EngineError, Unit] =
     if position.x < 0 || position.y < 0 then

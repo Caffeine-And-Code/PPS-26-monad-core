@@ -26,7 +26,7 @@ class ContainsTest extends AnyFunSuite with Inside with Matchers with MockFactor
 
       val containsInstance = mock[Contains[Circle]]
 
-      containsInstance.contains
+      containsInstance.checkIfContains
         .expects(placed, vector)
         .returning(expected)
         .once()
