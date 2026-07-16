@@ -1,7 +1,7 @@
 package integrations.graphics.resources
 
-import graphics.resources.Image.{PauseIcon, PlayIcon, StopIcon}
-import graphics.resources.{BaseImageConfig, ImageLoader}
+import monad_core.graphics.resources.Image.{PauseIcon, PlayIcon, StopIcon}
+import monad_core.graphics.resources.{BaseImageConfig, ImageLoader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite

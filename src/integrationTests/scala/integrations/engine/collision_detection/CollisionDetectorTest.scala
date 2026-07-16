@@ -1,10 +1,11 @@
 package integrations.engine.collision_detection
 
-import engine.collision_detection.CollisionDetector
-import engine.geometry.Collision
-import engine.geometry.ShapeCollision.shapeCollidesWithShape
-import engine.geometry.ShapeContainment.shapeContainsPoint
-import engine.model.*
+import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
+import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
+import monad_core.engine.model.*
+import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.geometry.Collision
+import monad_core.engine.model.{Entity, Surface, Vector2D}
 import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
