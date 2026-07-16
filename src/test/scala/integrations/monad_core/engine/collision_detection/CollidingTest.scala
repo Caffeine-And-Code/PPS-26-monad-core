@@ -1,9 +1,9 @@
-package integrations.engine.collision_detection
+package integrations.monad_core.engine.collision_detection
 
 import monad_core.engine.collision_detection.Colliding.hasCollisionWith
+import monad_core.engine.geometry.Collision
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
-import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, Vector2D}
 import org.scalatest.EitherValues.*
 import org.scalatest.Inside

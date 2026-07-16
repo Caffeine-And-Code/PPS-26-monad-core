@@ -19,14 +19,17 @@ lazy val osClassifier: String = {
 lazy val javaFXVersion = "23.0.1"
 lazy val javaFXModules = Seq("base", "controls", "fxml", "graphics", "media", "swing", "web")
 
-lazy val IntegrationTests = config("integrationTests").extend(Test)
+assembly / assemblyMergeStrategy := {
+  case "module-info.class" => MergeStrategy.discard
+  case PathList("META-INF", "substrate", "config", _*) => MergeStrategy.discard
+  case path =>
+    val previous = (assembly / assemblyMergeStrategy).value
+    previous(path)
+}
 
 lazy val root = rootProject
-  .configs(IntegrationTests)
   .settings(
-    inConfig(IntegrationTests)(Defaults.testSettings),
     name := "MonadCore2D",
-    IntegrationTests / scalaSource := baseDirectory.value / "src" / "integrationTests" / "scala",
     libraryDependencies ++= Seq(
       "org.scalactic" %% "scalactic" % "3.2.20",
       "org.scalatest" %% "scalatest" % "3.2.20" % Test,

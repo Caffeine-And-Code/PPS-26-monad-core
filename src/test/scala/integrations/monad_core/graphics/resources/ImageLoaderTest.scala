@@ -1,4 +1,4 @@
-package integrations.graphics.resources
+package integrations.monad_core.graphics.resources
 
 import monad_core.graphics.resources.Image.{PauseIcon, PlayIcon, StopIcon}
 import monad_core.graphics.resources.{BaseImageConfig, ImageLoader}

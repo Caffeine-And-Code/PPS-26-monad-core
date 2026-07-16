@@ -26,4 +26,4 @@ jobs:
         uses: sbt/setup-sbt@v1
 
       - name: Run unit and integration tests
-        run: sbt "Test / testFull ; IntegrationTests / testFull"
+        run: sbt test
