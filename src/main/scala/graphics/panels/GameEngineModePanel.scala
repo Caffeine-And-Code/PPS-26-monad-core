@@ -4,13 +4,16 @@ import engine.errors.EngineError
 import graphics.CannotBuildPanel
 import graphics.components.IconButton
 import graphics.panels.support.BasePanelStyle
+import graphics.panels.traits.GameEngineModePanelBuilder
 import graphics.resources.Image.{PauseIcon, PlayIcon, StopIcon}
-import graphics.resources.ImageLoader
+import graphics.resources.ImageConfigRecord
 import scalafx.geometry.Pos
 import scalafx.scene.layout.{HBox, Priority, VBox}
 
-object GameEngineModePanel {
-  def build(): Either[EngineError, VBox] =
+object GameEngineModePanel extends GameEngineModePanelBuilder {
+  def build()
+           (using imageConfig: ImageConfigRecord)
+  : Either[EngineError, VBox] =
     val playPauseBtnEither = IconButton.buildToggle(PlayIcon(), PauseIcon())
     val stopBtnEither = IconButton.build(StopIcon(), isDisabled = true)
 

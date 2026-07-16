@@ -2,20 +2,29 @@ package graphics.panels
 
 import engine.errors.EngineError
 import graphics.CannotBuildPanel
+import graphics.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
+import graphics.resources.ImageConfigRecord
 import scalafx.scene.layout.VBox
 
-object GameEnginePanel {
+object GameEnginePanel extends GameEnginePanelBuilder {
   private val TopPanelHeightRatio = 0.07
   private val BottomPanelHeightRatio = 0.93
   private val SpacingRatio = 0.02
   private val TopPanelMinHeight = 80.0
 
-  def build(): Either[EngineError, VBox] =
-    val gameEngineModePanelEither = GameEngineModePanel.build()
-    val sceneRendererPanel = SceneRendererPanel.build()
+  def build()
+           (
+             using imageConfig: ImageConfigRecord,
+             gameEngineModePanelBuilder: GameEngineModePanelBuilder,
+             sceneRendererPanelBuilder: SceneRendererPanelBuilder
+           )
+  : Either[EngineError, VBox] =
 
-    gameEngineModePanelEither match
-      case Right(gameEngineModePanel) =>
+    val gameEngineModePanelEither = gameEngineModePanelBuilder.build()
+    val sceneRendererPanelEither = sceneRendererPanelBuilder.build()
+
+    (gameEngineModePanelEither, sceneRendererPanelEither) match
+      case (Right(gameEngineModePanel), Right(sceneRendererPanel)) =>
         val container = new VBox {
           children = Seq(gameEngineModePanel, sceneRendererPanel)
         }
@@ -29,5 +38,6 @@ object GameEnginePanel {
 
         Right(container)
 
-      case Left(panelError) => Left(CannotBuildPanel(panelError, GameEnginePanel.toString))
+      case (Left(panelError), _) => Left(CannotBuildPanel(panelError, GameEnginePanel.toString))
+      case (_, Left(panelError)) => Left(CannotBuildPanel(panelError, GameEnginePanel.toString))
 }

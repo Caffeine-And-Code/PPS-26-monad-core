@@ -2,7 +2,7 @@ package graphics.resources
 
 import graphics.stages.support.Size
 
-sealed trait Image(
+trait Image(
                     val fileName: String,
                     val width: Double,
                     val height: Double,

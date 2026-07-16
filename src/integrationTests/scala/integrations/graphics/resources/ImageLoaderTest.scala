@@ -1,7 +1,7 @@
 package integrations.graphics.resources
 
 import graphics.resources.Image.{PauseIcon, PlayIcon, StopIcon}
-import graphics.resources.ImageLoader
+import graphics.resources.{BaseImageConfig, ImageLoader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -13,6 +13,8 @@ import scalafx.scene.image.Image as ScalaFxImage
 class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFactory:
 
   test("each Image can be loaded by the loader"):
+    given imageConfig : BaseImageConfig = BaseImageConfig()
+    
     val cases = Table(
       "image",
       PlayIcon(),

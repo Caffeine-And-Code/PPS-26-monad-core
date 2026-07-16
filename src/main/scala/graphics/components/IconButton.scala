@@ -2,7 +2,7 @@ package graphics.components
 
 import engine.errors.EngineError
 import graphics.CannotBuildButton
-import graphics.resources.{Image, ImageLoader}
+import graphics.resources.{Image, ImageConfigRecord, ImageLoader}
 import scalafx.scene.control.Button
 import scalafx.scene.image.ImageView
 
@@ -14,7 +14,8 @@ object IconButton {
              additionalStyle: String = "",
              onClick: () => Unit = () => (),
              isDisabled: Boolean = false,
-           ): Either[EngineError, Button] = {
+           )
+           (using imageConfig: ImageConfigRecord): Either[EngineError, Button] = {
 
     val loadedImageEither = ImageLoader.getScalaFxImage(image)
 
@@ -38,7 +39,8 @@ object IconButton {
                    additionalStyle: String = "",
                    onClick: Boolean => Unit = (_: Boolean) => (),
                    isDisabled: Boolean = false
-                 ): Either[EngineError, Button] =
+                 )
+                 (using imageConfig: ImageConfigRecord): Either[EngineError, Button] =
 
     val defaultFxImage = ImageLoader.getScalaFxImage(defaultImage)
     val activeFxImage = ImageLoader.getScalaFxImage(activeImage)
