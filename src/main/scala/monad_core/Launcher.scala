@@ -4,22 +4,31 @@ import monad_core.engine.errors.EngineError
 import monad_core.graphics.panels.traits.{AiModelChatPanelBuilder, GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.graphics.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.graphics.resources.BaseImageConfig
-import monad_core.graphics.stages.MainStage
+import monad_core.graphics.stages.{MainStage, ScalaFxLauncher}
 
-object Launcher {
-  def main(args: Array[String]): Unit = {
-    given imageConfig: BaseImageConfig = BaseImageConfig()
+import scala.Console.{GREEN, RESET}
 
-    given gameEnginePanelBuilder: GameEnginePanelBuilder = GameEnginePanel
+object Launcher:
+  def main(args: Array[String]): Unit =
+    val imageConfig = BaseImageConfig()
 
-    given aiModelChatPanelBuilder: AiModelChatPanelBuilder = AiModelChatPanel
+    val gamePanel = GameEnginePanel(
+      modePanel = GameEngineModePanel,
+      rendererPanel = SceneRendererPanel,
+      imageConfig = imageConfig
+    )
 
-    given gameEngineModePanelBuilder: GameEngineModePanelBuilder = GameEngineModePanel
+    val mainStage = MainStage(
+      gamePanel = gamePanel,
+      chatPanel = AiModelChatPanel
+    )
 
-    given sceneRendererPanelBuilder: SceneRendererPanelBuilder = SceneRendererPanel
+    val launcher = ScalaFxLauncher(mainStage)
 
-    MainStage.main() match
-      case Some(error: EngineError) => println(error.message)
-      case None => println("Building Complete.\n")
-  }
-}
+    launcher.run() match
+      case Left(error) =>
+        Console.err.println(s"Startup failed: ${error.message}")
+        sys.exit(1)
+
+      case Right(_) =>
+        Console.println(s"$RESET${GREEN}Build Completed$RESET")

@@ -2,6 +2,7 @@ package monad_core.graphics.resources
 
 import monad_core.engine.errors.EngineError
 import monad_core.graphics.ImageResourceNotFound
+import monad_core.graphics.helpers.{MockImage, MockImageConfig}
 import monad_core.graphics.resources.{Image, ImageConfigRecord, ImageLoader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -10,27 +11,21 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.scene.image.Image as ScalaFxImage
 
 class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFactory:
-  private case class MockedImageConfig() extends ImageConfigRecord("/")
-
-  private case class MockedImage() extends Image("play.png", 0, 0)
-
   test("An invalid Image load should respond with an error"):
-    given imageConfig: ImageConfigRecord = mock[ImageConfigRecord]
-
+    val imageConfig: ImageConfigRecord = mock[ImageConfigRecord]
     val image = mock[Image]
 
-    val result = ImageLoader.getScalaFxImage(image)
+    val result = ImageLoader.getScalaFxImage(image, imageConfig)
 
     inside(result):
       case Left(error) =>
         error should be(ImageResourceNotFound(image))
 
   test("A valid Image can be loaded"):
-    given imageConfig: ImageConfigRecord = MockedImageConfig()
+    val imageConfig: ImageConfigRecord = MockImageConfig()
+    val image: Image = MockImage()
 
-    val image: Image = MockedImage()
-
-    val result: Either[EngineError, ScalaFxImage] = ImageLoader.getScalaFxImage(image)
+    val result: Either[EngineError, ScalaFxImage] = ImageLoader.getScalaFxImage(image, imageConfig)
 
     inside(result):
       case Right(loadedImage) =>

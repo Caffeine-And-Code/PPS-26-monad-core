@@ -2,20 +2,16 @@ package monad_core.graphics.stages
 
 import monad_core.engine.errors.EngineError
 import monad_core.graphics.CannotBuildStage
-import monad_core.graphics.panels.traits.{AiModelChatPanelBuilder, GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
-import monad_core.graphics.resources.ImageConfigRecord
+import monad_core.graphics.panels.traits.{AiModelChatPanelBuilder, GameEnginePanelBuilder}
 import monad_core.graphics.stages.traits.MainStageBuilder
-import scalafx.application.Platform
 import scalafx.beans.property.ReadOnlyDoubleProperty
 import scalafx.geometry.Insets
-import scalafx.scene.Scene
 import scalafx.scene.layout.{HBox, VBox}
-import scalafx.scene.paint.Color
-import scalafx.stage.Stage
 
-import java.util.concurrent.{CountDownLatch, TimeUnit}
-
-object MainStage extends MainStageBuilder {
+final class MainStage(
+                       gamePanel: GameEnginePanelBuilder,
+                       chatPanel: AiModelChatPanelBuilder
+                     ) extends MainStageBuilder {
 
   private val HorizontalPaddingRatio = 0.02
   private val VerticalPaddingRatio = 0.02
@@ -23,84 +19,29 @@ object MainStage extends MainStageBuilder {
   private val LeftPanelWidthRatio = 0.40
   private val RightPanelWidthRatio = 0.58
 
-  private val MinStageWidth = 1024.0
-  private val MinStageHeight = 720.0
-
-  def main()
-          (
-            using imageConfig: ImageConfigRecord,
-            gameEnginePanelBuilder: GameEnginePanelBuilder,
-            aiModelChatPanelBuilder: AiModelChatPanelBuilder,
-            gameEngineModePanelBuilder: GameEngineModePanelBuilder,
-            sceneRendererPanelBuilder: SceneRendererPanelBuilder
-          )
-  : Option[EngineError] =
-    val latch = new CountDownLatch(1)
-    @volatile var startupError: Option[EngineError] = None
-
-    Platform.startup(() => {
-      val mainStage = new Stage {
-        title = "MonadCore2D"
-        fullScreen = true
-        minWidth = MinStageWidth
-        minHeight = MinStageHeight
+  def buildRootContent(
+                        stageWidth: ReadOnlyDoubleProperty,
+                        stageHeight: ReadOnlyDoubleProperty
+                      ): Either[EngineError, HBox] =
+    for
+      builtGameEnginePanel <- gamePanel.build()
+        .left.map(error => CannotBuildStage(error, this.toString))
+      builtChatPanel <- chatPanel.build()
+        .left.map(error => CannotBuildStage(error, this.toString))
+    yield
+      val rootContent = new HBox {
+        children = Seq(builtChatPanel, builtGameEnginePanel)
       }
 
-      val mainScene = new Scene(900, 600) {
-        fill = Color.rgb(25, 26, 28)
-      }
+      bindResponsivePadding(rootContent, stageWidth, stageHeight)
 
-      buildRootContent(mainScene.width, mainScene.height) match
-        case Right(rootContent) =>
-          mainScene.content = rootContent
-          mainStage.scene = mainScene
-          mainStage.show()
-
-        case Left(error) =>
-          startupError = Some(error)
-
-      latch.countDown()
-    })
-
-    // wait for setup to finish
-    latch.await(10, TimeUnit.SECONDS)
-    startupError
-
-  private def buildRootContent(
-                                stageWidth: ReadOnlyDoubleProperty,
-                                stageHeight: ReadOnlyDoubleProperty
-                              )
-                              (
-                                using imageConfig: ImageConfigRecord,
-                                gameEnginePanelBuilder: GameEnginePanelBuilder,
-                                aiModelChatPanelBuilder: AiModelChatPanelBuilder,
-                                gameEngineModePanelBuilder: GameEngineModePanelBuilder,
-                                sceneRendererPanelBuilder: SceneRendererPanelBuilder
-                              ): Either[EngineError, HBox] =
-    val gameEnginePanelEither = gameEnginePanelBuilder.build()
-    val modelChatPanelEither = aiModelChatPanelBuilder.build()
-
-    (gameEnginePanelEither, modelChatPanelEither) match
-      case (Right(gameEnginePanel), Right(modelChatPanel)) =>
-        val rootContent = new HBox {
-          children = Seq(modelChatPanel, gameEnginePanel)
-        }
-
-        bindResponsivePadding(rootContent, stageWidth, stageHeight)
-
-        Right(
-          assignPanelsSize(
-            stageWidth = stageWidth,
-            stageHeight = stageHeight,
-            rootContent = rootContent,
-            leftPanel = modelChatPanel,
-            rightPanel = gameEnginePanel
-          )
-        )
-
-      case (Left(error), _) => Left(CannotBuildStage(error, MainStage.toString))
-      case (_, Left(error)) => Left(CannotBuildStage(error, MainStage.toString))
-
+      assignPanelsSize(
+        stageWidth = stageWidth,
+        stageHeight = stageHeight,
+        rootContent = rootContent,
+        leftPanel = builtChatPanel,
+        rightPanel = builtGameEnginePanel
+      )
 
   private def bindResponsivePadding(
                                      rootContent: HBox,

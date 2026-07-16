@@ -6,38 +6,34 @@ import monad_core.graphics.panels.traits.{GameEngineModePanelBuilder, GameEngine
 import monad_core.graphics.resources.ImageConfigRecord
 import scalafx.scene.layout.VBox
 
-object GameEnginePanel extends GameEnginePanelBuilder {
+final class GameEnginePanel(
+                             modePanel: GameEngineModePanelBuilder,
+                             rendererPanel: SceneRendererPanelBuilder,
+                             imageConfig: ImageConfigRecord
+                           ) extends GameEnginePanelBuilder {
+
   private val TopPanelHeightRatio = 0.07
   private val BottomPanelHeightRatio = 0.93
   private val SpacingRatio = 0.02
   private val TopPanelMinHeight = 80.0
 
-  def build()
-           (
-             using imageConfig: ImageConfigRecord,
-             gameEngineModePanelBuilder: GameEngineModePanelBuilder,
-             sceneRendererPanelBuilder: SceneRendererPanelBuilder
-           )
-  : Either[EngineError, VBox] =
+  def build(): Either[EngineError, VBox] =
+    for
+      gameEngineModePanel <- modePanel.build(imageConfig)
+        .left.map(error => CannotBuildPanel(error, this.toString))
+      sceneRendererPanel <- rendererPanel.build()
+        .left.map(error => CannotBuildPanel(error, this.toString))
+    yield
+      val container = new VBox {
+        children = Seq(gameEngineModePanel, sceneRendererPanel)
+      }
 
-    val gameEngineModePanelEither = gameEngineModePanelBuilder.build()
-    val sceneRendererPanelEither = sceneRendererPanelBuilder.build()
+      container.spacing <== container.height * SpacingRatio
 
-    (gameEngineModePanelEither, sceneRendererPanelEither) match
-      case (Right(gameEngineModePanel), Right(sceneRendererPanel)) =>
-        val container = new VBox {
-          children = Seq(gameEngineModePanel, sceneRendererPanel)
-        }
+      gameEngineModePanel.prefHeight <== container.height * TopPanelHeightRatio
+      gameEngineModePanel.minHeight = TopPanelMinHeight
 
-        container.spacing <== container.height * SpacingRatio
+      sceneRendererPanel.prefHeight <== container.height * BottomPanelHeightRatio
 
-        gameEngineModePanel.prefHeight <== container.height * TopPanelHeightRatio
-        gameEngineModePanel.minHeight = TopPanelMinHeight
-
-        sceneRendererPanel.prefHeight <== container.height * BottomPanelHeightRatio
-
-        Right(container)
-
-      case (Left(panelError), _) => Left(CannotBuildPanel(panelError, GameEnginePanel.toString))
-      case (_, Left(panelError)) => Left(CannotBuildPanel(panelError, GameEnginePanel.toString))
+      container
 }

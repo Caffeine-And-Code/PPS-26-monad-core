@@ -1,7 +1,7 @@
 package monad_core.graphics.panels
 
 import monad_core.engine.errors.EngineError
-import monad_core.graphics.panels.support.{BaseLabelStyle, BasePanelStyle}
+import monad_core.graphics.panels.support.{BaseLabelStyle, PanelStyles}
 import monad_core.graphics.panels.traits.AiModelChatPanelBuilder
 import scalafx.scene.control.{Button, Label}
 import scalafx.scene.layout.VBox
@@ -16,7 +16,7 @@ object AiModelChatPanel extends AiModelChatPanelBuilder{
           },
           new Button("Action 1")
         )
-        style = BasePanelStyle.get()
+        style = PanelStyles.base
       }
     )
 }

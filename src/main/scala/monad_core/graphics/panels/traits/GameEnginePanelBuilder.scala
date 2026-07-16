@@ -5,10 +5,4 @@ import monad_core.graphics.resources.ImageConfigRecord
 import scalafx.scene.layout.VBox
 
 trait GameEnginePanelBuilder:
-  def build()
-           (
-             using imageConfig: ImageConfigRecord,
-             gameEngineModePanelBuilder: GameEngineModePanelBuilder,
-             sceneRendererPanelBuilder: SceneRendererPanelBuilder
-           )
-  : Either[EngineError, VBox]
+  def build(): Either[EngineError, VBox]

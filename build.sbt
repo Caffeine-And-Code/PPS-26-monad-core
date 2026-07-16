@@ -1,6 +1,6 @@
 scalaVersion := "3.8.4"
 
-// Determina os + architettura per scegliere il classifier JavaFX corretto
+// Classify the os to choose the building dependencies
 lazy val osClassifier: String = {
   val osName = System.getProperty("os.name").toLowerCase
   val osArch = System.getProperty("os.arch").toLowerCase
