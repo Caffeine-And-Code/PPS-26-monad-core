@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 
 class AgenticServiceTest extends AnyFunSuite with Matchers:
 
-  private def getMockedModel(prompt:String, response:String):ChatModel =
+  private def fakeModel(prompt: String, response: String): ChatModel =
     new ChatModel:
       override def doChat(request: ChatRequest): ChatResponse =
         request.messages().getFirst.asInstanceOf[UserMessage].singleText() shouldBe prompt
@@ -18,10 +18,23 @@ class AgenticServiceTest extends AnyFunSuite with Matchers:
   test("can send a message to the AI agent"):
     val simplePrompt = "How are you today"
     val modelResponse = "I'm fine!"
-    val model = getMockedModel(simplePrompt, modelResponse)
+    val model = fakeModel(simplePrompt, modelResponse)
 
-    val agenticService = AgentService.ollamaAgentService(using model)
+    val agentService = AgentService(model)
 
-    val response = agenticService.ask(simplePrompt)
+    val response = agentService.ask(simplePrompt)
 
     response shouldBe modelResponse
+
+  test("provides information about the configured model"):
+    val config = AgentService.OllamaConfig(
+      baseUrl = "http://localhost",
+      modelName = "test-model"
+    )
+
+    val agentService = AgentService.ollama(config)
+
+    agentService.modelInfo shouldBe ModelInfo(
+      provider = "OLLAMA",
+      model = "test-model"
+    )
