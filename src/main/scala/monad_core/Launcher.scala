@@ -1,10 +1,8 @@
 package monad_core
 
-import monad_core.engine.errors.EngineError
-import monad_core.graphics.panels.traits.{AiModelChatPanelBuilder, GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
-import monad_core.graphics.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
-import monad_core.graphics.resources.BaseImageConfig
-import monad_core.graphics.stages.{MainStage, ScalaFxLauncher}
+import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
+import monad_core.simulator.presentation.resources.BaseImageConfig
+import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}
 
