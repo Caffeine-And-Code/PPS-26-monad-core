@@ -29,3 +29,5 @@ object AgentService:
       .build()
 
     AgentService(model)
+
+  given defaultAgentService: AgentService = ollama()

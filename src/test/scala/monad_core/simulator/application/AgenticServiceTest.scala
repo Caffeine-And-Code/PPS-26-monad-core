@@ -9,6 +9,8 @@ import org.scalatest.matchers.should.Matchers
 
 class AgenticServiceTest extends AnyFunSuite with Matchers:
 
+  val ollamaProvider = "OLLAMA"
+
   private def fakeModel(prompt: String, response: String): ChatModel =
     new ChatModel:
       override def doChat(request: ChatRequest): ChatResponse =
@@ -27,14 +29,22 @@ class AgenticServiceTest extends AnyFunSuite with Matchers:
     response shouldBe modelResponse
 
   test("provides information about the configured model"):
+    val testModel = "test-model"
+
     val config = AgentService.OllamaConfig(
       baseUrl = "http://localhost",
-      modelName = "test-model"
+      modelName = testModel
     )
 
     val agentService = AgentService.ollama(config)
 
     agentService.modelInfo shouldBe ModelInfo(
-      provider = "OLLAMA",
-      model = "test-model"
+      provider = ollamaProvider,
+      model = testModel
+    )
+
+  test("provides information about the default model"):
+    summon[AgentService].modelInfo shouldBe ModelInfo(
+      provider = ollamaProvider,
+      model = AgentService.OllamaConfig().modelName
     )
