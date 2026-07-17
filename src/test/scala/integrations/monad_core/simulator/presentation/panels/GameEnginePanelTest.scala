@@ -2,6 +2,7 @@ package integrations.monad_core.simulator.presentation.panels
 
 import helpers.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
+import monad_core.engine.errors.EngineError
 import monad_core.simulator.presentation.panels.GameEnginePanel
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
@@ -13,46 +14,33 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.scene.layout.VBox
 
 class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
+  val modePanel: GameEngineModePanelBuilder = mock[GameEngineModePanelBuilder]
+  val sceneRenderer: SceneRendererPanelBuilder = mock[SceneRendererPanelBuilder]
+  val imageConfig: ImageConfigRecord = MockImageConfig()
 
-  def correctMockedModePanel : GameEngineModePanelBuilder =
-    val modePanel: GameEngineModePanelBuilder = mock[GameEngineModePanelBuilder]
+  def setupCorrectModePanel(): Unit =
     modePanel.build.expects(MockImageConfig()).returns(Right(new VBox {
       children = Seq()
     }))
 
-    modePanel
-
-  def invalidMockedModePanel: GameEngineModePanelBuilder =
-    val modePanel: GameEngineModePanelBuilder = mock[GameEngineModePanelBuilder]
+  def setupInvaliModePanel(): Unit =
     modePanel.build.expects(MockImageConfig()).returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
-    modePanel
-
-  def correctMockedRendererPanel: SceneRendererPanelBuilder =
-    val sceneRenderer: SceneRendererPanelBuilder = mock[SceneRendererPanelBuilder]
-    (sceneRenderer.build _).expects().returns(Right(new VBox {
+  def setupCorrectSceneRenderer(): Unit =
+    (sceneRenderer.build: () => Either[EngineError, VBox]).expects().returns(Right(new VBox {
       children = Seq()
     }))
 
-    sceneRenderer
+  def setupInvalidSceneRenderer(): Unit =
+    (sceneRenderer.build: () => Either[EngineError, VBox]).expects().returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
-  def invalidMockedRendererPanel: SceneRendererPanelBuilder =
-    val rendererPanel: SceneRendererPanelBuilder = mock[SceneRendererPanelBuilder]
-    (rendererPanel.build _).expects().returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
-
-    rendererPanel
-
-  def neverCalledRendererPanel: SceneRendererPanelBuilder =
-    val rendererPanel: SceneRendererPanelBuilder = mock[SceneRendererPanelBuilder]
-    (rendererPanel.build _).expects().never()
-
-    rendererPanel
+  def setupNeverCalledSceneRenderer(): Unit =
+    (sceneRenderer.build: () => Either[EngineError, VBox]).expects().never()
 
   test("A GameEnginePanel can be built"):
-    val modePanel: GameEngineModePanelBuilder = correctMockedModePanel
-    val rendererPanel: SceneRendererPanelBuilder = correctMockedRendererPanel
-    val imageConfig: ImageConfigRecord = MockImageConfig()
-    val enginePanel = GameEnginePanel(modePanel, rendererPanel, imageConfig)
+    setupCorrectModePanel()
+    setupCorrectSceneRenderer()
+    val enginePanel = GameEnginePanel(modePanel, sceneRenderer, imageConfig)
 
     val buildResult = enginePanel.build()
 
@@ -61,10 +49,9 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
         scene shouldBe a[VBox]
 
   test("building with an invalid GameEngineModePanelBuilder returns an error"):
-    val modePanel: GameEngineModePanelBuilder = invalidMockedModePanel
-    val rendererPanel: SceneRendererPanelBuilder = neverCalledRendererPanel
-    val imageConfig: ImageConfigRecord = MockImageConfig()
-    val enginePanel = GameEnginePanel(modePanel, rendererPanel, imageConfig)
+    setupInvaliModePanel()
+    setupNeverCalledSceneRenderer()
+    val enginePanel = GameEnginePanel(modePanel, sceneRenderer, imageConfig)
 
     val buildResult = enginePanel.build()
 
@@ -73,10 +60,9 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
         error shouldBe a[CannotBuildPanel]
 
   test("building with an invalid SceneRendererPanelBuilder returns an error"):
-    val modePanel: GameEngineModePanelBuilder = correctMockedModePanel
-    val rendererPanel: SceneRendererPanelBuilder = invalidMockedRendererPanel
-    val imageConfig: ImageConfigRecord = MockImageConfig()
-    val enginePanel = GameEnginePanel(modePanel, rendererPanel, imageConfig)
+    setupCorrectModePanel()
+    setupInvalidSceneRenderer()
+    val enginePanel = GameEnginePanel(modePanel, sceneRenderer, imageConfig)
 
     val buildResult = enginePanel.build()
 
@@ -85,10 +71,9 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
         error shouldBe a[CannotBuildPanel]
 
   test("building with an invalid ImageConfigRecord returns an error"):
+    setupNeverCalledSceneRenderer()
     val badImageConfig: ImageConfigRecord = mock[ImageConfigRecord]
-    val modePanel: GameEngineModePanelBuilder = mock[GameEngineModePanelBuilder]
-    val rendererPanel: SceneRendererPanelBuilder = neverCalledRendererPanel
-    val enginePanel = GameEnginePanel(modePanel, rendererPanel, badImageConfig)
+    val enginePanel = GameEnginePanel(modePanel, sceneRenderer, badImageConfig)
     modePanel.build.expects(badImageConfig).returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
     val buildResult = enginePanel.build()
