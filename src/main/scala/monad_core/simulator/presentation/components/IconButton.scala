@@ -63,18 +63,14 @@ object IconButton {
         onAction = _ => isDefaultActive = toggleIsActive(isDefaultActive, props.onClick, changeIcon)
       }
 
-  private def toggleIsActive(
+  private[components] def toggleIsActive(
                               currentIsActive: Boolean,
                               externalOnClick: Boolean => Unit,
                               internalOnClick: Boolean => Unit = (_: Boolean) => ()
                             ): Boolean =
     val newIsActiveValue = !currentIsActive
 
-    if currentIsActive then
-      internalOnClick(newIsActiveValue)
-    else
-      internalOnClick(newIsActiveValue)
-
+    internalOnClick(newIsActiveValue)
     externalOnClick(newIsActiveValue)
     newIsActiveValue
 }

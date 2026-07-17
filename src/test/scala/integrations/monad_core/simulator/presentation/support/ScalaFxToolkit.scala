@@ -1,4 +1,4 @@
-package monad_core.simulator.presentation.support
+package integrations.monad_core.simulator.presentation.support
 
 import javafx.application.Platform
 

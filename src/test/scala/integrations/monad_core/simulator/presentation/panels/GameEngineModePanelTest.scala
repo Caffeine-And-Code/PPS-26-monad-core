@@ -1,10 +1,10 @@
-package monad_core.simulator.presentation.panels
+package integrations.monad_core.simulator.presentation.panels
 
+import helpers.MockImageConfig
+import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.simulator.CannotBuildPanel
-import monad_core.simulator.presentation.helpers.MockImageConfig
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.resources.ImageConfigRecord
-import monad_core.simulator.presentation.support.ScalaFxInit
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite

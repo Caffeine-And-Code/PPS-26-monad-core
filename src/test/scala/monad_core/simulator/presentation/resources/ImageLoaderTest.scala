@@ -1,8 +1,8 @@
 package monad_core.simulator.presentation.resources
 
+import helpers.{MockImage, MockImageConfig}
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.ImageResourceNotFound
-import monad_core.simulator.presentation.helpers.{MockImage, MockImageConfig}
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
