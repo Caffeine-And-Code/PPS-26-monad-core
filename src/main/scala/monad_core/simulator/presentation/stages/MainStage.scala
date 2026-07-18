@@ -14,6 +14,7 @@ import scalafx.scene.paint.Color
 import scalafx.stage.Stage
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
+import scala.concurrent.ExecutionContext
 
 object MainStage extends MainStageBuilder {
 
@@ -32,7 +33,8 @@ object MainStage extends MainStageBuilder {
             gameEnginePanelBuilder: GameEnginePanelBuilder,
             aiModelChatPanelBuilder: AiModelChatPanelBuilder,
             gameEngineModePanelBuilder: GameEngineModePanelBuilder,
-            sceneRendererPanelBuilder: SceneRendererPanelBuilder
+            sceneRendererPanelBuilder: SceneRendererPanelBuilder,
+            executionContext: ExecutionContext
           )
   : Option[EngineError] =
     val latch = new CountDownLatch(1)
@@ -75,7 +77,8 @@ object MainStage extends MainStageBuilder {
                                 gameEnginePanelBuilder: GameEnginePanelBuilder,
                                 aiModelChatPanelBuilder: AiModelChatPanelBuilder,
                                 gameEngineModePanelBuilder: GameEngineModePanelBuilder,
-                                sceneRendererPanelBuilder: SceneRendererPanelBuilder
+                                sceneRendererPanelBuilder: SceneRendererPanelBuilder,
+                                executionContext: ExecutionContext
                               ): Either[EngineError, HBox] =
     val gameEnginePanelEither = gameEnginePanelBuilder.build()
     val modelChatPanelEither = aiModelChatPanelBuilder.build()

@@ -4,10 +4,13 @@ import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.ollama.OllamaChatModel
 import monad_core.simulator.errors.BaseError
 
+import scala.concurrent.{ExecutionContext, Future, blocking}
+import scala.util.Try
+
 case class ModelInfo(provider:String, model: String)
 
 trait AgentService:
-  def ask(message: String): Either[BaseError, String]
+  def ask(message: String): Future[Either[BaseError, String]]
   def modelInfo:ModelInfo
 
 object AgentService:
@@ -17,19 +20,21 @@ object AgentService:
       modelName: String = "gemma4:e2b"
   )
 
-  def apply(model: ChatModel): AgentService = new AgentService:
-    override def ask(message: String): Either[AgentCallError, String] = {
-      try{
-        Right(model.chat(message))
-      }catch {
-        case e: Exception => Left(AgentCallError(e.getMessage))
+  def apply(model: ChatModel)(using executionContext: ExecutionContext): AgentService = new AgentService:
+    override def ask(message: String): Future[Either[AgentCallError, String]] =
+      Future {
+        blocking {
+          Try(model.chat(message))
+            .toEither
+            .left
+            .map(error => AgentCallError(Option(error.getMessage).getOrElse(error.toString)))
+        }
       }
-    }
 
     override def modelInfo:ModelInfo =
       ModelInfo(model.provider.toString, model.defaultRequestParameters().modelName())
 
-  def ollama(config: OllamaConfig = OllamaConfig()): AgentService =
+  def ollama(config: OllamaConfig = OllamaConfig())(using ExecutionContext): AgentService =
     val model = OllamaChatModel.builder()
       .baseUrl(config.baseUrl)
       .modelName(config.modelName)
@@ -37,4 +42,4 @@ object AgentService:
 
     AgentService(model)
 
-  given defaultAgentService: AgentService = ollama()
+  given defaultAgentService(using ExecutionContext): AgentService = ollama()

@@ -1,7 +1,5 @@
 package monad_core.simulator.presentation.chat
 
-import dev.langchain4j.data.message.UserMessage
-import org.scalactic.Prettifier.default
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -9,7 +7,7 @@ class ChatPanelStateTest extends AnyFunSuite with Matchers:
 
   val emptyPrompt = ""
   val validPrompt = "Hi Jimmy how are you?"
-  val emptyMessages: Seq[ChatMessage] = Seq.empty[ChatMessage]
+  val emptyMessages: Seq[ChatMessage] = Seq.empty
   val validMessages: Seq[ChatMessage] = Seq(
     ChatMessage(validPrompt, MessageAuthor.User),
     ChatMessage("Jimmy's response", MessageAuthor.Assistant)

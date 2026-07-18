@@ -63,3 +63,8 @@ extension (model: ChatPanelState)
       case panel: ChatPanelState.Ready => panel.copy(messages = messages :+ chatMessage)
       case panel: ChatPanelState.Waiting => panel.copy(messages = messages :+ chatMessage)
       case panel: ChatPanelState.Error => panel.copy(messages = messages :+ chatMessage)
+
+  def isWaiting: Boolean =
+    model match
+      case Waiting(_) => true
+      case _ => false

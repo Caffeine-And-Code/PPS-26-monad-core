@@ -6,8 +6,11 @@ import dev.langchain4j.model.chat.request.ChatRequest
 import dev.langchain4j.model.chat.response.ChatResponse
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.concurrent.ScalaFutures
 
-class AgenticServiceTest extends AnyFunSuite with Matchers:
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class AgenticServiceTest extends AnyFunSuite with Matchers with ScalaFutures:
 
   val ollamaProvider = "OLLAMA"
 
@@ -26,7 +29,7 @@ class AgenticServiceTest extends AnyFunSuite with Matchers:
 
     val response = agentService.ask(simplePrompt)
 
-    response shouldBe Right(modelResponse)
+    response.futureValue shouldBe Right(modelResponse)
 
   test("provides information about the configured model"):
     val testModel = "test-model"

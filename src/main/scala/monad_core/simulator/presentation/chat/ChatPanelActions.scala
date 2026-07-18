@@ -1,32 +1,30 @@
 package monad_core.simulator.presentation.chat
 
-import monad_core.simulator.application.AgentService
-import monad_core.simulator.presentation.chat.ChatPanelState.{Error, Ready, Waiting}
-import monad_core.simulator.presentation.chat.MessageAuthor
-import monad_core.simulator.presentation.chat.MessageAuthor.Assistant
-
-case class ChatPanelActions(
-                             state: ChatPanelState,
-                             renderer: ChatPanelState => Unit
-)
+import monad_core.simulator.errors.BaseError
+import monad_core.simulator.presentation.chat.MessageAuthor.{Assistant, User}
 
 object ChatPanelActions:
 
-  extension (actions: ChatPanelActions)
+  def onPromptChange(state: ChatPanelState, newPrompt: String): ChatPanelState =
+    state.setPrompt(newPrompt)
 
-    def onPromptChange(newPrompt: String): ChatPanelActions =
-      val newAction = actions.copy(state = actions.state.setPrompt(newPrompt))
-      actions.renderer(newAction.state)
-      newAction
-
-    def onSubmit()(using agentService: AgentService): ChatPanelActions =
-      val prompt = actions.state.prompt
-      val currentState = actions.state.addMessage(ChatMessage(prompt, MessageAuthor.User))
-      actions.renderer(currentState.toWaiting)
-      val response = agentService.ask(prompt)
-      val state = response match {
-        case Right(response) => currentState.toReady.addMessage(ChatMessage(response, Assistant))
-        case Left(error) => currentState.toError(error.message)
+  def onSubmit(state: ChatPanelState): ChatPanelState =
+    Option
+      .when(state.canSend) {
+        val prompt = state.prompt.trim
+        state.addMessage(ChatMessage(prompt, User)).toWaiting
       }
-      actions.renderer(state)
-      actions.copy(state = state)
+      .getOrElse(state)
+
+  def onAgentRespond(
+      state: ChatPanelState,
+      response: Either[BaseError, String]
+  ): ChatPanelState =
+    state match
+      case waiting: ChatPanelState.Waiting =>
+        response match
+          case Right(answer) =>
+            waiting.toReady.addMessage(ChatMessage(answer, Assistant))
+          case Left(error) =>
+            waiting.toError(error.message)
+      case _ => state
