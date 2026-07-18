@@ -4,7 +4,7 @@ scalaVersion := "3.8.4"
 lazy val osClassifier: String = {
   val osName = System.getProperty("os.name").toLowerCase
   val osArch = System.getProperty("os.arch").toLowerCase
-  val isArm  = osArch.contains("aarch64") || osArch.contains("arm")
+  val isArm = osArch.contains("aarch64") || osArch.contains("arm")
 
   if (osName.contains("mac"))
     if (isArm) "mac-aarch64" else "mac"
@@ -36,8 +36,21 @@ lazy val root = rootProject
       "org.scalamock" %% "scalamock" % "7.5.5" % Test,
       "org.scalafx" %% "scalafx" % "23.0.1-R34"
     ) ++ javaFXModules.map(m =>
-      "org.openjfx" % s"javafx-$m" % javaFXVersion classifier osClassifier
-    )
+      ("org.openjfx" % s"javafx-$m" % javaFXVersion).classifier(osClassifier)
+    ),
+
+    // fork tests, a JVM foreach test class
+    Test / fork := true,
+    Test / testForkedParallel := false,
+    Test / testGrouping := Def.uncached {
+      (Test / definedTests).value.map { suite =>
+        Tests.Group(
+          name = suite.name,
+          tests = Seq(suite),
+          runPolicy = Tests.SubProcess(ForkOptions())
+        )
+      }
+    }
   )
 
 ThisBuild / scalacOptions ++= Seq(

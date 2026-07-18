@@ -12,7 +12,10 @@ trait Image(
 
 object Image:
 
-  private val iconSize : Size[Double] = Size(32.0, 32.0)
+  private val iconSize: Size = Size.square(32.0).fold(
+    err => throw new IllegalStateException(s"Invalid built-in icon size: $err"),
+    identity
+  )
 
   case class PlayIcon() extends Image(
     fileName = "play.png",

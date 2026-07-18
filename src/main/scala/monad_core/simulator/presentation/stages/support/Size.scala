@@ -1,15 +1,20 @@
 package monad_core.simulator.presentation.stages.support
 
-import scalafx.beans.binding.NumberBinding
-import scalafx.beans.property.ReadOnlyDoubleProperty
+import monad_core.engine.errors.EngineError
+import monad_core.simulator.InvalidSizeValue
 
+private[simulator] case class Size(width: Double, height: Double)
 
-case class Size[T](width: T, height: T)
+object Size:
+  private def validate(width: Double, height: Double): Either[EngineError, Unit] =
+    if width < 0 || height < 0 then
+      Left(InvalidSizeValue(width, height))
+    else
+      Right(())
 
-extension (size: Size[ReadOnlyDoubleProperty])
+  def square(edgeLength: Double): Either[EngineError, Size] =
+    validate(edgeLength, edgeLength).map(_ => Size(edgeLength, edgeLength))
 
-  infix def -(padding: Padding): (NumberBinding, NumberBinding) =
-    (
-      size.width - padding.horizontalSpacing,
-      size.height - padding.verticalSpacing
-    )  
+  def rectangle(width: Double, height: Double): Either[EngineError, Size] =
+    validate(width, height).map(_ => Size(width, height))
+    

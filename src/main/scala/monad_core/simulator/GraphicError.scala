@@ -14,3 +14,5 @@ case class CannotBuildStage(error: EngineError, stageId: String) extends EngineE
 case class StartupTimeout(seconds: Long) extends EngineError(s"JavaFX startup did not complete within ${seconds}s")
 
 case class UnexpectedStartupFailure(cause: String) extends EngineError(s"unexpected failure during JavaFX startup: $cause")
+
+case class InvalidSizeValue(width: Double, height: Double) extends EngineError(s"unexpected value for Size was passed: (width: $width, height: $height)")
