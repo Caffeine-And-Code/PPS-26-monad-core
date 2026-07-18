@@ -26,7 +26,7 @@ class AgenticServiceTest extends AnyFunSuite with Matchers:
 
     val response = agentService.ask(simplePrompt)
 
-    response shouldBe modelResponse
+    response shouldBe Right(modelResponse)
 
   test("provides information about the configured model"):
     val testModel = "test-model"
