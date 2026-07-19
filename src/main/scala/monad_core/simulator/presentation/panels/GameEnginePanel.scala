@@ -1,5 +1,6 @@
 package monad_core.simulator.presentation.panels
 
+import monad_core.engine.core.{EditMode, GameLoop, SimulationMode}
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
@@ -17,11 +18,23 @@ final class GameEnginePanel(
   private val SpacingRatio = 0.02
   private val TopPanelMinHeight = 80.0
 
-  def build(): Either[EngineError, VBox] =
+  def build(): Either[EngineError, VBox] = {
+    var gameLoop = GameLoop()
+
+    val onModeChange: Boolean => Unit =
+      isButtonActive =>
+        if isButtonActive then
+          gameLoop = gameLoop.withMode(EditMode)
+        else
+          gameLoop = gameLoop.withMode(SimulationMode)
+          gameLoop = gameLoop.start()
+
+    val onStopClick: () => Unit = () => gameLoop = gameLoop.stop()
+
     for
-      gameEngineModePanel <- modePanel.build(imageConfig)
+      gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick)
         .left.map(error => CannotBuildPanel(error, this.toString))
-      sceneRendererPanel <- rendererPanel.build()
+      sceneRendererPanel <- rendererPanel.build(gameLoop)
         .left.map(error => CannotBuildPanel(error, this.toString))
     yield
       val container = new VBox {
@@ -36,4 +49,5 @@ final class GameEnginePanel(
       sceneRendererPanel.prefHeight <== container.height * BottomPanelHeightRatio
 
       container
+  }
 }

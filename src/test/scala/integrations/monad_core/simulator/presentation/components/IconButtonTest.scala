@@ -2,9 +2,7 @@ package integrations.monad_core.simulator.presentation.components
 
 import helpers.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import javafx.application.Platform
 import javafx.scene.image.ImageView
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.presentation.components.{IconButton, IconButtonBaseProps}
 import monad_core.simulator.presentation.resources.{Image, ImageLoader}
 import monad_core.simulator.{CannotBuildButton, ImageResourceNotFound}
@@ -12,9 +10,8 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scalafx.beans.property.BooleanProperty
 import scalafx.scene.control.Button
-
-import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 class IconButtonTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
   private[presentation] case class AlternativeMockImage() extends Image("pause.png", 0, 0)
@@ -23,21 +20,6 @@ class IconButtonTest extends AnyFunSuite with Inside with Matchers with MockFact
   val primaryImage = MockImage()
   val secondaryImage = AlternativeMockImage()
   val invalidImage: Image = mock[Image]
-
-  private def clickButton(button: Button): Unit =
-    val latch = new CountDownLatch(1)
-
-    Platform.runLater: () =>
-      button.fire()
-      latch.countDown()
-
-    val clicked = latch.await(5, TimeUnit.SECONDS)
-    assert(clicked, "Button click did not complete in time")
-
-  private def getOrFail[T](either: Either[EngineError, T]): T =
-    either match
-      case Right(value) => value
-      case Left(err) => fail(s"Got error: $err")
 
   test("A static Icon Button can be built"):
     val props = IconButtonBaseProps(imageConfig)
@@ -69,7 +51,7 @@ class IconButtonTest extends AnyFunSuite with Inside with Matchers with MockFact
         button.style.toString.contains(additionalExpectedStyle) should be(true)
 
   test("A Static Icon Button can be built and set as disabled"):
-    val props = IconButtonBaseProps(imageConfig, isDisabled = true)
+    val props = IconButtonBaseProps(imageConfig, isDisabled = BooleanProperty(true))
 
     val buildResult = IconButton.build(primaryImage, props)
 
@@ -128,7 +110,7 @@ class IconButtonTest extends AnyFunSuite with Inside with Matchers with MockFact
         button.style.toString.contains(additionalExpectedStyle) should be(true)
 
   test("A toggle Icon Button can be built and set as disabled"):
-    val props = IconButtonBaseProps(imageConfig, isDisabled = true)
+    val props = IconButtonBaseProps(imageConfig, isDisabled = BooleanProperty(true))
 
     val buildResult = IconButton.buildToggle(primaryImage, secondaryImage, props)
 
@@ -167,6 +149,19 @@ class IconButtonTest extends AnyFunSuite with Inside with Matchers with MockFact
 
     clickButton(button)
     clickButton(button)
+
+    val actualGraphic = button.graphic.value
+    actualGraphic shouldBe a[ImageView]
+
+    val actualImage = actualGraphic.asInstanceOf[ImageView].getImage
+    actualImage.getUrl should be(expectedImage.delegate.getUrl)
+
+  test("The current image in toggle button can be changed externally by the activeProperty field"):
+    val props = IconButtonBaseProps(imageConfig)
+    val isActive = BooleanProperty(true)
+    val expectedImage = getOrFail(ImageLoader.getScalaFxImage(secondaryImage, props.imageConfig))
+
+    val button = getOrFail(IconButton.buildToggle(primaryImage, secondaryImage, props, isActive))
 
     val actualGraphic = button.graphic.value
     actualGraphic shouldBe a[ImageView]

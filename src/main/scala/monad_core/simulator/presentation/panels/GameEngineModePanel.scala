@@ -7,21 +7,43 @@ import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
+import scalafx.beans.property.BooleanProperty
 import scalafx.geometry.Pos
 import scalafx.scene.layout.{HBox, Priority, VBox}
 
 object GameEngineModePanel extends GameEngineModePanelBuilder {
-  def build(imageConfig: ImageConfigRecord): Either[EngineError, VBox] =
-    for
+  def build(
+             imageConfig: ImageConfigRecord,
+             onModeChange: Boolean => Unit,
+             onStopClick: () => Unit
+           ): Either[EngineError, VBox] = {
+    val isRunning = BooleanProperty(false)
 
+    for
       playPauseBtn <- IconButton.buildToggle(
           defaultImage = PlayIcon(),
           activeImage = PauseIcon(),
-          props= IconButtonBaseProps(imageConfig)
+          props = IconButtonBaseProps(
+            imageConfig,
+            onClick =
+              isActive =>
+                isRunning.value = isActive
+                onModeChange(isActive)
+          ),
+          activeProperty = isRunning
         )
         .left.map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
 
-      stopBtn <- IconButton.build(StopIcon(), IconButtonBaseProps(imageConfig, isDisabled = true))
+      stopBtn <- IconButton.build(
+          StopIcon(),
+          IconButtonBaseProps(
+            imageConfig,
+            isDisabled = !isRunning,
+            onClick = isActive =>
+              isRunning.value = false
+              onStopClick()
+          )
+        )
         .left.map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
     yield
       new VBox {
@@ -40,4 +62,5 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
         alignment = Pos.BottomRight
         style = PanelStyles.base
       }
+  }
 }

@@ -3,6 +3,8 @@ package monad_core.simulator.presentation.components
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildButton
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}
+import scalafx.beans.property.BooleanProperty
+import scalafx.beans.value.ObservableValue
 import scalafx.scene.control.Button
 import scalafx.scene.image.ImageView
 
@@ -10,7 +12,7 @@ case class IconButtonBaseProps(
                                 imageConfig: ImageConfigRecord,
                                 additionalStyle: String = "",
                                 onClick: Boolean => Unit = (_: Boolean) => (),
-                                isDisabled: Boolean = false
+                                isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false),
                               )
 
 object IconButton {
@@ -31,13 +33,14 @@ object IconButton {
         var isActive = false
 
         onAction = _ => isActive = toggleIsActive(isActive, props.onClick)
-        disable = props.isDisabled
+        disable <== props.isDisabled
       }
 
   def buildToggle(
                    defaultImage: Image,
                    activeImage: Image,
-                   props: IconButtonBaseProps
+                   props: IconButtonBaseProps,
+                   activeProperty: BooleanProperty = BooleanProperty(false)
                  ): Either[EngineError, Button] =
     for
       loadedDefault <- ImageLoader.getScalaFxImage(defaultImage, props.imageConfig)
@@ -46,13 +49,18 @@ object IconButton {
         .left.map(error => CannotBuildButton(error, IconButton.toString))
     yield
       val iconView = ImageView(loadedDefault)
+      var isDefaultActive = false
+
+      activeProperty.onChange { (_, _, isActive) =>
+        iconView.image = if isActive then loadedActive else loadedDefault
+        isDefaultActive = isActive
+      }
 
       new Button() {
         graphic = iconView
         style = defaultStyle + props.additionalStyle
-        disable = props.isDisabled
+        disable <== props.isDisabled
 
-        var isDefaultActive = false
         val changeIcon: Boolean => Unit =
           isActive =>
             if isActive then

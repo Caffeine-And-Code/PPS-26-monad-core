@@ -5,4 +5,8 @@ import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.scene.layout.VBox
 
 trait GameEngineModePanelBuilder:
-  def build(imageConfig: ImageConfigRecord): Either[EngineError, VBox]
+  def build(
+             imageConfig: ImageConfigRecord,
+             onModeChange : Boolean => Unit,
+             onStopClick: () => Unit
+           ): Either[EngineError, VBox]
