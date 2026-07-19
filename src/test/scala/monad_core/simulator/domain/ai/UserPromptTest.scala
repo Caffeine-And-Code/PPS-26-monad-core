@@ -13,3 +13,11 @@ class UserPromptTest extends AnyFunSuite with Matchers with Inside:
 
     inside(result):
       case Right(validPrompt) => validPrompt.toString shouldBe prompt
+
+  test("cannot create a user prompt from an invalid prompt"):
+    val invalidPrompt = "    "
+
+    val result = UserPrompt.from(invalidPrompt)
+
+    inside(result):
+      case Left(error) => error shouldBe InvalidUserPrompt()
