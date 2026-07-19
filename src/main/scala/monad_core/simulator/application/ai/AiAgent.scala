@@ -3,6 +3,8 @@ package monad_core.simulator.application.ai
 import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError, ConversationId, UserPrompt}
 import monad_core.simulator.errors.BaseError
 
+import scala.concurrent.Future
+
 case class AskAgentCommand(
                           conversationId: ConversationId,
                           prompt: UserPrompt,
@@ -13,6 +15,6 @@ case class CleanHistoryCommand(
                               )
 
 trait AiAgent :
-  def ask(command: AskAgentCommand):Either[AgentResponseError, AgentResponse]
+  def ask(command: AskAgentCommand): Future[Either[AgentResponseError, AgentResponse]]
 
   def cleanHistory(command: CleanHistoryCommand): Either[BaseError, Unit]

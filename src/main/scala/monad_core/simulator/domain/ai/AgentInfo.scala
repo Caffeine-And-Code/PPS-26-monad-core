@@ -2,7 +2,7 @@ package monad_core.simulator.domain.ai
 
 import monad_core.simulator.errors.BaseError
 
-case class AgentInfo private (
+case class AgentInfo (
                     provider: String,
                     modelName: String
                     )
