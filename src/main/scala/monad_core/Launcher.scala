@@ -1,5 +1,6 @@
 package monad_core
 
+import monad_core.engine.errors.EngineError
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
@@ -7,7 +8,7 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 import scala.Console.{GREEN, RESET}
 
 object Launcher:
-  def main(args: Array[String]): Unit =
+  def buildLauncher(): ScalaFxLauncher =
     val imageConfig = BaseImageConfig()
 
     val gamePanel = GameEnginePanel(
@@ -21,12 +22,18 @@ object Launcher:
       chatPanel = AiModelChatPanel
     )
 
-    val launcher = ScalaFxLauncher(mainStage)
+    ScalaFxLauncher(mainStage)
 
-    launcher.run() match
-      case Left(error) =>
-        Console.err.println(s"Startup failed: ${error.message}")
-        sys.exit(1)
+  def outcomeFor(result: Either[EngineError, Unit]): (Boolean, String) =
+    result match
+      case Left(error) => (false, s"Startup failed: ${error.message}")
+      case Right(_)     => (true, s"${GREEN}Build Completed$RESET")
 
-      case Right(_) =>
-        Console.println(s"$RESET${GREEN}Build Completed$RESET")
+  def main(args: Array[String]): Unit =
+    val (success, message) = outcomeFor(buildLauncher().run())
+
+    if success then
+      Console.println(s"$RESET$message")
+    else
+      Console.err.println(message)
+      sys.exit(1)

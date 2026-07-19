@@ -27,6 +27,23 @@ assembly / assemblyMergeStrategy := {
     previous(path)
 }
 
+// build dynamically the module-path of javaFx to resolve the warning upon application startup
+lazy val javaFXModulePath = Def.task {
+  val cp = (Test / dependencyClasspath).value
+  val converter = fileConverter.value
+  cp.map(af => converter.toPath(af.data))
+    .filter(p => p.getFileName.toString.startsWith("javafx-"))
+    .map(_.toAbsolutePath.toString)
+    .mkString(java.io.File.pathSeparator)
+}
+
+lazy val javaFXJavaOptions = Def.task {
+  Seq(
+    "--module-path", javaFXModulePath.value,
+    "--add-modules", javaFXModules.map(m => s"javafx.$m").mkString(",")
+  )
+}
+
 lazy val root = rootProject
   .settings(
     name := "MonadCore2D",
@@ -42,12 +59,17 @@ lazy val root = rootProject
     // fork tests, a JVM foreach test class
     Test / fork := true,
     Test / testForkedParallel := false,
+    Test / javaOptions ++= javaFXJavaOptions.value,
+
     Test / testGrouping := Def.uncached {
+      val jvmOpts = javaFXJavaOptions.value.toVector
       (Test / definedTests).value.map { suite =>
         Tests.Group(
           name = suite.name,
           tests = Seq(suite),
-          runPolicy = Tests.SubProcess(ForkOptions())
+          runPolicy = Tests.SubProcess(
+            ForkOptions().withRunJVMOptions(jvmOpts)
+          )
         )
       }
     }

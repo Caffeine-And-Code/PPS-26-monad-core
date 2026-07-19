@@ -20,11 +20,11 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
     val latch = new CountDownLatch(1)
     @volatile var result: Either[EngineError, Unit] = Left(StartupTimeout(StartupTimeoutSeconds))
 
-    Platform.startup(() =>
+    val buildAndShow: Runnable = () =>
       try
         val stage = new Stage {
           title = "MonadCore2D"
-          fullScreen = true
+          fullScreen = false
           minWidth = MinStageWidth
           minHeight = MinStageHeight
         }
@@ -47,7 +47,14 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
           result = Left(UnexpectedStartupFailure(throwable.getMessage))
       finally
         latch.countDown()
-    )
+
+    try
+      Platform.startup(buildAndShow)
+    catch
+      case _: IllegalStateException =>
+        // JavaFx toolkit has already started, schedule the program startup as soon
+        // as possible to the UI thread
+        Platform.runLater(buildAndShow)
 
     val completedInTime = latch.await(StartupTimeoutSeconds, TimeUnit.SECONDS)
 
