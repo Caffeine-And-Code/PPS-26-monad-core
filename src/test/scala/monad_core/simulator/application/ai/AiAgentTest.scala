@@ -15,3 +15,10 @@ class AiAgentTest extends AnyFunSuite with Matchers :
 
     result.conversationId shouldBe conversationId
     result.prompt shouldBe prompt
+
+  test("can create a clean history command"):
+    val conversationId = ConversationId.from("chat1").value
+
+    val result = CleanHistoryCommand(conversationId)
+
+    result.conversationId shouldBe conversationId
