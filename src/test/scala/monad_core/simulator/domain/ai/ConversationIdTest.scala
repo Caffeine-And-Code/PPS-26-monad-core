@@ -13,4 +13,12 @@ class ConversationIdTest extends AnyFunSuite with Matchers with Inside:
 
     inside(result):
       case Right(resId) => resId.toString shouldBe id
-    
+
+  test("cannot create a conversation id from an invalid string"):
+    val invalidId = "     "
+
+    val result = ConversationId.from(invalidId)
+
+    inside(result):
+      case Left(error) => error shouldBe InvalidConversationId()
+
