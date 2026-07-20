@@ -81,7 +81,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     MockPhysics.step.expects(*, *).never()
     MockRender.render.expects(*, *).anyNumberOfTimes()
 
-    val (currentScene, _) = initialLoop.tick(MockScene, currentTime)
+    val (currentScene, _) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentScene shouldBe MockScene
 
@@ -97,7 +97,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     MockPhysics.step.expects(*, *).never()
     MockRender.render.expects(*, *).anyNumberOfTimes()
 
-    val (currentScene, _) = initialLoop.tick(MockScene, currentTime)
+    val (currentScene, _) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentScene shouldBe MockScene
 
@@ -107,7 +107,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
 
     MockRender.render.expects(*, *).anyNumberOfTimes()
 
-    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentLoop.lastTime shouldBe currentTime
 
@@ -119,7 +119,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     MockPhysics.step.expects(*, *).never()
     MockRender.render.expects(*, *).anyNumberOfTimes()
 
-    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentScene shouldBe MockScene
     currentLoop.lastTime shouldBe currentTime
@@ -129,10 +129,10 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     val currentTime = DefaultTickTime
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).toOption.get
 
-    MockPhysics.step.expects(MockScene, currentTime).returning(updatedScene).once()
+    MockPhysics.step.expects(MockScene, currentTime).returning(Right(updatedScene)).once()
     MockRender.render.expects(*, *).anyNumberOfTimes()
 
-    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentScene shouldBe updatedScene
     currentLoop.lastTime shouldBe currentTime
@@ -145,10 +145,10 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
 
     MockRender.render.expects(*, *).anyNumberOfTimes()
     inSequence :
-      MockPhysics.step.expects(MockScene, DefaultTickTime).returning(sceneStep1).once()
-      MockPhysics.step.expects(sceneStep1, DefaultTickTime).returning(sceneStep2).once()
+      MockPhysics.step.expects(MockScene, DefaultTickTime).returning(Right(sceneStep1)).once()
+      MockPhysics.step.expects(sceneStep1, DefaultTickTime).returning(Right(sceneStep2)).once()
 
-    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentScene shouldBe sceneStep2
     currentLoop.lastTime shouldBe currentTime
@@ -159,10 +159,10 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     val correctAccumulator = 4_000_000L
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).toOption.get
 
-    MockPhysics.step.expects(MockScene, DefaultTickTime).returning(updatedScene).once()
+    MockPhysics.step.expects(MockScene, DefaultTickTime).returning(Right(updatedScene)).once()
     MockRender.render.expects(*, *).anyNumberOfTimes()
 
-    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentLoop.accumulator shouldBe correctAccumulator
 
@@ -172,10 +172,10 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     val correctIterationNumber = 15 // #iterations = 250ms / 16ms = 15
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime, maxFrameTime = DefaultMaxFrameTime).toOption.get
 
-    MockPhysics.step.expects(*, *).repeated(correctIterationNumber)
+    MockPhysics.step.expects(*, *).repeated(correctIterationNumber).returning(Right(MockScene))
     MockRender.render.expects(*, *).anyNumberOfTimes()
 
-    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentLoop.accumulator shouldBe correctAccumulator
 
@@ -186,10 +186,10 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
     val correctAccumulator = 4_000_000L
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).toOption.get
 
-    MockPhysics.step.expects(MockScene, DefaultTickTime).returning(updatedScene).once()
+    MockPhysics.step.expects(MockScene, DefaultTickTime).returning(Right(updatedScene)).once()
     MockRender.render.expects(updatedScene, correctAlpha).once()
 
-    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (_, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentLoop.accumulator shouldBe correctAccumulator
 
@@ -200,7 +200,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
 
     MockRender.render.expects(MockScene, correctAlpha).once()
 
-    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime)
+    val (currentScene, currentLoop) = initialLoop.tick(MockScene, currentTime).getOrElse(fail())
 
     currentScene shouldBe MockScene
 
@@ -213,14 +213,14 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory :
 
     MockRender.render.expects(*, *).anyNumberOfTimes()
     inSequence :
-      MockPhysics.step.expects(MockScene, DefaultTickTime).returning(updatedScene).once()
-      MockPhysics.step.expects(*, DefaultTickTime).returning(updatedScene).once()
+      MockPhysics.step.expects(MockScene, DefaultTickTime).returning(Right(updatedScene)).once()
+      MockPhysics.step.expects(*, DefaultTickTime).returning(Right(updatedScene)).once()
 
-    val (scene1, loop1) = initialLoop.tick(MockScene, partialTime1)
+    val (scene1, loop1) = initialLoop.tick(MockScene, partialTime1).getOrElse(fail())
     val loopPaused = loop1.stop()
-    val (scene2, loop2) = loopPaused.tick(scene1, partialTime2)
+    val (scene2, loop2) = loopPaused.tick(scene1, partialTime2).getOrElse(fail())
     val loopResumed = loop2.start()
-    val (scene3, currentLoop) = loopResumed.tick(scene2, partialTime3)
+    val (scene3, currentLoop) = loopResumed.tick(scene2, partialTime3).getOrElse(fail())
 
     scene2 shouldBe scene1
     scene3 shouldBe updatedScene

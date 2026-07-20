@@ -16,7 +16,7 @@ trait GameLoop:
   def start(): GameLoop
   def stop(): GameLoop
 
-  def tick[S](scene: S, currentTime: Long)(using physics: Physics[S], render: RenderEngine[S]): (S, GameLoop)
+  def tick[S](scene: S, currentTime: Long)(using physics: Physics[S], render: RenderEngine[S]): Either[EngineError, (S, GameLoop)]
 
 object GameLoop:
   val DefaultTickTime = 16_000_000L

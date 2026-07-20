@@ -25,25 +25,29 @@ private case class GameLoopImpl(
   def start(): GameLoop = this.copy(isRunning = true)
   def stop(): GameLoop = this.copy(isRunning = false)
 
-  def tick[S](scene: S, currentTime: Long)(using physics: Physics[S], render: RenderEngine[S]): (S, GameLoop) =
+  def tick[S](scene: S, currentTime: Long)(using physics: Physics[S], render: RenderEngine[S]): Either[EngineError, (S, GameLoop)] =
     if !isRunning || mode == LoopMode.EditMode then
       render.render(scene, StaticAlpha)
-      (scene, this.copy(lastTime = currentTime))
+      Right((scene, this.copy(lastTime = currentTime)))
     else
       val elapsedTime = currentTime - lastTime
       val clampedTime = Math.min(elapsedTime, maxFrameTime)
       val remainingTime = accumulator + clampedTime
 
       @tailrec
-      def runFixedUpdate(remainingTime: Long, currentScene: S): (S, Long) =
+      def runFixedUpdate(remainingTime: Long, currentScene: S): Either[EngineError, (S, Long)] =
         if remainingTime < tickTime then
-          (currentScene, remainingTime)
+          Right((currentScene, remainingTime))
         else
-          val updatedScene = physics.step(currentScene, tickTime)
-          runFixedUpdate(remainingTime - tickTime, updatedScene)
+          physics.step(currentScene, tickTime) match
+            case Left(error) => Left(error)
+            case Right(updatedScene) => runFixedUpdate(remainingTime - tickTime, updatedScene)
 
-      val (currentScene, currentAccumulator) = runFixedUpdate(remainingTime, scene)
-      val alpha = currentAccumulator.toDouble / tickTime.toDouble
-      render.render(currentScene, alpha)
-
-      (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+      for
+        res <- runFixedUpdate(remainingTime, scene)
+        (currentScene, currentAccumulator) = res
+        _ = {
+          val alpha = currentAccumulator.toDouble / tickTime.toDouble
+          render.render(currentScene, alpha)
+        }
+      yield (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
