@@ -18,7 +18,7 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
   private val validPrompt = "Hello"
   private val validAnswer = AgentResponse("Hi!", 0)
   private val emptyPrompt = ""
-  private val userMessage = ChatMessage(validPrompt.toString, MessageAuthor.User)
+  private val userMessage = ChatMessage(validPrompt, MessageAuthor.User)
   private val executeInUIThread: (() => Unit) => Unit = action => action()
 
   test("onPromptChange changes the state containing the new prompt"):
