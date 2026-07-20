@@ -6,11 +6,22 @@ import monad_core.simulator.presentation.panels.traits.{AiModelChatPanelBuilder,
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.MainStage
 import monad_core.simulator.application.AgentService.given
+import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Launcher {
   def main(args: Array[String]): Unit = {
+
+    given aiAgent: AiAgent = Langchain4jAgentFactory
+      .buildOllama(
+        Langchain4jOllamaConfig(
+          url = "http://localhost:11434",
+          modelName = "gemma4:e2b"
+        )
+      )
+
     given imageConfig: BaseImageConfig = BaseImageConfig()
 
     given gameEnginePanelBuilder: GameEnginePanelBuilder = GameEnginePanel

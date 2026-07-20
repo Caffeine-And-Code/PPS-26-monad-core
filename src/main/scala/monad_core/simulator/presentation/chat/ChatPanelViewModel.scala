@@ -1,12 +1,14 @@
 package monad_core.simulator.presentation.chat
 
 import monad_core.simulator.application.AgentService
+import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand}
+import monad_core.simulator.domain.ai.{ConversationId, UserPrompt}
 import scalafx.beans.property.ObjectProperty
 
 import scala.concurrent.ExecutionContext
 
 final class ChatPanelViewModel(
-    agentService: AgentService,
+    aiAgent: AiAgent,
     runOnUiThread: (() => Unit) => Unit
 )(using executionContext: ExecutionContext):
 
@@ -20,10 +22,18 @@ final class ChatPanelViewModel(
     Option.when(state.value.canSend)(state.value.prompt.trim).foreach { prompt =>
       update(ChatPanelActions.onSubmit)
 
-      agentService.ask(prompt).foreach { response =>
-        runOnUiThread { () =>
-          update(ChatPanelActions.onAgentRespond(_, response))
-        }
+      val askAgentCommand = for {
+        userPrompt <- UserPrompt.from(prompt)
+        conversationId <- ConversationId.from("chat1")
+      } yield AskAgentCommand(conversationId, userPrompt)
+
+      askAgentCommand.foreach {
+        command =>
+          aiAgent.ask(command).foreach { response =>
+            runOnUiThread { () =>
+              update(ChatPanelActions.onAgentRespond(_, response))
+            }
+          }
       }
     }
 

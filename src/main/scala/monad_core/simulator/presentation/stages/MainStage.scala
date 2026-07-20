@@ -2,6 +2,7 @@ package monad_core.simulator.presentation.stages
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildStage
+import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.presentation.panels.traits.{AiModelChatPanelBuilder, GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
@@ -30,6 +31,7 @@ object MainStage extends MainStageBuilder {
   def main()
           (
             using imageConfig: ImageConfigRecord,
+            aiAgent: AiAgent,
             gameEnginePanelBuilder: GameEnginePanelBuilder,
             aiModelChatPanelBuilder: AiModelChatPanelBuilder,
             gameEngineModePanelBuilder: GameEngineModePanelBuilder,
@@ -74,6 +76,7 @@ object MainStage extends MainStageBuilder {
                               )
                               (
                                 using imageConfig: ImageConfigRecord,
+                                aiAgent: AiAgent,
                                 gameEnginePanelBuilder: GameEnginePanelBuilder,
                                 aiModelChatPanelBuilder: AiModelChatPanelBuilder,
                                 gameEngineModePanelBuilder: GameEngineModePanelBuilder,
@@ -81,7 +84,7 @@ object MainStage extends MainStageBuilder {
                                 executionContext: ExecutionContext
                               ): Either[EngineError, HBox] =
     val gameEnginePanelEither = gameEnginePanelBuilder.build()
-    val modelChatPanelEither = aiModelChatPanelBuilder.build()
+    val modelChatPanelEither = aiModelChatPanelBuilder.build(aiAgent)
 
     (gameEnginePanelEither, modelChatPanelEither) match
       case (Right(gameEnginePanel), Right(modelChatPanel)) =>

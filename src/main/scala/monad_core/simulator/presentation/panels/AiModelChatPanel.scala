@@ -2,6 +2,7 @@ package monad_core.simulator.presentation.panels
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.AgentService
+import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.presentation.chat.*
 import monad_core.simulator.presentation.panels.support.{BaseLabelStyle, BasePanelStyle}
 import monad_core.simulator.presentation.panels.traits.AiModelChatPanelBuilder
@@ -14,9 +15,8 @@ import scala.concurrent.ExecutionContext
 
 object AiModelChatPanel extends AiModelChatPanelBuilder:
 
-  override def build()(using
-      agentService: AgentService,
-      executionContext: ExecutionContext
+  override def build(aiAgent: AiAgent)(using
+                                       executionContext: ExecutionContext
   ): Either[EngineError, VBox] =
     val messages = new VBox {
       id = "chat-messages"
@@ -146,7 +146,7 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
       scrollToLatestMessage()
 
     val viewModel = new ChatPanelViewModel(
-      agentService,
+      aiAgent,
       action => Platform.runLater(action())
     )
 

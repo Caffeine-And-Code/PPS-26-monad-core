@@ -1,13 +1,14 @@
 package monad_core.simulator.presentation.chat
 
 import monad_core.simulator.application.AgentCallError
+import monad_core.simulator.domain.ai.AgentResponse
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class ChatPanelActionsTest extends AnyFunSuite with Matchers:
 
   private val validPrompt = "Hi Jimmy, how are you?"
-  private val agentReply = "Fine!"
+  private val agentReply = AgentResponse("Fine!", 0)
 
   test("onPromptChange returns the state with the updated prompt"):
     val result = ChatPanelActions.onPromptChange(ChatPanelState.initial, validPrompt)
@@ -39,7 +40,7 @@ class ChatPanelActionsTest extends AnyFunSuite with Matchers:
 
     result shouldBe
       ChatPanelState.Ready(
-        messages :+ ChatMessage(agentReply, MessageAuthor.Assistant),
+        messages :+ ChatMessage(agentReply.response, MessageAuthor.Assistant),
         prompt = ""
       )
 
