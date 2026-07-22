@@ -63,6 +63,28 @@ class AiModelChatPanelTest
       messageTexts(panel) should contain allOf (prompt, response)
     }
 
+  test("it renders the error message when the AI ask request fails"):
+    val aiAgent = mock[AiAgent]
+    val prompt = "Hello"
+    val error = AgentResponseError("Agent unavailable")
+    val conversationId = ConversationId.from("chat1").value
+    val panel = buildPanel(aiAgent)
+
+    aiAgent.ask
+      .expects(AskAgentCommand(conversationId, UserPrompt.from(prompt).value))
+      .returning(Future.successful(Left(error)))
+      .once()
+
+    onFxThread {
+      promptField(panel).setText(prompt)
+      submitButton(panel).fire()
+    }
+    drainFxQueue()
+
+    onFxThread {
+      messageTexts(panel) should contain allOf (prompt, s"Error: ${error.message}")
+    }
+
   test("prompt and submit are disabled while waiting for the AI response"):
     val pendingResponse = Promise[Either[AgentResponseError, AgentResponse]]()
     val aiAgent = mock[AiAgent]
