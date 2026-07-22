@@ -1,6 +1,7 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.simulator.application.ai.AskAgentCommand
+import dev.langchain4j.memory.ChatMemory
+import monad_core.simulator.application.ai.{AskAgentCommand, CleanHistoryCommand}
 import monad_core.simulator.domain.ai.{AgentInfo, AgentResponse, ConversationId, UserPrompt}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -20,9 +21,24 @@ class Langchain4jAiAgentTest extends AnyFunSuite with Matchers with Inside with 
     val aiAgent = Langchain4jAiAgent(mockAssistant, mockAgentInfo)
     val askAgentCommand = AskAgentCommand(conversationId, prompt)
 
-    mockAssistant.chat.expects(prompt.toString).returns(response).once()
+    mockAssistant.chat.expects(conversationId, prompt.toString).returns(response).once()
 
     val result = aiAgent.ask(askAgentCommand)
 
     inside(result.futureValue):
       case Right(value) => value shouldBe AgentResponse(response, 0)
+
+  test("cleanHistory can clean assistant message history"):
+    val conversationId = ConversationId.from("chat1").value
+    val mockAssistant = mock[Langchain4jAssistant]
+    val mockAgentInfo = mock[AgentInfo]
+    val chatMemory = mock[ChatMemory]
+    val aiAgent = Langchain4jAiAgent(mockAssistant, mockAgentInfo)
+    val cleanHistoryCommand = CleanHistoryCommand(conversationId)
+
+    mockAssistant.getChatMemory.expects(conversationId).returns(chatMemory).once()
+    (() => chatMemory.clear()).expects().once()
+
+    val result = aiAgent.cleanHistory(cleanHistoryCommand)
+
+    result shouldBe Right(())
