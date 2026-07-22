@@ -2,9 +2,15 @@ package monad_core.engine.core.traits
 
 import monad_core.engine.core.Scene
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, LocatableId, Surface, Team, TeamId}
+import monad_core.engine.model.*
 
 trait State:
+  def allEntities : List[Entity]
+  
+  def allTeams: List[Team]
+  
+  def allSurfaces: List[Surface]
+
   def getEntity(id: LocatableId): Either[EngineError, Entity]
 
   def getTeam(id: TeamId): Either[EngineError, Team]

@@ -1,6 +1,7 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
+import monad_core.engine.public_api.Painter
 
 import scala.annotation.tailrec
 
@@ -38,7 +39,13 @@ object GameLoop:
     def stop(): GameLoop =
       gameLoop.copy(isRunning = false)
 
-    def tick(state: State, physicsEngine: PhysicsEngine, renderEngine: RenderEngine, currentTime: Long): (State, GameLoop) =
+    def tick(
+              state: State,
+              physicsEngine: PhysicsEngine,
+              renderEngine: RenderEngine,
+              currentTime: Long
+            )
+            (using painter: Painter): (State, GameLoop) =
       if !gameLoop.isRunning || gameLoop.mode == EditMode then
         renderEngine.render(state, StaticAlpha)
         (state, gameLoop.copy(lastTime = currentTime))

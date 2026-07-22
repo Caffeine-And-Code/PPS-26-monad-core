@@ -1,4 +1,6 @@
 package monad_core.engine.core.traits
 
-trait RenderEngine:
-  def render(state: State, alpha: Double): Unit
+import monad_core.engine.public_api.Painter
+
+private[engine] trait RenderEngine:
+  def render(state: State, alpha: Double)(using painter: Painter): Unit

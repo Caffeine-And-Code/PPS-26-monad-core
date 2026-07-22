@@ -6,8 +6,8 @@ trait GameEngineRuntime:
 
   def start(): Unit
   def stop(): Unit
-  def reset(word: Word): Unit
+  def reset(world: World): Unit
   def init(
-          initialWord: Word,
-          renderer: Word => Word
+            initialWorld: World,
+            renderer: World => World
           ): Future[Unit]

@@ -1,8 +1,10 @@
 package monad_core.simulator.presentation.panels
 
-import monad_core.engine.core.{EditMode, GameLoop, SimulationMode}
+import monad_core.engine.core.*
 import monad_core.engine.errors.EngineError
+import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.{GameEngineRuntime, SaveEntityCommand, World}
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.scene.layout.VBox
@@ -18,23 +20,28 @@ final class GameEnginePanel(
   private val SpacingRatio = 0.02
   private val TopPanelMinHeight = 80.0
 
-  def build(): Either[EngineError, VBox] = {
-    var gameLoop = GameLoop()
+  def build()
+           (
+             using gameEngineRuntime: GameEngineRuntime,
+             world: World
+           )
+  : Either[EngineError, VBox] = {
+    val gameEngine = initialSetup(world, gameEngineRuntime).fold(error => return Left(error), gameEngineRuntime => gameEngineRuntime)
 
     val onModeChange: Boolean => Unit =
       isButtonActive =>
         if isButtonActive then
-          gameLoop = gameLoop.withMode(EditMode)
-        else
-          gameLoop = gameLoop.withMode(SimulationMode)
-          gameLoop = gameLoop.start()
+          gameEngine.stop()
+        else {
+          gameEngineRuntime.start()
+        }
 
-    val onStopClick: () => Unit = () => gameLoop = gameLoop.stop()
+    val onStopClick: () => Unit = () => gameEngine.stop()
 
     for
       gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick)
         .left.map(error => CannotBuildPanel(error, this.toString))
-      sceneRendererPanel <- rendererPanel.build(gameLoop)
+      sceneRendererPanel <- rendererPanel.build()
         .left.map(error => CannotBuildPanel(error, this.toString))
     yield
       val container = new VBox {
@@ -50,4 +57,17 @@ final class GameEnginePanel(
 
       container
   }
+
+  private[panels] def initialSetup(world: World, gameEngineRuntime: GameEngineRuntime): Either[EngineError, GameEngineRuntime] =
+    val entity = Entity.circle("starter", Vector2D(0, 0), 5)
+      .fold(error => return Left(error), entity => entity)
+
+    val initialWorld = world.createEntity(SaveEntityCommand(entity))
+      .fold(error => return Left(error), world => world)
+
+    gameEngineRuntime.init(
+      world,
+      world => world
+    )
+
 }
