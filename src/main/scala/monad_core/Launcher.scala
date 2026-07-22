@@ -5,7 +5,6 @@ import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineMod
 import monad_core.simulator.presentation.panels.traits.{AiModelChatPanelBuilder, GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.MainStage
-import monad_core.simulator.application.AgentService.given
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 

@@ -1,6 +1,5 @@
 package monad_core.simulator.presentation.chat
 
-import monad_core.simulator.application.AgentService
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand}
 import monad_core.simulator.domain.ai.{ConversationId, UserPrompt}
 import scalafx.beans.property.ObjectProperty

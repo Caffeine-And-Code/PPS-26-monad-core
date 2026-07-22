@@ -1,7 +1,6 @@
 package monad_core.simulator.presentation.chat
 
-import monad_core.simulator.application.AgentCallError
-import monad_core.simulator.domain.ai.AgentResponse
+import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -48,7 +47,7 @@ class ChatPanelActionsTest extends AnyFunSuite with Matchers:
     val messages = Seq(ChatMessage(validPrompt, MessageAuthor.User))
     val state = ChatPanelState.Waiting(messages)
 
-    val result = ChatPanelActions.onAgentRespond(state, Left(AgentCallError("error")))
+    val result = ChatPanelActions.onAgentRespond(state, Left(AgentResponseError("error")))
 
     result shouldBe
       ChatPanelState.Error(messages, prompt = "", error = "error")

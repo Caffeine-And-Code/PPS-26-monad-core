@@ -1,9 +1,7 @@
 package monad_core.simulator.presentation.chat
 
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand}
-import monad_core.simulator.application.{AgentCallError, AgentService}
 import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError, ConversationId, UserPrompt}
-import monad_core.simulator.errors.BaseError
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

@@ -14,6 +14,7 @@ lazy val root = rootProject
       "org.scalactic" %% "scalactic" % "3.2.20",
       "org.scalatest" %% "scalatest" % "3.2.20" % Test,
       "org.scalamock" %% "scalamock" % "7.5.5" % Test,
+      "org.testfx" % "testfx-core" % "4.0.18" % Test,
       "dev.langchain4j" % "langchain4j-ollama" % "1.17.2",
       "dev.langchain4j" % "langchain4j" % "1.17.2",
       "org.scalafx" %% "scalafx" % "23.0.1-R34"

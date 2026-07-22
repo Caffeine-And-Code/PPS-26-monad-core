@@ -1,7 +1,6 @@
 package monad_core.simulator.presentation.panels
 
 import monad_core.engine.errors.EngineError
-import monad_core.simulator.application.AgentService
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.presentation.chat.*
 import monad_core.simulator.presentation.panels.support.{BaseLabelStyle, BasePanelStyle}
