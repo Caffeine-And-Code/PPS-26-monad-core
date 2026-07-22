@@ -1,6 +1,7 @@
 package monad_core.simulator.presentation.stages
 
 import monad_core.engine.errors.EngineError
+import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
 import monad_core.simulator.{StartupTimeout, UnexpectedStartupFailure}
 import scalafx.application.Platform
@@ -9,6 +10,8 @@ import scalafx.scene.paint.Color
 import scalafx.stage.Stage
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 final class ScalaFxLauncher(mainStage: MainStageBuilder) {
 
@@ -16,7 +19,10 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
   private val MinStageHeight = 720.0
   private val StartupTimeoutSeconds = 10L
 
-  def run(): Either[EngineError, Unit] =
+  def run()
+         (
+           using aiAgent: AiAgent
+         ): Either[EngineError, Unit] =
     val latch = new CountDownLatch(1)
     @volatile var result: Either[EngineError, Unit] = Left(StartupTimeout(StartupTimeoutSeconds))
 

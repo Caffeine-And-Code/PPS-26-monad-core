@@ -1,13 +1,15 @@
 package monad_core
 
 import monad_core.engine.errors.EngineError
+import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}
 
-object Launcher:
+object Launcher :
   def buildLauncher(): ScalaFxLauncher =
     val imageConfig = BaseImageConfig()
 
@@ -30,6 +32,14 @@ object Launcher:
       case Right(_)     => (true, s"${GREEN}Build Completed$RESET")
 
   def main(args: Array[String]): Unit =
+    given aiAgent: AiAgent = Langchain4jAgentFactory
+      .buildOllama(
+        Langchain4jOllamaConfig(
+          url = "http://localhost:11434",
+          modelName = "gemma4:e2b"
+        )
+      )
+    
     val (success, message) = outcomeFor(buildLauncher().run())
 
     if success then

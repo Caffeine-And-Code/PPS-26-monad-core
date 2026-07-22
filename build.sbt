@@ -51,6 +51,8 @@ lazy val root = rootProject
       "org.scalactic" %% "scalactic" % "3.2.20",
       "org.scalatest" %% "scalatest" % "3.2.20" % Test,
       "org.scalamock" %% "scalamock" % "7.5.5" % Test,
+      "dev.langchain4j" % "langchain4j-ollama" % "1.17.2",
+      "dev.langchain4j" % "langchain4j" % "1.17.2",
       "org.scalafx" %% "scalafx" % "23.0.1-R34"
     ) ++ javaFXModules.map(m =>
       ("org.openjfx" % s"javafx-$m" % javaFXVersion).classifier(osClassifier)
@@ -72,6 +74,14 @@ lazy val root = rootProject
           )
         )
       }
+    }
+  ).settings(
+    assembly / mainClass := Some("Launcher"),
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "services", _*) => MergeStrategy.concat
+      case PathList("META-INF", _*)             => MergeStrategy.discard
+      case "module-info.class"                  => MergeStrategy.discard
+      case _                                    => MergeStrategy.first
     }
   )
 
