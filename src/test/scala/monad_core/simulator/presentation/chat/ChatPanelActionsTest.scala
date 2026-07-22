@@ -1,6 +1,7 @@
 package monad_core.simulator.presentation.chat
 
-import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError}
+import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError, ConversationId, ConversationNotFoundError}
+import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -58,3 +59,23 @@ class ChatPanelActionsTest extends AnyFunSuite with Matchers:
     val result = ChatPanelActions.onAgentRespond(state, Right(agentReply))
 
     result shouldBe state
+
+  test("onHistoryCleaned removes all messages when cleaning succeeds"):
+    val state = ChatPanelState.Ready(
+      Seq(ChatMessage(validPrompt, MessageAuthor.User)),
+      validPrompt
+    )
+
+    val result = ChatPanelActions.onHistoryCleaned(state, Right(()))
+
+    result shouldBe ChatPanelState.Ready(Vector.empty, validPrompt)
+
+  test("onHistoryCleaned preserves messages and exposes the error when aiAgent clean fails"):
+    val conversationId = ConversationId.from("chat1").value
+    val error = ConversationNotFoundError(conversationId)
+    val messages = Seq(ChatMessage(validPrompt, MessageAuthor.User))
+    val state = ChatPanelState.Ready(messages, validPrompt)
+
+    val result = ChatPanelActions.onHistoryCleaned(state, Left(error))
+
+    result shouldBe ChatPanelState.Error(messages, validPrompt, error.message)

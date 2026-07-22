@@ -1,7 +1,7 @@
 package integrations.monad_core.simulator.presentation.panels
 
 import integrations.support.ScalaFxTest
-import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand}
+import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
 import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError, ConversationId, UserPrompt}
 import monad_core.simulator.presentation.panels.AiModelChatPanel
 import org.scalamock.scalatest.MockFactory
@@ -77,6 +77,42 @@ class AiModelChatPanelTest
       submitButton(panel).isDisable shouldBe true
     }
 
+    test("clear is disabled when there are no messages"):
+      val panel = buildPanel(mock[AiAgent])
+
+      onFxThread {
+        clearButton(panel).isDisable shouldBe true
+      }
+
+    test("clear removes all messages and cleans the AI history"):
+      val aiAgent = mock[AiAgent]
+      val prompt = "Hello"
+      val response = "Hi!"
+      val conversationId = ConversationId.from("chat1").value
+      aiAgent.ask
+        .expects(AskAgentCommand(conversationId, UserPrompt.from(prompt).value))
+        .returning(Future.successful(Right(AgentResponse(response, 0))))
+        .once()
+      aiAgent.cleanHistory
+        .expects(CleanHistoryCommand(conversationId))
+        .returning(Right(()))
+        .once()
+      val panel = buildPanel(aiAgent)
+
+      onFxThread {
+        promptField(panel).setText(prompt)
+        submitButton(panel).fire()
+      }
+      drainFxQueue()
+
+      onFxThread {
+        clearButton(panel).isDisable shouldBe false
+        clearButton(panel).fire()
+
+        messageTexts(panel) shouldBe empty
+        clearButton(panel).isDisable shouldBe true
+      }
+
   private def buildPanel(aiAgent: AiAgent): ScalaFxVBox =
     onFxThread {
       AiModelChatPanel.build(aiAgent).value
@@ -88,7 +124,14 @@ class AiModelChatPanelTest
   private def submitButton(panel: ScalaFxVBox): javafx.scene.control.Button =
     panel.delegate.lookup("#chat-send").asInstanceOf[javafx.scene.control.Button]
 
+  private def clearButton(panel: ScalaFxVBox): javafx.scene.control.Button =
+    panel.delegate.lookup("#chat-clear").asInstanceOf[javafx.scene.control.Button]
+
   private def messageTexts(panel: ScalaFxVBox): Seq[String] =
-    descendants(panel.delegate).collect {
+    val messages = panel.delegate
+      .lookup("#chat-scroll")
+      .asInstanceOf[javafx.scene.control.ScrollPane]
+      .getContent
+    descendants(messages).collect {
       case label: javafx.scene.control.Label => label.getText
     }

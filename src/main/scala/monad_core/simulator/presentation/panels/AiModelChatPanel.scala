@@ -97,17 +97,41 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
         """.stripMargin
     }
 
+    val clearButton = new Button("CLEAR") {
+      id = "chat-clear"
+      prefWidth = 85
+      style =
+        """
+          |-fx-border-color: #5b6069;
+          |-fx-border-width: 1;
+          |-fx-border-radius: 10;
+          |-fx-background-radius: 10;
+          |-fx-background-color: #454951;
+          |-fx-text-fill: white;
+          |-fx-font-weight: bold;
+          |-fx-cursor: hand;
+        """.stripMargin
+    }
+
     val component = new VBox {
       spacing = 20
       padding = Insets(30)
       prefWidth = 500
       prefHeight = 550
       children = Seq(
-        new Label("Chat with Jimmy") {
-          id = "chat-title"
-          maxWidth = Double.MaxValue
+        new HBox {
+          spacing = 15
           alignment = Pos.Center
-          style = BaseLabelStyle.h1
+          children = Seq(
+            new Label("Chat with Jimmy") {
+              id = "chat-title"
+              maxWidth = Double.MaxValue
+              alignment = Pos.Center
+              style = BaseLabelStyle.h1
+              HBox.setHgrow(this, Priority.Always)
+            },
+            clearButton
+          )
         },
         messagesScrollPane,
         new HBox {
@@ -139,6 +163,7 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
 
       promptField.disable = model.isWaiting
       sendButton.disable = !model.canSend
+      clearButton.disable = model.messages.isEmpty || model.isWaiting
 
       messages.children.clear()
       messagesToRender.foreach(message => messages.children.add(chatMessage(message)))
@@ -155,6 +180,7 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
       viewModel.onPromptChange(newPrompt)
     )
     sendButton.onAction = _ => viewModel.onSubmit()
+    clearButton.onAction = _ => viewModel.onClearHistory()
     promptField.onAction = _ => viewModel.onSubmit()
     render(viewModel.state.value)
 

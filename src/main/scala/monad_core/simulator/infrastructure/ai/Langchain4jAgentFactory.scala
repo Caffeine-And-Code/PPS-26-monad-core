@@ -25,7 +25,7 @@ object Langchain4jAgentFactory :
 
     val assistant = AiServices.builder(classOf[Langchain4jAssistant])
       .chatModel(model)
-      .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+      .chatMemoryProvider(_ => MessageWindowChatMemory.withMaxMessages(10))
       .build()
 
     val agentInfo = AgentInfo(

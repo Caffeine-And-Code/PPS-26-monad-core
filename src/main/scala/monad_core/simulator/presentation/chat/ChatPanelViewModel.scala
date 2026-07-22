@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.chat
 
-import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand}
+import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
 import monad_core.simulator.domain.ai.{ConversationId, UserPrompt}
 import scalafx.beans.property.ObjectProperty
 
@@ -10,6 +10,8 @@ final class ChatPanelViewModel(
     aiAgent: AiAgent,
     runOnUiThread: (() => Unit) => Unit
 )(using executionContext: ExecutionContext):
+
+  private val defaultConversationId = "chat1"
 
   val state: ObjectProperty[ChatPanelState] =
     ObjectProperty(ChatPanelState.initial)
@@ -23,7 +25,7 @@ final class ChatPanelViewModel(
 
       val askAgentCommand = for {
         userPrompt <- UserPrompt.from(prompt)
-        conversationId <- ConversationId.from("chat1")
+        conversationId <- ConversationId.from(defaultConversationId)
       } yield AskAgentCommand(conversationId, userPrompt)
 
       askAgentCommand.foreach {
@@ -35,6 +37,12 @@ final class ChatPanelViewModel(
           }
       }
     }
+
+  def onClearHistory(): Unit =
+    if state.value.messages.nonEmpty && !state.value.isWaiting then
+      ConversationId.from(defaultConversationId).map(CleanHistoryCommand.apply).foreach { command =>
+        update(ChatPanelActions.onHistoryCleaned(_, aiAgent.cleanHistory(command)))
+      }
 
   private def update(action: ChatPanelState => ChatPanelState): Unit =
     state.value = action(state.value)
