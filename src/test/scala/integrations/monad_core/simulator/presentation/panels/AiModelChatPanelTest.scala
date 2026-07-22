@@ -66,8 +66,9 @@ class AiModelChatPanelTest
   test("prompt and submit are disabled while waiting for the AI response"):
     val pendingResponse = Promise[Either[AgentResponseError, AgentResponse]]()
     val aiAgent = mock[AiAgent]
-    aiAgent.ask.expects(*).returning(pendingResponse.future).once()
     val panel = buildPanel(aiAgent)
+
+    aiAgent.ask.expects(*).returning(pendingResponse.future).once()
 
     onFxThread {
       promptField(panel).setText("Hello")
@@ -77,41 +78,42 @@ class AiModelChatPanelTest
       submitButton(panel).isDisable shouldBe true
     }
 
-    test("clear is disabled when there are no messages"):
-      val panel = buildPanel(mock[AiAgent])
+  test("clear is disabled when there are no messages"):
+    val panel = buildPanel(mock[AiAgent])
 
-      onFxThread {
-        clearButton(panel).isDisable shouldBe true
-      }
+    onFxThread {
+      clearButton(panel).isDisable shouldBe true
+    }
 
-    test("clear removes all messages and cleans the AI history"):
-      val aiAgent = mock[AiAgent]
-      val prompt = "Hello"
-      val response = "Hi!"
-      val conversationId = ConversationId.from("chat1").value
-      aiAgent.ask
-        .expects(AskAgentCommand(conversationId, UserPrompt.from(prompt).value))
-        .returning(Future.successful(Right(AgentResponse(response, 0))))
-        .once()
-      aiAgent.cleanHistory
-        .expects(CleanHistoryCommand(conversationId))
-        .returning(Right(()))
-        .once()
-      val panel = buildPanel(aiAgent)
+  test("clear removes all messages and cleans the AI history"):
+    val aiAgent = mock[AiAgent]
+    val prompt = "Hello"
+    val response = "Hi!"
+    val conversationId = ConversationId.from("chat1").value
+    val panel = buildPanel(aiAgent)
 
-      onFxThread {
-        promptField(panel).setText(prompt)
-        submitButton(panel).fire()
-      }
-      drainFxQueue()
+    aiAgent.ask
+      .expects(AskAgentCommand(conversationId, UserPrompt.from(prompt).value))
+      .returning(Future.successful(Right(AgentResponse(response, 0))))
+      .once()
+    aiAgent.cleanHistory
+      .expects(CleanHistoryCommand(conversationId))
+      .returning(Right(()))
+      .once()
 
-      onFxThread {
-        clearButton(panel).isDisable shouldBe false
-        clearButton(panel).fire()
+    onFxThread {
+      promptField(panel).setText(prompt)
+      submitButton(panel).fire()
+    }
+    drainFxQueue()
 
-        messageTexts(panel) shouldBe empty
-        clearButton(panel).isDisable shouldBe true
-      }
+    onFxThread {
+      clearButton(panel).isDisable shouldBe false
+      clearButton(panel).fire()
+
+      messageTexts(panel) shouldBe empty
+      clearButton(panel).isDisable shouldBe true
+    }
 
   private def buildPanel(aiAgent: AiAgent): ScalaFxVBox =
     onFxThread {
