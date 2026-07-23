@@ -27,6 +27,7 @@ object ChatPanelActions:
           case Right(answer) =>
             waiting.toReady.addMessage(ChatMessage(answer.response, Assistant))
           case Left(error) =>
+            println(error.message)
             waiting.toError(error.message)
       case _ => state
 
