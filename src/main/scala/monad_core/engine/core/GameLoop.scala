@@ -34,10 +34,10 @@ object GameLoop:
       gameLoop.copy(tickTime = newTickTime)
 
     def start(): GameLoop =
-      gameLoop.copy(isRunning = true)
+      gameLoop.copy(isRunning = true).withMode(newMode = SimulationMode)
 
     def stop(): GameLoop =
-      gameLoop.copy(isRunning = false)
+      gameLoop.copy(isRunning = false).withMode(newMode = EditMode)
 
     def tick(
               state: State,

@@ -1,6 +1,6 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.Scene.*
+import monad_core.engine.core.Scene.{entitiesLens, surfacesLens, teamsLens, *}
 import monad_core.engine.core.traits.State
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*

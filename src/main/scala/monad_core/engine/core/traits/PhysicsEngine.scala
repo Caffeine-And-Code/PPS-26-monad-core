@@ -1,4 +1,4 @@
 package monad_core.engine.core.traits
 
 private[engine] trait PhysicsEngine :
-  def step[S](scene: S, dt: Long): S
+  def step(scene: State, dt: Long): State
