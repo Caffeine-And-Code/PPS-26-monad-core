@@ -1,14 +1,16 @@
 package integrations.monad_core.simulator.presentation.support
 
 import javafx.application.Platform
+import javafx.stage.{Stage, Window}
 import monad_core.engine.errors.EngineError
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import scalafx.scene.control.Button
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.*
 
-private[presentation] trait ScalaFxInit extends BeforeAndAfterAll:
+private[simulator] trait ScalaFxInit extends BeforeAndAfterAll:
 
   this: Suite =>
   override def beforeAll(): Unit = {
@@ -31,6 +33,11 @@ private[presentation] trait ScalaFxInit extends BeforeAndAfterAll:
 
     val clicked = latch.await(5 * times, TimeUnit.SECONDS)
     assert(clicked, "Button click did not complete in time")
+    
+  def tryGetMainWindow: Option[Stage] =
+    Window.getWindows.asScala.collectFirst {
+      case stage: javafx.stage.Stage if stage.getTitle == "MonadCore2D" => stage
+    }
 
   def getOrFail[T](either: Either[EngineError, T]): T =
     either match
