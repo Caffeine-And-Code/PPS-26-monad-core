@@ -49,7 +49,11 @@ trait SnapshotTesting extends Matchers:
       Math.abs(g1 - g2) <= tolerance &&
       Math.abs(b1 - b2) <= tolerance
 
-  def assertMatchesVisualSnapshot(snapshotName: String, canvas: Canvas, maxAllowedDiffPixels: Int = 50): Unit =
+  def assertMatchesVisualSnapshot(
+                                   snapshotName: String,
+                                   canvas: Canvas,
+                                   maxDiffPercentage: Double = 0.1
+                                 ): Unit =
     val snapshot = runOnFxThread {
       canvas.snapshot(null, null)
     }
@@ -68,6 +72,7 @@ trait SnapshotTesting extends Matchers:
 
       val width = bufferedImage.getWidth
       val height = bufferedImage.getHeight
+      val totalPixels = width * height
 
       val diffs = for
         x <- 0 until width
@@ -77,11 +82,13 @@ trait SnapshotTesting extends Matchers:
         if !pixelsMatch(act, exp)
       yield (x, y, act, exp)
 
-      if diffs.length > maxAllowedDiffPixels then
+      val diffPercentage = (diffs.length.toDouble / totalPixels) * 100
+
+      if diffPercentage > maxDiffPercentage then
         val totalPixels = width * height
         val (firstX, firstY, act, exp) = diffs.head
         fail(
-          s"Mismatch in '$snapshotName': ${diffs.length}/$totalPixels pixels differ. " +
+          s"Mismatch in '$snapshotName': ${diffs.length}/$totalPixels ($diffPercentage%) pixels differ. " +
             s"First discrepancy at ($firstX, $firstY) -> Actual: 0x${act.toHexString.toUpperCase}, Expected: 0x${exp.toHexString.toUpperCase}"
         )
 
