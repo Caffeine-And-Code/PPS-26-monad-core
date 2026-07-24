@@ -1,4 +1,4 @@
-package engine.core.traits
+package engine.physics
 
 import engine.physics.PhysicsError
 

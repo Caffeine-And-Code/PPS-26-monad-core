@@ -1,8 +1,9 @@
 package engine.core.loop
 
 import engine.core.loop.GameLoop.StaticAlpha
-import engine.core.traits.{Physics, RenderEngine}
+import engine.core.traits.RenderEngine
 import engine.errors.EngineError
+import engine.physics.Physics
 
 import scala.annotation.tailrec
 
