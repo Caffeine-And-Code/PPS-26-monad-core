@@ -30,12 +30,30 @@ trait SnapshotTesting extends Matchers:
 
       normalizedActual shouldBe normalizedExpected
 
-  def assertMatchesVisualSnapshot(snapshotName: String, canvas: Canvas): Unit =
+  /**
+   * does a pixel match with a tolerance to prevent errors given by antialiasing
+   */
+  private def pixelsMatch(color1: Int, color2: Int, tolerance: Int = 10): Boolean =
+    val a1 = (color1 >> 24) & 0xff
+    val r1 = (color1 >> 16) & 0xff
+    val g1 = (color1 >> 8) & 0xff
+    val b1 = color1 & 0xff
+
+    val a2 = (color2 >> 24) & 0xff
+    val r2 = (color2 >> 16) & 0xff
+    val g2 = (color2 >> 8) & 0xff
+    val b2 = color2 & 0xff
+
+    Math.abs(a1 - a2) <= tolerance &&
+      Math.abs(r1 - r2) <= tolerance &&
+      Math.abs(g1 - g2) <= tolerance &&
+      Math.abs(b1 - b2) <= tolerance
+
+  def assertMatchesVisualSnapshot(snapshotName: String, canvas: Canvas, maxAllowedDiffPixels: Int = 50): Unit =
     val snapshot = runOnFxThread {
       canvas.snapshot(null, null)
     }
     val bufferedImage = SwingFXUtils.fromFXImage(snapshot.delegate, null)
-
     val file = snapshotsDir.resolve(s"$snapshotName.png").toFile
 
     if !file.exists() then
@@ -56,10 +74,10 @@ trait SnapshotTesting extends Matchers:
         y <- 0 until height
         act = bufferedImage.getRGB(x, y)
         exp = expectedImage.getRGB(x, y)
-        if act != exp
+        if !pixelsMatch(act, exp)
       yield (x, y, act, exp)
 
-      if diffs.nonEmpty then
+      if diffs.length > maxAllowedDiffPixels then
         val totalPixels = width * height
         val (firstX, firstY, act, exp) = diffs.head
         fail(
