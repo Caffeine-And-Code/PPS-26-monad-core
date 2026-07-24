@@ -48,17 +48,24 @@ trait SnapshotTesting extends Matchers:
       bufferedImage.getWidth shouldBe expectedImage.getWidth
       bufferedImage.getHeight shouldBe expectedImage.getHeight
 
-      val actualPixels = for
-        x <- 0 until bufferedImage.getWidth
-        y <- 0 until bufferedImage.getHeight
-      yield bufferedImage.getRGB(x, y)
+      val width = bufferedImage.getWidth
+      val height = bufferedImage.getHeight
 
-      val expectedPixels = for
-        x <- 0 until expectedImage.getWidth
-        y <- 0 until expectedImage.getHeight
-      yield expectedImage.getRGB(x, y)
+      val diffs = for
+        x <- 0 until width
+        y <- 0 until height
+        act = bufferedImage.getRGB(x, y)
+        exp = expectedImage.getRGB(x, y)
+        if act != exp
+      yield (x, y, act, exp)
 
-      actualPixels shouldBe expectedPixels
+      if diffs.nonEmpty then
+        val totalPixels = width * height
+        val (firstX, firstY, act, exp) = diffs.head
+        fail(
+          s"Mismatch in '$snapshotName': ${diffs.length}/$totalPixels pixels differ. " +
+            s"First discrepancy at ($firstX, $firstY) -> Actual: 0x${act.toHexString.toUpperCase}, Expected: 0x${exp.toHexString.toUpperCase}"
+        )
 
   def runOnFxThread[A](body: => A): A =
     if Platform.isFxApplicationThread then

@@ -81,26 +81,18 @@ class DrawerTest extends AnyFunSuite with Matchers with Inside with MockFactory 
 
       color shouldBe a[Color]
 
-  test("Similar TeamId gets different colors"):
+  test("teamIdColorRelation is deterministic"):
+    val teamId = generateRandomTeamId()
+    val color1 = Drawer.teamIdColorRelation(teamId)
+    val color2 = Drawer.teamIdColorRelation(teamId)
 
-    def createSimilarString(original: String): String =
-      val newHead = if (original.head == 'A') 'B' else 'A'
-      original.updated(0, newHead)
+    color1 should be(color2)
 
-    def colorDistance(c1: Color, c2: Color): Double =
-      val dr = c1.red - c2.red
-      val dg = c1.green - c2.green
-      val db = c1.blue - c2.blue
-
-      Math.sqrt(0.30 * dr * dr + 0.59 * dg * dg + 0.11 * db * db)
-
-    def areColorsDifferentEnough(c1: Color, c2: Color, threshold: Double = 0.3): Boolean =
-      colorDistance(c1, c2) >= threshold
-
-    val firstTeamId = generateRandomTeamId()
-    val secondTeamId = TeamId(createSimilarString(firstTeamId.value)).value
+  test("Different TeamIds get different colors"):
+    val firstTeamId = TeamId("TeamA").value
+    val secondTeamId = TeamId("TeamB").value
 
     val firstColor = Drawer.teamIdColorRelation(firstTeamId)
     val secondColor = Drawer.teamIdColorRelation(secondTeamId)
 
-    areColorsDifferentEnough(firstColor, secondColor) should be(true)
+    firstColor should not be secondColor

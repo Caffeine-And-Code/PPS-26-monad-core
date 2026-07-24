@@ -7,6 +7,7 @@ import scalafx.scene.paint.Color
 
 import scala.collection.mutable.ListBuffer
 import scala.math.{max, min}
+import scala.util.Random
 import scala.util.hashing.MurmurHash3
 
 enum DrawCommand:
@@ -16,15 +17,20 @@ enum DrawCommand:
 object Drawer extends Painter:
 
   private[painters] val buffer = ListBuffer.empty[DrawCommand]
-  
+
   def getBuffer: ListBuffer[DrawCommand] = buffer
 
   override def baseColor: Color = Color.rgb(255, 255, 255)
 
   def teamIdColorRelation(id: TeamId): Color =
-    val hue = (MurmurHash3.stringHash(id.value).abs % 360).toDouble
+    val hash = MurmurHash3.stringHash(id.value)
+    val rng = Random(hash)
 
-    Color.hsb(hue, saturation = 0.8, brightness = 0.8)
+    val hue = rng.nextDouble() * 360.0
+    val saturation = 0.5 + (rng.nextDouble() * 0.5)
+    val brightness = 0.5 + (rng.nextDouble() * 0.5)
+
+    Color.hsb(hue, saturation, brightness)
 
   def drawCircle(locatable: Locatable, color: Color): Unit =
     locatable.shape match
