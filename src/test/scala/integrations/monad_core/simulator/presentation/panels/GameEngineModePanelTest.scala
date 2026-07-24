@@ -14,6 +14,10 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.{jfxButton2sfx, jfxHBox2sfx}
 
 class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
+  val ToolsButtonIndex = 0
+  val SpacingRegionIndex = 1
+  val ModeButtonIndex = 2
+  val StopButtonIndex = 3
 
   test("A GameEngineModePanel can be created"):
     val imageConfigRecord = MockImageConfig()
@@ -48,7 +52,7 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
-        inside(buttonsRow.children.head):
+        inside(buttonsRow.children.get(ModeButtonIndex)):
           case playPauseBtn: Button =>
             clickButton(playPauseBtn)
 
@@ -67,7 +71,7 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
-        inside(buttonsRow.children.head):
+        inside(buttonsRow.children.get(ModeButtonIndex)):
           case playPauseBtn: Button =>
             clickButton(playPauseBtn, times = 2)
 
@@ -81,7 +85,7 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
-        inside(buttonsRow.children.get(1)):
+        inside(buttonsRow.children.get(StopButtonIndex)):
           case stopButton: Button =>
             clickButton(stopButton)
 
@@ -96,10 +100,10 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
-        inside(buttonsRow.children.getFirst):
+        inside(buttonsRow.children.get(ModeButtonIndex)):
           case playPauseBtn: Button =>
             clickButton(playPauseBtn)
-        inside(buttonsRow.children.get(1)):
+        inside(buttonsRow.children.get(StopButtonIndex)):
           case stopButton: Button =>
             clickButton(stopButton)
 
@@ -117,10 +121,10 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
-        inside(buttonsRow.children.getFirst):
+        inside(buttonsRow.children.get(ModeButtonIndex)):
           case playPauseBtn: Button =>
             clickButton(playPauseBtn, times = 2)
-        inside(buttonsRow.children.get(1)):
+        inside(buttonsRow.children.get(StopButtonIndex)):
           case stopButton: Button =>
             clickButton(stopButton)
 
@@ -139,9 +143,9 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
-        inside(buttonsRow.children.getFirst):
+        inside(buttonsRow.children.get(ModeButtonIndex)):
           case playPauseBtn: Button =>
             clickButton(playPauseBtn, times = 3)
-        inside(buttonsRow.children.get(1)):
+        inside(buttonsRow.children.get(StopButtonIndex)):
           case stopButton: Button =>
             clickButton(stopButton)

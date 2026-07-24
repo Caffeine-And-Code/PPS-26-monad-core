@@ -183,6 +183,19 @@
                   "children": [
                     {
                       "type": "Button",
+                      "styleClass": ["button", "menu-icon-button"],
+                      "children": [
+                        {
+                          "type": "ImageView",
+                          "styleClass": ["image-view"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Region"
+                    },
+                    {
+                      "type": "Button",
                       "styleClass": ["button"],
                       "children": [
                         {
