@@ -3,7 +3,7 @@ package engine.core.loop
 import engine.core.loop.GameLoop.StaticAlpha
 import engine.core.traits.RenderEngine
 import engine.errors.EngineError
-import engine.physics.Physics
+import engine.physics.core.Physics
 
 import scala.annotation.tailrec
 

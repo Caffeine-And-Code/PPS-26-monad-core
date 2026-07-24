@@ -116,7 +116,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityWithWeight = ValidEntity.flatMap(_.withWeight(invalidWeight))
 
-    entityWithWeight shouldBe Left(WeightCannotBeNegative())
+    entityWithWeight shouldBe Left(WeightCannotBeNegativeOrZero())
 
   test("can create an entity and give it a health"):
     val health = 5

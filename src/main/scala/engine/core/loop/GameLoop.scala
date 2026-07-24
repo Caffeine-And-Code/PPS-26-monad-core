@@ -2,7 +2,7 @@ package engine.core.loop
 
 import engine.core.traits.RenderEngine
 import engine.errors.EngineError
-import engine.physics.Physics
+import engine.physics.core.Physics
 
 trait GameLoop:
   def mode: LoopMode

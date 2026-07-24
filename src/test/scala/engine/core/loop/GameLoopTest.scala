@@ -3,7 +3,7 @@ package engine.core.loop
 import engine.core.loop.GameLoop
 import engine.core.loop.LoopMode.{SimulationMode, EditMode}
 import engine.core.traits.RenderEngine
-import engine.physics.Physics
+import engine.physics.core.Physics
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

@@ -20,6 +20,6 @@ case class LengthMustBeGreaterThanZero() extends EngineError("Length must be gre
 
 case class TeamIdCannotBeEmpty() extends EngineError("TeamId cannot be empty")
 
-case class WeightCannotBeNegative() extends EngineError("Weight cannot be negative")
+case class WeightCannotBeNegativeOrZero() extends EngineError("Weight cannot be negative")
 
 case class ATeamCannotBeItsOwnEnemy() extends EngineError("A team cannot be its own enemy")
