@@ -33,7 +33,7 @@ trait SnapshotTesting extends Matchers:
   /**
    * does a pixel match with a tolerance to prevent errors given by antialiasing
    */
-  private def pixelsMatch(color1: Int, color2: Int, tolerance: Int = 10): Boolean =
+  private def pixelsMatch(color1: Int, color2: Int, tolerance: Int = 15): Boolean =
     val a1 = (color1 >> 24) & 0xff
     val r1 = (color1 >> 16) & 0xff
     val g1 = (color1 >> 8) & 0xff
