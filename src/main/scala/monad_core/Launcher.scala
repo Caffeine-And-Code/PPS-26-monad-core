@@ -10,7 +10,7 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 import scala.Console.{GREEN, RESET}
 
 object Launcher :
-  def buildLauncher(): ScalaFxLauncher =
+  private def buildLauncher(): ScalaFxLauncher =
     val imageConfig = BaseImageConfig()
 
     val gamePanel = GameEnginePanel(
