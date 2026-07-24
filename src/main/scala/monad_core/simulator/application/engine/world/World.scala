@@ -19,7 +19,7 @@ private final case class WorldImpl(snapshot: State) extends World:
     snapshot.getEntity(entityId).flatMap(snapshot.removeEntity).map(WorldImpl.apply)
 
   def updateEntity(command: SaveEntityCommand): Either[EngineError, World] =
-    removeEntity(command.entity.id).flatMap(_ => createEntity(command))
+    removeEntity(command.entity.id).flatMap(_.createEntity(command))
 
   def createSurface(command: SaveSurfaceCommand): Either[EngineError, World] =
     snapshot.addSurface(command.surface).map(WorldImpl.apply)
@@ -28,7 +28,7 @@ private final case class WorldImpl(snapshot: State) extends World:
     snapshot.getSurface(id).flatMap(snapshot.removeSurface).map(WorldImpl.apply)
 
   def updateSurface(command: SaveSurfaceCommand): Either[EngineError, World] =
-    removeSurface(command.surface.id).flatMap(_ => createSurface(command))
+    removeSurface(command.surface.id).flatMap(_.createSurface(command))
 
   def createTeam(command: SaveTeamCommand): Either[EngineError, World] =
     snapshot.addTeam(command.team).map(WorldImpl.apply)
@@ -37,7 +37,7 @@ private final case class WorldImpl(snapshot: State) extends World:
     snapshot.getTeam(id).flatMap(snapshot.removeTeam).map(WorldImpl.apply)
 
   def updateTeam(command: SaveTeamCommand): Either[EngineError, World] =
-    removeTeam(command.team.id).flatMap(_ => createTeam(command))
+    removeTeam(command.team.id).flatMap(_.createTeam(command))
 
   override def getAllEntities: List[Entity] = snapshot.allEntities
 

@@ -1,6 +1,5 @@
 package monad_core.engine.core.traits
 
-import monad_core.engine.core.Scene
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 
@@ -17,14 +16,14 @@ trait State:
 
   def getSurface(id: LocatableId): Either[EngineError, Surface]
 
-  def addEntity(entity: Entity): Either[EngineError, Scene]
+  def addEntity(entity: Entity): Either[EngineError, State]
 
-  def addTeam(team: Team): Either[EngineError, Scene]
+  def addTeam(team: Team): Either[EngineError, State]
 
-  def addSurface(surface: Surface): Either[EngineError, Scene]
+  def addSurface(surface: Surface): Either[EngineError, State]
 
-  def removeEntity(entity: Entity): Either[EngineError, Scene]
+  def removeEntity(entity: Entity): Either[EngineError, State]
 
-  def removeTeam(team: Team): Either[EngineError, Scene]
+  def removeTeam(team: Team): Either[EngineError, State]
 
-  def removeSurface(surface: Surface): Either[EngineError, Scene]
+  def removeSurface(surface: Surface): Either[EngineError, State]

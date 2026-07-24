@@ -41,7 +41,6 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
 
     assertMatchesVisualSnapshot("circle_flush_result", canvas)
 
-
   test("flush draws the Rectangle Commands"):
     enlistRectangle()
 
