@@ -2,7 +2,8 @@ package integrations.monad_core.simulator.presentation.panels
 
 import helpers.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import monad_core.simulator.application.engine.GameLoopController
+import monad_core.engine.public_api.Painter
+import monad_core.simulator.application.engine.GameEngine
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.presentation.panels.GameEnginePanel
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, SceneRendererPanelBuilder}
@@ -43,7 +44,10 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
     modePanel.build.expects(*, *, *).never()
 
   def setupCorrectSceneRenderer(): Unit = {
-    val gameLoopController: GameLoopController = mock[GameLoopController]
+    given Painter = mock[Painter]
+    val onFrame = mockFunction[World, Unit]
+    
+    val gameLoopController: GameEngine = GameEngine(onFrame)
 
     sceneRenderer.build.expects(*).returns(
       Right((

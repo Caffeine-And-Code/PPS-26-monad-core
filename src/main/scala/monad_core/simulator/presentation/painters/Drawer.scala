@@ -4,7 +4,10 @@ import monad_core.engine.model.*
 import monad_core.engine.public_api.Painter
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
+
 import scala.collection.mutable.ListBuffer
+import scala.math.{max, min}
+import scala.util.hashing.MurmurHash3
 
 enum DrawCommand:
   case Circle(x: Double, y: Double, radius: Double, color: Color)
@@ -12,12 +15,16 @@ enum DrawCommand:
 
 object Drawer extends Painter:
 
-  private val buffer = ListBuffer.empty[DrawCommand]
+  private[painters] val buffer = ListBuffer.empty[DrawCommand]
+  
+  def getBuffer: ListBuffer[DrawCommand] = buffer
 
   override def baseColor: Color = Color.rgb(255, 255, 255)
 
   def teamIdColorRelation(id: TeamId): Color =
-    Color.color(id.value.length ** 2, id.value.length ** 2, id.value.length ** 2)
+    val hue = (MurmurHash3.stringHash(id.value).abs % 360).toDouble
+
+    Color.hsb(hue, saturation = 0.8, brightness = 0.8)
 
   def drawCircle(locatable: Locatable, color: Color): Unit =
     locatable.shape match
@@ -35,6 +42,7 @@ object Drawer extends Painter:
     val commands = buffer.toList
     buffer.clear()
     gc.clearRect(0, 0, gc.canvas.getWidth, gc.canvas.getHeight)
+
     commands.foreach {
       case DrawCommand.Circle(x, y, r, c) =>
         gc.fill = c
