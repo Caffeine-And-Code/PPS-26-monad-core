@@ -16,4 +16,4 @@ class Langchain4jAgentFactoryTest extends AnyFunSuite with Matchers:
     val result = Langchain4jAgentFactory.buildOllama(ollamaConfig)
 
     result.agentInfo shouldBe AgentInfo(ollamaConfig.provider, ollamaConfig.modelName)
-    result.isInstanceOf[Langchain4jAiAgent]
+    result shouldBe a[Langchain4jAiAgent]

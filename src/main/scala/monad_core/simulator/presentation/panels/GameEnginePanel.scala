@@ -21,11 +21,9 @@ final class GameEnginePanel(
   private val TopPanelMinHeight = 80.0
 
   def build(): Either[EngineError, VBox] = {
-
-    val initialWorld = buildInitialWorld(World(Scene()))
-      .fold(error => return Left(error), w => w)
-
     for
+      initialWorld <- buildInitialWorld(World(Scene()))
+
       (sceneRendererPanel, controller) <- rendererPanel.build(initialWorld)
         .left.map(error => CannotBuildPanel(error, this.toString))
 
