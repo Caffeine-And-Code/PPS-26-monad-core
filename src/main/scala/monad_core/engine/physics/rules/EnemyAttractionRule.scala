@@ -1,7 +1,6 @@
 package monad_core.engine.physics.rules
 
-import engine.model.*
-import engine.physics.core.*
+import monad_core.engine.model.*
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule, PhysicsState, PhysicsUtil}
 
 object EnemyAttractionRule:

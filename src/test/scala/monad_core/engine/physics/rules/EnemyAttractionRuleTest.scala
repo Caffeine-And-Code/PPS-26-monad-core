@@ -1,8 +1,8 @@
 package monad_core.engine.physics.rules
 
-import engine.model.*
+import monad_core.engine.model.*
 import monad_core.engine.model.Entity.*
-import engine.physics.core.*
+import monad_core.engine.physics.core.*
 import monad_core.engine.model.{Entity, LocatableId, Team, Vector2D}
 import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsRule, PhysicsState}
 import monad_core.engine.physics.rules.EnemyAttractionRule.given

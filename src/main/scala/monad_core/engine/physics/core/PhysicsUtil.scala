@@ -1,8 +1,7 @@
 package monad_core.engine.physics.core
 
-import engine.model.*
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, LocatableId, Team, TeamId, Vector2D, Weight}
+import monad_core.engine.model.*
 
 object PhysicsUtil:
 

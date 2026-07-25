@@ -1,8 +1,7 @@
 package monad_core.engine.physics.rules
 
-import engine.model.*
 import monad_core.engine.model.Entity.*
-import engine.physics.core.*
+import monad_core.engine.physics.core.*
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
 import monad_core.engine.physics.core.{NegativeDeltaTime, OutOfBoundEntity, PhysicsRule, PhysicsState}
 import monad_core.engine.physics.rules.KinematicsRule.given

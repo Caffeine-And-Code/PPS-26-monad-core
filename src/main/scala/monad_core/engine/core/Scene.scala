@@ -1,6 +1,5 @@
 package monad_core.engine.core
 
-import engine.model.*
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, LocatableId, Surface, Team, TeamId}
 

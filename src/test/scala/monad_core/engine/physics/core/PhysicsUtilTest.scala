@@ -1,6 +1,5 @@
 package monad_core.engine.physics.core
 
-import engine.model.*
 import monad_core.engine.model.{Entity, Team, Vector2D, Weight, WeightCannotBeNegativeOrZero}
 import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsUtil}
 import org.scalatest.EitherValues.convertEitherToValuable

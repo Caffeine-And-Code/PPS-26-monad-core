@@ -1,8 +1,6 @@
 package monad_core.engine.physics.rules
 
-import engine.model.{dot, sub, times}
-import engine.physics.core.*
-import monad_core.engine.model.{Entity, LocatableId, Vector2D}
+import monad_core.engine.model.{Entity, LocatableId, Vector2D, dot, sub, times}
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule, PhysicsState, PhysicsUtil}
 
 trait Collision:

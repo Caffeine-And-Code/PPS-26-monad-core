@@ -1,6 +1,5 @@
 package monad_core.engine.physics.rules
 
-import engine.physics.core.*
 import monad_core.engine.physics.core.{OutOfBoundEntity, PhysicsError, PhysicsRule, PhysicsState, PhysicsUtil}
 
 object KinematicsRule:
