@@ -1,10 +1,12 @@
 package monad_core.simulator.application
 
-import monad_core.engine.core.{EditMode, GameLoop, Scene}
+import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
+import monad_core.engine.core.{GameLoop, Scene}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.GameEngine
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.presentation.painters.Drawer
+import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 
 class GameEngineTest extends AnyFunSuite:
@@ -14,7 +16,7 @@ class GameEngineTest extends AnyFunSuite:
   private def emptyWorld: World = World(Scene())
 
   test("tick in edit mode does not run physics and only refreshes lastTime") {
-    val loop = GameLoop()
+    val loop = GameLoop().value
     val world = emptyWorld
 
     val (newWorld, newLoop) = GameEngine.tick(world, loop, currentTime = 1_000L)
@@ -27,7 +29,7 @@ class GameEngineTest extends AnyFunSuite:
   }
 
   test("tick in simulation mode below tick time only accumulates elapsed time") {
-    val loop = GameLoop().start()
+    val loop = GameLoop().value.start()
     val elapsed = loop.tickTime - 1
 
     val (_, newLoop) = GameEngine.tick(emptyWorld, loop, currentTime = elapsed)
@@ -38,7 +40,7 @@ class GameEngineTest extends AnyFunSuite:
   }
 
   test("tick in simulation mode consumes exactly one fixed update when elapsed time equals tick time") {
-    val loop = GameLoop().start()
+    val loop = GameLoop().value.start()
 
     val (_, newLoop) = GameEngine.tick(emptyWorld, loop, currentTime = loop.tickTime)
 
@@ -47,7 +49,7 @@ class GameEngineTest extends AnyFunSuite:
   }
 
   test("tick clamps elapsed time to maxFrameTime, avoiding the spiral of death") {
-    val loop = GameLoop().start()
+    val loop = GameLoop().value.start()
     val farInTheFuture = loop.maxFrameTime * 2
 
     val (_, newLoop) = GameEngine.tick(emptyWorld, loop, currentTime = farInTheFuture)
@@ -60,7 +62,7 @@ class GameEngineTest extends AnyFunSuite:
   }
 
   test("tick returns to edit-mode behaviour once the loop is stopped") {
-    val running = GameLoop().start()
+    val running = GameLoop().value.start()
     val (_, afterOneStep) = GameEngine.tick(emptyWorld, running, currentTime = running.tickTime)
     val stopped = afterOneStep.stop()
 

@@ -1,10 +1,9 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.GameLoop.StaticAlpha
-import monad_core.engine.core.traits.RenderEngine
+import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
 import monad_core.engine.errors.EngineError
-import monad_core.engine.physics.core.Physics
-
+import monad_core.engine.public_api.Painter
 import scala.annotation.tailrec
 
 private case class GameLoopImpl(
@@ -23,29 +22,28 @@ private case class GameLoopImpl(
     else if maxFrameTime < newTickTime then Left(InvalidMaxFrameTimeTickTimeRatio(maxFrameTime, newTickTime))
     else Right(this.copy(tickTime = newTickTime))
 
-  def start(): GameLoop = this.copy(isRunning = true)
-  def stop(): GameLoop = this.copy(isRunning = false)
+  def start(): GameLoop = this.copy(isRunning = true, mode = LoopMode.SimulationMode)
+  def stop(): GameLoop = this.copy(isRunning = false, mode = LoopMode.EditMode)
 
-  def tick[S](scene: S, currentTime: Long)(using physics: Physics[S], render: RenderEngine[S]): Either[EngineError, (S, GameLoop)] =
+  def tick(state: State, currentTime: Long)(using physics: PhysicsEngine, render: RenderEngine, painter: Painter): Either[EngineError, (State, GameLoop)] =
     if !isRunning || mode == LoopMode.EditMode then
-      render.render(scene, StaticAlpha)
-      Right((scene, this.copy(lastTime = currentTime)))
+      render.render(state, StaticAlpha)
+      Right((state, this.copy(lastTime = currentTime)))
     else
       val elapsedTime = currentTime - lastTime
       val clampedTime = Math.min(elapsedTime, maxFrameTime)
       val remainingTime = accumulator + clampedTime
 
       @tailrec
-      def runFixedUpdate(remainingTime: Long, currentScene: S): Either[EngineError, (S, Long)] =
+      def runFixedUpdate(remainingTime: Long, currentScene: State): Either[EngineError, (State, Long)] =
         if remainingTime < tickTime then
           Right((currentScene, remainingTime))
         else
-          physics.step(currentScene, tickTime) match
-            case Left(error) => Left(error)
-            case Right(updatedScene) => runFixedUpdate(remainingTime - tickTime, updatedScene)
+          val updatedScene = physics.step(currentScene, tickTime)
+          runFixedUpdate(remainingTime - tickTime, updatedScene)
 
       for
-        res <- runFixedUpdate(remainingTime, scene)
+        res <- runFixedUpdate(remainingTime, state)
         (currentScene, currentAccumulator) = res
         _ = {
           val alpha = currentAccumulator.toDouble / tickTime.toDouble

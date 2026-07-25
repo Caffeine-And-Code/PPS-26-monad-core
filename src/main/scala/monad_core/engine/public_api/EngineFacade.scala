@@ -5,5 +5,5 @@ import monad_core.engine.core.traits.State
 
 object EngineFacade:
   def tick(loop: GameLoop, state: State, currentTime: Long)
-          (using painter: Painter): (State, GameLoop) =
-    loop.tick(state, PhysicsMock, RendererManager, currentTime)
+          (using painter: Painter, physics: PhysicsMock.type, renderer: RendererManager.type): (State, GameLoop) =
+    loop.tick(state, currentTime).toOption.get
