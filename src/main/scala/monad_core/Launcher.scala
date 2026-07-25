@@ -1,24 +1,37 @@
 package monad_core
 
 import monad_core.engine.errors.EngineError
-import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
-import monad_core.simulator.presentation.panels.traits.{AiModelChatPanelBuilder, GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
-import monad_core.simulator.presentation.resources.BaseImageConfig
-import monad_core.simulator.presentation.stages.MainStage
 import monad_core.simulator.application.ai.AiAgent
-import monad_core.simulator.application.engine.{GameEngineRuntime, Word}
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
-import monad_core.simulator.infrastructure.engine.{DummyGameEngineRuntime, EngineWord}
+import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
+import monad_core.simulator.presentation.resources.BaseImageConfig
+import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.Console.{GREEN, RESET}
 
-object Launcher {
-  def main(args: Array[String]): Unit = {
+object Launcher :
+  private def buildLauncher(): ScalaFxLauncher =
+    val imageConfig = BaseImageConfig()
 
-    given word: Word = EngineWord()
+    val gamePanel = GameEnginePanel(
+      modePanel = GameEngineModePanel,
+      rendererPanel = SceneRendererPanel,
+      imageConfig = imageConfig
+    )
 
-    given gameEngineRuntime :GameEngineRuntime = DummyGameEngineRuntime()
+    val mainStage = MainStage(
+      gamePanel = gamePanel,
+      chatPanel = AiModelChatPanel
+    )
 
+    ScalaFxLauncher(mainStage)
+
+  def outcomeFor(result: Either[EngineError, Unit]): (Boolean, String) =
+    result match
+      case Left(error) => (false, s"Startup failed: ${error.message}")
+      case Right(_)     => (true, s"${GREEN}Build Completed$RESET")
+
+  def main(args: Array[String]): Unit =
     given aiAgent: AiAgent = Langchain4jAgentFactory
       .buildOllama(
         Langchain4jOllamaConfig(
@@ -27,18 +40,10 @@ object Launcher {
         )
       )
 
-    given imageConfig: BaseImageConfig = BaseImageConfig()
+    val (success, message) = outcomeFor(buildLauncher().run())
 
-    given gameEnginePanelBuilder: GameEnginePanelBuilder = GameEnginePanel
-
-    given aiModelChatPanelBuilder: AiModelChatPanelBuilder = AiModelChatPanel
-
-    given gameEngineModePanelBuilder: GameEngineModePanelBuilder = GameEngineModePanel
-
-    given sceneRendererPanelBuilder: SceneRendererPanelBuilder = SceneRendererPanel
-
-    MainStage.main() match
-      case Some(error: EngineError) => println(error.message)
-      case None => println("Building Complete.\n")
-  }
-}
+    if success then
+      Console.println(s"$RESET$message")
+    else
+      Console.err.println(message)
+      sys.exit(1)

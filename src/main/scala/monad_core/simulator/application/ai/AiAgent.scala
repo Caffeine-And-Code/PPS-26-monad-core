@@ -1,6 +1,6 @@
 package monad_core.simulator.application.ai
 
-import monad_core.simulator.domain.ai.{AgentInfo, AgentResponse, AgentResponseError, ConversationId, UserPrompt}
+import monad_core.simulator.domain.ai.*
 import monad_core.simulator.errors.BaseError
 
 import scala.concurrent.Future

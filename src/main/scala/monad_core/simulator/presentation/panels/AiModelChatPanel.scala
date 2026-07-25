@@ -3,7 +3,7 @@ package monad_core.simulator.presentation.panels
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.presentation.chat.*
-import monad_core.simulator.presentation.panels.support.{BaseLabelStyle, BasePanelStyle}
+import monad_core.simulator.presentation.panels.support.BaseLabelStyle
 import monad_core.simulator.presentation.panels.traits.AiModelChatPanelBuilder
 import scalafx.application.Platform
 import scalafx.geometry.{Insets, Pos}
@@ -141,7 +141,7 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
           children = Seq(promptField, sendButton)
         }
       )
-      style = BasePanelStyle.get() + "-fx-padding: 30px;"
+      style = BaseLabelStyle.p + "-fx-padding: 30px;"
     }
 
     def scrollToLatestMessage(): Unit =

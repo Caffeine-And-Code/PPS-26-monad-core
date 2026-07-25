@@ -6,11 +6,11 @@ import dev.langchain4j.service.Result
 import monad_core.simulator.application.ai.{AskAgentCommand, CleanHistoryCommand}
 import monad_core.simulator.domain.ai.{AgentInfo, AgentResponse, ConversationId, ConversationNotFoundError, ConversationNotFoundErrorTest, UserPrompt}
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.EitherValues.*
 import org.scalatest.Inside
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.EitherValues.*
 
 class Langchain4jAiAgentTest extends AnyFunSuite with Matchers with Inside with MockFactory with ScalaFutures:
 

@@ -1,9 +1,9 @@
 package monad_core.simulator.application.ai
 
 import monad_core.simulator.domain.ai.{ConversationId, UserPrompt}
+import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.EitherValues.*
 
 class AiAgentTest extends AnyFunSuite with Matchers :
 

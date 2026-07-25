@@ -1,43 +1,58 @@
 package monad_core.simulator.presentation.panels
 
+import monad_core.engine.core.Scene
 import monad_core.engine.errors.EngineError
+import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.scene.layout.VBox
 
-object GameEnginePanel extends GameEnginePanelBuilder {
+final class GameEnginePanel(
+                             modePanel: GameEngineModePanelBuilder,
+                             rendererPanel: SceneRendererPanelBuilder,
+                             imageConfig: ImageConfigRecord
+                           ) extends GameEnginePanelBuilder {
+
   private val TopPanelHeightRatio = 0.07
   private val BottomPanelHeightRatio = 0.93
   private val SpacingRatio = 0.02
   private val TopPanelMinHeight = 80.0
 
-  def build()
-           (
-             using imageConfig: ImageConfigRecord,
-             gameEngineModePanelBuilder: GameEngineModePanelBuilder,
-             sceneRendererPanelBuilder: SceneRendererPanelBuilder
-           )
-  : Either[EngineError, VBox] =
+  def build(): Either[EngineError, VBox] = {
+    for
+      initialWorld <- buildInitialWorld(World(Scene()))
 
-    val gameEngineModePanelEither = gameEngineModePanelBuilder.build()
-    val sceneRendererPanelEither = sceneRendererPanelBuilder.build()
+      (sceneRendererPanel, controller) <- rendererPanel.build(initialWorld)
+        .left.map(error => CannotBuildPanel(error, this.toString))
 
-    (gameEngineModePanelEither, sceneRendererPanelEither) match
-      case (Right(gameEngineModePanel), Right(sceneRendererPanel)) =>
-        val container = new VBox {
-          children = Seq(gameEngineModePanel, sceneRendererPanel)
-        }
+      onModeChange = (isButtonActive: Boolean) =>
+        if isButtonActive then controller.play()
+        else controller.pause()
 
-        container.spacing <== container.height * SpacingRatio
+      onStopClick = () => controller.init(initialWorld)
 
-        gameEngineModePanel.prefHeight <== container.height * TopPanelHeightRatio
-        gameEngineModePanel.minHeight = TopPanelMinHeight
+      gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick)
+        .left.map(error => CannotBuildPanel(error, this.toString))
+    yield
+      val container = new VBox {
+        children = Seq(gameEngineModePanel, sceneRendererPanel)
+      }
 
-        sceneRendererPanel.prefHeight <== container.height * BottomPanelHeightRatio
+      container.spacing <== container.height * SpacingRatio
 
-        Right(container)
+      gameEngineModePanel.prefHeight <== container.height * TopPanelHeightRatio
+      gameEngineModePanel.minHeight = TopPanelMinHeight
 
-      case (Left(panelError), _) => Left(CannotBuildPanel(panelError, GameEnginePanel.toString))
-      case (_, Left(panelError)) => Left(CannotBuildPanel(panelError, GameEnginePanel.toString))
+      sceneRendererPanel.prefHeight <== container.height * BottomPanelHeightRatio
+
+      container
+  }
+
+  private[panels] def buildInitialWorld(world: World): Either[EngineError, World] =
+    for
+      entity        <- Entity.circle("starter", Vector2D(10, 10), 5)
+      updatedWorld  <- world.createEntity(SaveEntityCommand(entity))
+    yield updatedWorld
 }

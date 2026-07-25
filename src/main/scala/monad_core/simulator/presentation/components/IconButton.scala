@@ -3,73 +3,82 @@ package monad_core.simulator.presentation.components
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildButton
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}
+import scalafx.beans.property.BooleanProperty
+import scalafx.beans.value.ObservableValue
 import scalafx.scene.control.Button
 import scalafx.scene.image.ImageView
+
+case class IconButtonBaseProps(
+                                imageConfig: ImageConfigRecord,
+                                additionalStyle: String = "",
+                                onClick: Boolean => Unit = (_: Boolean) => (),
+                                isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false),
+                              )
 
 object IconButton {
   private val defaultStyle: String = "-fx-background-color: transparent; -fx-cursor: hand;"
 
   def build(
              image: Image,
-             additionalStyle: String = "",
-             onClick: () => Unit = () => (),
-             isDisabled: Boolean = false,
-           )
-           (using imageConfig: ImageConfigRecord): Either[EngineError, Button] = {
+             props: IconButtonBaseProps
+           ): Either[EngineError, Button] =
+    for
+      loadedImage <- ImageLoader.getScalaFxImage(image, props.imageConfig)
+        .left.map(error => CannotBuildButton(error, IconButton.toString))
+    yield
+      new Button() {
+        graphic = ImageView(loadedImage)
+        style = defaultStyle + props.additionalStyle
 
-    val loadedImageEither = ImageLoader.getScalaFxImage(image)
+        var isActive = false
 
-    loadedImageEither match
-      case Left(error) => Left(CannotBuildButton(error, IconButton.toString))
-
-      case Right(loadedImage) =>
-        Right(
-          new Button() {
-            graphic = ImageView(loadedImage)
-            style = defaultStyle + additionalStyle
-            onAction = _ => onClick()
-            disable = isDisabled
-          }
-        )
-  }
+        onAction = _ => isActive = toggleIsActive(isActive, props.onClick)
+        disable <== props.isDisabled
+      }
 
   def buildToggle(
                    defaultImage: Image,
                    activeImage: Image,
-                   additionalStyle: String = "",
-                   onClick: Boolean => Unit = (_: Boolean) => (),
-                   isDisabled: Boolean = false
-                 )
-                 (using imageConfig: ImageConfigRecord): Either[EngineError, Button] =
+                   props: IconButtonBaseProps,
+                   activeProperty: BooleanProperty = BooleanProperty(false)
+                 ): Either[EngineError, Button] =
+    for
+      loadedDefault <- ImageLoader.getScalaFxImage(defaultImage, props.imageConfig)
+        .left.map(error => CannotBuildButton(error, IconButton.toString))
+      loadedActive <- ImageLoader.getScalaFxImage(activeImage, props.imageConfig)
+        .left.map(error => CannotBuildButton(error, IconButton.toString))
+    yield
+      val iconView = ImageView(loadedDefault)
+      var isDefaultActive = false
 
-    val defaultFxImage = ImageLoader.getScalaFxImage(defaultImage)
-    val activeFxImage = ImageLoader.getScalaFxImage(activeImage)
+      activeProperty.onChange { (_, _, isActive) =>
+        iconView.image = if isActive then loadedActive else loadedDefault
+        isDefaultActive = isActive
+      }
 
-    (activeFxImage, defaultFxImage) match
-      case (Right(loadedActive), Right(loadedDefault)) =>
-        val iconView = ImageView(loadedDefault)
+      new Button() {
+        graphic = iconView
+        style = defaultStyle + props.additionalStyle
+        disable <== props.isDisabled
 
-        Right(
-          new Button() {
-            graphic = iconView
-            style = "-fx-background-color: transparent; -fx-cursor: hand;" + additionalStyle
-            disable = isDisabled
+        val changeIcon: Boolean => Unit =
+          isActive =>
+            if isActive then
+              iconView.image = loadedActive
+            else
+              iconView.image = loadedDefault
 
-            var isDefaultActive = true
+        onAction = _ => isDefaultActive = toggleIsActive(isDefaultActive, props.onClick, changeIcon)
+      }
 
-            onAction = _ => {
-              if isDefaultActive then
-                iconView.image = loadedActive
-                isDefaultActive = false
-              else
-                iconView.image = loadedDefault
-                isDefaultActive = true
+  private[components] def toggleIsActive(
+                              currentIsActive: Boolean,
+                              externalOnClick: Boolean => Unit,
+                              internalOnClick: Boolean => Unit = (_: Boolean) => ()
+                            ): Boolean =
+    val newIsActiveValue = !currentIsActive
 
-              onClick(isDefaultActive)
-            }
-          }
-        )
-
-      case (Left(activeError), _) => Left(CannotBuildButton(activeError, IconButton.toString))
-      case (_, Left(defaultError)) => Left(CannotBuildButton(defaultError, IconButton.toString))
+    internalOnClick(newIsActiveValue)
+    externalOnClick(newIsActiveValue)
+    newIsActiveValue
 }

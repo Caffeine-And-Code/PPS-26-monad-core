@@ -46,6 +46,12 @@ case class Scene(
   def removeSurface(surface: Surface): Either[EngineError, Scene] =
     removeFromMap(surfacesLens, this, surface.id, CannotRemoveSurface(_))
 
+  override def allEntities: List[Entity] = entities.map((id, entity) => entity).toList
+
+  override def allTeams: List[Team] = teams.map((id, team) => team).toList
+
+  override def allSurfaces: List[Surface] = surfaces.map((id, surfaces) => surfaces).toList
+
 object Scene:
 
   given entitiesLens: Lens[Scene, EntityMap] =

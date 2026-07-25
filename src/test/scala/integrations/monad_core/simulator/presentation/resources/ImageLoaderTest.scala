@@ -1,7 +1,7 @@
-package integrations.monad_core.graphics.resources
+package integrations.monad_core.simulator.presentation.resources
 
-import monad_core.simulator.presentation.resources.{BaseImageConfig, ImageLoader}
 import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon}
+import monad_core.simulator.presentation.resources.{BaseImageConfig, ImageLoader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -13,7 +13,7 @@ import scalafx.scene.image.Image as ScalaFxImage
 class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFactory:
 
   test("each Image can be loaded by the loader"):
-    given imageConfig : BaseImageConfig = BaseImageConfig()
+    val imageConfig : BaseImageConfig = BaseImageConfig()
     
     val cases = Table(
       "image",
@@ -23,7 +23,7 @@ class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFac
     )
 
     forAll(cases): image =>
-      val result = ImageLoader.getScalaFxImage(image)
+      val result = ImageLoader.getScalaFxImage(image, imageConfig)
 
       inside(result):
         case Right(loadedImage) => loadedImage shouldBe a[ScalaFxImage]
