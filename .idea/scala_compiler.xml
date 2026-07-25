@@ -2,6 +2,11 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="MonadCore2D,MonadCore2D.main,MonadCore2D.test" />
+    <profile name="sbt 1" modules="MonadCore2D" />
+    <profile name="sbt 3" modules="MonadCore2D.main,MonadCore2D.test">
+      <parameters>
+        <parameter value="-Wconf:msg=Implicit parameters should be provided with a `using` clause:s" />
+      </parameters>
+    </profile>
   </component>
 </project>

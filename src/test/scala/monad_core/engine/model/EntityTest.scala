@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 class EntityTest extends AnyFunSuite with Inside with Matchers:
 
   val ValidEntityId = "entity1"
-  val ValidPosition = Vector2D(1, 3)
+  val ValidPosition: Vector2D = Vector2D(1, 3)
   val ValidRadius = 2
   val ValidHeight = 2
   val ValidLength = 2
@@ -23,7 +23,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       case Right(entity) =>
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
-        entity.shape shouldBe Circle(ValidRadius)
+        entity.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
         entity.speed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
@@ -36,7 +36,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       case Right(entity) =>
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
-        entity.shape shouldBe Rectangle(ValidHeight, ValidLength)
+        entity.shape shouldBe Shape2D.rectangle(ValidHeight, ValidLength).toOption.get
         entity.speed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
@@ -146,6 +146,13 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(entity):
       case Right(entity) => entity.health shouldBe Some(health - damage)
+
+  test("cannot apply damage to an entity without health"):
+    val damage = 20
+
+    val entity = ValidEntity.flatMap(_.applyDamage(damage))
+
+    entity shouldBe Left(CannotApplyDamageToNoneHealthEntity())
 
   test("if apply a damage greater than life left, it returns Left"):
     val health = 50

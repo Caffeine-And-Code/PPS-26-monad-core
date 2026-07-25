@@ -1,8 +1,8 @@
 package monad_core.engine.model
 
-import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Surface, Vector2D}
+import monad_core.engine.model.Shape2D.{Circle, Rectangle}
+import monad_core.engine.model.{Shape2D, Surface, Vector2D}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 class SurfaceTest extends AnyFunSuite with Matchers with Inside:
 
   val ValidEntityId = "entity1"
-  val ValidPosition = Vector2D(1, 3)
+  val ValidPosition: Vector2D = Vector2D(1, 3)
   val ValidRadius = 2
   val ValidHeight = 2
   val ValidLength = 2
@@ -24,7 +24,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
       case Right(surface) =>
         surface.id.value shouldBe ValidEntityId
         surface.position shouldBe ValidPosition
-        surface.shape shouldBe Circle(ValidRadius)
+        surface.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
 
@@ -35,7 +35,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
       case Right(surface) =>
         surface.id.value shouldBe ValidEntityId
         surface.position shouldBe ValidPosition
-        surface.shape shouldBe Rectangle(ValidHeight, ValidLength)
+        surface.shape shouldBe Shape2D.rectangle(ValidHeight, ValidLength).toOption.get
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
 
