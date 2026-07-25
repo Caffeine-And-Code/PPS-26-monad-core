@@ -1,6 +1,6 @@
-package monad_core.engine.core.loop
+package monad_core.engine.core
 
-import GameLoop.StaticAlpha
+import monad_core.engine.core.GameLoop.StaticAlpha
 import monad_core.engine.core.traits.RenderEngine
 import monad_core.engine.errors.EngineError
 import monad_core.engine.physics.core.Physics

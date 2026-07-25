@@ -1,8 +1,8 @@
-package monad_core.engine.core.loop
+package monad_core.engine.core
 
-import monad_core.engine.core.loop.{GameLoop, InvalidAccumulator, InvalidLastTime, InvalidMaxFrameTime, InvalidMaxFrameTimeTickTimeRatio, InvalidTickTime, LoopMode}
-import monad_core.engine.core.loop.LoopMode.{EditMode, SimulationMode}
+import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
 import monad_core.engine.core.traits.RenderEngine
+import monad_core.engine.core.{GameLoop, InvalidAccumulator, InvalidLastTime, InvalidMaxFrameTime, InvalidMaxFrameTimeTickTimeRatio, InvalidTickTime, LoopMode}
 import monad_core.engine.physics.core.Physics
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
