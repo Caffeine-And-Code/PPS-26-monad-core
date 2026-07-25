@@ -3,7 +3,7 @@ package monad_core.simulator.presentation.panels
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps}
-import monad_core.simulator.presentation.components.{IconButton, IconButtonBaseProps, MenuButton, MenuButtonItem, MenuButtonProps}
+import monad_core.simulator.presentation.components.*
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon, ToolsIcon}
@@ -53,12 +53,13 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
           imageConfig = imageConfig,
           defaultImage = ToolsIcon(),
           items = Seq(
-            MenuButtonItem("Aggiungi Entità", () => SaveEntityFormDialog.show(
+            MenuButtonItem("Add Entity", () => SaveEntityFormDialog.show(
               props = SaveEntityFormDialogProps(
-                title = "Impostazioni Entità",
+                title = "Entity Settings",
                 owner = Some(playPauseBtn.scene.value.window.value),
                 onSubmit = entity => println(entity.toString),
-                teams = Seq.empty
+                teams = Seq.empty,
+                onError = error => println(error.message)
               )
             )
             )

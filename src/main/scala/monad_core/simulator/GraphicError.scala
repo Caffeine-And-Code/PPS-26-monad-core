@@ -17,4 +17,8 @@ case class UnexpectedStartupFailure(cause: String) extends EngineError(s"unexpec
 
 case class CannotBuildDialog(cause: String, dialogId: String) extends EngineError(s"$dialogId cannot be built: \n $cause")
 
-case class InvalidFormFieldError(key: String, specificMessage: String) extends EngineError(s"$key has an invalid value: $specificMessage")
+case class MissingKeyInFormError(key: String) extends EngineError(s"$key is not present in form field list")
+
+case class InvalidNumericFormFieldError(key: String) extends EngineError(s"$key has an invalid value: Numeric value Required")
+
+case class InvalidShapeFormFieldError(key: String) extends EngineError(s"$key has an invalid value: Invalid Shape Value")

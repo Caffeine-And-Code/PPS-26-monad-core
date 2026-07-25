@@ -1,13 +1,14 @@
 package integrations.monad_core.simulator.presentation.support
 
-import scalafx.application.Platform
-import javax.imageio.ImageIO
-import scalafx.embed.swing.SwingFXUtils
-import scalafx.scene.canvas.Canvas
 import org.scalatest.matchers.should.Matchers
-import scalafx.Includes.jfxImage2sfx
+import scalafx.Includes.{jfxImage2sfx, jfxNode2sfx}
+import scalafx.application.Platform
+import scalafx.embed.swing.SwingFXUtils
+import scalafx.stage.Stage
+
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
+import javax.imageio.ImageIO
 
 trait SnapshotTesting extends Matchers:
 
@@ -30,6 +31,14 @@ trait SnapshotTesting extends Matchers:
 
       normalizedActual shouldBe normalizedExpected
 
+  def assertMatchesSnapshotOfStage(snapshotName: String, stage: Stage) : Unit =
+    val rootNode: scalafx.scene.Node = stage.getScene.getRoot
+
+    val currentTree = SceneGraphSerializer.snapshotOf(rootNode)
+    val currentJson = SceneGraphSerializer.toJson(currentTree)
+
+    assertMatchesSnapshot(snapshotName, currentJson)
+
   /**
    * does a pixel match with a tolerance to prevent errors given by antialiasing
    */
@@ -50,12 +59,12 @@ trait SnapshotTesting extends Matchers:
       Math.abs(b1 - b2) <= tolerance
 
   def assertMatchesVisualSnapshot(
-                                   snapshotName: String,
-                                   canvas: Canvas,
-                                   maxDiffPercentage: Double = 0.1
-                                 ): Unit =
+                                       snapshotName: String,
+                                       node: scalafx.scene.Node,
+                                       maxDiffPercentage: Double = 0.1
+                                     ): Unit =
     val snapshot = runOnFxThread {
-      canvas.snapshot(null, null)
+      node.snapshot(null, null)
     }
     val bufferedImage = SwingFXUtils.fromFXImage(snapshot.delegate, null)
     val file = snapshotsDir.resolve(s"$snapshotName.png").toFile
@@ -85,7 +94,6 @@ trait SnapshotTesting extends Matchers:
       val diffPercentage = (diffs.length.toDouble / totalPixels) * 100
 
       if diffPercentage > maxDiffPercentage then
-        val totalPixels = width * height
         val (firstX, firstY, act, exp) = diffs.head
         fail(
           s"Mismatch in '$snapshotName': ${diffs.length}/$totalPixels ($diffPercentage%) pixels differ. " +

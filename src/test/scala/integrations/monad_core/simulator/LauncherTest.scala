@@ -1,11 +1,12 @@
 package integrations.monad_core.simulator
 
 import helpers.MockImage
-import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SceneGraphSerializer, SnapshotTesting}
+import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
 import monad_core.Launcher
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scalafx.Includes.jfxStage2sfx
 
 class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with ScalaFxInit:
 
@@ -31,9 +32,4 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
 
     mainWindow shouldBe defined
 
-    val rootNode = mainWindow.get.getScene.getRoot
-
-    val currentTree = SceneGraphSerializer.snapshotOf(rootNode)
-    val currentJson = SceneGraphSerializer.toJson(currentTree)
-
-    assertMatchesSnapshot("launcher_scene_snapshot", currentJson)
+    assertMatchesSnapshotOfStage("launcher_scene_snapshot", mainWindow.get)

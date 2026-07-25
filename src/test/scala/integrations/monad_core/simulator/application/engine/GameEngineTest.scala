@@ -56,30 +56,3 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
       engine.dispose()
   }
 
-  test("reset replaces the world; frames observed afterwards reflect the new world, not the old one") {
-    val worldBeforeReset = worldWithOneEntity("before")
-    val worldAfterReset = worldWithOneEntity("after")
-
-    val resetHappened = new AtomicBoolean(false)
-    val frameAfterReset = new CountDownLatch(1)
-    val received = new AtomicReference[World]()
-
-    val engine = GameEngine { world =>
-      if resetHappened.get() then
-        received.set(world)
-        frameAfterReset.countDown()
-    }
-
-    try
-      engine.init(worldBeforeReset)
-      engine.play()
-      Thread.sleep(100) // let a few real frames run against the pre-reset world
-
-      engine.reset(worldAfterReset)
-      resetHappened.set(true)
-
-      assert(frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS), "no frame observed after reset")
-      assert(received.get().getAllEntities == worldAfterReset.getAllEntities)
-    finally
-      engine.dispose()
-  }

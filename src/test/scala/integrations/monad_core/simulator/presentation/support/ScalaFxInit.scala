@@ -32,12 +32,20 @@ private[simulator] trait ScalaFxInit extends BeforeAndAfterAll:
       latch.countDown()
 
     val clicked = latch.await(5 * times, TimeUnit.SECONDS)
-    assert(clicked, "Button click did not complete in time")
+    assert(clicked, ",Button click did not complete in time")
     
   def tryGetMainWindow: Option[Stage] =
     Window.getWindows.asScala.collectFirst {
       case stage: javafx.stage.Stage if stage.getTitle == "MonadCore2D" => stage
     }
+
+  def getRequiredActiveStage: javafx.stage.Stage =
+    getActiveStage
+      .getOrElse(fail("No active showing stage found"))
+
+  def getActiveStage: Option[javafx.stage.Stage] =
+    Window.getWindows.asScala
+      .collectFirst { case s: javafx.stage.Stage if s.isShowing => s }
 
   def getOrFail[T](either: Either[EngineError, T]): T =
     either match
