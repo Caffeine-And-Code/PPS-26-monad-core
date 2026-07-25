@@ -33,8 +33,9 @@ class KinematicsRuleTest extends AnyFunSuite with Matchers with MockFactory:
     given PhysicsState[TestScene] = mock[PhysicsState[TestScene]]
 
     val rule = summon[PhysicsRule[TestScene, TestDetector]]
+    val result = rule.apply(InitialScene)(using summon[TestDetector], NegativeDt)
 
-    rule.apply(InitialScene)(using summon[TestDetector], NegativeDt) shouldBe Left(NegativeDeltaTime(NegativeDt))
+    result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged scene when the entities map is empty"):
     val mockState = mock[PhysicsState[TestScene]]
@@ -45,7 +46,9 @@ class KinematicsRuleTest extends AnyFunSuite with Matchers with MockFactory:
     given PhysicsState[TestScene] = mockState
 
     val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond).value shouldBe InitialScene
+    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond)
+    
+    result.value shouldBe InitialScene
 
   test("the rule should not update the scene if the entity has no speed (fixed entity)"):
     val fixedEntityPositionX = 5.0
@@ -62,7 +65,9 @@ class KinematicsRuleTest extends AnyFunSuite with Matchers with MockFactory:
     given PhysicsState[TestScene] = mockState
 
     val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond).value shouldBe InitialScene
+    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond)
+    
+    result.value shouldBe InitialScene
 
   test("the rule should move an entity with speed successfully and update the scene"):
     val movingEntityPositionX = 2.0

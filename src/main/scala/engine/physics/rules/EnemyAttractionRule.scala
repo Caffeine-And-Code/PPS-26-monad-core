@@ -15,36 +15,18 @@ object EnemyAttractionRule:
         entities = state.getEntities(scene)
         teams = state.getTeams(scene)
 
-        updatedScene <-
-          entities.foldLeft[Either[PhysicsError, S]](Right(scene)):
-            case (sceneResult, (entityId, entity)) =>
-              sceneResult.flatMap: currentScene =>
-                PhysicsUtil.nearestEnemy(entity, entities, teams) match
-                  case None =>
-                    Right(currentScene)
-                  case Some(enemy) =>
-                    entity.speed match
-                      case None =>
-                        Right(currentScene)
-
-                      case Some(speed) =>
-                        PhysicsUtil
-                          .direction(entity.position, enemy.position)
-                          .fold[Either[PhysicsError, S]](Right(currentScene)):
-                            direction =>
-                              for
-                                nextSpeed <- PhysicsUtil.nextSpeed(
-                                  speed = speed,
-                                  acceleration = direction * AttractionAcceleration,
-                                  deltaTime = dt
-                                )
-                                updatedEntity <- entity
-                                .withSpeed(nextSpeed)
-                                .left
-                                .map(PhysicsDomainError.apply)
-                              yield state.updateEntity(
-                                currentScene,
-                                entityId,
-                                updatedEntity
-                              )
+        updatedScene <- entities.foldLeft[Either[PhysicsError, S]](Right(scene)):
+          case (Left(err), _) => Left(err)
+          case (Right(currentScene), (entityId, entity)) =>
+            val maybeUpdatedScene: Option[Either[PhysicsError, S]] = for
+              enemy     <- PhysicsUtil.nearestEnemy(entity, entities, teams)
+              speed     <- entity.speed
+              direction <- PhysicsUtil.direction(entity.position, enemy.position)
+            yield
+              for
+                nextSpeed     <- PhysicsUtil.nextSpeed(speed, direction * AttractionAcceleration, dt)
+                updatedEntity <- entity.withSpeed(nextSpeed).left.map(PhysicsDomainError.apply)
+              yield
+                state.updateEntity(currentScene, entityId, updatedEntity)
+            maybeUpdatedScene.getOrElse(Right(currentScene))
       yield updatedScene

@@ -11,16 +11,14 @@ object KinematicsRule:
         _ <- PhysicsUtil.deltaSeconds(dt)
         entities = state.getEntities(scene)
 
-        updatedScene <-
-          entities.foldLeft[Either[PhysicsError, S]](Right(scene)):
-            case (sceneResult, (entityId, entity)) =>
-              sceneResult.flatMap: currentScene =>
-                entity.speed match
-                  case None => Right(currentScene)
-                  case Some(speed) =>
-                    for
-                      nextPos <- PhysicsUtil.nextPosition(entity.position, speed, dt)
-                      moved   <- entity.moveTo(nextPos).left.map(_ => OutOfBoundEntity(nextPos))
-                    yield
-                      state.updateEntity(currentScene, entityId, moved)
+        updatedScene <- entities.foldLeft[Either[PhysicsError, S]](Right(scene)):
+          case (Left(err), _) => Left(err)
+          case (Right(currentScene), (entityId, entity)) =>
+            entity.speed match
+              case None => Right(currentScene)
+              case Some(speed) =>
+                for
+                  nextPos <- PhysicsUtil.nextPosition(entity.position, speed, dt)
+                  moved   <- entity.moveTo(nextPos).left.map(_ => OutOfBoundEntity(nextPos))
+                yield state.updateEntity(currentScene, entityId, moved)
       yield updatedScene

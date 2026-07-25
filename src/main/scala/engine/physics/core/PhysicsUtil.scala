@@ -22,30 +22,30 @@ object PhysicsUtil:
     yield speed * seconds
 
   def nextPosition(
-                    position: Vector2D,
-                    speed: Vector2D,
-                    deltaTime: Long
-                  ): Either[PhysicsError, Vector2D] =
+    position: Vector2D,
+    speed: Vector2D,
+    deltaTime: Long
+  ): Either[PhysicsError, Vector2D] =
     displacement(speed, deltaTime).map(position + _)
 
   def acceleration(
-                    force: Vector2D,
-                    mass: Either[EngineError, Weight]
-                  ): Either[EngineError, Vector2D] =
+    force: Vector2D,
+    mass: Either[EngineError, Weight]
+  ): Either[EngineError, Vector2D] =
     mass.map(m => force * (Numerator / m.value.toDouble))
 
   def nextSpeed(
-                 speed: Vector2D,
-                 acceleration: Vector2D,
-                 deltaTime: Long
-               ): Either[PhysicsError, Vector2D] =
+    speed: Vector2D,
+    acceleration: Vector2D,
+    deltaTime: Long
+  ): Either[PhysicsError, Vector2D] =
     displacement(acceleration, deltaTime).map(speed + _)
 
   def applyFriction(
-                     speed: Vector2D,
-                     frictionIndex: Double,
-                     deltaTime: Long
-                   ): Either[PhysicsError, Vector2D] =
+    speed: Vector2D,
+    frictionIndex: Double,
+    deltaTime: Long
+  ): Either[PhysicsError, Vector2D] =
     deltaSeconds(deltaTime).map(seconds =>
       val factor = math.max(DoubleZero, Numerator - frictionIndex * seconds)
       speed * factor
@@ -57,9 +57,9 @@ object PhysicsUtil:
     dx * dx + dy * dy
 
   def direction(
-                 from: Vector2D,
-                 to: Vector2D
-               ): Option[Vector2D] =
+    from: Vector2D,
+    to: Vector2D
+  ): Option[Vector2D] =
     val delta = Vector2D(to.x - from.x, to.y - from.y)
     val squaredLength = squaredDistance(from, to)
 
@@ -67,10 +67,10 @@ object PhysicsUtil:
       delta * (Numerator / math.sqrt(squaredLength))
 
   def nearestEnemy(
-                            entity: Entity,
-                            entities: Map[LocatableId, Entity],
-                            teams: Map[TeamId, Team]
-                          ): Option[Entity] =
+    entity: Entity,
+    entities: Map[LocatableId, Entity],
+    teams: Map[TeamId, Team]
+  ): Option[Entity] =
     for
       teamId <- entity.teamId
       team <- teams.get(teamId)
