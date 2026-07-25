@@ -58,10 +58,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
 
     var saveButtonNode: javafx.scene.control.Button = null
     runOnFxThread {
-      val activeStage = getRequiredActiveStage
-      saveButtonNode = activeStage.getScene.getRoot
-        .lookup(".form-dialog-save")
-        .asInstanceOf[javafx.scene.control.Button]
+      saveButtonNode = formSaveButton
     }
 
     clickButton(new Button(saveButtonNode))
@@ -74,33 +71,21 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
 
   test("FormDialog updates dependent fields dynamically when changing select option"):
     var submittedValues: Map[String, String] = Map.empty
+    val props = FormDialogProps(
+      title = "Dynamic Fields Test",
+      fields = defaultFields,
+      onSubmit = values => submittedValues = values
+    )
 
     runOnFxThread {
-      val props = FormDialogProps(
-        title = "Dynamic Fields Test",
-        fields = defaultFields,
-        onSubmit = values => submittedValues = values
-      )
-
       getOrFail(FormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
-      val root = activeStage.getScene.getRoot
-
-      // Seleziona la ComboBox per la Shape
-      val comboNode = root
-        .lookup(".form-field-select")
-        .asInstanceOf[javafx.scene.control.ComboBox[String]]
+      val comboNode = allFormComboBoxes.head
 
       val comboBox = new ComboBox[String](comboNode)
       comboBox.selectionModel().select("Rectangle")
 
-      // Esegui il salvataggio via fire() sincrono
-      val saveButtonNode = root
-        .lookup(".form-dialog-save")
-        .asInstanceOf[javafx.scene.control.Button]
-
-      saveButtonNode.fire()
+      formSaveButton.fire()
     }
 
     submittedValues shouldBe Map(
@@ -112,40 +97,37 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
 
   test("FormDialog matches structural JSON snapshot of submitted values"):
     var capturedJsonString = ""
+    val props = FormDialogProps(
+      title = "Snapshot Test",
+      fields = defaultFields,
+      onSubmit = values =>
+        capturedJsonString = values
+          .map { case (k, v) => s""""$k": "$v"""" }
+          .mkString("{\n  ", ",\n  ", "\n}")
+    )
 
     runOnFxThread {
-      val props = FormDialogProps(
-        title = "Snapshot Test",
-        fields = defaultFields,
-        onSubmit = values =>
-          capturedJsonString = values
-            .map { case (k, v) => s""""$k": "$v"""" }
-            .mkString("{\n  ", ",\n  ", "\n}")
-      )
-
       getOrFail(FormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
-      val saveButtonNode = formSaveButton
 
-      saveButtonNode.fire()
+      formSaveButton.fire()
     }
 
     assertMatchesSnapshot("form_dialog_submitted_values", capturedJsonString)
 
   test("FormDialog matches visual snapshot of rendered dialog scene"):
-    runOnFxThread {
-      val props = FormDialogProps(
-        title = "Visual Test",
-        fields = defaultFields,
-        onSubmit = _ => ()
-      )
+    val props = FormDialogProps(
+      title = "Visual Test",
+      fields = defaultFields,
+      onSubmit = _ => ()
+    )
 
+    runOnFxThread {
       getOrFail(FormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      // Cattura lo snapshot visivo dell'intero layout del form!
       assertMatchesVisualSnapshot("generic_form_dialog", rootNode)
     }

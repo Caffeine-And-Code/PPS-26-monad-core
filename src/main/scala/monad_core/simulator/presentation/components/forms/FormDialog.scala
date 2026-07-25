@@ -5,9 +5,9 @@ import monad_core.simulator.CannotBuildDialog
 import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.{Node, Scene}
 import scalafx.scene.control.{Button, ComboBox, Label, TextField}
 import scalafx.scene.layout.{GridPane, HBox, VBox}
+import scalafx.scene.{Node, Scene}
 import scalafx.stage.{Modality, Stage, Window}
 
 import scala.util.Try
@@ -16,7 +16,8 @@ final case class FormDialogProps(
                                   title: String,
                                   fields: Seq[FormFieldSpec],
                                   onSubmit: Map[String, String] => Unit,
-                                  owner: Option[Window] = None
+                                  owner: Option[Window] = None,
+                                  minWidth: Double = 300
                                 )
 
 object FormDialog:
@@ -76,12 +77,15 @@ private final class FormDialogBuilder(props: FormDialogProps):
 
     val root = new VBox {
       styleClass += "form-dialog-root"
+      minWidth = props.minWidth
+      prefWidth = props.minWidth
       children = Seq(grid, buttonsRow)
     }
 
     stage.scene = new Scene(root) {
       stylesheets += FormDialog.StylesheetPath
     }
+
     stage.sizeToScene()
     stage.show()
 

@@ -88,7 +88,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
 
     capturedError shouldBe defined
 
-  test("SaveEntityFormDialog Circle matches snapshot"):
+  test("SaveEntityFormDialog Circle matches visual snapshot"):
     val props = SaveEntityFormDialogProps(
       title = "Visual Save Entity Test",
       onSubmit = _ => (),
@@ -105,11 +105,29 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesVisualSnapshot("save_circle_entity_form_dialog_initial", rootNode, maxDiffPercentage = 0.2)
+    }
+
+
+  test("SaveEntityFormDialog Circle matches architectural snapshot"):
+    val props = SaveEntityFormDialogProps(
+      title = "Visual Save Entity Test",
+      onSubmit = _ => (),
+      onError = _ => (),
+      teams = testTeams
+    )
+
+    runOnFxThread {
+      getOrFail(SaveEntityFormDialog.show(props))
+
+      selectCircleInComboBox()
+
+      val activeStage = getRequiredActiveStage
+      val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesSnapshotOfStage("save_circle_entity_form_dialog_initial", activeStage)
     }
 
-  test("SaveEntityFormDialog Rectangle matches snapshot"):
+  test("SaveEntityFormDialog Rectangle matches visual snapshot"):
     val props = SaveEntityFormDialogProps(
       title = "Visual Save Entity Test",
       onSubmit = _ => (),
@@ -126,6 +144,23 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesVisualSnapshot("save_rectangle_entity_form_dialog_initial", rootNode, maxDiffPercentage = 0.2)
+    }
+
+  test("SaveEntityFormDialog Rectangle matches architectural snapshot"):
+    val props = SaveEntityFormDialogProps(
+      title = "Visual Save Entity Test",
+      onSubmit = _ => (),
+      onError = _ => (),
+      teams = testTeams
+    )
+
+    runOnFxThread {
+      getOrFail(SaveEntityFormDialog.show(props))
+
+      selectRectangleInComboBox()
+
+      val activeStage = getRequiredActiveStage
+      val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesSnapshotOfStage("save_rectangle_entity_form_dialog_initial", activeStage)
     }
