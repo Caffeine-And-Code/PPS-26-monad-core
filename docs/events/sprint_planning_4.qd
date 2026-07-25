@@ -1,0 +1,17 @@
+### Sprint Planning 4
+
+**Data**: 25/07/2026
+
+**Durata**: 1 ore
+
+**Attività**
+- Review dello sprint precedente.
+- Revisione dello stato delle User Story non completate.
+- Suddivisione e assegnazione delle nuove attività.
+
+**Assegnazione User Story**
+- **Senni**: Individuazione del punto di collisione nella Collision Detection, completamento dei Tools dell'agente LLM, completamento della Comunicazione con agente LLM, completamento dello Studio della metodologia di test LLM e validazione, impedire all'agente AI di modificare la scena mentre l'Engine è in esecuzione, Testing dell'agente LLM
+- **Fattori**: Completamento del Sistema degli eventi, completamento della Creazione di entità dalla GUI, completamento della Modifica delle entità, Game Engine Runtime
+- **Tonelli**: Completamento della Gestione della fisica, Gestione modalità Edit/Simulation, Stress Testing, Rotazione delle entità nel Physics Engine
+
+**Settimana di interesse** dal 27/07/2026 al 31/07/2026

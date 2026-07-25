@@ -1,0 +1,44 @@
+### Sprint Review 3
+
+**Data**: 25/07/2026
+
+**Durata**: 1 ora
+
+#### Incremento prodotto
+
+Durante lo sprint sono stati completati o evoluti i seguenti elementi:
+
+- Completamento della comunicazione con l'agente LLM.
+- Implementazione dei tool dell'agente e sviluppo dell'Agente AI.
+- Completamento della visualizzazione della scena e dei relativi test.
+- Sviluppo della creazione di entità tramite GUI.
+- Prosecuzione dell'implementazione e del refactoring del Physics Engine.
+
+#### Stato dei task
+
+| Area | Responsabile | Stato |
+|-|-|-|
+| Comunicazione con agente LLM | Senni | Completata |
+| Tools dell'agente LLM | Senni | In sviluppo avanzato; restano alcuni test e l'apertura della pull request |
+| Visualizzazione della scena | Fattori | Completata |
+| Creazione entità dalla GUI | Fattori | In sviluppo avanzato |
+| Gestione della fisica | Tonelli | In sviluppo avanzato |
+
+Tutto ciò che non è stato completato durante lo Sprint 3 viene riportato nello sprint successivo.
+
+#### Problemi riscontrati
+
+Durante lo sprint non sono emersi impedimenti bloccanti. È stato tuttavia necessario effettuare alcuni interventi di refactoring per mantenere separati i livelli architetturali del Simulator, rivedere la gestione degli Application Service e consentire l'integrazione tra l'agente LLM e l'Engine.
+
+L'implementazione dei tool dell'agente ha inoltre richiesto uno studio delle tecniche di testing e validazione degli agenti AI. Per la componente grafica è stato necessario coordinare la struttura delle entità tra i layer Domain, Application e Infrastructure e introdurre gli snapshot test per verificare il comportamento dell'interfaccia.
+
+#### Backlog
+
+- Completamento e testing dei tool dell'agente LLM
+- Completamento della creazione di entità dalla GUI
+- Modifica delle entità tramite GUI
+- Completamento della gestione della fisica
+- Completamento del sistema degli eventi
+- Gestione delle modalità Edit/Simulation
+- Stress testing
+- Stesura dei requirement specifications
