@@ -12,8 +12,8 @@ private[world] trait SurfaceOperations:
 
   def getSurface(id: LocatableId): Either[EngineError, Surface]
 
-  def createSurface(command: SaveSurfaceCommand): Either[EngineError, World]
+  def createSurface(command: SaveSurfaceCommand): Either[EngineError, Unit]
 
-  def removeSurface(id: LocatableId): Either[EngineError, World]
+  def removeSurface(id: LocatableId): Either[EngineError, Unit]
 
-  def updateSurface(command: SaveSurfaceCommand): Either[EngineError, World]
+  def updateSurface(command: SaveSurfaceCommand): Either[EngineError, Unit]

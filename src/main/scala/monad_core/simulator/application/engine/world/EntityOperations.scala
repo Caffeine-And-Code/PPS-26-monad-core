@@ -12,9 +12,9 @@ private[world] trait EntityOperations:
 
   def getEntity(entityId: LocatableId): Either[EngineError, Entity]
 
-  def createEntity(command: SaveEntityCommand): Either[EngineError, World]
+  def createEntity(command: SaveEntityCommand): Either[EngineError, Unit]
 
-  def removeEntity(entityId: LocatableId): Either[EngineError, World]
+  def removeEntity(entityId: LocatableId): Either[EngineError, Unit]
 
-  def updateEntity(command: SaveEntityCommand): Either[EngineError, World]
+  def updateEntity(command: SaveEntityCommand): Either[EngineError, Unit]
 

@@ -2,7 +2,10 @@ package monad_core
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
+import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
@@ -10,7 +13,7 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 import scala.Console.{GREEN, RESET}
 
 object Launcher :
-  private def buildLauncher(): ScalaFxLauncher =
+  private def buildLauncher()(using World, GameEngineRuntime): ScalaFxLauncher =
     val imageConfig = BaseImageConfig()
 
     val gamePanel = GameEnginePanel(
@@ -32,6 +35,11 @@ object Launcher :
       case Right(_)     => (true, s"${GREEN}Build Completed$RESET")
 
   def main(args: Array[String]): Unit =
+
+    given world: World = MonadCoreWorld()
+
+    given gameEngine: GameEngineRuntime = MonadCodeGameEngineRuntime()
+
     given aiAgent: AiAgent = Langchain4jAgentFactory
       .buildOllama(
         Langchain4jOllamaConfig(

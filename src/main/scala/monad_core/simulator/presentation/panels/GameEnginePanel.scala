@@ -4,6 +4,7 @@ import monad_core.engine.core.Scene
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
@@ -13,6 +14,9 @@ final class GameEnginePanel(
                              modePanel: GameEngineModePanelBuilder,
                              rendererPanel: SceneRendererPanelBuilder,
                              imageConfig: ImageConfigRecord
+                           )(
+                             using world: World,
+                             gameEngineRuntime: GameEngineRuntime
                            ) extends GameEnginePanelBuilder {
 
   private val TopPanelHeightRatio = 0.07
@@ -20,18 +24,18 @@ final class GameEnginePanel(
   private val SpacingRatio = 0.02
   private val TopPanelMinHeight = 80.0
 
-  def build(): Either[EngineError, VBox] = {
+  def build()
+  : Either[EngineError, VBox] = {
+    buildInitialWorld(world)
     for
-      initialWorld <- buildInitialWorld(World(Scene()))
-
-      (sceneRendererPanel, controller) <- rendererPanel.build(initialWorld)
+      sceneRendererPanel <- rendererPanel.build()
         .left.map(error => CannotBuildPanel(error, this.toString))
 
       onModeChange = (isButtonActive: Boolean) =>
-        if isButtonActive then controller.play()
-        else controller.pause()
+        if isButtonActive then gameEngineRuntime.start()
+        else gameEngineRuntime.stop()
 
-      onStopClick = () => controller.init(initialWorld)
+      onStopClick = () => gameEngineRuntime.reset(world)
 
       gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick)
         .left.map(error => CannotBuildPanel(error, this.toString))
@@ -50,9 +54,8 @@ final class GameEnginePanel(
       container
   }
 
-  private[panels] def buildInitialWorld(world: World): Either[EngineError, World] =
-    for
-      entity        <- Entity.circle("starter", Vector2D(10, 10), 5)
-      updatedWorld  <- world.createEntity(SaveEntityCommand(entity))
-    yield updatedWorld
+  private[panels] def buildInitialWorld(world: World): Either[EngineError, Unit] =
+    Entity.circle("starter", Vector2D(10, 10), 5).flatMap(
+      entity =>world.createEntity(SaveEntityCommand(entity))
+    )
 }

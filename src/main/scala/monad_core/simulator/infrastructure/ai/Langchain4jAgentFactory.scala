@@ -4,7 +4,8 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory
 import dev.langchain4j.model.ollama.OllamaChatModel
 import dev.langchain4j.service.AiServices
 import monad_core.simulator.application.ai.AiAgent
-import monad_core.simulator.application.engine.{GameEngineRuntime, Word}
+import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.domain.ai.AgentInfo
 
 case class Langchain4jOllamaConfig (
@@ -19,7 +20,7 @@ trait Langchain4jAgentFactory:
 object Langchain4jAgentFactory :
 
   def buildOllama(config: Langchain4jOllamaConfig)(
-    using word:Word,
+    using word:World,
     gameEngineRuntime: GameEngineRuntime
   ):AiAgent =
     val model = OllamaChatModel.builder()

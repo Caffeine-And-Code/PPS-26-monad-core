@@ -6,26 +6,25 @@ import monad_core.engine.core.traits.State
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.*
+import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.engine.EngineWord
+import monad_core.simulator.infrastructure.engine.{MonadCoreWorld}
 
 case class IncompleteEntitySpeed() extends EngineError("Both speedX and speedY must be provided together")
 
 case class Langchain4jTools()(
-  using initialWord: Word,
+  using world: World,
   gameEngineRuntime: GameEngineRuntime
 ):
-  private var word: Word = initialWord
-
   @Tool(Array("Lists all entities in the world."))
   def getAllEntities: String =
-    renderList(word.getAllEntities, "entities")(renderEntity)
+    renderList(world.getAllEntities, "entities")(renderEntity)
 
   @Tool(Array("Gets an entity by its identifier."))
   def getEntity(
     @P("Entity identifier") id: String
   ): String =
-    render(LocatableId(id).flatMap(word.getEntity))(renderEntity)
+    render(LocatableId(id).flatMap(world.getEntity))(renderEntity)
 
   @Tool(Array("Creates a circular entity."))
   def createCircleEntity(
@@ -45,7 +44,7 @@ case class Langchain4jTools()(
     save(
       Entity.circle(id, Vector2D(x, y), radius)
         .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
-        .flatMap(entity => word.createEntity(SaveEntityCommand(entity))),
+        .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
       s"Entity '$id' created."
     )
 
@@ -68,7 +67,7 @@ case class Langchain4jTools()(
     save(
       Entity.rectangle(id, Vector2D(x, y), height, length)
         .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
-        .flatMap(entity => word.createEntity(SaveEntityCommand(entity))),
+        .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
       s"Entity '$id' created."
     )
 
@@ -81,7 +80,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Entity.circle(id, Vector2D(x, y), radius)
-        .flatMap(entity => word.updateEntity(SaveEntityCommand(entity))),
+        .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
       s"Entity '$id' updated."
     )
 
@@ -95,7 +94,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Entity.rectangle(id, Vector2D(x, y), height, length)
-        .flatMap(entity => word.updateEntity(SaveEntityCommand(entity))),
+        .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
       s"Entity '$id' updated."
     )
 
@@ -104,19 +103,19 @@ case class Langchain4jTools()(
     @P("Entity identifier") id: String
   ): String =
     save(
-      LocatableId(id).flatMap(word.removeEntity),
+      LocatableId(id).flatMap(world.removeEntity),
       s"Entity '$id' removed."
     )
 
   @Tool(Array("Lists all surfaces in the world."))
   def getAllSurfaces: String =
-    renderList(word.getAllSurfaces, "surfaces")(renderSurface)
+    renderList(world.getAllSurfaces, "surfaces")(renderSurface)
 
   @Tool(Array("Gets a surface by its identifier."))
   def getSurface(
     @P("Surface identifier") id: String
   ): String =
-    render(LocatableId(id).flatMap(word.getSurface))(renderSurface)
+    render(LocatableId(id).flatMap(world.getSurface))(renderSurface)
 
   @Tool(Array("Creates a circular surface."))
   def createCircleSurface(
@@ -127,7 +126,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Surface.circle(id, Vector2D(x, y), radius)
-        .flatMap(surface => word.createSurface(SaveSurfaceCommand(surface))),
+        .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
       s"Surface '$id' created."
     )
 
@@ -141,7 +140,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Surface.rectangle(id, Vector2D(x, y), height, length)
-        .flatMap(surface => word.createSurface(SaveSurfaceCommand(surface))),
+        .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
       s"Surface '$id' created."
     )
 
@@ -154,7 +153,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Surface.circle(id, Vector2D(x, y), radius)
-        .flatMap(surface => word.updateSurface(SaveSurfaceCommand(surface))),
+        .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
       s"Surface '$id' updated."
     )
 
@@ -168,7 +167,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Surface.rectangle(id, Vector2D(x, y), height, length)
-        .flatMap(surface => word.updateSurface(SaveSurfaceCommand(surface))),
+        .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
       s"Surface '$id' updated."
     )
 
@@ -177,19 +176,19 @@ case class Langchain4jTools()(
     @P("Surface identifier") id: String
   ): String =
     save(
-      LocatableId(id).flatMap(word.removeSurface),
+      LocatableId(id).flatMap(world.removeSurface),
       s"Surface '$id' removed."
     )
 
   @Tool(Array("Lists all teams in the world."))
   def getAllTeams: String =
-    renderList(word.getAllTeams, "teams")(renderTeam)
+    renderList(world.getAllTeams, "teams")(renderTeam)
 
   @Tool(Array("Gets a team by its identifier."))
   def getTeam(
     @P("Team identifier") id: String
   ): String =
-    render(TeamId(id).flatMap(word.getTeam))(renderTeam)
+    render(TeamId(id).flatMap(world.getTeam))(renderTeam)
 
   @Tool(Array("Creates a team and optionally assigns enemy teams."))
   def createTeam(
@@ -198,7 +197,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Team.create(id, parseIds(enemies))
-        .flatMap(team => word.createTeam(SaveTeamCommand(team))),
+        .flatMap(team => world.createTeam(SaveTeamCommand(team))),
       s"Team '$id' created."
     )
 
@@ -209,7 +208,7 @@ case class Langchain4jTools()(
   ): String =
     save(
       Team.create(id, parseIds(enemies))
-        .flatMap(team => word.updateTeam(SaveTeamCommand(team))),
+        .flatMap(team => world.updateTeam(SaveTeamCommand(team))),
       s"Team '$id' updated."
     )
 
@@ -218,7 +217,7 @@ case class Langchain4jTools()(
     @P("Team identifier") id: String
   ): String =
     save(
-      TeamId(id).flatMap(word.removeTeam),
+      TeamId(id).flatMap(world.removeTeam),
       s"Team '$id' removed."
     )
 
@@ -233,17 +232,14 @@ case class Langchain4jTools()(
     "Game engine stopped."
 
   private def save(
-    result: Either[EngineError, State],
+    result: Either[EngineError, Unit],
     successMessage: String
   ): String =
     result match
       case Left(error) =>
         s"Error: ${error.message}"
-      case Right(scene: Scene) =>
-        word = EngineWord(scene)
+      case Right =>
         s"Success: $successMessage"
-      case Right(_) =>
-        "Error: the operation returned an unsupported world state."
 
   private def render[A](
     result: Either[EngineError, A]
