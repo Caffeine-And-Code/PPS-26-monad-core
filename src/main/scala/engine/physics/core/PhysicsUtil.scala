@@ -65,3 +65,24 @@ object PhysicsUtil:
 
     Option.when(squaredLength > DoubleZero):
       delta * (Numerator / math.sqrt(squaredLength))
+
+  def nearestEnemy(
+                            entity: Entity,
+                            entities: Map[LocatableId, Entity],
+                            teams: Map[TeamId, Team]
+                          ): Option[Entity] =
+    for
+      teamId <- entity.teamId
+      team <- teams.get(teamId)
+
+      enemy <- entities.valuesIterator
+        .filter(candidate =>
+          candidate.teamId.exists(team.enemies.contains)
+        )
+        .minByOption(candidate =>
+          PhysicsUtil.squaredDistance(
+            entity.position,
+            candidate.position
+          )
+        )
+    yield enemy

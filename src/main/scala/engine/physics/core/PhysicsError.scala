@@ -10,3 +10,6 @@ case class NegativeDeltaTime(dt: Long)
 
 case class OutOfBoundEntity(position: Vector2D)
   extends PhysicsError(s"Entity position is out of bounds: (${position.x}, ${position.y})")
+
+case class PhysicsDomainError(cause: EngineError)
+  extends PhysicsError(s"Physics update rejected by the domain model: $cause")

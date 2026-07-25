@@ -1,6 +1,6 @@
 package engine.physics.core
 
-import engine.model.{Vector2D, Weight, WeightCannotBeNegativeOrZero}
+import engine.model.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -9,6 +9,25 @@ import org.scalatest.matchers.should.Matchers
 class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
   private val NegativeDt = -1L
+
+  private val EntityRadius = 1.0
+
+  private def entityInTeam(
+                            id: String,
+                            position: Vector2D,
+                            teamId: String
+                          ): Entity =
+    Entity
+      .circle(id, position, EntityRadius)
+      .value
+      .withTeamId(teamId)
+      .value
+
+  private def team(
+                    id: String,
+                    enemies: Set[String] = Set.empty
+                  ): Team =
+    Team.create(id, enemies).value
 
   test("deltaSeconds should convert nanoseconds to seconds"):
     val nano = 1_500_000_000L
@@ -252,3 +271,131 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     )
 
     result shouldBe expectedValue
+
+  test("nearestEnemy should return None when there are no other entities"):
+    val entityPositionX = 0.0
+    val entityPositionY = 0.0
+    val entityPosition = Vector2D(entityPositionX, entityPositionY)
+    val entityRadius = 1.0
+    val entityId = "1"
+    val entityTeamId = "teamA"
+    val otherTeamId = "teamB"
+
+    val entity = entityInTeam(entityId, entityPosition, entityTeamId)
+    val entityTeam = team(entityTeamId, Set(otherTeamId))
+
+    val entities = Map(entity.id -> entity)
+    val teams = Map(entityTeam.id -> entityTeam)
+
+    val result = PhysicsUtil.nearestEnemy(entity, entities, teams)
+
+    result shouldBe None
+
+  test("nearestEnemy should return None when the other entity is not an enemy"):
+    val entity1PositionX = 0.0
+    val entity1PositionY = 0.0
+    val entity1Position = Vector2D(entity1PositionX, entity1PositionY)
+    val entity1Radius = 1.0
+    val entity1Id = "1"
+    val entity1TeamId = "teamA"
+    val entity2PositionX = 3.0
+    val entity2PositionY = 4.0
+    val entity2Position = Vector2D(entity2PositionX, entity2PositionY)
+    val entity2Radius = 1.0
+    val entity2Id = "2"
+    val entity2TeamId = "teamA"
+
+    val entity1 = entityInTeam(entity1Id, entity1Position, entity1TeamId)
+    val entity2 = entityInTeam(entity2Id, entity2Position, entity2TeamId)
+
+    val team1 = team(entity1TeamId)
+    val team2 = team(entity2TeamId)
+
+    val entities = Map(
+      entity1.id -> entity1,
+      entity2.id -> entity2
+    )
+
+    val teams = Map(
+      team1.id -> team1,
+      team2.id -> team2
+    )
+
+    val result = PhysicsUtil.nearestEnemy(entity1, entities, teams)
+
+    result shouldBe None
+
+  test("nearestEnemy should return the enemy when a single enemy entity is present"):
+    val entity1PositionX = 0.0
+    val entity1PositionY = 0.0
+    val entity1Position = Vector2D(entity1PositionX, entity1PositionY)
+    val entity1Radius = 1.0
+    val entity1Id = "1"
+    val entity1Team = "teamA"
+    val entity2PositionX = 3.0
+    val entity2PositionY = 4.0
+    val entity2Position = Vector2D(entity2PositionX, entity2PositionY)
+    val entity2Radius = 1.0
+    val entity2Id = "2"
+    val entity2Team = "teamB"
+
+    val entity1 = entityInTeam(entity1Id, entity1Position, entity1Team)
+    val entity2 = entityInTeam(entity2Id, entity2Position, entity2Team)
+
+    val teamA = team(entity1Team, Set(entity2Team))
+    val teamB = team(entity2Team, Set(entity1Team))
+
+    val entities = Map(
+      entity1.id -> entity1,
+      entity2.id -> entity2
+    )
+
+    val teams = Map(
+      teamA.id -> teamA,
+      teamB.id -> teamB
+    )
+
+    val result = PhysicsUtil.nearestEnemy(entity1, entities, teams)
+
+    result.value shouldBe entity2
+
+  test("nearestEnemy should select the closest enemy when multiple enemies are present"):
+    val entityPositionX = 0.0
+    val entityPositionY = 0.0
+    val entityPosition = Vector2D(entityPositionX, entityPositionY)
+    val entityRadius = 1.0
+    val entityId = "1"
+    val entityTeamId = "teamA"
+    val farEnemyPositionX = 3.0
+    val farEnemyPositionY = 4.0
+    val farEnemyPosition = Vector2D(farEnemyPositionX, farEnemyPositionY)
+    val farEnemyRadius = 1.0
+    val farEnemyId = "2"
+    val closeEnemyPositionX = 1.0
+    val closeEnemyPositionY = 1.0
+    val closeEnemyPosition = Vector2D(closeEnemyPositionX, closeEnemyPositionY)
+    val closeEnemyRadius = 1.0
+    val closeEnemyId = "3"
+    val enemyTeamId = "teamB"
+
+    val entity = entityInTeam(entityId, entityPosition, entityTeamId)
+    val farEnemy = entityInTeam(farEnemyId, farEnemyPosition, enemyTeamId)
+    val closeEnemy = entityInTeam(closeEnemyId, closeEnemyPosition, enemyTeamId)
+
+    val teamA = team(entityTeamId, Set(enemyTeamId))
+    val teamB = team(enemyTeamId, Set(entityTeamId))
+
+    val entities = Map(
+      entity.id -> entity,
+      farEnemy.id -> farEnemy,
+      closeEnemy.id -> closeEnemy
+    )
+
+    val teams = Map(
+      teamA.id -> teamA,
+      teamB.id -> teamB
+    )
+
+    val result = PhysicsUtil.nearestEnemy(entity, entities, teams)
+
+    result.value shouldBe closeEnemy
