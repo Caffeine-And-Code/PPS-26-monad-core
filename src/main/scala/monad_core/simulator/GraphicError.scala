@@ -14,3 +14,7 @@ case class CannotBuildStage(error: EngineError, stageId: String) extends EngineE
 case class StartupTimeout(seconds: Long) extends EngineError(s"JavaFX startup did not complete within ${seconds}s")
 
 case class UnexpectedStartupFailure(cause: String) extends EngineError(s"unexpected failure during JavaFX startup: $cause")
+
+case class CannotBuildDialog(cause: String, dialogId: String) extends EngineError(s"$dialogId cannot be built: \n $cause")
+
+case class InvalidFormFieldError(key: String, specificMessage: String) extends EngineError(s"$key has an invalid value: $specificMessage")
