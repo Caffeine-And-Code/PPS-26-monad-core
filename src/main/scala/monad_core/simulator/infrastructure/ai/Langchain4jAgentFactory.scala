@@ -14,7 +14,7 @@ case class Langchain4jOllamaConfig (
                                    )
 
 trait Langchain4jAgentFactory:
-  def buildOllama(config: Langchain4jOllamaConfig):AiAgent
+  def buildOllama(config: Langchain4jOllamaConfig):Langchain4jAiAgent
 
 object Langchain4jAgentFactory :
 

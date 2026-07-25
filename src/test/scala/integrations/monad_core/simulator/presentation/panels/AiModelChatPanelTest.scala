@@ -51,7 +51,7 @@ class AiModelChatPanelTest
 
     aiAgent.ask.expects(
       AskAgentCommand(conversationId, userPrompt)
-    ).returning(Future.successful(Right(AgentResponse(response, 0)))).once()
+    ).returning(Future.successful(Right(AgentResponse(response)))).once()
 
     onFxThread {
       promptField(panel).setText(prompt)
@@ -116,7 +116,7 @@ class AiModelChatPanelTest
 
     aiAgent.ask
       .expects(AskAgentCommand(conversationId, UserPrompt.from(prompt).value))
-      .returning(Future.successful(Right(AgentResponse(response, 0))))
+      .returning(Future.successful(Right(AgentResponse(response))))
       .once()
     aiAgent.cleanHistory
       .expects(CleanHistoryCommand(conversationId))

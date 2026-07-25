@@ -17,7 +17,7 @@ extends AiAgent:
   override def ask(command: AskAgentCommand): Future[Either[AgentResponseError, AgentResponse]] =
     Future {
       blocking {
-        Try(AgentResponse(assistant.chat(command.conversationId, command.prompt.toString), 0))
+        Try (AgentResponse(assistant.chat(command.conversationId, command.prompt.toString).content()))
           .toEither
           .left
           .map(error => AgentResponseError(error.getMessage))

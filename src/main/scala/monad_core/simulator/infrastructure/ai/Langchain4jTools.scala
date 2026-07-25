@@ -6,7 +6,10 @@ import monad_core.engine.core.traits.State
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.*
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.EngineWord
+
+case class IncompleteEntitySpeed() extends EngineError("Both speedX and speedY must be provided together")
 
 case class Langchain4jTools()(
   using initialWord: Word,
@@ -29,10 +32,19 @@ case class Langchain4jTools()(
     @P("Unique entity identifier") id: String,
     @P("X coordinate") x: Double,
     @P("Y coordinate") y: Double,
-    @P("Circle radius, greater than zero") radius: Double
+    @P("Circle radius, greater than zero") radius: Double,
+    @P(value = "Optional team identifier", required = false)
+    teamId: String = null,
+    @P(value = "Optional entity weight, zero or greater", required = false)
+    weight: Integer = null,
+    @P(value = "Optional horizontal speed; provide together with speedY", required = false)
+    speedX: java.lang.Double = null,
+    @P(value = "Optional vertical speed; provide together with speedX", required = false)
+    speedY: java.lang.Double = null
   ): String =
     save(
       Entity.circle(id, Vector2D(x, y), radius)
+        .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
         .flatMap(entity => word.createEntity(SaveEntityCommand(entity))),
       s"Entity '$id' created."
     )
@@ -43,10 +55,19 @@ case class Langchain4jTools()(
     @P("X coordinate") x: Double,
     @P("Y coordinate") y: Double,
     @P("Rectangle height, greater than zero") height: Double,
-    @P("Rectangle length, greater than zero") length: Double
+    @P("Rectangle length, greater than zero") length: Double,
+    @P(value = "Optional team identifier", required = false)
+    teamId: String = null,
+    @P(value = "Optional entity weight, zero or greater", required = false)
+    weight: Integer = null,
+    @P(value = "Optional horizontal speed; provide together with speedY", required = false)
+    speedX: java.lang.Double = null,
+    @P(value = "Optional vertical speed; provide together with speedX", required = false)
+    speedY: java.lang.Double = null
   ): String =
     save(
       Entity.rectangle(id, Vector2D(x, y), height, length)
+        .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
         .flatMap(entity => word.createEntity(SaveEntityCommand(entity))),
       s"Entity '$id' created."
     )
@@ -290,3 +311,30 @@ case class Langchain4jTools()(
 
   private def parseIds(csv: String): Set[String] =
     csv.split(",").iterator.map(_.trim).filter(_.nonEmpty).toSet
+
+  private def withOptionalEntityFields(
+    entity: Entity,
+    teamId: String,
+    weight: Integer,
+    speedX: java.lang.Double,
+    speedY: java.lang.Double
+  ): Either[EngineError, Entity] =
+    for
+      entityWithTeam <- Option(teamId)
+        .fold(Right(entity): Either[EngineError, Entity])(entity.withTeamId)
+      entityWithWeight <- Option(weight)
+        .fold(Right(entityWithTeam): Either[EngineError, Entity])(
+          value => entityWithTeam.withWeight(value.intValue())
+        )
+      completeEntity <- (
+        (Option(speedX), Option(speedY)) match
+          case (None, None) =>
+            Right(entityWithWeight)
+          case (Some(horizontal), Some(vertical)) =>
+            entityWithWeight.withSpeed(
+              Vector2D(horizontal.doubleValue(), vertical.doubleValue())
+            )
+          case _ =>
+            Left(IncompleteEntitySpeed())
+      ): Either[EngineError, Entity]
+    yield completeEntity

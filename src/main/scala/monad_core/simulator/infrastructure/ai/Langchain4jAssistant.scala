@@ -1,6 +1,6 @@
 package monad_core.simulator.infrastructure.ai
 
-import dev.langchain4j.service.{MemoryId, SystemMessage, UserMessage}
+import dev.langchain4j.service.{MemoryId, Result, SystemMessage, UserMessage}
 import dev.langchain4j.service.memory.ChatMemoryAccess
 import monad_core.simulator.domain.ai.ConversationId
 
@@ -18,4 +18,4 @@ trait Langchain4jAssistant extends ChatMemoryAccess:
     "Return plain text only. Do not use Markdown, headings, bullet points, numbered lists, tables, code blocks, backticks, bold, italics, links, or any other markup.",
     "Keep responses concise, direct, and in the same language used by the user."
   ))
-  def chat(@MemoryId memoryId: ConversationId, @UserMessage message: String): String
+  def chat(@MemoryId memoryId: ConversationId, @UserMessage message: String): Result[String]

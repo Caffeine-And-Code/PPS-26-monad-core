@@ -99,6 +99,45 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
     result shouldBe s"Success: Entity '$entityId' created."
 
+  test("when create circle entity receives optional fields they are saved"):
+    val teamId = "blue"
+    val weight = 12
+    val speedX = 1.5
+    val speedY = -2.5
+    val entity = Entity.circle(entityId, Vector2D(posX, posY), radius)
+      .flatMap(_.withTeamId(teamId))
+      .flatMap(_.withWeight(weight))
+      .flatMap(_.withSpeed(Vector2D(speedX, speedY)))
+      .value
+    word.createEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+
+    val result = tools.createCircleEntity(
+      entityId,
+      posX,
+      posY,
+      radius,
+      teamId,
+      Integer.valueOf(weight),
+      java.lang.Double.valueOf(speedX),
+      java.lang.Double.valueOf(speedY)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' created."
+
+  test("when create entity receives only one speed component it returns an error"):
+    val result = tools.createCircleEntity(
+      entityId,
+      posX,
+      posY,
+      radius,
+      speedX = java.lang.Double.valueOf(1.5)
+    )
+
+    result shouldBe "Error: Both speedX and speedY must be provided together"
+
   test("when create circle entity receives an invalid radius returns an error"):
     val invalidRadius = -radius
 

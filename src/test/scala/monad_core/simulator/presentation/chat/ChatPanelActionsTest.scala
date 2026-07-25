@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 class ChatPanelActionsTest extends AnyFunSuite with Matchers:
 
   private val validPrompt = "Hi Jimmy, how are you?"
-  private val agentReply = AgentResponse("Fine!", 0)
+  private val agentReply = AgentResponse("Fine!")
 
   test("onPromptChange returns the state with the updated prompt"):
     val result = ChatPanelActions.onPromptChange(ChatPanelState.initial, validPrompt)

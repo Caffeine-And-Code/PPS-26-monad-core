@@ -7,13 +7,24 @@ lazy val javaFXModules = Seq("base", "controls", "graphics")
 // le rispettive librerie native hanno gli stessi nomi di file.
 lazy val javaFXClassifiers = Seq("win", "linux", "mac-aarch64")
 
+lazy val LlmIntegrationTest =
+  config("llmIntegrationTest").extend(Test)
+
 lazy val root = rootProject
+  .configs(LlmIntegrationTest)
   .settings(
     name := "MonadCore2D",
+    inConfig(LlmIntegrationTest)(Defaults.testSettings),
+    LlmIntegrationTest / scalaSource :=
+      baseDirectory.value / "src" / "llmIntegrationTest" / "scala",
+    LlmIntegrationTest / resourceDirectory :=
+      baseDirectory.value / "src" / "llmIntegrationTest" / "resources",
+    LlmIntegrationTest / parallelExecution := false,
+    LlmIntegrationTest / fork := true,
     libraryDependencies ++= Seq(
       "org.scalactic" %% "scalactic" % "3.2.20",
-      "org.scalatest" %% "scalatest" % "3.2.20" % Test,
-      "org.scalamock" %% "scalamock" % "7.5.5" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.20" % "test,llmIntegrationTest",
+      "org.scalamock" %% "scalamock" % "7.5.5" % "test,llmIntegrationTest",
       "org.testfx" % "testfx-core" % "4.0.18" % Test,
       "dev.langchain4j" % "langchain4j-ollama" % "1.17.2",
       "dev.langchain4j" % "langchain4j" % "1.17.2",

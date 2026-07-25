@@ -14,7 +14,7 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
   given ExecutionContext = ExecutionContext.parasitic
 
   private val validPrompt = "Hello"
-  private val validAnswer = AgentResponse("Hi!", 0)
+  private val validAnswer = AgentResponse("Hi!")
   private val emptyPrompt = ""
   private val userMessage = ChatMessage(validPrompt, MessageAuthor.User)
   private val conversationId = ConversationId.from("chat1").value
