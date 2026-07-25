@@ -3,6 +3,7 @@ package monad_core.simulator.infrastructure.ai
 import monad_core.engine.core.Scene
 import monad_core.engine.model.{Entity, LocatableId, Surface, Team, TeamId, Vector2D}
 import monad_core.simulator.application.engine.*
+import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.EitherValues.*
@@ -22,19 +23,19 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   private val rectangleLength = 5.0
   private val invalidId = ""
 
-  private var word: Word = uninitialized
+  private var world: World = uninitialized
   private var gameEngineRuntime: GameEngineRuntime = uninitialized
 
   override def beforeEach(): Unit =
     super.beforeEach()
-    word = mock[Word]
+    world = mock[World]
     gameEngineRuntime = mock[GameEngineRuntime]
 
   private def tools: Langchain4jTools =
-    Langchain4jTools()(using word, gameEngineRuntime)
+    Langchain4jTools()(using world, gameEngineRuntime)
 
   test("list all entities in the world returns empty if scene is empty"):
-    (() => word.getAllEntities).expects().returning(List.empty).once()
+    (() => world.getAllEntities).expects().returning(List.empty).once()
 
     val result = tools.getAllEntities
 
@@ -43,7 +44,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   test("list all entities in the world returns the list"):
     val circle = Entity.circle("circle", Vector2D(posX, posY), radius).value
     val rectangle = Entity.rectangle("rectangle", Vector2D(posX, posY), height, rectangleLength).value
-    (() => word.getAllEntities).expects().returning(List(circle, rectangle)).once()
+    (() => world.getAllEntities).expects().returning(List(circle, rectangle)).once()
 
     val result = tools.getAllEntities
 
@@ -69,7 +70,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when get entity is called returns the formatted entity"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
-    word.getEntity.expects(LocatableId(entityId).value).returning(Right(entity)).once()
+    world.getEntity.expects(LocatableId(entityId).value).returning(Right(entity)).once()
 
     val result = tools.getEntity(entityId)
 
@@ -90,7 +91,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when create circle entity is called a success message is returned"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
-    word.createEntity
+    world.createEntity
       .expects(SaveEntityCommand(entity))
       .returning(Right(Scene(entities = Map(entity.id -> entity))))
       .once()
@@ -109,7 +110,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
       .flatMap(_.withWeight(weight))
       .flatMap(_.withSpeed(Vector2D(speedX, speedY)))
       .value
-    word.createEntity
+    world.createEntity
       .expects(SaveEntityCommand(entity))
       .returning(Right(Scene(entities = Map(entity.id -> entity))))
       .once()
@@ -147,7 +148,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when create rectangle entity is called a success message is returned"):
     val entity = Entity.rectangle(entityId, Vector2D(posX, posY), height, rectangleLength).value
-    word.createEntity
+    world.createEntity
       .expects(SaveEntityCommand(entity))
       .returning(Right(Scene(entities = Map(entity.id -> entity))))
       .once()
@@ -158,7 +159,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when update circle entity is called returns a success message"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
-    word.updateEntity
+    world.updateEntity
       .expects(SaveEntityCommand(entity))
       .returning(Right(Scene(entities = Map(entity.id -> entity))))
       .once()
@@ -169,7 +170,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when update rectangle entity is called returns a success message"):
     val entity = Entity.rectangle(entityId, Vector2D(posX, posY), height, rectangleLength).value
-    word.updateEntity
+    world.updateEntity
       .expects(SaveEntityCommand(entity))
       .returning(Right(Scene(entities = Map(entity.id -> entity))))
       .once()
@@ -180,14 +181,14 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when remove entity is called returns a success message"):
     val id = LocatableId(entityId).value
-    word.removeEntity.expects(id).returning(Right(Scene())).once()
+    world.removeEntity.expects(id).returning(Right(Scene())).once()
 
     val result = tools.removeEntity(entityId)
 
     result shouldBe s"Success: Entity '$entityId' removed."
 
   test("list all surfaces in the world returns empty if scene is empty"):
-    (() => word.getAllSurfaces).expects().returning(List.empty).once()
+    (() => world.getAllSurfaces).expects().returning(List.empty).once()
 
     val result = tools.getAllSurfaces
 
@@ -195,7 +196,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("list all surfaces in the world returns the list"):
     val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
-    (() => word.getAllSurfaces).expects().returning(List(surface)).once()
+    (() => world.getAllSurfaces).expects().returning(List(surface)).once()
 
     val result = tools.getAllSurfaces
 
@@ -210,7 +211,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when get surface is called returns the formatted surface"):
     val surface = Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
-    word.getSurface.expects(LocatableId(surfaceId).value).returning(Right(surface)).once()
+    world.getSurface.expects(LocatableId(surfaceId).value).returning(Right(surface)).once()
 
     val result = tools.getSurface(surfaceId)
 
@@ -224,7 +225,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when create circle surface is called returns a success message"):
     val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
-    word.createSurface
+    world.createSurface
       .expects(SaveSurfaceCommand(surface))
       .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
       .once()
@@ -235,7 +236,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when create rectangle surface is called returns a success message"):
     val surface = Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
-    word.createSurface
+    world.createSurface
       .expects(SaveSurfaceCommand(surface))
       .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
       .once()
@@ -246,7 +247,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when update circle surface is called returns a success message"):
     val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
-    word.updateSurface
+    world.updateSurface
       .expects(SaveSurfaceCommand(surface))
       .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
       .once()
@@ -257,7 +258,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when update rectangle surface is called returns a success message"):
     val surface = Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
-    word.updateSurface
+    world.updateSurface
       .expects(SaveSurfaceCommand(surface))
       .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
       .once()
@@ -268,14 +269,14 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when remove surface is called delegates returns a success message"):
     val id = LocatableId(surfaceId).value
-    word.removeSurface.expects(id).returning(Right(Scene())).once()
+    world.removeSurface.expects(id).returning(Right(Scene())).once()
 
     val result = tools.removeSurface(surfaceId)
 
     result shouldBe s"Success: Surface '$surfaceId' removed."
 
   test("list all teams in the world returns empty if scene is empty"):
-    (() => word.getAllTeams).expects().returning(List.empty).once()
+    (() => world.getAllTeams).expects().returning(List.empty).once()
 
     val result = tools.getAllTeams
 
@@ -283,7 +284,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("list all teams in the world returns the list"):
     val team = Team.create("blue", Set("red", "green")).value
-    (() => word.getAllTeams).expects().returning(List(team)).once()
+    (() => world.getAllTeams).expects().returning(List(team)).once()
 
     val result = tools.getAllTeams
 
@@ -295,7 +296,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when get team is called returns the formatted team"):
     val team = Team.create("blue", Set("red")).value
-    word.getTeam.expects(TeamId("blue").value).returning(Right(team)).once()
+    world.getTeam.expects(TeamId("blue").value).returning(Right(team)).once()
 
     val result = tools.getTeam("blue")
 
@@ -306,7 +307,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when create team is called returns a success message"):
     val team = Team.create("blue", Set("red", "green")).value
-    word.createTeam
+    world.createTeam
       .expects(SaveTeamCommand(team))
       .returning(Right(Scene(teams = Map(team.id -> team))))
       .once()
@@ -317,7 +318,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when update team is called returns a success message"):
     val team = Team.create("blue", Set("yellow")).value
-    word.updateTeam
+    world.updateTeam
       .expects(SaveTeamCommand(team))
       .returning(Right(Scene(teams = Map(team.id -> team))))
       .once()
@@ -328,7 +329,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("when remove team is called returns a success message"):
     val id = TeamId("blue").value
-    word.removeTeam.expects(id).returning(Right(Scene())).once()
+    world.removeTeam.expects(id).returning(Right(Scene())).once()
 
     val result = tools.removeTeam("blue")
 

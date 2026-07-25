@@ -1,14 +1,10 @@
 package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.agent.tool.{P, Tool}
-import monad_core.engine.core.Scene
-import monad_core.engine.core.traits.State
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
-import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.engine.{MonadCoreWorld}
 
 case class IncompleteEntitySpeed() extends EngineError("Both speedX and speedY must be provided together")
 
@@ -238,7 +234,7 @@ case class Langchain4jTools()(
     result match
       case Left(error) =>
         s"Error: ${error.message}"
-      case Right =>
+      case Right(_) =>
         s"Success: $successMessage"
 
   private def render[A](

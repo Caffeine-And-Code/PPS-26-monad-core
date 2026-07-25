@@ -2,9 +2,11 @@ package integrations.monad_core.simulator.presentation.panels
 
 import helpers.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
+import monad_core.engine.core.Scene
 import monad_core.engine.public_api.Painter
-import monad_core.simulator.application.engine.GameEngine
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.GameEnginePanel
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
@@ -17,6 +19,9 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.scene.layout.VBox
 
 class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
+  given runtime : MonadCodeGameEngineRuntime = MonadCodeGameEngineRuntime() 
+  given world : World = MonadCoreWorld(Scene())  
+  
   val modePanel: GameEngineModePanelBuilder = mock[GameEngineModePanelBuilder]
   val sceneRenderer: SceneRendererPanelBuilder = mock[SceneRendererPanelBuilder]
   val imageConfig: ImageConfigRecord = MockImageConfig()
@@ -44,27 +49,22 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
     modePanel.build.expects(*, *, *).never()
 
   def setupCorrectSceneRenderer(): Unit = {
-    given Painter = mock[Painter]
-    val onFrame = mockFunction[World, Unit]
-    
-    val gameLoopController: GameEngine = GameEngine(onFrame)
-
-    sceneRenderer.build.expects(*).returns(
-      Right((
-        new VBox {
-          children = Seq()
-        },
-        gameLoopController
-      ))
-    )
+    (sceneRenderer.build()(using _: GameEngineRuntime, _: World))
+      .expects(*, *).returns(
+        Right(
+          new VBox {
+            children = Seq()
+          }
+        )
+      )
   }
 
   def setupInvalidSceneRenderer(): Unit =
-    sceneRenderer.build.expects(*)
+    (sceneRenderer.build()(using _: GameEngineRuntime, _: World)).expects(*, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
   def setupNeverCalledSceneRenderer(): Unit =
-    sceneRenderer.build.expects(*).never()
+    (sceneRenderer.build()(using _: GameEngineRuntime, _: World)).expects(*, *).never()
 
   test("A GameEnginePanel can be built"):
     setupCorrectSceneRenderer()

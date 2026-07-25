@@ -9,14 +9,31 @@
           "type": "VBox",
           "children": [
             {
-              "type": "Label",
-              "id": "chat-title",
-              "styleClass": ["label"],
-              "text": "Chat with Jimmy",
+              "type": "HBox",
               "children": [
                 {
-                  "type": "LabeledText",
-                  "styleClass": ["text"]
+                  "type": "Label",
+                  "id": "chat-title",
+                  "styleClass": ["label"],
+                  "text": "Chat with Jimmy",
+                  "children": [
+                    {
+                      "type": "LabeledText",
+                      "styleClass": ["text"]
+                    }
+                  ]
+                },
+                {
+                  "type": "Button",
+                  "id": "chat-clear",
+                  "styleClass": ["button"],
+                  "text": "CLEAR",
+                  "children": [
+                    {
+                      "type": "LabeledText",
+                      "styleClass": ["text"]
+                    }
+                  ]
                 }
               ]
             },

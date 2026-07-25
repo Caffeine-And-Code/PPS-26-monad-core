@@ -1,6 +1,7 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.simulator.application.engine.{GameEngineRuntime, Word}
+import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.domain.ai.AgentInfo
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -14,7 +15,7 @@ class Langchain4jAgentFactoryTest extends AnyFunSuite with Matchers with MockFac
       modelName = "gemma4:e2b",
       provider = "ollama"
     )
-    val word: Word = mock[Word]
+    val word: World = mock[World]
     val gameEngineRuntime: GameEngineRuntime = mock[GameEngineRuntime]
 
     val result = Langchain4jAgentFactory.buildOllama(ollamaConfig)(using word, gameEngineRuntime)
