@@ -203,9 +203,10 @@
 
 #### Tasks
 
-- da definire
+- test level 1
+- valutare test level 2 e 3
 
-### User Story 16 (opzionale) - Rotazione delle entità
+### User Story 16 - Rotazione delle entità
 
 **Come** sviluppatore  
 **voglio** permettere alle entità di ruotare  
@@ -232,3 +233,13 @@
 - Misurare FPS. [2]
 - Analizzare colli di bottiglia. [2]
 - Valutare l'impiego di Prolog nei test. [5]
+
+### User Story 18 - game engine runtime
+come sviluppatore
+voglio avere un runtime pronto per usare l'engine
+così da avere delle utilità per gestire l'engine
+
+#### Tasks
+- case class che gestisca il tick e la scena
+- possibilità di overridare la scena
+- callback quando cambia la scena in base al tick
