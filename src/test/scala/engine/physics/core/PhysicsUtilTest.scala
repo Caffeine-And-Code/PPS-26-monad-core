@@ -1,19 +1,20 @@
 package engine.physics.core
 
 import engine.model.{Vector2D, Weight, WeightCannotBeNegativeOrZero}
+import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
-  val NegativeDt = -1L
+  private val NegativeDt = -1L
 
   test("deltaSeconds should convert nanoseconds to seconds"):
     val nano = 1_500_000_000L
     val expectedSeconds = 1.5
 
-    PhysicsUtil.deltaSeconds(nano) shouldBe Right(expectedSeconds)
+    PhysicsUtil.deltaSeconds(nano).value shouldBe expectedSeconds
 
   test("deltaSeconds treats a negative delta time as zero"):
 
@@ -33,7 +34,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       deltaTime = dt
     )
 
-    result shouldBe Right(expectedDisplacement)
+    result.value shouldBe expectedDisplacement
 
   test("displacement should return an error for negative delta time"):
     val speedVectorX = 1.0
@@ -65,7 +66,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       deltaTime = dt
     )
 
-    result shouldBe Right(expectedNextPosition)
+    result.value shouldBe expectedNextPosition
 
   test("nextPosition should return an error for negative delta time"):
     val positionVectorX = 5.0
@@ -97,7 +98,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       mass = Weight(massValue)
     )
 
-    result shouldBe Right(expectedAcceleration)
+    result.value shouldBe expectedAcceleration
 
   test("acceleration should return an error for zero or negative mass"):
     val forceVectorX = 10.0
@@ -137,7 +138,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       deltaTime = dt
     )
 
-    result shouldBe Right(expectedNextSpeed)
+    result.value shouldBe expectedNextSpeed
 
   test("nextSpeed should return an error for negative delta time"):
     val speedVectorX = 1.0
@@ -172,7 +173,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       deltaTime = dt
     )
 
-    result shouldBe Right(expectedFrictionSpeed)
+    result.value shouldBe expectedFrictionSpeed
     
   test("friction should not reverse speed"):
     val speedVectorX = 10.0
@@ -180,6 +181,9 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val speedVector = Vector2D(speedVectorX, speedVectorY)
     val frictionIndex = 2.0
     val dt = 1_000_000_000L
+    val expectedVectorX = 0.0
+    val expectedVectorY = 0.0
+    val expectedVector = Vector2D(expectedVectorX, expectedVectorY)
 
     val result = PhysicsUtil.applyFriction(
       speed = speedVector,
@@ -187,7 +191,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       deltaTime = dt
     )
 
-    result shouldBe Right(Vector2D(0.0, 0.0))
+    result.value shouldBe expectedVector
 
   test("friction should return an error for negative delta time"):
     val speedVectorX = 10.0
