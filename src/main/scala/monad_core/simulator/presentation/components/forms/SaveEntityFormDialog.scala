@@ -86,8 +86,8 @@ object SaveEntityFormDialog:
             TextFieldSpec(id = EntityFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
           ),
           EntityShapes.RectangleLabel -> Seq(
-            TextFieldSpec(id = EntityFormParser.HeightKey, label = "Height", defaultValue = defaultValues.height),
-            TextFieldSpec(id = EntityFormParser.LengthKey, label = "Width", defaultValue = defaultValues.length)
+            TextFieldSpec(id = EntityFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
+            TextFieldSpec(id = EntityFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
           )
         ),
         defaultValue = defaultValues.shape

@@ -25,7 +25,12 @@ final case class MenuButtonProps(
                                 )
 
 object MenuButton {
-
+  extension(item: MenuButtonItem)
+    def toMenuItem: MenuItem =
+      new MenuItem(item.label):
+        disable = item.isDisabled
+        onAction = _ => item.onSelect()
+  
   private val StylesheetPath: String =
     getClass.getResource("/stylesheets/menu-button.css").toExternalForm
 

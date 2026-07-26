@@ -5,6 +5,7 @@ import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import javafx.scene.control.Button
 import javafx.scene.layout.HBox
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import org.scalamock.scalatest.MockFactory
@@ -14,6 +15,8 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.{jfxButton2sfx, jfxHBox2sfx}
 
 class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
+  given mockWorld : World = mock[World]
+  
   val ToolsButtonIndex = 0
   val SpacingRegionIndex = 1
   val ModeButtonIndex = 2

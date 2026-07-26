@@ -2,6 +2,7 @@ package monad_core.simulator.presentation.panels
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.presentation.components.*
 import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps}
 import monad_core.simulator.presentation.panels.support.PanelStyles
@@ -18,6 +19,9 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
              imageConfig: ImageConfigRecord,
              onModeChange: Boolean => Unit,
              onStopClick: () => Unit
+           )
+           (
+           using world: World
            ): Either[EngineError, VBox] = {
     val isRunning = BooleanProperty(false)
 
@@ -57,8 +61,8 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
               props = SaveEntityFormDialogProps(
                 title = "Entity Settings",
                 owner = Some(playPauseBtn.scene.value.window.value),
-                onSubmit = entity => println(entity.toString),
-                teams = Seq.empty,
+                onSubmit = entity => world.createEntity(SaveEntityCommand(entity)),
+                teams = world.getAllTeams,
                 onError = error => println(error.message)
               )
             )),

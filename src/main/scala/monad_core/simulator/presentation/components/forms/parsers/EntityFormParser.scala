@@ -80,7 +80,12 @@ object EntityFormParser:
 
       teamId = values.get(TeamIdKey)
       finalEntity <- teamId match
-        case Some(id) => entityWithWeight.withTeamId(id)
+        case Some(id) =>
+          if id.isEmpty then
+            Right(entityWithWeight)
+          else
+            entityWithWeight.withTeamId(id)
+
         case None => Right(entityWithWeight)
     yield finalEntity
 

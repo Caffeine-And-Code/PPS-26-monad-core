@@ -58,7 +58,7 @@ final class GameEnginePanel(
   }
 
   private[panels] def buildInitialWorld(world: World): Either[EngineError, Unit] =
-    Entity.circle("starter", Vector2D(10, 10), 5).flatMap(
+    Entity.circle("starter", Vector2D(15, 15), 15).flatMap(
       entity => world.createEntity(SaveEntityCommand(entity))
     )
 }
