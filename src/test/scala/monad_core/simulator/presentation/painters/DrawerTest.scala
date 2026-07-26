@@ -15,7 +15,7 @@ class DrawerTest extends AnyFunSuite with Matchers with Inside with MockFactory 
   val CircleEntity: Entity = Entity.circle("CircleId", Vector2D(0, 0), 1).value
   val RectangleEntity: Entity = Entity.rectangle("RectangleId", Vector2D(0, 0), 10, 10).value
 
-  override def afterEach(): Unit =
+  override def beforeEach(): Unit =
     Drawer.buffer.clear()
 
   def generateRandomTeamId(): TeamId =

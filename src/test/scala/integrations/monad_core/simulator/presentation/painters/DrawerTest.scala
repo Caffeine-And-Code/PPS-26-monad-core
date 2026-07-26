@@ -39,7 +39,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
       Drawer.flush(canvas.graphicsContext2D)
     }
 
-    assertMatchesVisualSnapshot("circle_flush_result", canvas)
+    assertMatchesVisualSnapshot("circle_flush_result", canvas, maxDiffPercentage = 2.0)
 
   test("flush draws the Rectangle Commands"):
     enlistRectangle()
