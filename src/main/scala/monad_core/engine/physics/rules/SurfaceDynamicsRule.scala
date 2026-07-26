@@ -9,7 +9,11 @@ trait SurfaceDetection[CD]:
 
 object SurfaceDynamicsRule:
 
+  private val id = "surface-dynamics"
+  
   given surfaceDynamicsRule[S, CD](using state: PhysicsState[S], surfaceDetection: SurfaceDetection[CD]): PhysicsRule[S, CD] with
+
+    override val ruleId: String = SurfaceDynamicsRule.id
 
     override def apply(scene: S)(using detector: CD, dt: Long): Either[PhysicsError, S] =
       for

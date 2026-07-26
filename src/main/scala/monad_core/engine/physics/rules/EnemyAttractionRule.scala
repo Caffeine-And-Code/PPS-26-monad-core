@@ -4,10 +4,14 @@ import monad_core.engine.model.*
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule, PhysicsState, PhysicsUtil}
 
 object EnemyAttractionRule:
-
+  
+  private val id = "enemy-attraction"
   private val AttractionAcceleration = 1.0
 
   given enemyAttractionRule[S, CD](using state: PhysicsState[S]): PhysicsRule[S, CD] with
+    
+    override val ruleId: String = EnemyAttractionRule.id
+    
     override def apply(scene: S)(using detector: CD, dt: Long): Either[PhysicsError, S] =
       for
         _ <- PhysicsUtil.deltaSeconds(dt)

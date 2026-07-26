@@ -11,9 +11,12 @@ trait CollisionResolutionDetection[CD]:
   def collision(detector: CD, first: Entity, second: Entity): Option[Collision]
 
 object CollisionResolutionRule:
-
+  private val id = "collision-resolution"
+  
   given collisionResolutionRule[S, CD](using state: PhysicsState[S], collisionDetection: CollisionResolutionDetection[CD]): PhysicsRule[S, CD] with
-
+    
+    override val ruleId: String = CollisionResolutionRule.id
+    
     override def apply(scene: S)(using detector: CD, dt: Long): Either[PhysicsError, S] =
       for
         _ <- PhysicsUtil.deltaSeconds(dt)

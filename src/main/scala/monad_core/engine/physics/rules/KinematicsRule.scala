@@ -4,8 +4,12 @@ import monad_core.engine.physics.core.{OutOfBoundEntity, PhysicsError, PhysicsRu
 
 object KinematicsRule:
 
+  private val id = "kinematics"
+  
   given kinematicsRule[S, CD](using state: PhysicsState[S]): PhysicsRule[S, CD] with
-
+    
+    override val ruleId: String = KinematicsRule.id
+    
     override def apply(scene: S)(using detector: CD, dt: Long): Either[PhysicsError, S] =
       for
         _ <- PhysicsUtil.deltaSeconds(dt)

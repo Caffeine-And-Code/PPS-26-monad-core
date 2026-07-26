@@ -2,7 +2,6 @@ package monad_core.engine.physics.core
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
-import monad_core.engine.model.Vector2D.*
 
 object PhysicsUtil:
 
