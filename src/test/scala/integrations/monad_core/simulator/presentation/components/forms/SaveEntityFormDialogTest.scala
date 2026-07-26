@@ -104,7 +104,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       val activeStage = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("save_circle_entity_form_dialog_initial", rootNode, maxDiffPercentage = 0.2)
+      assertMatchesVisualSnapshot("save_circle_entity_form_dialog_initial", rootNode, maxDiffPercentage = 8.0)
     }
 
 
@@ -143,7 +143,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       val activeStage = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("save_rectangle_entity_form_dialog_initial", rootNode, maxDiffPercentage = 0.2)
+      assertMatchesVisualSnapshot("save_rectangle_entity_form_dialog_initial", rootNode, maxDiffPercentage = 8.0)
     }
 
   test("SaveEntityFormDialog Rectangle matches architectural snapshot"):

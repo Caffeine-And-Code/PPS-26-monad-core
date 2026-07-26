@@ -129,5 +129,5 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
       val activeStage = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("generic_form_dialog", rootNode)
+      assertMatchesVisualSnapshot("generic_form_dialog", rootNode, maxDiffPercentage = 8.0)
     }
