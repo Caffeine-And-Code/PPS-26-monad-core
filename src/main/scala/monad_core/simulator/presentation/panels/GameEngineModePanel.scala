@@ -2,8 +2,8 @@ package monad_core.simulator.presentation.panels
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
-import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps}
 import monad_core.simulator.presentation.components.*
+import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps}
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon, ToolsIcon}
@@ -61,8 +61,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                 teams = Seq.empty,
                 onError = error => println(error.message)
               )
-            )
-            )
+            )),
           )
         )
       ).left.map(error => CannotBuildPanel(error, GameEngineModePanel.toString))

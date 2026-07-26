@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.engine.model.{Shape2D, Vector2D}
+import monad_core.engine.model.{Shape2D, TeamId, Vector2D}
 import monad_core.simulator.MissingKeyInFormError
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.{convertEitherToValuable, convertLeftProjectionToValuable}
@@ -15,22 +15,34 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
   val EntityLength: Double = 6
   val EntityHeight: Double = 7
   val EntityPosition: Vector2D = Vector2D(10, 11)
+  val EntitySpeed : Vector2D = Vector2D(12, 13)
+  val EntityWeight: Double = 14
+  val EntityHealth: Int = 15
+  val EntityTeamId: String = "teamIdValue"
   val EntityFormValues: Map[String, String] = Map(
-    "x" -> EntityPosition.x.toString,
-    "y" -> EntityPosition.y.toString
+    EntityFormParser.PositionXKey -> EntityPosition.x.toString,
+    EntityFormParser.PositionYKey -> EntityPosition.y.toString
   )
 
   def buildShapeFormValues(shapeLabel: String): Map[String, String] =
-    EntityFormValues + ("shape" -> shapeLabel)
+    EntityFormValues + (EntityFormParser.ShapeKey -> shapeLabel)
 
   def circleFormValues: Map[String, String] =
     buildShapeFormValues(EntityShapes.CircleLabel)
-      + ("radius" -> EntityRadius.toString)
+      + (EntityFormParser.RadiusKey -> EntityRadius.toString)
 
   def rectangleFormValues: Map[String, String] =
     buildShapeFormValues(EntityShapes.RectangleLabel)
-      + ("length" -> EntityLength.toString)
-      + ("height" -> EntityHeight.toString)
+      + (EntityFormParser.LengthKey -> EntityLength.toString)
+      + (EntityFormParser.HeightKey -> EntityHeight.toString)
+
+  def buildFormValuesWithOptionalParams(formValues: Map[String, String]) : Map[String, String] =
+    formValues
+      + (EntityFormParser.TeamIdKey -> EntityTeamId)
+      + (EntityFormParser.SpeedXKey -> EntitySpeed.x.toString)
+      + (EntityFormParser.SpeedYKey -> EntitySpeed.y.toString)
+      + (EntityFormParser.WeightKey -> EntityWeight.toString)
+      + (EntityFormParser.HealthKey -> EntityHealth.toString)
 
   test("A circle entity can be converted from form values by utilizing the default id generator"):
     val expectedCircle = Shape2D.circle(EntityRadius).value
@@ -71,7 +83,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         error should be(expectedError)
 
   test("If form values doesn't have the 'x' value the entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError("x")
+    val expectedError = MissingKeyInFormError(EntityFormParser.PositionXKey)
     val formValuesWithMissingX = Map.empty[String, String]
 
     val parseResult = EntityFormParser.buildEntity(formValuesWithMissingX)
@@ -81,8 +93,8 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         error should be(expectedError)
 
   test("If form values doesn't have the 'y' value the entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError("y")
-    val formValuesWithMissingY = Map("x" -> EntityPosition.x.toString)
+    val expectedError = MissingKeyInFormError(EntityFormParser.PositionYKey)
+    val formValuesWithMissingY = Map(EntityFormParser.PositionXKey -> EntityPosition.x.toString)
 
     val parseResult = EntityFormParser.buildEntity(formValuesWithMissingY)
 
@@ -90,35 +102,23 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       case Left(error) =>
         error should be(expectedError)
 
-  test("If form values doesn't have the 'radius' value the circle entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError("radius")
-    val formValuesWithMissingRadius = circleFormValues - "radius"
+  test("If form values doesn't have a Shape specific key the entity cannot be parsed"):
+    val cases = Table(
+      ("key", "baseFormValue"),
+      (EntityFormParser.RadiusKey, circleFormValues),
+      (EntityFormParser.HeightKey, rectangleFormValues),
+      (EntityFormParser.LengthKey, rectangleFormValues),
+    )
 
-    val parseResult = EntityFormParser.buildEntity(formValuesWithMissingRadius)
+    forAll(cases): (key, baseFormValue) =>
+      val expectedError = MissingKeyInFormError(key)
+      val formValues = baseFormValue - key
 
-    inside(parseResult):
-      case Left(error) =>
-        error should be(expectedError)
+      val parseResult = EntityFormParser.buildEntity(formValues)
 
-  test("If form values doesn't have the 'height' value the rectangle entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError("height")
-    val formValuesWithMissingHeight = rectangleFormValues - "height"
-
-    val parseResult = EntityFormParser.buildEntity(formValuesWithMissingHeight)
-
-    inside(parseResult):
-      case Left(error) =>
-        error should be(expectedError)
-
-  test("If form values doesn't have the 'length' value the rectangle entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError("length")
-    val formValuesWithMissingLength = rectangleFormValues - "length"
-
-    val parseResult = EntityFormParser.buildEntity(formValuesWithMissingLength)
-
-    inside(parseResult):
-      case Left(error) =>
-        error should be(expectedError)
+      inside(parseResult):
+        case Left(error) =>
+          error should be(expectedError)
 
   test("A function that generates an id can be passed to the buildEntity function"):
     val formValuesTable = Table(
@@ -139,17 +139,36 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         case Right(entity) =>
           entity.id.value should be(expectedId)
 
+  test("A circle complete form can be parsed to entity"):
+    val cases = Table(
+      "baseFormValues",
+      circleFormValues,
+      rectangleFormValues
+    )
+
+    forAll(cases) : baseFormValues =>
+      val fullCompletedFormValues = buildFormValuesWithOptionalParams(baseFormValues)
+
+      val parseResult = EntityFormParser.buildEntity(fullCompletedFormValues)
+
+      inside(parseResult):
+        case Right(entity) =>
+          entity.teamId should be(Some(TeamId(EntityTeamId).value))
+          entity.health should be(Some(EntityHealth))
+          entity.weight should be(Some(EntityWeight))
+          entity.speed should be(Some(EntitySpeed))
+
   test("buildByShape should correctly construct entities based on shape type"):
     val testCases = Table(
       ("shape", "values", "expectedShape"),
       (
         EntityShapes.Circle,
-        Map("radius" -> EntityRadius.toString),
+        Map(EntityFormParser.RadiusKey -> EntityRadius.toString),
         Shape2D.circle(EntityRadius).value
       ),
       (
         EntityShapes.Rectangle,
-        Map("height" -> EntityHeight.toString, "length" -> EntityLength.toString),
+        Map(EntityFormParser.HeightKey -> EntityHeight.toString, EntityFormParser.LengthKey -> EntityLength.toString),
         Shape2D.rectangle(height = EntityHeight, length = EntityLength).value
       )
     )

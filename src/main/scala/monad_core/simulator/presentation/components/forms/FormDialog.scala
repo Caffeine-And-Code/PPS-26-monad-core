@@ -108,6 +108,7 @@ private final class FormDialogBuilder(props: FormDialogProps):
         val field = new TextField {
           text = tf.defaultValue.getOrElse("")
           styleClass += "form-field-input"
+          id = spec.id
         }
         (field, () => field.text.value)
 
@@ -115,6 +116,7 @@ private final class FormDialogBuilder(props: FormDialogProps):
         val combo = new ComboBox[String] {
           items = ObservableBuffer.from(select.options)
           styleClass += "form-field-select"
+          id = spec.id
           select.defaultValue.orElse(select.options.headOption).foreach(v => value = v)
         }
 
