@@ -90,6 +90,10 @@ trait SnapshotTesting extends Matchers:
             java.awt.image.BufferedImage.TYPE_INT_ARGB
           )
           val g = canvas.createGraphics()
+          val bgRgb = img.getRGB(0, img.getHeight - 1)
+          g.setColor(new java.awt.Color(bgRgb, true))
+          g.fillRect(0, 0, maxWidth, maxHeight)
+
           g.drawImage(img, 0, 0, null)
           g.dispose()
           canvas
