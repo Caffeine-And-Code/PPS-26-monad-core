@@ -42,7 +42,11 @@ lazy val javaFXJavaOptions = Def.task {
     "--module-path", javaFXModulePath.value,
     "--add-modules", javaFXModules.map(m => s"javafx.$m").mkString(","),
     "-Dglass.win.uiScale=100%",
-    "-Dprism.allowhidpi=false"
+    "-Dprism.allowhidpi=false",
+    "-Dprism.order=sw",
+    "-Dprism.lcdtext=false",
+    "-Dprism.text=t2k",
+    "-Dprism.subpixeltext=false"
   )
 }
 
@@ -81,9 +85,9 @@ lazy val root = rootProject
     assembly / mainClass := Some("Launcher"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
-      case PathList("META-INF", _*)             => MergeStrategy.discard
-      case "module-info.class"                  => MergeStrategy.discard
-      case _                                    => MergeStrategy.first
+      case PathList("META-INF", _*) => MergeStrategy.discard
+      case "module-info.class" => MergeStrategy.discard
+      case _ => MergeStrategy.first
     }
   )
 
