@@ -40,7 +40,9 @@ lazy val javaFXModulePath = Def.task {
 lazy val javaFXJavaOptions = Def.task {
   Seq(
     "--module-path", javaFXModulePath.value,
-    "--add-modules", javaFXModules.map(m => s"javafx.$m").mkString(",")
+    "--add-modules", javaFXModules.map(m => s"javafx.$m").mkString(","),
+    "-Dglass.win.uiScale=100%",
+    "-Dprism.allowhidpi=false"
   )
 }
 

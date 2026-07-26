@@ -1,3 +1,12 @@
+@font-face {
+    font-family: 'TestFont';
+    src: url('/fonts/Roboto-Regular.ttf');
+}
+
+.root {
+    -fx-font-family: 'TestFont';
+}
+
 .form-dialog-root {
     -fx-background-color: #1a1b1f;
 }
