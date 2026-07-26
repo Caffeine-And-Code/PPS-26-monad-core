@@ -10,7 +10,8 @@ final case class SaveEntityFormDialogProps(
                                             onSubmit: Entity => Unit,
                                             onError: EngineError => Unit,
                                             teams: Seq[Team],
-                                            owner: Option[Window] = None
+                                            owner: Option[Window] = None,
+                                            entityToUpdate: Option[Entity] = None
                                           )
 
 object SaveEntityFormDialog:

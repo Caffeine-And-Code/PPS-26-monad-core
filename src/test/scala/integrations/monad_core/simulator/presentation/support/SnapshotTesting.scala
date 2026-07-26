@@ -31,7 +31,7 @@ trait SnapshotTesting extends Matchers:
 
       normalizedActual shouldBe normalizedExpected
 
-  def assertMatchesSnapshotOfStage(snapshotName: String, stage: Stage) : Unit =
+  def assertMatchesSnapshotOfStage(snapshotName: String, stage: Stage): Unit =
     val rootNode: scalafx.scene.Node = stage.getScene.getRoot
 
     val currentTree = SceneGraphSerializer.snapshotOf(rootNode)
@@ -59,28 +59,46 @@ trait SnapshotTesting extends Matchers:
       Math.abs(b1 - b2) <= tolerance
 
   def assertMatchesVisualSnapshot(
-                                       snapshotName: String,
-                                       node: scalafx.scene.Node,
-                                       maxDiffPercentage: Double = 0.1
-                                     ): Unit =
+                                   snapshotName: String,
+                                   node: scalafx.scene.Node,
+                                   maxDiffPercentage: Double = 0.1
+                                 ): Unit =
     val snapshot = runOnFxThread {
       node.snapshot(null, null)
     }
-    val bufferedImage = SwingFXUtils.fromFXImage(snapshot.delegate, null)
+    val actualImageRaw = SwingFXUtils.fromFXImage(snapshot.delegate, null)
     val file = snapshotsDir.resolve(s"$snapshotName.png").toFile
 
     if !file.exists() then
       file.getParentFile.mkdirs()
-      ImageIO.write(bufferedImage, "png", file)
+      ImageIO.write(actualImageRaw, "png", file)
       fail(s"Visual snapshot created at: ${file.getAbsolutePath}")
     else
-      val expectedImage = ImageIO.read(file)
+      val expectedImageRaw = ImageIO.read(file)
 
-      bufferedImage.getWidth shouldBe expectedImage.getWidth
-      bufferedImage.getHeight shouldBe expectedImage.getHeight
+      // normalize the size of the image, this is done cause
+      // ScalaFx creates a System (OS) dependant panel
+      val maxWidth = Math.max(actualImageRaw.getWidth, expectedImageRaw.getWidth)
+      val maxHeight = Math.max(actualImageRaw.getHeight, expectedImageRaw.getHeight)
 
-      val width = bufferedImage.getWidth
-      val height = bufferedImage.getHeight
+      def normalize(img: java.awt.image.BufferedImage): java.awt.image.BufferedImage =
+        if img.getWidth == maxWidth && img.getHeight == maxHeight then img
+        else
+          val canvas = new java.awt.image.BufferedImage(
+            maxWidth,
+            maxHeight,
+            java.awt.image.BufferedImage.TYPE_INT_ARGB
+          )
+          val g = canvas.createGraphics()
+          g.drawImage(img, 0, 0, null)
+          g.dispose()
+          canvas
+
+      val bufferedImage = normalize(actualImageRaw)
+      val expectedImage = normalize(expectedImageRaw)
+
+      val width = maxWidth
+      val height = maxHeight
       val totalPixels = width * height
 
       val diffs = for
