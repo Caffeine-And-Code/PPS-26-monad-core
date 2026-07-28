@@ -131,6 +131,7 @@ private final class FormDialogBuilder(props: FormDialogProps):
           styleClass += "form-field-multiselect"
           id = spec.id
           prefHeight = 120
+          maxHeight = 120
         }
         listView.selectionModel.value.selectionMode = SelectionMode.Multiple
 
