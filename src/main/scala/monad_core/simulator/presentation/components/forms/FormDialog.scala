@@ -132,6 +132,7 @@ private final class FormDialogBuilder(props: FormDialogProps):
           id = spec.id
           prefHeight = 120
           maxHeight = 120
+          fixedCellSize = 24
         }
         listView.selectionModel.value.selectionMode = SelectionMode.Multiple
 
