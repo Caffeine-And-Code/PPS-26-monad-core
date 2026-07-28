@@ -6,7 +6,7 @@ import monad_core.Launcher
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import scalafx.Includes.jfxStage2sfx
+import scalafx.Includes.{jfxNode2sfx, jfxStage2sfx}
 
 class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with ScalaFxInit:
 
@@ -25,11 +25,21 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
     message should include("Startup failed")
     message should include(error.message)
 
-  test("buildLauncher generates a valid snapshot"):
+  test("buildLauncher generates a valid architecture snapshot"):
     Launcher.main(Array.empty)
 
     val mainWindow = this.tryGetMainWindow
 
     mainWindow shouldBe defined
 
-    assertMatchesSnapshotOfStage("launcher_scene_snapshot", mainWindow.get)
+    assertMatchesArchitecturalSnapshotOfStage("launcher_scene_snapshot", mainWindow.get)
+
+
+  test("buildLauncher generates a valid visual snapshot"):
+    Launcher.main(Array.empty)
+
+    val mainWindow = this.tryGetMainWindow
+
+    mainWindow shouldBe defined
+
+    assertMatchesVisualSnapshot("launcher_scene_snapshot", mainWindow.get.getScene.getRoot)

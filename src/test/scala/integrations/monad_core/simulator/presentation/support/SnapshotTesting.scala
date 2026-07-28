@@ -14,7 +14,7 @@ trait SnapshotTesting extends Matchers:
 
   def snapshotsDir: Path = Paths.get("src/test/scala/integrations/monad_core/simulator/snapshots")
 
-  def assertMatchesSnapshot(snapshotName: String, actualContent: String): Unit =
+  def assertMatchesArchitecturalSnapshot(snapshotName: String, actualContent: String): Unit =
     val fileName = if snapshotName.endsWith(".json") then snapshotName else s"$snapshotName.json"
     val snapshotPath = snapshotsDir.resolve(fileName)
     val snapshotFile = snapshotPath.toFile
@@ -31,13 +31,13 @@ trait SnapshotTesting extends Matchers:
 
       normalizedActual shouldBe normalizedExpected
 
-  def assertMatchesSnapshotOfStage(snapshotName: String, stage: Stage): Unit =
+  def assertMatchesArchitecturalSnapshotOfStage(snapshotName: String, stage: Stage): Unit =
     val rootNode: scalafx.scene.Node = stage.getScene.getRoot
 
     val currentTree = SceneGraphSerializer.snapshotOf(rootNode)
     val currentJson = SceneGraphSerializer.toJson(currentTree)
 
-    assertMatchesSnapshot(snapshotName, currentJson)
+    assertMatchesArchitecturalSnapshot(snapshotName, currentJson)
 
   /**
    * does a pixel match with a tolerance to prevent errors given by antialiasing

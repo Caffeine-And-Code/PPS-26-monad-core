@@ -114,7 +114,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
       formSaveButton.fire()
     }
 
-    assertMatchesSnapshot("form_dialog_submitted_values", capturedJsonString)
+    assertMatchesArchitecturalSnapshot("form_dialog_submitted_values", capturedJsonString)
 
   test("FormDialog matches visual snapshot of rendered dialog scene"):
     val props = FormDialogProps(

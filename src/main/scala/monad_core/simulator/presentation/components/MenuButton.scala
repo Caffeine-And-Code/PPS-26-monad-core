@@ -5,6 +5,7 @@ import monad_core.simulator.CannotBuildButton
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord}
 import scalafx.Includes.jfxScene2sfx
 import scalafx.beans.property.BooleanProperty
+import scalafx.beans.value.ObservableValue
 import scalafx.scene.control.{ContextMenu, MenuItem}
 import scalafx.scene.Node
 import scalafx.geometry.Side
@@ -12,7 +13,7 @@ import scalafx.geometry.Side
 final case class MenuButtonItem(
                                  label: String,
                                  onSelect: () => Unit,
-                                 isDisabled: Boolean = false
+                                 isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
                                )
 
 final case class MenuButtonProps(
@@ -21,14 +22,14 @@ final case class MenuButtonProps(
                                   items: Seq[MenuButtonItem],
                                   activeImage: Option[Image] = None,
                                   side: Side = Side.Bottom,
-                                  isDisabled: Boolean = false
+                                  isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
                                 )
 
 object MenuButton {
   extension(item: MenuButtonItem)
     def toMenuItem: MenuItem =
       new MenuItem(item.label):
-        disable = item.isDisabled
+        disable <== item.isDisabled
         onAction = _ => item.onSelect()
   
   private val StylesheetPath: String =
@@ -48,7 +49,7 @@ object MenuButton {
 
     contextMenu.items ++= props.items.map { item =>
       new MenuItem(item.label) {
-        disable = item.isDisabled
+        disable <== item.isDisabled
         onAction = _ => item.onSelect()
       }
     }
@@ -60,7 +61,7 @@ object MenuButton {
           activeImage = activeImg,
           props = IconButtonBaseProps(
             props.imageConfig,
-            isDisabled = BooleanProperty(props.isDisabled)
+            isDisabled = props.isDisabled
           ),
           activeProperty = isOpen
         )
@@ -69,7 +70,7 @@ object MenuButton {
           props.defaultImage,
           IconButtonBaseProps(
             props.imageConfig,
-            isDisabled = BooleanProperty(props.isDisabled)
+            isDisabled = props.isDisabled
           )
         )
     }

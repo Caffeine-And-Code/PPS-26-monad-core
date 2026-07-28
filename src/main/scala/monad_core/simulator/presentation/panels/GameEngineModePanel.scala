@@ -2,9 +2,9 @@ package monad_core.simulator.presentation.panels
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
-import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
+import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveTeamCommand, World}
 import monad_core.simulator.presentation.components.*
-import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps}
+import monad_core.simulator.presentation.components.forms.*
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon, ToolsIcon}
@@ -21,9 +21,20 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
              onStopClick: () => Unit
            )
            (
-           using world: World
+             using world: World
            ): Either[EngineError, VBox] = {
     val isRunning = BooleanProperty(false)
+
+    val onFormError: EngineError => Unit = err => println(err.message)
+    val editTeamsIsDisabled = BooleanProperty(true)
+    val deleteTeamsIsDisabled = BooleanProperty(true)
+
+    def onTeamAction(actionResult: Either[EngineError, Unit]): Unit =
+      actionResult match
+        case Left(error) => onFormError(error)
+        case Right(_) =>
+          editTeamsIsDisabled.value = world.getAllTeams.length <= 1
+          deleteTeamsIsDisabled.value = world.getAllTeams.isEmpty
 
     for
       playPauseBtn <- IconButton.buildToggle(
@@ -57,15 +68,58 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
           imageConfig = imageConfig,
           defaultImage = ToolsIcon(),
           items = Seq(
-            MenuButtonItem("Add Entity", () => SaveEntityFormDialog.show(
+            MenuButtonItem("Add an Entity", () => SaveEntityFormDialog.show(
               props = SaveEntityFormDialogProps(
                 title = "Entity Settings",
                 owner = Some(playPauseBtn.scene.value.window.value),
                 onSubmit = entity => world.createEntity(SaveEntityCommand(entity)),
                 teams = world.getAllTeams,
-                onError = error => println(error.message)
+                onError = onFormError
               )
             )),
+            MenuButtonItem("Add a Team", () => SaveTeamFormDialog.show(
+              props = SaveTeamFormDialogProps(
+                title = "Team Settings",
+                owner = Some(playPauseBtn.scene.value.window.value),
+                onSubmit = team => onTeamAction(world.createTeam(SaveTeamCommand(team))),
+                possibleEnemies = world.getAllTeams,
+                onError = onFormError
+              )
+            )),
+            MenuButtonItem(
+              label = "Edit a Team",
+              onSelect = () => ChooseTeamFormDialog.show(
+                props = ChooseTeamFormDialogProps(
+                  owner = Some(playPauseBtn.scene.value.window.value),
+                  onSubmit = team =>
+                    SaveTeamFormDialog.show(
+                      props = SaveTeamFormDialogProps(
+                        title = s"${team.id.value} Settings",
+                        owner = Some(playPauseBtn.scene.value.window.value),
+                        onSubmit = team => world.updateTeam(SaveTeamCommand(team)),
+                        possibleEnemies = world.getAllTeams.filterNot(_.id.value == team.id.value),
+                        onError = onFormError,
+                        teamToUpdate = Some(team)
+                      )
+                    ),
+                  teams = world.getAllTeams,
+                  onError = onFormError
+                )
+              ),
+              isDisabled = editTeamsIsDisabled
+            ),
+            MenuButtonItem(
+              label = "Delete a Team",
+              onSelect = () => ChooseTeamFormDialog.show(
+                props = ChooseTeamFormDialogProps(
+                  owner = Some(playPauseBtn.scene.value.window.value),
+                  onSubmit = team => onTeamAction(world.removeTeam(team.id)),
+                  teams = world.getAllTeams,
+                  onError = onFormError
+                )
+              ),
+              isDisabled = deleteTeamsIsDisabled
+            ),
           )
         )
       ).left.map(error => CannotBuildPanel(error, GameEngineModePanel.toString))

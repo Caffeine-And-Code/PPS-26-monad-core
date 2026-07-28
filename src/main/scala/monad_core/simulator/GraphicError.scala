@@ -22,3 +22,5 @@ case class MissingKeyInFormError(key: String) extends EngineError(s"$key is not 
 case class InvalidNumericFormFieldError(key: String) extends EngineError(s"$key has an invalid value: Numeric value Required")
 
 case class InvalidShapeFormFieldError(key: String) extends EngineError(s"$key has an invalid value: Invalid Shape Value")
+
+case class TeamNotFoundDuringSelection(teamId: String) extends EngineError(s"$teamId was not found in teams")

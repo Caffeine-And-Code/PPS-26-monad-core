@@ -1,0 +1,262 @@
+{
+  "type": "VBox",
+  "styleClass": ["root", "form-dialog-root"],
+  "children": [
+    {
+      "type": "GridPane",
+      "styleClass": ["form-dialog-grid"],
+      "children": [
+        {
+          "type": "Label",
+          "styleClass": ["label", "form-field-label"],
+          "text": "Name",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        },
+        {
+          "type": "TextField",
+          "id": "id",
+          "styleClass": ["text-input", "text-field", "form-field-input"],
+          "children": [
+            {
+              "type": "Pane",
+              "children": [
+                {
+                  "type": "Path"
+                },
+                {
+                  "type": "Text",
+                  "styleClass": ["text"]
+                },
+                {
+                  "type": "Group",
+                  "children": [
+                    {
+                      "type": "Path"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "styleClass": ["label", "form-field-label"],
+          "text": "Enemies",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        },
+        {
+          "type": "ListView",
+          "id": "enemies",
+          "styleClass": ["list-view", "form-field-multiselect"],
+          "children": [
+            {
+              "type": "VirtualFlow",
+              "id": "virtual-flow",
+              "styleClass": ["virtual-flow"],
+              "children": [
+                {
+                  "type": "ClippedContainer",
+                  "styleClass": ["clipped-container"],
+                  "children": [
+                    {
+                      "type": "Group",
+                      "styleClass": ["sheet"],
+                      "children": [
+                        {
+                          "type": "",
+                          "styleClass": ["cell", "indexed-cell", "list-cell"],
+                          "text": "RedTeam",
+                          "children": [
+                            {
+                              "type": "LabeledText",
+                              "styleClass": ["text"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["cell", "indexed-cell", "list-cell"],
+                          "text": "BlueTeam",
+                          "children": [
+                            {
+                              "type": "LabeledText",
+                              "styleClass": ["text"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["cell", "indexed-cell", "list-cell"],
+                          "text": "GreenTeam",
+                          "children": [
+                            {
+                              "type": "LabeledText",
+                              "styleClass": ["text"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["cell", "indexed-cell", "list-cell"],
+                          "children": [
+                            {
+                              "type": "LabeledText",
+                              "styleClass": ["text"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["cell", "indexed-cell", "list-cell"],
+                          "children": [
+                            {
+                              "type": "LabeledText",
+                              "styleClass": ["text"]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "Group",
+                  "children": [
+                    {
+                      "type": "",
+                      "styleClass": ["cell", "indexed-cell", "list-cell"],
+                      "children": [
+                        {
+                          "type": "LabeledText",
+                          "styleClass": ["text"]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "VirtualScrollBar",
+                  "styleClass": ["scroll-bar"],
+                  "children": [
+                    {
+                      "type": "StackPane",
+                      "styleClass": ["track-background"]
+                    },
+                    {
+                      "type": "",
+                      "styleClass": ["increment-button"],
+                      "children": [
+                        {
+                          "type": "Region",
+                          "styleClass": ["increment-arrow"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "",
+                      "styleClass": ["decrement-button"],
+                      "children": [
+                        {
+                          "type": "Region",
+                          "styleClass": ["decrement-arrow"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "StackPane",
+                      "styleClass": ["track"]
+                    },
+                    {
+                      "type": "",
+                      "styleClass": ["thumb"]
+                    }
+                  ]
+                },
+                {
+                  "type": "VirtualScrollBar",
+                  "styleClass": ["scroll-bar"],
+                  "children": [
+                    {
+                      "type": "StackPane",
+                      "styleClass": ["track-background"]
+                    },
+                    {
+                      "type": "",
+                      "styleClass": ["increment-button"],
+                      "children": [
+                        {
+                          "type": "Region",
+                          "styleClass": ["increment-arrow"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "",
+                      "styleClass": ["decrement-button"],
+                      "children": [
+                        {
+                          "type": "Region",
+                          "styleClass": ["decrement-arrow"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "StackPane",
+                      "styleClass": ["track"]
+                    },
+                    {
+                      "type": "",
+                      "styleClass": ["thumb"]
+                    }
+                  ]
+                },
+                {
+                  "type": "StackPane",
+                  "styleClass": ["corner"]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "HBox",
+      "children": [
+        {
+          "type": "Button",
+          "styleClass": ["button", "form-dialog-cancel"],
+          "text": "Cancel",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        },
+        {
+          "type": "Button",
+          "styleClass": ["button", "form-dialog-save"],
+          "text": "Save",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

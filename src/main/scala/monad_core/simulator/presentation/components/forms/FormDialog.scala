@@ -5,7 +5,7 @@ import monad_core.simulator.CannotBuildDialog
 import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Button, ComboBox, Label, TextField}
+import scalafx.scene.control.{Button, ComboBox, Label, ListView, SelectionMode, TextField}
 import scalafx.scene.layout.{GridPane, HBox, VBox}
 import scalafx.scene.{Node, Scene}
 import scalafx.stage.{Modality, Stage, Window}
@@ -17,7 +17,7 @@ final case class FormDialogProps(
                                   fields: Seq[FormFieldSpec],
                                   onSubmit: Map[String, String] => Unit,
                                   owner: Option[Window] = None,
-                                  minWidth: Double = 300
+                                  minWidth: Double = 500
                                 )
 
 object FormDialog:
@@ -125,6 +125,24 @@ private final class FormDialogBuilder(props: FormDialogProps):
           Option(combo.value.value).foreach(v => updateDependentFields(select, v))
 
         (combo, () => Option(combo.value.value).getOrElse(""))
+
+      case multi: MultiSelectFieldSpec =>
+        val listView = new ListView[String](ObservableBuffer.from(multi.options)) {
+          styleClass += "form-field-multiselect"
+          id = spec.id
+          prefHeight = 120
+        }
+        listView.selectionModel.value.selectionMode = SelectionMode.Multiple
+
+        multi.defaultValues.foreach { v =>
+          val idx = multi.options.indexOf(v)
+          if idx >= 0 then listView.selectionModel.value.select(idx)
+        }
+
+        val getValue: () => String = () =>
+          listView.selectionModel.value.getSelectedItems.mkString(",")
+
+        (listView, getValue)
 
   private def updateDependentFields(spec: SelectFieldSpec, selectedValue: String): Unit =
     val idsToRemove = spec.dependentFields.values.flatten.map(_.id).toSet

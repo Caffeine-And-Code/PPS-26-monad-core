@@ -30,29 +30,10 @@ private case class SaveEntityFormDefaultValues(
                                               )
 
 object SaveEntityFormDialog:
-  private val Shapes = Seq(EntityShapes.CircleLabel, EntityShapes.RectangleLabel)
+  private[forms] val Shapes = Seq(EntityShapes.CircleLabel, EntityShapes.RectangleLabel)
 
   def show(props: SaveEntityFormDialogProps): Either[EngineError, Unit] = {
-    val defaultValues = props.entityToUpdate match
-      case None => SaveEntityFormDefaultValues()
-      case Some(entity) =>
-        val (radius, height, length) = entity.shape match
-          case Shape2D.Circle(r) => (Some(r.toString), None, None)
-          case Shape2D.Rectangle(h, l) => (None, Some(h.toString), Some(l.toString))
-
-        SaveEntityFormDefaultValues(
-          x = Some(entity.position.x.toString),
-          y = Some(entity.position.y.toString),
-          shape = Some(entity.shape.getEnumValue.getStringValue),
-          radius = radius,
-          height = height,
-          length = length,
-          teamId = entity.teamId.map(_.value),
-          weight = entity.weight.map(_.toString),
-          health = entity.health.map(_.toString),
-          speedX = entity.speed.map(_.x.toString),
-          speedY = entity.speed.map(_.y.toString)
-        )
+    val defaultValues = buildDefaultValues(props.entityToUpdate)
 
     FormDialog.show(
       FormDialogProps(
@@ -73,7 +54,29 @@ object SaveEntityFormDialog:
     )
   }
 
-  private def buildFields(teams: Seq[Team], defaultValues: SaveEntityFormDefaultValues): Seq[FormFieldSpec] =
+  private[forms] def buildDefaultValues(entityToUpdate: Option[Entity]): SaveEntityFormDefaultValues =
+    entityToUpdate match
+      case None => SaveEntityFormDefaultValues()
+      case Some(entity) =>
+        val (radius, height, length) = entity.shape match
+          case Shape2D.Circle(r) => (Some(r.toString), None, None)
+          case Shape2D.Rectangle(h, l) => (None, Some(h.toString), Some(l.toString))
+
+        SaveEntityFormDefaultValues(
+          x = Some(entity.position.x.toString),
+          y = Some(entity.position.y.toString),
+          shape = Some(entity.shape.getEnumValue.getStringValue),
+          radius = radius,
+          height = height,
+          length = length,
+          teamId = entity.teamId.map(_.value),
+          weight = entity.weight.map(_.toString),
+          health = entity.health.map(_.toString),
+          speedX = entity.speed.map(_.x.toString),
+          speedY = entity.speed.map(_.y.toString)
+        )
+
+  private[forms] def buildFields(teams: Seq[Team], defaultValues: SaveEntityFormDefaultValues): Seq[FormFieldSpec] =
     Seq(
       TextFieldSpec(id = EntityFormParser.PositionXKey, label = "Initial X Position", defaultValue = defaultValues.x),
       TextFieldSpec(id = EntityFormParser.PositionYKey, label = "Initial Y Position", defaultValue = defaultValues.y),
