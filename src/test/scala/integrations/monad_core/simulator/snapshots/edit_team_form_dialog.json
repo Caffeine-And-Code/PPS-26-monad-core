@@ -93,19 +93,7 @@
                   ]
                 },
                 {
-                  "type": "Group",
-                  "children": [
-                    {
-                      "type": "",
-                      "styleClass": ["cell", "indexed-cell", "list-cell"],
-                      "children": [
-                        {
-                          "type": "LabeledText",
-                          "styleClass": ["text"]
-                        }
-                      ]
-                    }
-                  ]
+                  "type": "Group"
                 },
                 {
                   "type": "VirtualScrollBar",
