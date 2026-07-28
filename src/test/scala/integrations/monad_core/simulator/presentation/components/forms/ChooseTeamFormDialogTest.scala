@@ -10,6 +10,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.*
+import scalafx.stage.Stage
 
 class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with DialogTesting with FormTesting:
   val TeamComboBoxIndex: Int = 0
@@ -30,11 +31,13 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = _ => ()
     )
 
+    var result: Option[Either[EngineError, Unit]] = Option.empty
     runOnFxThread {
-      val result = ChooseTeamFormDialog.show(props)
-      inside(result):
-        case Right(_) => ()
+      result = Some(ChooseTeamFormDialog.show(props))
     }
+
+    inside(result.get):
+      case Right(_) => ()
 
   test("ChooseTeamFormDialog invokes onSubmit with the first team by default"):
     var submittedTeam: Option[Team] = None
@@ -96,14 +99,18 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = _ => ()
     )
 
+    var activeStage: Option[Stage] = Option.empty
+
     runOnFxThread {
       getOrFail(ChooseTeamFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
-      val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
-
-      assertMatchesVisualSnapshot("choose_team_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
+      activeStage = Some(getRequiredActiveStage)
     }
+
+    val rootNode: scalafx.scene.Node = activeStage.get.getScene.getRoot
+
+    assertMatchesVisualSnapshot("choose_team_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
+
 
   test("ChooseTeamFormDialog matches architectural snapshot"):
     val props = ChooseTeamFormDialogProps(
@@ -112,10 +119,12 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = _ => ()
     )
 
+    var activeStage: Option[Stage] = Option.empty
+
     runOnFxThread {
       getOrFail(ChooseTeamFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
-
-      assertMatchesArchitecturalSnapshotOfStage("choose_team_form_dialog_initial", activeStage)
+      activeStage = Some(getRequiredActiveStage)
     }
+
+    assertMatchesArchitecturalSnapshotOfStage("choose_team_form_dialog_initial", activeStage.get)
