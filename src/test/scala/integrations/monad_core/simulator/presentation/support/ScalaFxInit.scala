@@ -5,7 +5,7 @@ import javafx.stage.{Stage, Window}
 import monad_core.engine.errors.EngineError
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import scalafx.scene.control.Button
-
+import javafx.scene.control.{ContextMenu => JfxContextMenu}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
@@ -46,6 +46,9 @@ private[simulator] trait ScalaFxInit extends BeforeAndAfterAll:
   def getActiveStage: Option[javafx.stage.Stage] =
     Window.getWindows.asScala
       .collectFirst { case s: javafx.stage.Stage if s.isShowing => s }
+
+  def findOpenContextMenu(): Option[JfxContextMenu] =
+    Window.getWindows.asScala.collectFirst { case cm: JfxContextMenu => cm }
 
   def getOrFail[T](either: Either[EngineError, T]): T =
     either match
