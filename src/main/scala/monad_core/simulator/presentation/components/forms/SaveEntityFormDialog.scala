@@ -2,8 +2,8 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Shape2D, Team}
-import monad_core.simulator.presentation.components.forms.parsers.EntityShapes.getEnumValue
-import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, EntityShapes}
+import monad_core.simulator.presentation.components.forms.parsers.LocatableShapes.getEnumValue
+import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, LocatableShapes}
 import scalafx.stage.Window
 
 final case class SaveEntityFormDialogProps(
@@ -18,7 +18,7 @@ final case class SaveEntityFormDialogProps(
 private case class SaveEntityFormDefaultValues(
                                                 x: Option[String] = Option.apply("10.0"),
                                                 y: Option[String] = Option.apply("10.0"),
-                                                shape: Option[String] = Option.apply(EntityShapes.CircleLabel),
+                                                shape: Option[String] = Option.apply(LocatableShapes.CircleLabel),
                                                 speedX: Option[String] = Option.empty,
                                                 speedY: Option[String] = Option.empty,
                                                 weight: Option[String] = Option.empty,
@@ -30,7 +30,7 @@ private case class SaveEntityFormDefaultValues(
                                               )
 
 object SaveEntityFormDialog:
-  private[forms] val Shapes = Seq(EntityShapes.CircleLabel, EntityShapes.RectangleLabel)
+  private[forms] val Shapes = Seq(LocatableShapes.CircleLabel, LocatableShapes.RectangleLabel)
 
   def show(props: SaveEntityFormDialogProps): Either[EngineError, Unit] = {
     val defaultValues = buildDefaultValues(props.entityToUpdate)
@@ -85,10 +85,10 @@ object SaveEntityFormDialog:
         label = "Shape",
         options = Shapes,
         dependentFields = Map(
-          EntityShapes.CircleLabel -> Seq(
+          LocatableShapes.CircleLabel -> Seq(
             TextFieldSpec(id = EntityFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
           ),
-          EntityShapes.RectangleLabel -> Seq(
+          LocatableShapes.RectangleLabel -> Seq(
             TextFieldSpec(id = EntityFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
             TextFieldSpec(id = EntityFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
           )
