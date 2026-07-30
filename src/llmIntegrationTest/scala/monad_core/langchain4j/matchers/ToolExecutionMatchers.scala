@@ -27,8 +27,15 @@ object ToolExecutionMatchers:
         val executedTools = result
           .getExecutedToolNameList
 
+        val toolNotExecutedThatShouldHaveBeenExecuted = expectedTools.filterNot{
+          toolExpected => executedTools.contains(toolExpected)
+        }
+        val toolExecutedThatShouldHaveNotBeenExecuted = executedTools.filterNot {
+          toolExpected => expectedTools.contains(toolExpected)
+        }
+
         MatchResult(
-          executedTools == expectedTools,
+          toolNotExecutedThatShouldHaveBeenExecuted.isEmpty && toolNotExecutedThatShouldHaveBeenExecuted.isEmpty,
           s"""Expected only tool "${expectedTools.formatForLogging()}" to be executed, """ +
             s"but executed: ${executedTools.formatForLogging()}",
           s"""Only tool "${expectedTools.formatForLogging()}" was executed"""

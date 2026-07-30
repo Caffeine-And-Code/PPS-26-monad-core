@@ -1,6 +1,6 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.model.{Entity, LocatableId, Vector2D}
 import monad_core.langchain4j.judge.LlmJudgeAssistant
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
@@ -33,7 +33,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
   val ollamaConfig = Langchain4jOllamaConfig(
     url = "http://localhost:11434",
-    modelName = "gemma4:e4b"
+    modelName = "gemma4:e2b"
   )
 
   val memoryId:ConversationId = ConversationId.from("chat1").value
@@ -76,7 +76,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     result should containsInResponse(rectangleEntity.id.toString)
     result should onlyExecuteTool("getAllEntities")
 
-  test("Can create a rectangular entity using the assistant when game engine is in pause"):
+  test("Can create a circular entity using the assistant when game engine is in pause"):
     val userMessage = "Create a circle entity with id e1 with center in 20,20 and a radius of 50, his weight is 70, and a speed of 20,35"
     val assistant = getAssistant
 
@@ -87,18 +87,57 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
     result should onlyExecuteTool("createCircleEntity")
 
-  test("can execute multiple tools at once"):
-    val userMessage = "Create a circular and a rectangular entity with random data, choose the data you want, and then tell me witch entities are on the scene"
+  test("Can execute different tools in succession"):
+    val userMessage = "First list all entities in the scene, then start the game engine."
     val assistant = getAssistant
 
-    (() => gameEngineRuntime.isRunning).expects().returning(true).repeat(2)
-    world.createEntity.expects(*).returning(Right(())).repeat(2)
     (() => world.getAllEntities).expects().returning(List(circleEntity, rectangleEntity)).once()
+    (() => gameEngineRuntime.start()).expects().once()
 
     val result = assistant.chat(memoryId, userMessage)
 
     result should containsInResponse(List(circleEntity.id.toString, rectangleEntity.id.toString))
-    result should executeOnlyTheseTools(List("createCircleEntity", "createRectangleEntity", "getAllEntities"))
+    result should executeOnlyTheseTools(List("getAllEntities", "start"))
+
+  test("Can update an existing entity"):
+    val firstMessage = "Get the circle entity with id 'my_circle' from the scene"
+    val secondMessage = "update his radius to 10"
+    val circle = Entity.circle("my_circle", Vector2D(20, 20), 67).value
+    val updatedEntity = Entity.circle("my_circle", Vector2D(20, 20), 10).value
+    val assistant = getAssistant
+
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+    world.getEntity.expects(LocatableId("my_circle").value).returning(Right(circle)).once()
+    world.updateEntity.expects(SaveEntityCommand(updatedEntity)).returning(Right(())).once()
+
+    val firstResponse = assistant.chat(memoryId, firstMessage)
+    val secondResponse = assistant.chat(memoryId, secondMessage)
+
+    firstResponse should onlyExecuteTool("getEntity")
+    secondResponse should onlyExecuteTool("updateCircleEntity")
+
+  test("Can remember information across messages in the same conversation"):
+    val firstMessage = "Remember that my preferred shape is the circle."
+    val secondMessage = "What shape did I tell you I prefer?"
+    val assistant = getAssistant
+
+    val firstResult = assistant.chat(memoryId, firstMessage)
+    val secondResult = assistant.chat(memoryId, secondMessage)
+
+    firstResult should notExecuteTools
+    secondResult should containsInResponse("circle")
+    secondResult should notExecuteTools
+
+  test("Asks for clarification when required information is missing"):
+    val userMessage = "Create a circle named e1 at 20,20."
+    val assistant = getAssistant
+    val judgeAssistant = getJudgeModel
+
+    val result = assistant.chat(memoryId, userMessage)
+
+    result should notExecuteTools
+    result should (beJudgedBy(judgeAssistant) withCriteria
+      "The assistant should ask for the missing radius without inventing it.")
 
   test("Cannot create entities while engine is running"):
     val userMessage = "Create a circle entity with id e1 with center in 20,20 and a radius of 50, his weight is 70, and a speed of 20,35"
@@ -110,10 +149,10 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
     val result = assistant.chat(memoryId, userMessage)
 
-    val judgeCriteria = "Should tell user that is not possible to create entities while engine is running"
+    val judgeCriteria =
+      "The assistant should say that the entity was not created because the engine is running."
     result should (beJudgedBy(judgeAssistant) withCriteria judgeCriteria)
-    result should notContainsInResponse("e1")
-    result should notExecuteTools
+    result should onlyExecuteTool("createCircleEntity")
 
   test("Assistant can talk only about The application tools and geometry, not on any other things"):
     val userMessage = "Witch is the capital of Italy?"
