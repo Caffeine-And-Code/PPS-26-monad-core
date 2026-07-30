@@ -1,11 +1,12 @@
-package monad_core.simulator.presentation.components.forms
+package monad_core.simulator.presentation.components.forms.base
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildDialog
+import monad_core.simulator.presentation.components.forms.*
 import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Button, ComboBox, Label, ListView, SelectionMode, TextField}
+import scalafx.scene.control.*
 import scalafx.scene.layout.{GridPane, HBox, VBox}
 import scalafx.scene.{Node, Scene}
 import scalafx.stage.{Modality, Stage, Window}

@@ -28,11 +28,11 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
     EntityFormValues + (EntityFormParser.ShapeKey -> shapeLabel)
 
   def circleFormValues: Map[String, String] =
-    buildShapeFormValues(LocatableShapes.CircleLabel)
+    buildShapeFormValues(LocatableFormShapes.CircleLabel)
       + (EntityFormParser.RadiusKey -> EntityRadius.toString)
 
   def rectangleFormValues: Map[String, String] =
-    buildShapeFormValues(LocatableShapes.RectangleLabel)
+    buildShapeFormValues(LocatableFormShapes.RectangleLabel)
       + (EntityFormParser.LengthKey -> EntityLength.toString)
       + (EntityFormParser.HeightKey -> EntityHeight.toString)
 
@@ -162,12 +162,12 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
     val testCases = Table(
       ("shape", "values", "expectedShape"),
       (
-        LocatableShapes.Circle,
+        LocatableFormShapes.Circle,
         Map(EntityFormParser.RadiusKey -> EntityRadius.toString),
         Shape2D.circle(EntityRadius).value
       ),
       (
-        LocatableShapes.Rectangle,
+        LocatableFormShapes.Rectangle,
         Map(EntityFormParser.HeightKey -> EntityHeight.toString, EntityFormParser.LengthKey -> EntityLength.toString),
         Shape2D.rectangle(height = EntityHeight, length = EntityLength).value
       )
@@ -185,9 +185,9 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
   test("buildByShape should return an error when shape-specific fields are missing or invalid"):
     val invalidCases = Table(
       ("shape", "values", "expectedKey"),
-      (LocatableShapes.Circle, Map.empty[String, String], "radius"),
-      (LocatableShapes.Rectangle, Map("length" -> "5"), "height"),
-      (LocatableShapes.Rectangle, Map("height" -> "5"), "length")
+      (LocatableFormShapes.Circle, Map.empty[String, String], "radius"),
+      (LocatableFormShapes.Rectangle, Map("length" -> "5"), "height"),
+      (LocatableFormShapes.Rectangle, Map("height" -> "5"), "length")
     )
 
     forAll(invalidCases): (shape, values, expectedKey) =>

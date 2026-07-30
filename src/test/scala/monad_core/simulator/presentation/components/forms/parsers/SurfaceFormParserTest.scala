@@ -26,11 +26,11 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
     SurfaceFormValues + (SurfaceFormParser.ShapeKey -> shapeLabel)
 
   def circleFormValues: Map[String, String] =
-    buildShapeFormValues(LocatableShapes.CircleLabel)
+    buildShapeFormValues(LocatableFormShapes.CircleLabel)
       + (SurfaceFormParser.RadiusKey -> SurfaceRadius.toString)
 
   def rectangleFormValues: Map[String, String] =
-    buildShapeFormValues(LocatableShapes.RectangleLabel)
+    buildShapeFormValues(LocatableFormShapes.RectangleLabel)
       + (SurfaceFormParser.LengthKey -> SurfaceLength.toString)
       + (SurfaceFormParser.HeightKey -> SurfaceHeight.toString)
 
@@ -169,12 +169,12 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
     val testCases = Table(
       ("shape", "values", "expectedShape"),
       (
-        LocatableShapes.Circle,
+        LocatableFormShapes.Circle,
         Map(SurfaceFormParser.RadiusKey -> SurfaceRadius.toString),
         Surface.circle("id", SurfacePosition, SurfaceRadius).value.shape
       ),
       (
-        LocatableShapes.Rectangle,
+        LocatableFormShapes.Rectangle,
         Map(SurfaceFormParser.HeightKey -> SurfaceHeight.toString, SurfaceFormParser.LengthKey -> SurfaceLength.toString),
         Surface.rectangle("id", SurfacePosition, SurfaceHeight, SurfaceLength).value.shape
       )
@@ -192,9 +192,9 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
   test("buildByShape should return an error when shape-specific fields are missing or invalid"):
     val invalidCases = Table(
       ("shape", "values", "expectedKey"),
-      (LocatableShapes.Circle, Map.empty[String, String], "radius"),
-      (LocatableShapes.Rectangle, Map("length" -> "5"), "height"),
-      (LocatableShapes.Rectangle, Map("height" -> "5"), "length")
+      (LocatableFormShapes.Circle, Map.empty[String, String], "radius"),
+      (LocatableFormShapes.Rectangle, Map("length" -> "5"), "height"),
+      (LocatableFormShapes.Rectangle, Map("height" -> "5"), "length")
     )
 
     forAll(invalidCases): (shape, values, expectedKey) =>

@@ -2,15 +2,17 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
+import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
-import scalafx.stage.Window
+import monad_core.simulator.presentation.support.ScalaFxUtils
+import scalafx.scene.Node
 
 final case class SaveTeamFormDialogProps(
                                           title: String,
                                           onSubmit: Team => Unit,
                                           onError: EngineError => Unit,
                                           possibleEnemies: Seq[Team],
-                                          owner: Option[Window] = None,
+                                          anchorNode: Option[Node] = None,
                                           teamToUpdate: Option[Team] = None
                                         )
 
@@ -37,7 +39,7 @@ object SaveTeamFormDialog:
           case Some(team) => buildTeamEditFields(buildFieldsRecord)
           case None => buildTeamCreationFields(buildFieldsRecord)
         ,
-        owner = props.owner,
+        owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
         onSubmit = values =>
           TeamFormParser.buildTeam(values) match
             case Right(team) => props.onSubmit(team)

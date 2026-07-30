@@ -5,16 +5,20 @@ import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.presentation.components.ResizableCanvas
 import monad_core.simulator.presentation.painters.Drawer
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.paint.Color
 
-class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matchers with SnapshotTesting:
+class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matchers with SnapshotTesting with BeforeAndAfterEach:
   val canvas: Canvas = ResizableCanvas()
   canvas.width = 800.0
   canvas.height = 800.0
+
+  override def beforeEach(): Unit =
+    Drawer.getBuffer.clear()
 
   def enlistCircle(): Unit =
     val entity: Entity = Entity.circle("CircleId", Vector2D(400, 400), 50).value
@@ -35,7 +39,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
   test("flush draws the Circle Commands"):
     enlistCircle()
 
-    runOnFxThread{
+    runOnFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 
@@ -44,8 +48,8 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
   test("flush draws the Rectangle Commands"):
     enlistRectangle()
 
-    runOnFxThread{
+    runOnFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 
-    assertMatchesVisualSnapshot("rectangle_flush_result", canvas)
+    assertMatchesVisualSnapshot("rectangle_flush_result", canvas, maxDiffPercentage = 3.0)

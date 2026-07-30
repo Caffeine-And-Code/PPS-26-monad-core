@@ -1,24 +1,26 @@
 package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Shape2D, Team}
-import monad_core.simulator.presentation.components.forms.parsers.LocatableShapes.getEnumValue
-import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, LocatableShapes}
-import scalafx.stage.Window
+import monad_core.engine.model.{Entity, Team}
+import monad_core.simulator.presentation.components.forms.base.*
+import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
+import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, LocatableFormShapes}
+import monad_core.simulator.presentation.support.ScalaFxUtils
+import scalafx.scene.Node
 
 final case class SaveEntityFormDialogProps(
                                             title: String,
                                             onSubmit: Entity => Unit,
                                             onError: EngineError => Unit,
                                             teams: Seq[Team],
-                                            owner: Option[Window] = None,
+                                            anchorNode: Option[Node] = None,
                                             entityToUpdate: Option[Entity] = None
                                           )
 
 private case class SaveEntityFormDefaultValues(
                                                 x: Option[String] = Option.apply("10.0"),
                                                 y: Option[String] = Option.apply("10.0"),
-                                                shape: Option[String] = Option.apply(LocatableShapes.CircleLabel),
+                                                shape: Option[String] = Option.apply(LocatableFormShapes.CircleLabel),
                                                 speedX: Option[String] = Option.empty,
                                                 speedY: Option[String] = Option.empty,
                                                 weight: Option[String] = Option.empty,
@@ -30,7 +32,7 @@ private case class SaveEntityFormDefaultValues(
                                               )
 
 object SaveEntityFormDialog:
-  private[forms] val Shapes = Seq(LocatableShapes.CircleLabel, LocatableShapes.RectangleLabel)
+  private[forms] val Shapes = Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
   def show(props: SaveEntityFormDialogProps): Either[EngineError, Unit] = {
     val defaultValues = buildDefaultValues(props.entityToUpdate)
@@ -39,7 +41,7 @@ object SaveEntityFormDialog:
       FormDialogProps(
         title = props.title,
         fields = buildFields(props.teams, defaultValues),
-        owner = props.owner,
+        owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
         onSubmit = values =>
           val result = props.entityToUpdate match
             case Some(entity) =>
@@ -58,9 +60,7 @@ object SaveEntityFormDialog:
     entityToUpdate match
       case None => SaveEntityFormDefaultValues()
       case Some(entity) =>
-        val (radius, height, length) = entity.shape match
-          case Shape2D.Circle(r) => (Some(r.toString), None, None)
-          case Shape2D.Rectangle(h, l) => (None, Some(h.toString), Some(l.toString))
+        val (radius, height, length) = entity.shape.getDefaultValuesByShape
 
         SaveEntityFormDefaultValues(
           x = Some(entity.position.x.toString),
@@ -85,10 +85,10 @@ object SaveEntityFormDialog:
         label = "Shape",
         options = Shapes,
         dependentFields = Map(
-          LocatableShapes.CircleLabel -> Seq(
+          LocatableFormShapes.CircleLabel -> Seq(
             TextFieldSpec(id = EntityFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
           ),
-          LocatableShapes.RectangleLabel -> Seq(
+          LocatableFormShapes.RectangleLabel -> Seq(
             TextFieldSpec(id = EntityFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
             TextFieldSpec(id = EntityFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
           )

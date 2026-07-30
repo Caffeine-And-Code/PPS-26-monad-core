@@ -1,7 +1,8 @@
-package integrations.monad_core.simulator.presentation.components.forms
+package integrations.monad_core.simulator.presentation.components.forms.base
 
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import monad_core.simulator.presentation.components.forms.*
+import monad_core.simulator.presentation.components.forms.base.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite

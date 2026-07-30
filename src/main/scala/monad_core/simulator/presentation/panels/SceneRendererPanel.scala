@@ -1,21 +1,19 @@
 package monad_core.simulator.presentation.panels
 
-import javafx.scene.control.MenuItem
 import javafx.scene.input.{MouseButton, MouseEvent}
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{**, Entity, Locatable, Surface}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.GameEngineRuntime
-import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
+import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
-import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps}
-import monad_core.simulator.presentation.components.{MenuButtonItem, ResizableCanvas}
+import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps, SaveSurfaceFormDialog, SaveSurfaceFormDialogProps}
+import monad_core.simulator.presentation.components.{Error, MenuButtonItem, NotificationManager, ResizableCanvas}
 import monad_core.simulator.presentation.painters.Drawer
 import monad_core.simulator.presentation.panels.MouseHitDetector.checkMouseHit
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
-import scalafx.Includes.{jfxScene2sfx, jfxWindow2sfx}
 import scalafx.scene.control.ContextMenu
 import scalafx.scene.layout.{Priority, VBox}
 
@@ -73,10 +71,11 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
              world: World
            )
   : Either[EngineError, VBox] =
-    val canvas = ResizableCanvas()
-    val drawer = Drawer
+    given Painter = Drawer
 
-    given Painter = drawer
+    val canvas = ResizableCanvas()
+    val menusAnchor = Some(canvas)
+    val onError: EngineError => Unit = error => NotificationManager.show(error.message, Error)
 
     EntityContextMenu.attachTo(
       canvas = canvas,
@@ -90,23 +89,31 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
           MenuButtonItem(s"Edit ${entity.id} Entity", () => SaveEntityFormDialog.show(
             props = SaveEntityFormDialogProps(
               title = "Entity Settings",
-              owner = Some(canvas.scene.value.window.value),
+              anchorNode = menusAnchor,
               onSubmit = entity => world.updateEntity(SaveEntityCommand(entity)),
               teams = world.getAllTeams,
-              onError = error => println(error.message),
+              onError = onError,
               entityToUpdate = Some(entity)
             )
           )),
           MenuButtonItem(s"Remove ${entity.id} Entity", () => world.removeEntity(entity.id))
         )
         case surface: Surface => Seq(
-          MenuButtonItem(s"Edit ${surface.id} Surface", () => println("edit surface")),
+          MenuButtonItem(s"Edit ${surface.id} Surface", () => SaveSurfaceFormDialog.show(
+            props = SaveSurfaceFormDialogProps(
+              title = "Surface Settings",
+              anchorNode = menusAnchor,
+              onSubmit = surface => world.updateSurface(SaveSurfaceCommand(surface)),
+              onError = onError,
+              surfaceToUpdate = Some(surface)
+            )
+          )),
           MenuButtonItem(s"Remove ${surface.id} Surface", () => world.removeSurface(surface.id))
         )
       }
     )
 
-    val onFrame: World => Unit = _ => drawer.flush(canvas.graphicsContext2D)
+    val onFrame: World => Unit = _ => Drawer.flush(canvas.graphicsContext2D)
 
     gameEngineRuntime.attach(onFrame)
     gameEngineRuntime.reset(world)

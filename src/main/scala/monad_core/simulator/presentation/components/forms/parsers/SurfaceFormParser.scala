@@ -4,7 +4,7 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Surface, Vector2D}
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 import monad_core.simulator.presentation.components.forms.parsers.EntityFormParser.HealthKey
-import monad_core.simulator.presentation.components.forms.parsers.LocatableShapes.{Circle, Rectangle, getEnumValue}
+import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{Circle, Rectangle, getEnumValue}
 
 import scala.util.Random
 
@@ -43,7 +43,7 @@ object SurfaceFormParser {
     yield completeSurface
 
   private[forms] def buildByShape(
-                                   shape: LocatableShapes,
+                                   shape: LocatableFormShapes,
                                    id: String,
                                    position: Vector2D,
                                    values: Map[String, String]

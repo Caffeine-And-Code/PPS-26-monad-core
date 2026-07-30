@@ -4,7 +4,7 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Shape2D, Vector2D}
 import monad_core.simulator.InvalidShapeFormFieldError
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
-import monad_core.simulator.presentation.components.forms.parsers.LocatableShapes.{Circle, Rectangle, getEnumValue}
+import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{Circle, Rectangle, getEnumValue}
 
 import scala.util.Random
 
@@ -58,7 +58,7 @@ object EntityFormParser:
     yield finalEntity
 
   private[forms] def buildByShape(
-                                   shape: LocatableShapes,
+                                   shape: LocatableFormShapes,
                                    id: String,
                                    position: Vector2D,
                                    values: Map[String, String]

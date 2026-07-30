@@ -3,13 +3,15 @@ package monad_core.simulator.presentation.components.forms
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
 import monad_core.simulator.TeamNotFoundDuringSelection
-import scalafx.stage.Window
+import monad_core.simulator.presentation.components.forms.base.{FormDialog, FormDialogProps, FormFieldSpec, SelectFieldSpec}
+import monad_core.simulator.presentation.support.ScalaFxUtils
+import scalafx.scene.Node
 
 final case class ChooseTeamFormDialogProps(
                                             teams: Seq[Team],
                                             onSubmit: Team => Unit,
                                             onError: EngineError => Unit,
-                                            owner: Option[Window] = None
+                                            anchorNode: Option[Node] = None
                                           )
 
 object ChooseTeamFormDialog:
@@ -19,8 +21,8 @@ object ChooseTeamFormDialog:
     FormDialog.show(
       FormDialogProps(
         title = "Please choose a Team",
-        fields = buildFields(props.teams),
-        owner = props.owner,
+        fields = buildSelect(props.teams),
+        owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
         onSubmit = values =>
           if values.contains(TeamKey) then {
             val selectedTeamId = values(TeamKey)
@@ -32,7 +34,7 @@ object ChooseTeamFormDialog:
     )
   }
 
-  private[forms] def buildFields(teams: Seq[Team]): Seq[FormFieldSpec] =
+  private[forms] def buildSelect(teams: Seq[Team]): Seq[FormFieldSpec] =
     Seq(
       SelectFieldSpec(
         id = TeamKey,

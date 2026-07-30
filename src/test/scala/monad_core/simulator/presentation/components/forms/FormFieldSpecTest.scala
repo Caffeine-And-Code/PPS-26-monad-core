@@ -1,5 +1,6 @@
 package monad_core.simulator.presentation.components.forms
 
+import monad_core.simulator.presentation.components.forms.base.MultiSelectFieldSpec
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

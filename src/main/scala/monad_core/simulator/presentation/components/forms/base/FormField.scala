@@ -1,4 +1,4 @@
-package monad_core.simulator.presentation.components.forms
+package monad_core.simulator.presentation.components.forms.base
 
 sealed trait FormFieldSpec {
   def id: String

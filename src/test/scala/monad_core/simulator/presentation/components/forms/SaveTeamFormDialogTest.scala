@@ -1,6 +1,7 @@
 package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.model.*
+import monad_core.simulator.presentation.components.forms.base.{MultiSelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
