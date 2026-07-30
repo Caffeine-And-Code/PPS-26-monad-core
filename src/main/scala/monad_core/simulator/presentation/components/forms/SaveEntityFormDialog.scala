@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Team}
 import monad_core.simulator.presentation.components.forms.base.*
+import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
 import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, LocatableFormShapes}
 import monad_core.simulator.presentation.support.ScalaFxUtils
@@ -49,9 +50,7 @@ object SaveEntityFormDialog:
             case None =>
               EntityFormParser.buildEntity(values)
 
-          result match
-            case Right(entity) => props.onSubmit(entity)
-            case Left(error) => props.onError(error)
+          result.matchToResult(props.onError)(props.onSubmit)
       )
     )
   }

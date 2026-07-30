@@ -16,7 +16,7 @@ trait SnapshotTesting extends Matchers:
 
   def assertMatchesArchitecturalSnapshot(snapshotName: String, actualContent: String): Unit =
     val fileName = if snapshotName.endsWith(".json") then snapshotName else s"$snapshotName.json"
-    val snapshotPath = snapshotsDir.resolve(fileName)
+    val snapshotPath = snapshotsDir.resolve(s"architectural/$fileName")
     val snapshotFile = snapshotPath.toFile
 
     val normalizedActual = actualContent.replace("\r\n", "\n").trim
@@ -67,7 +67,7 @@ trait SnapshotTesting extends Matchers:
       node.snapshot(null, null)
     }
     val actualImageRaw = SwingFXUtils.fromFXImage(snapshot.delegate, null)
-    val file = snapshotsDir.resolve(s"$snapshotName.png").toFile
+    val file = snapshotsDir.resolve(s"visuals/$snapshotName.png").toFile
 
     if !file.exists() then
       file.getParentFile.mkdirs()

@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
 import monad_core.simulator.presentation.components.forms.base.*
+import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
@@ -41,9 +42,11 @@ object SaveTeamFormDialog:
         ,
         owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
         onSubmit = values =>
-          TeamFormParser.buildTeam(values) match
-            case Right(team) => props.onSubmit(team)
-            case Left(error) => props.onError(error)
+          val newTeam = props.teamToUpdate match
+            case None => TeamFormParser.buildTeam(values)
+            case Some(oldTeam) => TeamFormParser.buildUpdatedTeam(values, oldTeam)
+          
+          newTeam.matchToResult(props.onError)(props.onSubmit)
       )
     )
   }

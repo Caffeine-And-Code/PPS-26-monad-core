@@ -1,7 +1,7 @@
 package integrations.monad_core.simulator.presentation.components
 
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
-import monad_core.simulator.presentation.components.{Info, NotificationManager, Success, Error}
+import monad_core.simulator.presentation.components.{Error, Info, NotificationManager, NotificationType, Success}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -214,12 +214,18 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     )
 
     forAll(cases): (firstMessageType, secondMessageType) =>
+      def getDisplayValue(severity: NotificationType): String = severity.toString.toLowerCase
+
       runOnFxThread {
         resetManagerAndScene()
 
         NotificationManager.animationsEnabled = false
-        NotificationManager.show(s"Positioned $firstMessageType message", firstMessageType)
-        NotificationManager.show(s"Positioned $secondMessageType message", secondMessageType)
+        NotificationManager.show(s"Positioned ${getDisplayValue(firstMessageType)} message", firstMessageType)
+        NotificationManager.show(s"Positioned ${getDisplayValue(secondMessageType)} message", secondMessageType)
       }
 
-      assertMatchesVisualSnapshot(s"${firstMessageType}_${secondMessageType}_notification_snapshot", root, maxDiffPercentage = 4.0)
+      assertMatchesVisualSnapshot(
+        s"${getDisplayValue(firstMessageType)}_${getDisplayValue(secondMessageType)}_notification_snapshot",
+        root,
+        maxDiffPercentage = 4.0
+      )

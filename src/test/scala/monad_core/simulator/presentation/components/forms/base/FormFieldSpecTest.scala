@@ -1,4 +1,4 @@
-package monad_core.simulator.presentation.components.forms
+package monad_core.simulator.presentation.components.forms.base
 
 import monad_core.simulator.presentation.components.forms.base.MultiSelectFieldSpec
 import org.scalatest.funsuite.AnyFunSuite

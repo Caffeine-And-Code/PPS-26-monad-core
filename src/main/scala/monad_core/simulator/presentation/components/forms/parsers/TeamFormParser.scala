@@ -4,19 +4,25 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 
-object TeamFormParser :
+object TeamFormParser:
   val TeamIdKey = "id"
   val EnemiesKey = "enemies"
 
-  def buildTeam(values: Map[String, String]) : Either[EngineError, Team] =
+  def buildTeam(values: Map[String, String]): Either[EngineError, Team] =
     for
       id <- values.getValueSafe(TeamIdKey)
       teamId <- TeamId(id)
 
+      teamWithId <- Team.apply(teamId)
+      team <- buildUpdatedTeam(values, teamWithId)
+    yield team
+
+  def buildUpdatedTeam(values: Map[String, String], teamToUpdate: Team): Either[EngineError, Team] =
+    for
       enemies <- values.getValueSafe(EnemiesKey)
       enemyIds <- parseEnemies(enemies)
 
-      team <- Team.apply(teamId, enemyIds)
+      team <- Team.apply(teamToUpdate.id, enemyIds)
     yield team
 
   private[parsers] def parseEnemies(raw: String): Either[EngineError, Set[TeamId]] =
