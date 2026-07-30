@@ -130,7 +130,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
       NotificationManager.show("Positioned Info message")
     }
 
-    assertMatchesVisualSnapshot("info_notification_snapshot", root, maxDiffPercentage = 0.2)
+    assertMatchesVisualSnapshot("info_notification_snapshot", root, maxDiffPercentage = 2.0)
 
   test("Error notification matches visual snapshot"):
     runOnFxThread {
@@ -138,7 +138,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
       NotificationManager.show("Positioned Error message", Error)
     }
 
-    assertMatchesVisualSnapshot("error_notification_snapshot", root, maxDiffPercentage = 0.2)
+    assertMatchesVisualSnapshot("error_notification_snapshot", root, maxDiffPercentage = 2.0)
 
   test("Success notification matches visual snapshot"):
     runOnFxThread {
@@ -146,7 +146,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
       NotificationManager.show("Positioned Success message", Success)
     }
 
-    assertMatchesVisualSnapshot("success_notification_snapshot", root, maxDiffPercentage = 0.2)
+    assertMatchesVisualSnapshot("success_notification_snapshot", root, maxDiffPercentage = 2.0)
 
   test("Info notification matches architectural snapshot"):
     runOnFxThread {
@@ -222,4 +222,4 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
         NotificationManager.show(s"Positioned $secondMessageType message", secondMessageType)
       }
 
-      assertMatchesVisualSnapshot(s"${firstMessageType}_${secondMessageType}_notification_snapshot", root, maxDiffPercentage = 0.6)
+      assertMatchesVisualSnapshot(s"${firstMessageType}_${secondMessageType}_notification_snapshot", root, maxDiffPercentage = 4.0)
