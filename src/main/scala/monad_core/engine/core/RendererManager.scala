@@ -2,11 +2,9 @@ package monad_core.engine.core
 
 import monad_core.engine.core.traits.{RenderEngine, State}
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.{Locatable, TeamId}
+import monad_core.engine.model.TeamId
 import monad_core.engine.public_api.Painter
 import scalafx.scene.paint.Color
-
-import java.util
 
 object RendererManager extends RenderEngine:
   override def render(state: State, alpha: Double)(using painter: Painter): Unit = {
