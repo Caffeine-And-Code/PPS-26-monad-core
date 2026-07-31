@@ -38,7 +38,6 @@ Sono inoltre emerse alcune necessità di refactoring dovute alla crescita del pr
 
 #### Backlog
 
-- Stesura dei requirement specifications
 - Gestione della fisica (completata parzialmente)
 - Gestione modalità Edit/Simulation
 - Creazione entità dalla GUI (valutata ma non assegnata durante lo sprint precedente)

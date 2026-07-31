@@ -1,0 +1,37 @@
+### Report Daily Scrum Sprint 3
+
+**Data: 21/07/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Fattori | Avvio dello sviluppo degli snapshot test per l'interfaccia grafica | |
+
+**Data: 22/07/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Refactoring dei componenti dell'agente AI e completamento dei relativi test | |
+| Fattori | Completamento degli snapshot test e avvio dello sviluppo dello Scene Renderer | |
+
+**Data: 23/07/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Prima implementazione dei tool dell'agente AI | |
+| Tonelli | Implementazione del Physics Engine | |
+
+**Data: 24/07/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Ricerca sulle tecniche di testing degli agenti AI e refactoring minimale per consentire l'implementazione dei test | |
+| Fattori | Prosecuzione dello sviluppo dello Scene Renderer e delle entità dei layer Domain, Application e Infrastructure del package Simulator | |
+| Tonelli | Refactoring del Physics Engine | |
+
+**Data: 25/07/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Refactoring dell'applicazione Simulator, revisione della gestione degli Application Service e implementazione dell'integrazione con l'Engine | |
+| Fattori | Apertura della pull request dello Scene Renderer, confronto con Senni sulle entità del layer Application e avvio dello sviluppo del pannello per l'aggiunta di entità dal Simulator | |
+| Tonelli | Completamento dell'implementazione e del refactoring del Physics Engine | |

@@ -6,8 +6,10 @@ import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
+import monad_core.simulator.infrastructure.engine.MonadCoreWorld
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
+import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
 final class GameEnginePanel(
@@ -27,6 +29,9 @@ final class GameEnginePanel(
   def build()
   : Either[EngineError, VBox] = {
     buildInitialWorld(world)
+    val worldSnapshot: Option[Scene] = Some(world.scene)
+    val isEngineRunning = BooleanProperty(gameEngineRuntime.isRunning)
+
     for
       sceneRendererPanel <- rendererPanel.build()
         .left.map(error => CannotBuildPanel(error, this.toString))
@@ -34,10 +39,11 @@ final class GameEnginePanel(
       onModeChange = (isButtonActive: Boolean) =>
         if isButtonActive then gameEngineRuntime.start()
         else gameEngineRuntime.stop()
+        isEngineRunning.value = gameEngineRuntime.isRunning
 
-      onStopClick = () => gameEngineRuntime.reset(world)
+      onStopClick = () => gameEngineRuntime.reset(MonadCoreWorld(worldSnapshot.get))
 
-      gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick)
+      gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick, isEngineRunning)
         .left.map(error => CannotBuildPanel(error, this.toString))
     yield
       val container = new VBox {
@@ -55,7 +61,7 @@ final class GameEnginePanel(
   }
 
   private[panels] def buildInitialWorld(world: World): Either[EngineError, Unit] =
-    Entity.circle("starter", Vector2D(10, 10), 5).flatMap(
-      entity =>world.createEntity(SaveEntityCommand(entity))
+    Entity.circle("starter", Vector2D(15, 15), 15).flatMap(
+      entity => world.createEntity(SaveEntityCommand(entity))
     )
 }
