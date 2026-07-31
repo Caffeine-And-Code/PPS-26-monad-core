@@ -1,4 +1,4 @@
-package monad_core.langchain4j.matchers
+package llmIntegrationTest.langchain4j.matchers
 
 import dev.langchain4j.service.Result
 import org.scalatest.matchers.{MatchResult, Matcher}

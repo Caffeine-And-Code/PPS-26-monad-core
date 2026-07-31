@@ -1,4 +1,4 @@
-package monad_core.langchain4j.judge
+package llmIntegrationTest.langchain4j.judge
 
 import dev.langchain4j.model.ollama.OllamaChatModel
 import dev.langchain4j.service.{AiServices, SystemMessage, UserMessage, V}

@@ -1,7 +1,7 @@
-package monad_core.simulator.infrastructure.ai
+package llmIntegrationTest.simulator.infrastructure.ai
 
+import llmIntegrationTest.langchain4j.judge.LlmJudgeAssistant
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
-import monad_core.langchain4j.judge.LlmJudgeAssistant
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.domain.ai.ConversationId
@@ -11,9 +11,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalactic.Prettifier.default
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.EitherValues.*
-import monad_core.langchain4j.matchers.ToolExecutionMatchers.*
-import monad_core.langchain4j.matchers.AssistantResponseMatchers.*
-import monad_core.langchain4j.matchers.LLMAsAJudgeMatchers.*
+import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
+import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
+import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistant, Langchain4jOllamaConfig}
 
 import scala.compiletime.uninitialized
 

@@ -1,9 +1,8 @@
-package monad_core.langchain4j.matchers
+package llmIntegrationTest.langchain4j.matchers
 
 import dev.langchain4j.service.Result
-import monad_core.langchain4j.judge.Judgement
-import monad_core.langchain4j.judge.Judgement.Pass
-import monad_core.langchain4j.judge.LlmJudgeAssistant
+import llmIntegrationTest.langchain4j.judge.{Judgement, LlmJudgeAssistant}
+import Judgement.Pass
 import org.scalatest.matchers.{MatchResult, Matcher}
 
 object LLMAsAJudgeMatchers:
