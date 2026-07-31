@@ -1,6 +1,7 @@
 package integrations.monad_core.simulator.presentation.panels
 
-import integrations.support.ScalaFxTest
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
+import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
 import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError, ConversationId, UserPrompt}
 import monad_core.simulator.presentation.panels.AiModelChatPanel
@@ -16,7 +17,7 @@ class AiModelChatPanelTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with ScalaFxTest:
+    with ScalaFxInit:
 
   given ExecutionContext = ExecutionContext.parasitic
 

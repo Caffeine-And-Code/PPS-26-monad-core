@@ -10,8 +10,7 @@ object ToolExecutionMatchers:
   def onlyExecuteTool(expectedTool: String): Matcher[Result[?]] =
     Matcher {
       result =>
-        val executedTools = result
-          .getExecutedToolNameList
+        val executedTools = result.getExecutedToolNameList
 
         MatchResult(
           executedTools == List(expectedTool),
@@ -27,7 +26,7 @@ object ToolExecutionMatchers:
         val executedTools = result
           .getExecutedToolNameList
 
-        val toolNotExecutedThatShouldHaveBeenExecuted = expectedTools.filterNot{
+        val toolNotExecutedThatShouldHaveBeenExecuted = expectedTools.filterNot {
           toolExpected => executedTools.contains(toolExpected)
         }
         val toolExecutedThatShouldHaveNotBeenExecuted = executedTools.filterNot {
@@ -55,7 +54,7 @@ object ToolExecutionMatchers:
         )
     }
 
-  extension (result: Result[?]){
+  extension (result: Result[?]) {
 
     def getExecutedToolNameList: List[String] =
       result
@@ -65,7 +64,7 @@ object ToolExecutionMatchers:
         .toList
   }
 
-  extension (stringList: List[String]){
+  extension (stringList: List[String]) {
 
     def formatForLogging(): String =
       stringList.mkString("[", ", ", "]")

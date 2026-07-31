@@ -25,7 +25,7 @@ extends AiAgent:
     }
 
   override def cleanHistory(command: CleanHistoryCommand): Either[BaseError, Unit] =
-    assistant.getChatMemory(command.conversationId) match {
+    assistant.getChatMemory(command.conversationId) match
       case null => Left(ConversationNotFoundError(command.conversationId))
       case chatMemory: ChatMemory => Right(chatMemory.clear())
-    }
+

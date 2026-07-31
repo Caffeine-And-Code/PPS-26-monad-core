@@ -1,8 +1,8 @@
 package llmIntegrationTest.langchain4j.matchers
 
 import dev.langchain4j.service.Result
+import llmIntegrationTest.langchain4j.judge.Judgement.Pass
 import llmIntegrationTest.langchain4j.judge.{Judgement, LlmJudgeAssistant}
-import Judgement.Pass
 import org.scalatest.matchers.{MatchResult, Matcher}
 
 object LLMAsAJudgeMatchers:
@@ -10,9 +10,9 @@ object LLMAsAJudgeMatchers:
   def beJudgedBy(judge: LlmJudgeAssistant): JudgeMatcherBuilder =
     JudgeMatcherBuilder(judge)
 
-  final case class JudgeMatcherBuilder private[LLMAsAJudgeMatchers] (
-      judge: LlmJudgeAssistant
-  ):
+  final case class JudgeMatcherBuilder private[LLMAsAJudgeMatchers](
+                                                                     judge: LlmJudgeAssistant
+                                                                   ):
 
     infix def withCriteria(judgePrompt: String): Matcher[Result[String]] =
       Matcher { result =>

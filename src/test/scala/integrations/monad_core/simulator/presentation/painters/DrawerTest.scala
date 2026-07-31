@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.painters
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
 import monad_core.engine.model.{Entity, Locatable, Surface, Vector2D}
 import monad_core.simulator.presentation.components.ResizableCanvas
@@ -43,7 +44,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
   test("flush draws the Circle Commands that contains a Circle Entity"):
     enlistCircle(BaseCircleEntity)
 
-    runOnFxThread {
+    onFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 
@@ -52,7 +53,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
   test("flush draws the Rectangle Commands that contains a Rectangle Entity"):
     enlistRectangle(BaseRectangleEntity)
 
-    runOnFxThread {
+    onFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 
@@ -62,7 +63,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
     val entityWithATeam = BaseCircleEntity.withTeamId("TestTeam").value
     Drawer.drawCircle(entityWithATeam, Drawer.teamIdColorRelation(entityWithATeam.teamId.get))
 
-    runOnFxThread {
+    onFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 
@@ -72,7 +73,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
     val entityWithATeam = BaseRectangleEntity.withTeamId("TestTeam").value
     Drawer.drawRectangle(entityWithATeam, Drawer.teamIdColorRelation(entityWithATeam.teamId.get))
 
-    runOnFxThread {
+    onFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 
@@ -81,7 +82,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
   test("flush draws the Circle Commands that contains a Circle Surface"):
     enlistCircle(BaseCircleSurface)
 
-    runOnFxThread {
+    onFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 
@@ -90,7 +91,7 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
   test("flush draws the Rectangle Commands that contains a Rectangle Surface"):
     enlistRectangle(BaseRectangleSurface)
 
-    runOnFxThread {
+    onFxThread {
       Drawer.flush(canvas.graphicsContext2D)
     }
 

@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.components.forms
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
@@ -32,7 +33,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     )
 
     var result: Option[Either[EngineError, Unit]] = Option.empty
-    runOnFxThread {
+    onFxThread {
       result = Some(ChooseTeamFormDialog.show(props))
     }
 
@@ -48,7 +49,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = err => fail(s"Unexpected error: $err")
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(ChooseTeamFormDialog.show(props))
 
       formSaveButton.fire()
@@ -65,7 +66,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = err => fail(s"Unexpected error: $err")
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(ChooseTeamFormDialog.show(props))
 
       selectTeamInComboBox(2)
@@ -84,7 +85,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = err => capturedError = Some(err)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(ChooseTeamFormDialog.show(props))
 
       formSaveButton.fire()
@@ -101,7 +102,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
 
     var activeStage: Option[Stage] = Option.empty
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(ChooseTeamFormDialog.show(props))
 
       activeStage = Some(getRequiredActiveStage)
@@ -121,7 +122,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
 
     var activeStage: Option[Stage] = Option.empty
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(ChooseTeamFormDialog.show(props))
 
       activeStage = Some(getRequiredActiveStage)

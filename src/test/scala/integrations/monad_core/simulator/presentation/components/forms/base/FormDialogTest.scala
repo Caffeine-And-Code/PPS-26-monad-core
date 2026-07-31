@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.components.forms.base
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import monad_core.simulator.presentation.components.forms.*
 import monad_core.simulator.presentation.components.forms.base.*
@@ -37,7 +38,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
       onSubmit = onSubmitMock
     )
 
-    runOnFxThread {
+    onFxThread {
       val buildResult = FormDialog.show(props)
 
       inside(buildResult):
@@ -53,12 +54,12 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
       onSubmit = values => submittedValues = values
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(FormDialog.show(props))
     }
 
     var saveButtonNode: javafx.scene.control.Button = null
-    runOnFxThread {
+    onFxThread {
       saveButtonNode = formSaveButton
     }
 
@@ -78,7 +79,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
       onSubmit = values => submittedValues = values
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(FormDialog.show(props))
 
       val comboNode = allFormComboBoxes.head
@@ -107,7 +108,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
           .mkString("{\n  ", ",\n  ", "\n}")
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(FormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -124,7 +125,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
       onSubmit = _ => ()
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(FormDialog.show(props))
 
       val activeStage = getRequiredActiveStage

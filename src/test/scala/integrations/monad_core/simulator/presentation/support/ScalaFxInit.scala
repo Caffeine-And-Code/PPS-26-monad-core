@@ -1,6 +1,8 @@
 package integrations.monad_core.simulator.presentation.support
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import javafx.application.Platform
+import javafx.scene.{Node, Parent}
 import javafx.scene.control.ContextMenu as JfxContextMenu
 import javafx.stage.{Stage, Window}
 import monad_core.engine.errors.EngineError
@@ -13,8 +15,8 @@ import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
 
 private[simulator] trait ScalaFxInit extends BeforeAndAfterAll with Matchers:
-
   this: Suite =>
+
   override def beforeAll(): Unit = {
     ScalaFxToolkit.init()
     super.beforeAll()
@@ -56,3 +58,11 @@ private[simulator] trait ScalaFxInit extends BeforeAndAfterAll with Matchers:
     either match
       case Right(value) => value
       case Left(err) => fail(s"Got error: $err")
+
+  protected def drainFxQueue(): Unit = onFxThread(())
+
+  protected def descendants(node: Node): Seq[Node] =
+    node +: (node match
+      case scrollPane: javafx.scene.control.ScrollPane => descendants(scrollPane.getContent)
+      case parent: Parent => parent.getChildrenUnmodifiable.asScala.toSeq.flatMap(descendants)
+      case _ => Seq.empty)
