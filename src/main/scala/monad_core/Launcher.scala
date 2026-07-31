@@ -4,6 +4,10 @@ import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig, Langchain4jTools}
+import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
@@ -43,8 +47,8 @@ object Launcher :
     given aiAgent: AiAgent = Langchain4jAgentFactory
       .buildOllama(
         Langchain4jOllamaConfig(
-          url = "http://localhost:11434",
-          modelName = "gemma4:e2b"
+          url = sys.env.getOrElse("MONAD_CORE_OLLAMA_URL", "http://localhost:11434"),
+          modelName = sys.env.getOrElse("MONAD_CORE_MODEL_NAME", "qwen3.5:4b")
         )
       )
 

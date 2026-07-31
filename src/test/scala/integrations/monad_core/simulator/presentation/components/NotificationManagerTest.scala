@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.components
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
 import monad_core.simulator.presentation.components.{Error, Info, NotificationManager, NotificationType, Success}
 import org.scalatest.BeforeAndAfterEach
@@ -19,7 +20,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
   private var stage: Stage = uninitialized
 
   override def beforeEach(): Unit =
-    runOnFxThread {
+    onFxThread {
       root = new StackPane() {
         prefWidth = 300
         prefHeight = 300
@@ -35,7 +36,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     super.beforeEach()
 
   override def afterEach(): Unit =
-    runOnFxThread {
+    onFxThread {
       NotificationManager.detach()
     }
     super.afterEach()
@@ -49,14 +50,14 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     root.children.collect { case l: javafx.scene.control.Label => new Label(l) }.toList
 
   test("show should do nothing when no overlay has been attached"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.detach()
 
       noException should be thrownBy NotificationManager.show("Hello")
     }
 
   test("show should add a label with the given message to the attached overlay"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.show("Hello world")
 
       val labels = labelsInRoot
@@ -65,7 +66,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     }
 
   test("show should support multiple notifications stacking in the overlay"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.show("First")
       NotificationManager.show("Second")
 
@@ -81,7 +82,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     )
 
     forAll(cases): (notifType, expectedColor) =>
-      runOnFxThread {
+      onFxThread {
         root.children.clear()
 
         NotificationManager.show("Message", notifType)
@@ -90,7 +91,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
       }
 
   test("show should default to Info type when no notification type is given"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.show("Default type message")
 
       labelsInRoot.head.style.value should include("#333333")
@@ -102,7 +103,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     val expectedOpacity: Double = 0.0
 
     var label: Option[Label] = None
-    runOnFxThread {
+    onFxThread {
       NotificationManager.show("Some message")
 
       label = Some(labelsInRoot.head)
@@ -115,7 +116,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
   test("show should position the notification at the top right with the expected initial offset"):
     var label: Option[Label] = None
 
-    runOnFxThread {
+    onFxThread {
       NotificationManager.show("Positioned message")
 
       label = Some(labelsInRoot.head)
@@ -125,7 +126,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     label.get.translateY.value should be(40.0 +- 0.5)
 
   test("Info notification matches visual snapshot"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.animationsEnabled = false
       NotificationManager.show("Positioned Info message")
     }
@@ -133,7 +134,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     assertMatchesVisualSnapshot("info_notification_snapshot", root, maxDiffPercentage = 2.0)
 
   test("Error notification matches visual snapshot"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.animationsEnabled = false
       NotificationManager.show("Positioned Error message", Error)
     }
@@ -141,7 +142,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     assertMatchesVisualSnapshot("error_notification_snapshot", root, maxDiffPercentage = 2.0)
 
   test("Success notification matches visual snapshot"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.animationsEnabled = false
       NotificationManager.show("Positioned Success message", Success)
     }
@@ -149,7 +150,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     assertMatchesVisualSnapshot("success_notification_snapshot", root, maxDiffPercentage = 2.0)
 
   test("Info notification matches architectural snapshot"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.animationsEnabled = false
       NotificationManager.show("Positioned Info message")
     }
@@ -157,7 +158,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     assertMatchesArchitecturalSnapshotOfStage("info_notification_snapshot", stage)
 
   test("Error notification matches architectural snapshot"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.animationsEnabled = false
       NotificationManager.show("Positioned Error message", Error)
     }
@@ -165,7 +166,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     assertMatchesArchitecturalSnapshotOfStage("error_notification_snapshot", stage)
 
   test("Success notification matches architectural snapshot"):
-    runOnFxThread {
+    onFxThread {
       NotificationManager.animationsEnabled = false
       NotificationManager.show("Positioned Success message", Success)
     }
@@ -188,7 +189,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     )
 
     forAll(cases): (firstMessageType, secondMessageType) =>
-      runOnFxThread {
+      onFxThread {
         resetManagerAndScene()
 
         NotificationManager.animationsEnabled = false
@@ -216,7 +217,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     forAll(cases): (firstMessageType, secondMessageType) =>
       def getDisplayValue(severity: NotificationType): String = severity.toString.toLowerCase
 
-      runOnFxThread {
+      onFxThread {
         resetManagerAndScene()
 
         NotificationManager.animationsEnabled = false

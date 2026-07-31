@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.components.forms
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
@@ -31,7 +32,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       possibleEnemies = possibleEnemies
     )
 
-    runOnFxThread {
+    onFxThread {
       val result = SaveTeamFormDialog.show(props)
       inside(result):
         case Right(_) => ()
@@ -48,7 +49,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       teamToUpdate = Some(teamToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       val result = SaveTeamFormDialog.show(props)
       inside(result):
         case Right(_) => ()
@@ -64,7 +65,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       possibleEnemies = possibleEnemies
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
       allFormFields(TeamNameFieldIndex).setText("NewTeam")
@@ -86,7 +87,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       possibleEnemies = possibleEnemies
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
       allFormFields(TeamNameFieldIndex).setText(expectedName)
@@ -111,7 +112,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       possibleEnemies = possibleEnemies
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
       formSaveButton.fire()
@@ -130,7 +131,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       teamToUpdate = Some(teamToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -150,7 +151,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       teamToUpdate = Some(teamToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -166,7 +167,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       possibleEnemies = possibleEnemies
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -183,7 +184,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
       possibleEnemies = possibleEnemies
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage

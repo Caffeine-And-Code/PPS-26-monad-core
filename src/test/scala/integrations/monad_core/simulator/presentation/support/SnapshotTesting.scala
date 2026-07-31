@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.support
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.{jfxImage2sfx, jfxNode2sfx}
 import scalafx.application.Platform
@@ -63,7 +64,7 @@ trait SnapshotTesting extends Matchers:
                                    node: scalafx.scene.Node,
                                    maxDiffPercentage: Double = 0.1
                                  ): Unit =
-    val snapshot = runOnFxThread {
+    val snapshot = onFxThread {
       node.snapshot(null, null)
     }
     val actualImageRaw = SwingFXUtils.fromFXImage(snapshot.delegate, null)
@@ -121,26 +122,3 @@ trait SnapshotTesting extends Matchers:
           s"Mismatch in '$snapshotName': ${diffs.length}/$totalPixels ($diffPercentage%) pixels differ. " +
             s"First discrepancy at ($firstX, $firstY) -> Actual: 0x${act.toHexString.toUpperCase}, Expected: 0x${exp.toHexString.toUpperCase}"
         )
-
-  def runOnFxThread[A](body: => A): A =
-    if Platform.isFxApplicationThread then
-      body
-    else
-      var result: Option[Either[Throwable, A]] = None
-      val latch = new CountDownLatch(1)
-
-      Platform.runLater {
-        try
-          result = Some(Right(body))
-        catch
-          case t: Throwable => result = Some(Left(t))
-        finally
-          latch.countDown()
-      }
-
-      if !latch.await(10, TimeUnit.SECONDS) then
-        throw new RuntimeException("Timeout in attesa dell'FX Application Thread")
-
-      result.get match
-        case Right(value) => value
-        case Left(cause) => throw cause

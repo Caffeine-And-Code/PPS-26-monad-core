@@ -1,6 +1,7 @@
 package integrations.monad_core.simulator.presentation.components
 
 import integrations.monad_core.simulator.presentation.support.DialogTesting
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import javafx.event.Event
 import javafx.scene.input.{MouseButton, MouseEvent}
 import monad_core.simulator.CannotBuildButton
@@ -44,14 +45,14 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     stage
 
   test("toMenuItem should build a MenuItem with the given label"):
-    runOnFxThread {
+    onFxThread {
       val item = MenuButtonItem(label = "My Action", onSelect = () => ())
 
       item.toMenuItem.text.value should be("My Action")
     }
 
   test("toMenuItem should invoke onSelect when the item's action fires"):
-    runOnFxThread {
+    onFxThread {
       var selected = false
       val item = MenuButtonItem(label = "My Action", onSelect = () => selected = true)
 
@@ -61,7 +62,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("toMenuItem should reflect the initial isDisabled value"):
-    runOnFxThread {
+    onFxThread {
       val disabledItem = MenuButtonItem(label = "Disabled", onSelect = () => (), isDisabled = BooleanProperty(true))
       val enabledItem = MenuButtonItem(label = "Enabled", onSelect = () => ())
 
@@ -70,7 +71,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("toMenuItem should stay in sync with isDisabled changes after being built"):
-    runOnFxThread {
+    onFxThread {
       val isDisabled = BooleanProperty(false)
       val item = MenuButtonItem(label = "Toggle", onSelect = () => (), isDisabled = isDisabled)
 
@@ -83,7 +84,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton.build should return a Node on success"):
-    runOnFxThread {
+    onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = Image.ToolsIcon(),
@@ -97,7 +98,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton.build should wrap the underlying error in CannotBuildButton when the default image cannot be loaded"):
-    runOnFxThread {
+    onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = MissingIcon(),
@@ -112,7 +113,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton.build should wrap the underlying error in CannotBuildButton when the active image cannot be loaded"):
-    runOnFxThread {
+    onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = Image.ToolsIcon(),
@@ -128,7 +129,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton should open the context menu when clicked"):
-    runOnFxThread {
+    onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = Image.ToolsIcon(),
@@ -146,7 +147,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton should invoke onSelect when a menu item is clicked"):
-    runOnFxThread {
+    onFxThread {
       var selected = false
 
       val props = MenuButtonProps(
@@ -171,7 +172,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton should build disabled menu items when the corresponding MenuButtonItem is disabled"):
-    runOnFxThread {
+    onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = Image.ToolsIcon(),
@@ -194,7 +195,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton should propagate isDisabled to the underlying button"):
-    runOnFxThread {
+    onFxThread {
       val isDisabled = BooleanProperty(true)
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
@@ -209,7 +210,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton matches visual snapshot"):
-    runOnFxThread {
+    onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = Image.ToolsIcon(),
@@ -228,7 +229,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
     }
 
   test("MenuButton matches architectural snapshot"):
-    runOnFxThread {
+    onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = Image.ToolsIcon(),

@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.components.forms
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
@@ -51,7 +52,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       teams = testTeams
     )
 
-    runOnFxThread {
+    onFxThread {
       val result = SaveEntityFormDialog.show(props)
       inside(result):
         case Right(_) => ()
@@ -66,7 +67,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       entityToUpdate = Some(GenericEitherCircleEntity.value)
     )
 
-    runOnFxThread {
+    onFxThread {
       val result = SaveEntityFormDialog.show(props)
       inside(result):
         case Right(_) => ()
@@ -82,7 +83,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       teams = testTeams
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
 
@@ -112,7 +113,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       entityToUpdate = Some(entityToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       allFormFields(RadiusFieldIndex).setText(expectedRadius.toString)
@@ -142,7 +143,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       teams = testTeams
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       formSaveButton.fire()
@@ -162,7 +163,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       entityToUpdate = Some(circleEntityToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -183,7 +184,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       entityToUpdate = Some(circleEntityToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -204,7 +205,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       entityToUpdate = Some(rectangleEntityToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -225,7 +226,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       entityToUpdate = Some(rectangleEntityToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -242,7 +243,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       teams = testTeams
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       selectCircleInComboBox()
@@ -262,7 +263,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       teams = testTeams
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       selectCircleInComboBox()
@@ -281,7 +282,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       teams = testTeams
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       selectRectangleInComboBox()
@@ -300,7 +301,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       teams = testTeams
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveEntityFormDialog.show(props))
 
       selectRectangleInComboBox()

@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.components.forms
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
@@ -41,7 +42,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       onError = _ => (),
     )
 
-    runOnFxThread {
+    onFxThread {
       val result = SaveSurfaceFormDialog.show(props)
       inside(result):
         case Right(_) => ()
@@ -55,7 +56,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       surfaceToUpdate = Some(GenericEitherCircleSurface.value)
     )
 
-    runOnFxThread {
+    onFxThread {
       val result = SaveSurfaceFormDialog.show(props)
       inside(result):
         case Right(_) => ()
@@ -70,7 +71,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       onError = err => fail(s"Unexpected error: $err"),
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       allFormFields(RadiusFieldIndex).setText("10.0")
@@ -95,7 +96,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       surfaceToUpdate = Some(surfaceToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       allFormFields(RadiusFieldIndex).setText(expectedRadius.toString)
@@ -119,7 +120,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       onError = err => capturedError = Some(err),
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       formSaveButton.fire()
@@ -138,7 +139,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       surfaceToUpdate = Some(circleSurfaceToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -158,7 +159,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       surfaceToUpdate = Some(circleSurfaceToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -178,7 +179,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       surfaceToUpdate = Some(rectangleSurfaceToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -198,7 +199,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       surfaceToUpdate = Some(rectangleSurfaceToUpdate)
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       val activeStage = getRequiredActiveStage
@@ -214,7 +215,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       onError = _ => (),
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       selectCircleInComboBox()
@@ -233,7 +234,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       onError = _ => (),
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       selectCircleInComboBox()
@@ -251,7 +252,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       onError = _ => (),
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       selectRectangleInComboBox()
@@ -269,7 +270,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       onError = _ => (),
     )
 
-    runOnFxThread {
+    onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       selectRectangleInComboBox()

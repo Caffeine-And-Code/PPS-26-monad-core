@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.support
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -9,7 +10,7 @@ trait DialogTesting extends AnyFunSuite with BeforeAndAfterEach with ScalaFxInit
 
   override def beforeEach(): Unit =
     if getActiveStage.isDefined then
-      runOnFxThread {
+      onFxThread {
         getRequiredActiveStage.close()
 
         javafx.stage.Window.getWindows.asScala.toList

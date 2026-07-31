@@ -1,5 +1,6 @@
 package integrations.monad_core.simulator.presentation.components
 
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
 import monad_core.simulator.presentation.components.ResizableCanvas
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,14 +13,14 @@ import scalafx.stage.Stage
 class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit with SnapshotTesting:
 
   test("ResizableCanvas should report itself as resizable"):
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
 
       canvas.delegate.isResizable should be(true)
     }
 
   test("ResizableCanvas should have no minimum size constraints"):
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
 
       canvas.delegate.minWidth(-1) should be(0.0)
@@ -27,7 +28,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     }
 
   test("ResizableCanvas should have unbounded maximum size constraints"):
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
 
       canvas.delegate.maxWidth(-1) should be(Double.MaxValue)
@@ -38,7 +39,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     val expectedWidth = 200
     val expectedHeight = 150
 
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
       canvas.width = expectedWidth
       canvas.height = expectedHeight
@@ -51,7 +52,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     val expectedWidth = 300
     val expectedHeight = 250
 
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
 
       canvas.delegate.resize(expectedWidth, expectedHeight)
@@ -64,7 +65,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     val expectedWidth = 80
     val expectedHeight = 60
 
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
 
       canvas.delegate.resize(expectedWidth, expectedHeight)
@@ -74,7 +75,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     }
 
   test("ResizableCanvas matches visual snapshot when placed in a resizable container"):
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
       val gc = canvas.graphicsContext2D
       gc.setFill(Color.Red)
@@ -96,7 +97,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     }
 
   test("ResizableCanvas matches architectural snapshot when placed in a resizable container"):
-    runOnFxThread {
+    onFxThread {
       val canvas = ResizableCanvas()
 
       val root = new StackPane {
