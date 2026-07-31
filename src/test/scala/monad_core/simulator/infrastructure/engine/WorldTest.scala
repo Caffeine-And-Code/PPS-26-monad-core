@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.engine
 
-import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotAddSurface, CannotAddTeam, EntityNotFound, Scene, SurfaceNotFound, TeamNotFound}
-import monad_core.engine.model.{Entity, Surface, Team, TeamId, Vector2D}
+import monad_core.engine.core.*
+import monad_core.engine.model.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
 import org.scalamock.scalatest.MockFactory

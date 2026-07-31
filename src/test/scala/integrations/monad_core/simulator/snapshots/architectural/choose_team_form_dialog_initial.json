@@ -1,0 +1,199 @@
+{
+  "type": "VBox",
+  "styleClass": ["root", "form-dialog-root"],
+  "children": [
+    {
+      "type": "GridPane",
+      "styleClass": ["form-dialog-grid"],
+      "children": [
+        {
+          "type": "Label",
+          "styleClass": ["label", "form-field-label"],
+          "text": "Team",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        },
+        {
+          "type": "ComboBox",
+          "id": "chosenTeam",
+          "styleClass": ["combo-box-base", "combo-box", "form-field-select"],
+          "children": [
+            {
+              "type": "StackPane",
+              "id": "arrow-button",
+              "styleClass": ["arrow-button"],
+              "children": [
+                {
+                  "type": "Region",
+                  "id": "arrow",
+                  "styleClass": ["arrow"]
+                }
+              ]
+            },
+            {
+              "type": "",
+              "id": "list-view",
+              "styleClass": ["list-view"],
+              "children": [
+                {
+                  "type": "VirtualFlow",
+                  "id": "virtual-flow",
+                  "styleClass": ["virtual-flow"],
+                  "children": [
+                    {
+                      "type": "ClippedContainer",
+                      "styleClass": ["clipped-container"],
+                      "children": [
+                        {
+                          "type": "Group",
+                          "styleClass": ["sheet"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Group",
+                      "children": [
+                        {
+                          "type": "",
+                          "styleClass": ["cell", "indexed-cell", "list-cell"],
+                          "children": [
+                            {
+                              "type": "LabeledText",
+                              "styleClass": ["text"]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "VirtualScrollBar",
+                      "styleClass": ["scroll-bar"],
+                      "children": [
+                        {
+                          "type": "StackPane",
+                          "styleClass": ["track-background"]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["increment-button"],
+                          "children": [
+                            {
+                              "type": "Region",
+                              "styleClass": ["increment-arrow"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["decrement-button"],
+                          "children": [
+                            {
+                              "type": "Region",
+                              "styleClass": ["decrement-arrow"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPane",
+                          "styleClass": ["track"]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["thumb"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "VirtualScrollBar",
+                      "styleClass": ["scroll-bar"],
+                      "children": [
+                        {
+                          "type": "StackPane",
+                          "styleClass": ["track-background"]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["increment-button"],
+                          "children": [
+                            {
+                              "type": "Region",
+                              "styleClass": ["increment-arrow"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["decrement-button"],
+                          "children": [
+                            {
+                              "type": "Region",
+                              "styleClass": ["decrement-arrow"]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPane",
+                          "styleClass": ["track"]
+                        },
+                        {
+                          "type": "",
+                          "styleClass": ["thumb"]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "StackPane",
+                      "styleClass": ["corner"]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "",
+              "styleClass": ["cell", "indexed-cell", "list-cell"],
+              "text": "RedTeam",
+              "children": [
+                {
+                  "type": "LabeledText",
+                  "styleClass": ["text"]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "HBox",
+      "children": [
+        {
+          "type": "Button",
+          "styleClass": ["button", "form-dialog-cancel"],
+          "text": "Cancel",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        },
+        {
+          "type": "Button",
+          "styleClass": ["button", "form-dialog-save"],
+          "text": "Save",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

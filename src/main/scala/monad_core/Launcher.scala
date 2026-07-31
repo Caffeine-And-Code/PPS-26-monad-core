@@ -6,6 +6,10 @@ import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig, Langchain4jTools}
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
+import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}

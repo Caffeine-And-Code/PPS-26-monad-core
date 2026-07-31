@@ -1,0 +1,58 @@
+.menu-icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8;
+}
+
+.menu-icon-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+}
+
+.menu-icon-button:pressed {
+    -fx-background-color: rgba(255, 255, 255, 0.10);
+}
+
+.menu-icon-button:disabled {
+    -fx-opacity: 0.35;
+}
+
+.menu-icon-button:selected {
+    -fx-background-color: rgba(80, 200, 120, 0.15);
+    -fx-border-color: rgba(80, 200, 120, 0.4);
+}
+
+.app-context-menu {
+    -fx-background-color: #1a1b1f;
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 10;
+    -fx-padding: 6 0 6 0;
+}
+
+.app-context-menu .menu-item {
+    -fx-background-color: transparent;
+    -fx-padding: 8 16 8 16;
+}
+
+.app-context-menu .menu-item .label {
+    -fx-text-fill: #e4e4e7;
+    -fx-font-size: 13px;
+}
+
+.app-context-menu .menu-item:focused,
+.app-context-menu .menu-item:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.app-context-menu .menu-item:disabled .label {
+    -fx-text-fill: rgba(228, 228, 231, 0.35);
+}
+
+.app-context-menu .separator .line {
+    -fx-border-color: rgba(255, 255, 255, 0.08) transparent transparent transparent;
+}

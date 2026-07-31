@@ -1,21 +1,22 @@
 package integrations.monad_core.simulator.presentation.support
 
-import scalafx.application.Platform
-import javax.imageio.ImageIO
-import scalafx.embed.swing.SwingFXUtils
-import scalafx.scene.canvas.Canvas
 import org.scalatest.matchers.should.Matchers
-import scalafx.Includes.jfxImage2sfx
+import scalafx.Includes.{jfxImage2sfx, jfxNode2sfx}
+import scalafx.application.Platform
+import scalafx.embed.swing.SwingFXUtils
+import scalafx.stage.Stage
+
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
+import javax.imageio.ImageIO
 
 trait SnapshotTesting extends Matchers:
 
   def snapshotsDir: Path = Paths.get("src/test/scala/integrations/monad_core/simulator/snapshots")
 
-  def assertMatchesSnapshot(snapshotName: String, actualContent: String): Unit =
+  def assertMatchesArchitecturalSnapshot(snapshotName: String, actualContent: String): Unit =
     val fileName = if snapshotName.endsWith(".json") then snapshotName else s"$snapshotName.json"
-    val snapshotPath = snapshotsDir.resolve(fileName)
+    val snapshotPath = snapshotsDir.resolve(s"architectural/$fileName")
     val snapshotFile = snapshotPath.toFile
 
     val normalizedActual = actualContent.replace("\r\n", "\n").trim
@@ -29,6 +30,14 @@ trait SnapshotTesting extends Matchers:
       val normalizedExpected = expectedContent.replace("\r\n", "\n").trim
 
       normalizedActual shouldBe normalizedExpected
+
+  def assertMatchesArchitecturalSnapshotOfStage(snapshotName: String, stage: Stage): Unit =
+    val rootNode: scalafx.scene.Node = stage.getScene.getRoot
+
+    val currentTree = SceneGraphSerializer.snapshotOf(rootNode)
+    val currentJson = SceneGraphSerializer.toJson(currentTree)
+
+    assertMatchesArchitecturalSnapshot(snapshotName, currentJson)
 
   /**
    * does a pixel match with a tolerance to prevent errors given by antialiasing
@@ -51,27 +60,49 @@ trait SnapshotTesting extends Matchers:
 
   def assertMatchesVisualSnapshot(
                                    snapshotName: String,
-                                   canvas: Canvas,
+                                   node: scalafx.scene.Node,
                                    maxDiffPercentage: Double = 0.1
                                  ): Unit =
     val snapshot = runOnFxThread {
-      canvas.snapshot(null, null)
+      node.snapshot(null, null)
     }
-    val bufferedImage = SwingFXUtils.fromFXImage(snapshot.delegate, null)
-    val file = snapshotsDir.resolve(s"$snapshotName.png").toFile
+    val actualImageRaw = SwingFXUtils.fromFXImage(snapshot.delegate, null)
+    val file = snapshotsDir.resolve(s"visuals/$snapshotName.png").toFile
 
     if !file.exists() then
       file.getParentFile.mkdirs()
-      ImageIO.write(bufferedImage, "png", file)
+      ImageIO.write(actualImageRaw, "png", file)
       fail(s"Visual snapshot created at: ${file.getAbsolutePath}")
     else
-      val expectedImage = ImageIO.read(file)
+      val expectedImageRaw = ImageIO.read(file)
 
-      bufferedImage.getWidth shouldBe expectedImage.getWidth
-      bufferedImage.getHeight shouldBe expectedImage.getHeight
+      // normalize the size of the image, this is done cause
+      // ScalaFx creates a System (OS) dependant panel
+      val maxWidth = Math.max(actualImageRaw.getWidth, expectedImageRaw.getWidth)
+      val maxHeight = Math.max(actualImageRaw.getHeight, expectedImageRaw.getHeight)
 
-      val width = bufferedImage.getWidth
-      val height = bufferedImage.getHeight
+      def normalize(img: java.awt.image.BufferedImage): java.awt.image.BufferedImage =
+        if img.getWidth == maxWidth && img.getHeight == maxHeight then img
+        else
+          val canvas = new java.awt.image.BufferedImage(
+            maxWidth,
+            maxHeight,
+            java.awt.image.BufferedImage.TYPE_INT_ARGB
+          )
+          val g = canvas.createGraphics()
+          val bgRgb = img.getRGB(0, img.getHeight - 1)
+          g.setColor(new java.awt.Color(bgRgb, true))
+          g.fillRect(0, 0, maxWidth, maxHeight)
+
+          g.drawImage(img, 0, 0, null)
+          g.dispose()
+          canvas
+
+      val bufferedImage = normalize(actualImageRaw)
+      val expectedImage = normalize(expectedImageRaw)
+
+      val width = maxWidth
+      val height = maxHeight
       val totalPixels = width * height
 
       val diffs = for
@@ -85,7 +116,6 @@ trait SnapshotTesting extends Matchers:
       val diffPercentage = (diffs.length.toDouble / totalPixels) * 100
 
       if diffPercentage > maxDiffPercentage then
-        val totalPixels = width * height
         val (firstX, firstY, act, exp) = diffs.head
         fail(
           s"Mismatch in '$snapshotName': ${diffs.length}/$totalPixels ($diffPercentage%) pixels differ. " +

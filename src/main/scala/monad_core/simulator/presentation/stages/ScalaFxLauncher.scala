@@ -4,10 +4,12 @@ import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.presentation.components.NotificationManager
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
 import monad_core.simulator.{StartupTimeout, UnexpectedStartupFailure}
 import scalafx.application.Platform
 import scalafx.scene.Scene
+import scalafx.scene.layout.StackPane
 import scalafx.scene.paint.Color
 import scalafx.stage.Stage
 
@@ -39,13 +41,21 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
           minHeight = MinStageHeight
         }
 
+        val notificationLayer = new StackPane {
+          pickOnBounds = false
+        }
+
         val scene = new Scene(900, 600) {
           fill = Color.rgb(25, 26, 28)
         }
 
         result = mainStage.buildRootContent(scene.width, scene.height) match
           case Right(rootContent) =>
-            scene.content = rootContent
+            scene.content = new StackPane {
+              children = Seq(rootContent, notificationLayer)
+            }
+
+            NotificationManager.attach(notificationLayer)
             stage.scene = scene
             stage.show()
             Right(())

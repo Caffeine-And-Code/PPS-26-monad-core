@@ -1,7 +1,8 @@
 package integrations.monad_core.simulator.presentation.support
 
-import javafx.scene.{Node, Parent}
 import javafx.scene.control.Labeled
+import javafx.scene.{Node, Parent}
+
 import scala.jdk.CollectionConverters.*
 
 object SceneGraphSerializer:

@@ -6,7 +6,6 @@ import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 
 import scala.collection.mutable.ListBuffer
-import scala.math.{max, min}
 import scala.util.Random
 import scala.util.hashing.MurmurHash3
 

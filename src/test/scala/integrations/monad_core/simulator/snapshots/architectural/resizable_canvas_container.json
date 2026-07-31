@@ -1,0 +1,9 @@
+{
+  "type": "StackPane",
+  "styleClass": ["root"],
+  "children": [
+    {
+      "type": "ResizableCanvas"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, M
 import monad_core.simulator.presentation.painters.Drawer
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 class GameEngineTest extends AnyFunSuite with ScalaFxInit:
@@ -27,7 +27,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     getOrFail(world)
 
-  test("init starts the loop and delivers frames through onFrame") {
+  test("init starts the loop and delivers frames through onFrame"):
     val firstFrame = new CountDownLatch(1)
     val received = new AtomicReference[World]()
 
@@ -41,9 +41,9 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     assert(firstFrame.await(AwaitTimeout, TimeUnit.SECONDS), "onFrame was never called after init")
     assert(received.get().getAllEntities.isEmpty)
-  }
 
-  test("play and pause do not break the frame loop") {
+
+  test("play and pause do not break the frame loop"):
     val frames = new CountDownLatch(3)
 
     val engine = MonadCodeGameEngineRuntime()
@@ -55,32 +55,35 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     engine.start()
 
     assert(frames.await(AwaitTimeout, TimeUnit.SECONDS), "engine stopped delivering frames after play/pause")
-  }
 
-  test("reset replaces the world; frames observed afterwards reflect the new world, not the old one") {
+
+  test("reset replaces the world; frames observed afterwards reflect the new world, not the old one"):
     val worldBeforeReset = worldWithOneEntity("before")
-    val worldAfterReset = worldWithOneEntity("after")
+    val worldAfterReset  = worldWithOneEntity("after")
 
-    val resetHappened = new AtomicBoolean(false)
-    val frameAfterReset = new CountDownLatch(1)
+    val sawPreResetFrame = new CountDownLatch(1)
+    val frameAfterReset  = new CountDownLatch(1)
     val received = new AtomicReference[World]()
 
     val engine = MonadCodeGameEngineRuntime()
 
-    engine.attach(
-      world =>
-        if resetHappened.get() then
-          received.set(world)
-          frameAfterReset.countDown()
-    )
+    engine.attach { world =>
+      if world.getAllEntities == worldAfterReset.getAllEntities then
+        received.set(world)
+        frameAfterReset.countDown()
+      else
+        sawPreResetFrame.countDown()
+    }
 
     engine.reset(worldBeforeReset)
     engine.start()
-    Thread.sleep(100) // let a few real frames run against the pre-reset world
+
+    val hasWaitedForAtLeastOneFrameBeforeReset = sawPreResetFrame.await(AwaitTimeout, TimeUnit.SECONDS)
+    hasWaitedForAtLeastOneFrameBeforeReset should be(true)
 
     engine.reset(worldAfterReset)
-    resetHappened.set(true)
 
-    assert(frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS), "no frame observed after reset")
+    val hasWaitedForAtLeastOneFrameAfterReset = frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS)
+    hasWaitedForAtLeastOneFrameAfterReset should be(true)
+
     assert(received.get().getAllEntities == worldAfterReset.getAllEntities)
-  }
