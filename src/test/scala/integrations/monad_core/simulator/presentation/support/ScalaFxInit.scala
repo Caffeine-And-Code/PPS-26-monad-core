@@ -1,16 +1,18 @@
 package integrations.monad_core.simulator.presentation.support
 
 import javafx.application.Platform
+import javafx.scene.control.ContextMenu as JfxContextMenu
 import javafx.stage.{Stage, Window}
 import monad_core.engine.errors.EngineError
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import scalafx.scene.control.Button
-import javafx.scene.control.{ContextMenu => JfxContextMenu}
+
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
 
-private[simulator] trait ScalaFxInit extends BeforeAndAfterAll:
+private[simulator] trait ScalaFxInit extends BeforeAndAfterAll with Matchers:
 
   this: Suite =>
   override def beforeAll(): Unit = {
@@ -32,7 +34,7 @@ private[simulator] trait ScalaFxInit extends BeforeAndAfterAll:
       latch.countDown()
 
     val clicked = latch.await(5 * times, TimeUnit.SECONDS)
-    assert(clicked, ",Button click did not complete in time")
+    clicked should be(true)
     
   def tryGetMainWindow: Option[Stage] =
     Window.getWindows.asScala.collectFirst {

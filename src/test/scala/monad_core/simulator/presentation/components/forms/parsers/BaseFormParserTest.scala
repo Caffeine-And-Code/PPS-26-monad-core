@@ -3,12 +3,11 @@ package monad_core.simulator.presentation.components.forms.parsers
 import monad_core.engine.model.Vector2D
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 import monad_core.simulator.{InvalidNumericFormFieldError, MissingKeyInFormError}
-import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class BaseFormParserTest extends AnyFunSuite with Inside with Matchers with MockFactory:
+class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
   val ValidFormValueKey = "valid_key"
   val InvalidFormValueKey = "invalid_key"
   val FormValues: Map[String, String] = Map(ValidFormValueKey -> "10.0")

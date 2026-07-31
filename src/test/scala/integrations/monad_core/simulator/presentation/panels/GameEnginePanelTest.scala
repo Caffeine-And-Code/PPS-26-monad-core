@@ -3,7 +3,6 @@ package integrations.monad_core.simulator.presentation.panels
 import helpers.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.core.Scene
-import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}

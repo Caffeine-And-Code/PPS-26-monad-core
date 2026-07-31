@@ -18,10 +18,15 @@ final case class SaveEntityFormDialogProps(
                                             entityToUpdate: Option[Entity] = None
                                           )
 
+private object EntityFormDefaults:
+  val InitialX: String = "10.0"
+  val InitialY: String = "10.0"
+  val InitialShape: String = LocatableFormShapes.CircleLabel
+
 private case class SaveEntityFormDefaultValues(
-                                                x: Option[String] = Option.apply("10.0"),
-                                                y: Option[String] = Option.apply("10.0"),
-                                                shape: Option[String] = Option.apply(LocatableFormShapes.CircleLabel),
+                                                x: Option[String] = Option.apply(EntityFormDefaults.InitialX),
+                                                y: Option[String] = Option.apply(EntityFormDefaults.InitialY),
+                                                shape: Option[String] = Option.apply(EntityFormDefaults.InitialShape),
                                                 speedX: Option[String] = Option.empty,
                                                 speedY: Option[String] = Option.empty,
                                                 weight: Option[String] = Option.empty,
