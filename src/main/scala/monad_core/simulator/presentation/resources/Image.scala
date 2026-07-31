@@ -1,12 +1,12 @@
 package monad_core.simulator.presentation.resources
 
 trait Image(
-                    val fileName: String,
-                    val width: Double,
-                    val height: Double,
-                    val preserveRatio: Boolean = true,
-                    val smooth: Boolean = true
-                  )
+             val fileName: String,
+             val width: Double,
+             val height: Double,
+             val preserveRatio: Boolean = true,
+             val smooth: Boolean = true
+           )
 
 object Image:
 
@@ -28,4 +28,10 @@ object Image:
     fileName = "stop.png",
     width = iconSize,
     height = iconSize
+  )
+
+  case class ToolsIcon() extends Image(
+    fileName = "tools.png",
+    width = 28,
+    height = 28
   )

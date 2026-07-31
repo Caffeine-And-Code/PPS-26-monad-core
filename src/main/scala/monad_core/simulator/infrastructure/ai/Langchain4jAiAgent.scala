@@ -1,7 +1,8 @@
 package monad_core.simulator.infrastructure.ai
 
+import dev.langchain4j.memory.ChatMemory
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
-import monad_core.simulator.domain.ai.{AgentInfo, AgentResponse, AgentResponseError}
+import monad_core.simulator.domain.ai.{AgentInfo, AgentResponse, AgentResponseError, ConversationNotFoundError}
 import monad_core.simulator.errors.BaseError
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,12 +17,15 @@ extends AiAgent:
   override def ask(command: AskAgentCommand): Future[Either[AgentResponseError, AgentResponse]] =
     Future {
       blocking {
-        Try(AgentResponse(assistant.chat(command.prompt.toString), 0))
+        Try (AgentResponse(assistant.chat(command.conversationId, command.prompt.toString).content()))
           .toEither
           .left
           .map(error => AgentResponseError(error.getMessage))
       }
     }
 
-  override def cleanHistory(command: CleanHistoryCommand): Either[BaseError, Unit] = ???
+  override def cleanHistory(command: CleanHistoryCommand): Either[BaseError, Unit] =
+    assistant.getChatMemory(command.conversationId) match
+      case null => Left(ConversationNotFoundError(command.conversationId))
+      case chatMemory: ChatMemory => Right(chatMemory.clear())
 

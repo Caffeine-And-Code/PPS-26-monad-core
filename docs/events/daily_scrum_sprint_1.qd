@@ -2,32 +2,32 @@
 
 **Data**: 24/06/2026
 
-| Membro | Ore | Riepilogo giorno precedente | Prospettiva odierna | Problemi riscontrati |
-|-|-|-|-|-|
-|Senni|3|-|Implementazione entity circle e rectangle|-|
-|Fattori|8|-|Studio e sviluppo di Github Actions|-|
-|Tonelli|6|-|Progettazione e inizializzazione del game loop|-|
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|-|-|
+|Fattori|-|-|
+|Tonelli|-|-|
 
 **Data**: 25/06/2026
 
-| Membro | Ore | Riepilogo giorno precedente | Prospettiva odierna | Problemi riscontrati |
-|-|-|-|-|-|
-|Senni|8|Implementazione entity circle e rectangle|Entità di dominio|Quali campi hanno le entity?|
-|Fattori|6|Sviluppo di Github Actions, branch policies|Ingegnerizzazione della scena|Come testare le actions delle release|
-|Tonelli|6|Inizializzazione del game loop|Testing del game loop con dipendenze|-|
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|Implementazione entity circle e rectangle|Quali campi hanno le entity?|
+|Fattori|Sviluppo di Github Actions, branch policies|Come testare le actions delle release|
+|Tonelli|Inizializzazione del game loop|-|
 
 **Data**: 26/06/2026
 
-| Membro | Ore | Riepilogo giorno precedente | Prospettiva odierna | Problemi riscontrati |
-|-|-|-|-|-|
-|Senni|4|Entità di dominio|Revisione del dominio delle entità, collision detection|Le entità possono avere un angolazione ed una velocità angolare|
-|Fattori|6|Ingegnerizzazione della scena|Sviluppo della scena|-|
-|Tonelli|8|Completamento game loop|Studio e sviluppo del sistema della fisica|Dimenticanza nel controllo dei tempi del game loop|
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|Entità di dominio|Le entità possono avere un angolazione ed una velocità angolare|
+|Fattori|Ingegnerizzazione della scena|-|
+|Tonelli|Completamento game loop|Dimenticanza nel controllo dei tempi del game loop|
 
 **Data**: 27/06/2026
 
-| Membro | Ore | Riepilogo giorno precedente | Prospettiva odierna | Problemi riscontrati |
-|-|-|-|-|-|
-|Senni|2|Collision detection|Collision detection, determinare se una figura è dentro l'altra|-|
-|Fattori|4|Conclusione della scena|Refactoring della scena|-|
-|Tonelli|4|Finalizzazione Game loop|Inizializzazione del sistema della fisica|-|
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|Collision detection|-|
+|Fattori|Conclusione della scena|-|
+|Tonelli|Finalizzazione Game loop|-|

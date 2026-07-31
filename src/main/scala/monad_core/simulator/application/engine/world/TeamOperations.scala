@@ -12,9 +12,9 @@ private[world] trait TeamOperations:
 
   def getTeam(id: TeamId): Either[EngineError, Team]
 
-  def createTeam(command: SaveTeamCommand): Either[EngineError, World]
+  def createTeam(command: SaveTeamCommand): Either[EngineError, Unit]
 
-  def removeTeam(id: TeamId): Either[EngineError, World]
+  def removeTeam(id: TeamId): Either[EngineError, Unit]
 
-  def updateTeam(command: SaveTeamCommand): Either[EngineError, World]
+  def updateTeam(command: SaveTeamCommand): Either[EngineError, Unit]
 
