@@ -2,9 +2,9 @@ name: scala-tests.yml
 on:
   push:
     branches:
-      # run on any branch
-      #- main
-      #- development
+    # run on any branch
+    #- main
+    #- development
   pull_request:
     branches:
       - main
@@ -24,6 +24,9 @@ jobs:
 
       - name: Setup SBT
         uses: sbt/setup-sbt@v1
+
+      - name: Check Format Policy
+        run: sbt scalafmtCheckAll
 
       - name: Install Xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
