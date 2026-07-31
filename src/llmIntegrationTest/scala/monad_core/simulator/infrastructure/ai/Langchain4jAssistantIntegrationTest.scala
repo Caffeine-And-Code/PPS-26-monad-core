@@ -33,7 +33,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
   val ollamaConfig = Langchain4jOllamaConfig(
     url = "http://localhost:11434",
-    modelName = "gemma4:e2b"
+    modelName = "qwen3.5:4b"
   )
 
   val memoryId:ConversationId = ConversationId.from("chat1").value
@@ -120,12 +120,14 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val firstMessage = "Remember that my preferred shape is the circle."
     val secondMessage = "What shape did I tell you I prefer?"
     val assistant = getAssistant
+    val judge = getJudgeModel
 
     val firstResult = assistant.chat(memoryId, firstMessage)
     val secondResult = assistant.chat(memoryId, secondMessage)
 
     firstResult should notExecuteTools
-    secondResult should containsInResponse("circle")
+    secondResult should (beJudgedBy(judge) withCriteria 
+      "should tell that circle is the preferred shape")
     secondResult should notExecuteTools
 
   test("Asks for clarification when required information is missing"):

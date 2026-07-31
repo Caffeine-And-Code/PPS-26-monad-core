@@ -8,6 +8,13 @@ enum Judgement:
   case Pass
   case Fail
 
+object Judgement:
+  def from(response: String): Judgement =
+    response.trim.toUpperCase match
+      case "PASS" => Judgement.Pass
+      case "FAIL" => Judgement.Fail
+      case other  => throw IllegalArgumentException(s"Unexpected judge response: '$other'")
+
 trait LlmJudgeAssistant:
 
   @SystemMessage(Array(
@@ -29,7 +36,7 @@ trait LlmJudgeAssistant:
   def judge(
       @V("criterion") criterion: String,
       @V("response") response: String
-  ): Judgement
+  ): String
 
 object LlmJudgeAssistant:
 

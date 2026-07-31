@@ -1,6 +1,7 @@
 package monad_core.langchain4j.matchers
 
 import dev.langchain4j.service.Result
+import monad_core.langchain4j.judge.Judgement
 import monad_core.langchain4j.judge.Judgement.Pass
 import monad_core.langchain4j.judge.LlmJudgeAssistant
 import org.scalatest.matchers.{MatchResult, Matcher}
@@ -17,7 +18,7 @@ object LLMAsAJudgeMatchers:
     infix def withCriteria(judgePrompt: String): Matcher[Result[String]] =
       Matcher { result =>
         val candidateResponse = result.content()
-        val judgement = judge.judge(judgePrompt, candidateResponse)
+        val judgement = Judgement.from(judge.judge(judgePrompt, candidateResponse))
         val passed = judgement == Pass
 
         MatchResult(
