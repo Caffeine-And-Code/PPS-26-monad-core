@@ -1,10 +1,9 @@
 package monad_core.langchain4j.matchers
 
 import dev.langchain4j.service.Result
+import monad_core.langchain4j.judge.Judgement.Pass
 import monad_core.langchain4j.judge.LlmJudgeAssistant
 import org.scalatest.matchers.{MatchResult, Matcher}
-
-import java.util.Locale
 
 object LLMAsAJudgeMatchers:
 
@@ -18,8 +17,8 @@ object LLMAsAJudgeMatchers:
     infix def withCriteria(judgePrompt: String): Matcher[Result[String]] =
       Matcher { result =>
         val candidateResponse = result.content()
-        val judgement = judge.judge(judgePrompt, candidateResponse).trim
-        val passed = judgement.toUpperCase(Locale.ROOT) == "PASS"
+        val judgement = judge.judge(judgePrompt, candidateResponse)
+        val passed = judgement == Pass
 
         MatchResult(
           passed,

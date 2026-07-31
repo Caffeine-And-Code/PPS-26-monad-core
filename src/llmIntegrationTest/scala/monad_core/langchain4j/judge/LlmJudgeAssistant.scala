@@ -4,6 +4,10 @@ import dev.langchain4j.model.ollama.OllamaChatModel
 import dev.langchain4j.service.{AiServices, SystemMessage, UserMessage, V}
 import monad_core.simulator.infrastructure.ai.Langchain4jOllamaConfig
 
+enum Judgement:
+  case Pass
+  case Fail
+
 trait LlmJudgeAssistant:
 
   @SystemMessage(Array(
@@ -25,7 +29,7 @@ trait LlmJudgeAssistant:
   def judge(
       @V("criterion") criterion: String,
       @V("response") response: String
-  ): String
+  ): Judgement
 
 object LlmJudgeAssistant:
 
