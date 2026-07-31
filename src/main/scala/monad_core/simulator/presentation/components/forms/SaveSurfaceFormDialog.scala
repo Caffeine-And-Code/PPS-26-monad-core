@@ -3,33 +3,36 @@ package monad_core.simulator.presentation.components.forms
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Surface
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
-import monad_core.simulator.presentation.components.forms.base.{FormDialog, FormDialogProps, FormFieldSpec, SelectFieldSpec, TextFieldSpec}
+import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
 import monad_core.simulator.presentation.components.forms.parsers.{LocatableFormShapes, SurfaceFormParser}
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
-import scalafx.stage.Window
-
 
 final case class SaveSurfaceFormDialogProps(
-                                            title: String,
-                                            onSubmit: Surface => Unit,
-                                            onError: EngineError => Unit,
-                                            anchorNode: Option[Node] = None,
-                                            surfaceToUpdate: Option[Surface] = None
-                                          )
+                                             title: String,
+                                             onSubmit: Surface => Unit,
+                                             onError: EngineError => Unit,
+                                             anchorNode: Option[Node] = None,
+                                             surfaceToUpdate: Option[Surface] = None
+                                           )
+
+private object SurfaceFormDefaults:
+  val InitialX: String = "10.0"
+  val InitialY: String = "10.0"
+  val InitialShape: String = LocatableFormShapes.CircleLabel
 
 private case class SaveSurfaceFormDefaultValues(
-                                                x: Option[String] = Option.apply("10.0"),
-                                                y: Option[String] = Option.apply("10.0"),
-                                                shape: Option[String] = Option.apply(LocatableFormShapes.CircleLabel),
-                                                frictionIndex: Option[String] = Option.empty,
-                                                appliedForceX: Option[String] = Option.empty,
-                                                appliedForceY: Option[String] = Option.empty,
-                                                radius: Option[String] = Option.empty,
-                                                height: Option[String] = Option.empty,
-                                                length: Option[String] = Option.empty,
-                                              )
+                                                 x: Option[String] = Option.apply(SurfaceFormDefaults.InitialX),
+                                                 y: Option[String] = Option.apply(SurfaceFormDefaults.InitialY),
+                                                 shape: Option[String] = Option.apply(SurfaceFormDefaults.InitialShape),
+                                                 frictionIndex: Option[String] = None,
+                                                 appliedForceX: Option[String] = None,
+                                                 appliedForceY: Option[String] = None,
+                                                 radius: Option[String] = None,
+                                                 height: Option[String] = None,
+                                                 length: Option[String] = None,
+                                               )
 
 object SaveSurfaceFormDialog:
   private[forms] val Shapes = Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)

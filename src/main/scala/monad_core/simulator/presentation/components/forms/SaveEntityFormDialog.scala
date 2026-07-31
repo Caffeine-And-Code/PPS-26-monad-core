@@ -27,14 +27,14 @@ private case class SaveEntityFormDefaultValues(
                                                 x: Option[String] = Option.apply(EntityFormDefaults.InitialX),
                                                 y: Option[String] = Option.apply(EntityFormDefaults.InitialY),
                                                 shape: Option[String] = Option.apply(EntityFormDefaults.InitialShape),
-                                                speedX: Option[String] = Option.empty,
-                                                speedY: Option[String] = Option.empty,
-                                                weight: Option[String] = Option.empty,
-                                                health: Option[String] = Option.empty,
-                                                teamId: Option[String] = Option.empty,
-                                                radius: Option[String] = Option.empty,
-                                                height: Option[String] = Option.empty,
-                                                length: Option[String] = Option.empty,
+                                                speedX: Option[String] = None,
+                                                speedY: Option[String] = None,
+                                                weight: Option[String] = None,
+                                                health: Option[String] = None,
+                                                teamId: Option[String] = None,
+                                                radius: Option[String] = None,
+                                                height: Option[String] = None,
+                                                length: Option[String] = None,
                                               )
 
 object SaveEntityFormDialog:
