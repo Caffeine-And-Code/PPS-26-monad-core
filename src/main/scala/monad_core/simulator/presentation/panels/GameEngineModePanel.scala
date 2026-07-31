@@ -17,13 +17,12 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
   def build(
              imageConfig: ImageConfigRecord,
              onModeChange: Boolean => Unit,
-             onStopClick: () => Unit
+             onStopClick: () => Unit,
+             isEngineRunning: BooleanProperty
            )
            (
              using world: World
            ): Either[EngineError, VBox] = {
-    val isRunning = BooleanProperty(false)
-
     val onFormError: EngineError => Unit = err => NotificationManager.show(err.message, Error)
     val editTeamsIsDisabled = BooleanProperty(true)
     val deleteTeamsIsDisabled = BooleanProperty(true)
@@ -43,10 +42,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
             imageConfig,
             onClick =
               isActive =>
-                isRunning.value = isActive
+                isEngineRunning.value = isActive
                 onModeChange(isActive)
           ),
-          activeProperty = isRunning
+          activeProperty = isEngineRunning
         )
         .left.map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
 
@@ -54,18 +53,19 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
           StopIcon(),
           IconButtonBaseProps(
             imageConfig,
-            isDisabled = !isRunning,
+            isDisabled = !isEngineRunning,
             onClick = isActive =>
-              isRunning.value = false
+              isEngineRunning.value = false
               onStopClick()
           )
         )
         .left.map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
 
       contextMenuAnchor = Some(playPauseBtn)
-      
+
       menuBtn <- MenuButton.build(
         MenuButtonProps(
+          isDisabled = isEngineRunning,
           imageConfig = imageConfig,
           defaultImage = ToolsIcon(),
           items = Seq(
@@ -78,7 +78,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                 onError = onFormError
               )
             )),
-            MenuButtonItem("Add a Team", () => SaveTeamFormDialog.show(
+            MenuButtonItem(
+              isDisabled = isEngineRunning,
+              label = "Add a Team",
+              onSelect = () => SaveTeamFormDialog.show(
               props = SaveTeamFormDialogProps(
                 title = "Team Settings",
                 anchorNode = contextMenuAnchor,
@@ -87,7 +90,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                 onError = onFormError
               )
             )),
-            MenuButtonItem("Add a Surface", () => SaveSurfaceFormDialog.show(
+            MenuButtonItem(
+              isDisabled = isEngineRunning,
+              label = "Add a Surface", 
+              onSelect = () => SaveSurfaceFormDialog.show(
               props = SaveSurfaceFormDialogProps(
                 title = "Surface Settings",
                 anchorNode = contextMenuAnchor,
@@ -115,7 +121,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                   onError = onFormError
                 )
               ),
-              isDisabled = editTeamsIsDisabled
+              isDisabled = editTeamsIsDisabled || isEngineRunning,
             ),
             MenuButtonItem(
               label = "Delete a Team",
@@ -127,7 +133,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                   onError = onFormError
                 )
               ),
-              isDisabled = deleteTeamsIsDisabled
+              isDisabled = deleteTeamsIsDisabled || isEngineRunning,
             ),
           )
         )

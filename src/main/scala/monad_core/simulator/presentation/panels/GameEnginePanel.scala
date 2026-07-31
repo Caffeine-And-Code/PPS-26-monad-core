@@ -9,6 +9,7 @@ import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
+import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
 final class GameEnginePanel(
@@ -29,6 +30,7 @@ final class GameEnginePanel(
   : Either[EngineError, VBox] = {
     buildInitialWorld(world)
     val worldSnapshot: Option[Scene] = Some(world.scene)
+    val isEngineRunning = BooleanProperty(gameEngineRuntime.isRunning)
 
     for
       sceneRendererPanel <- rendererPanel.build()
@@ -37,10 +39,11 @@ final class GameEnginePanel(
       onModeChange = (isButtonActive: Boolean) =>
         if isButtonActive then gameEngineRuntime.start()
         else gameEngineRuntime.stop()
+        isEngineRunning.value = gameEngineRuntime.isRunning
 
       onStopClick = () => gameEngineRuntime.reset(MonadCoreWorld(worldSnapshot.get))
 
-      gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick)
+      gameEngineModePanel <- modePanel.build(imageConfig, onModeChange, onStopClick, isEngineRunning)
         .left.map(error => CannotBuildPanel(error, this.toString))
     yield
       val container = new VBox {

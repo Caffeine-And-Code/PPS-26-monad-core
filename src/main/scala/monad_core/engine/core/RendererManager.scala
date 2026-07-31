@@ -7,7 +7,7 @@ import monad_core.engine.public_api.Painter
 import scalafx.scene.paint.Color
 
 object RendererManager extends RenderEngine:
-  override def render(state: State, alpha: Double)(using painter: Painter): Unit = {
+  override def render(state: State, alpha: Double)(using painter: Painter): Unit =
     for (surface <- state.allSurfaces)
       surface.shape match
         case _: Circle => painter.drawCircle(surface, painter.baseColor)
@@ -29,7 +29,3 @@ object RendererManager extends RenderEngine:
       entity.shape match
         case _: Circle => painter.drawCircle(entity, getTeamColorOrDefault(entity.teamId))
         case _: Rectangle => painter.drawRectangle(entity, getTeamColorOrDefault(entity.teamId))
-  }
-    
-    
-  
