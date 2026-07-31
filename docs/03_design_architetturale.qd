@@ -1,3 +1,87 @@
 # Design architetturale
 
-Design architetturale
+## Architettura complessiva
+.mermaid
+    graph TD
+        subgraph Simulation ["🎮 Simulation (monad_core.simulator)"]
+            UI["Presentation Layer<br/>(ScalaFX / Panels / Chat)"]
+            APP["Application Layer<br/>(GameEngine / AgentService / World)"]
+            INFRA["Infrastructure Layer<br/>(Langchain4j Agent / Adapters)"]
+            
+            UI --> APP
+            APP --> INFRA
+        end
+
+        subgraph Engine ["⚙️ Engine (monad_core.engine)"]
+            FACADE["EngineFacade"]
+            CORE["Core & Game Loop"]
+            COLLISION["Collision Detection"]
+            GEOM["Geometry & Physics Models"]
+
+            FACADE --> CORE
+            FACADE --> COLLISION
+            FACADE --> GEOM
+            CORE --> GEOM
+            COLLISION --> GEOM
+        end
+
+        APP -->|"Usa unicamente"| FACADE
+        INFRA -.->|"Chiamate HTTP/REST"| LLM["LLM Provider Remoto<br/>(OpenAI / Ollama)"]
+
+        style Engine fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+        style Simulation fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+        style LLM fill:#fff3e0,stroke:#f57c00,stroke-width:1px,stroke-dasharray: 5 5
+
+L'architettura di **MonadCore 2D** è progettata seguendo una rigorosa separazione delle responsabilità (Separation of Concerns), dividendo nettamente il sistema in un **Engine 2D riutilizzabile e agnostico** e in un'**Applicazione di Simulazione guidata da Agenti AI**.
+
+### Engine (`monad_core.engine`)
+L'Engine costituisce il nucleo di basso livello della piattaforma. Gestisce unicamente la matematica delle forme 2D, l'algebra vettoriale, la detezione spaziale delle collisioni e il ciclo di vita del motore grafico/fisico (*Game Loop*). 
+- **Integrità e Indipendenza**: Non ha alcuna conoscenza del dominio della simulazione, della UI (JavaFX/ScalaFX) o dell'AI.
+- **Punto di accesso**: L'esterno interagisce con il motore esclusivamente tramite la facade `EngineFacade` e le astrazioni grafiche immutabili (`Painter`).
+
+### 🎮 Simulation (`monad_core.simulator`)
+La Simulation rappresenta il livello applicativo di alto livello. Orchestrato attorno alle entità di gioco e all'esperienza utente, estende le funzionalità dell'Engine integrando scenari dinamici e intelligenza artificiale.
+- **Orchestrazione di Mondo e UI**: Gestisce il modello di stato del mondo (`World`), l'interfaccia utente ScalaFX (`MainStage`, `SceneRendererPanel`) e il ciclo di rendering effettivo su Canvas tramite i propri `Drawer`.
+- **Integrazione AI**: Gestisce gli agenti intelligenti basati su LLM tramite servizi dedicati (`AgentService`), operando sia a livello di dominio che di infrastruttura.
+
+---
+
+## Pattern architetturali
+
+### ⚙️ Engine (`monad_core.engine`)
+* **Facade Pattern (`EngineFacade`)**: Semplifica e unifica l'accesso ai sottosistemi complessi dell'engine (geometria, gestione scene e collisioni) fornendo un'interfaccia pubblica pulita ed essenziale per il modulo esterno.
+* **Component-Based / Pure Domain Model**: Rappresentazione immutabile e funzionale delle entità fisiche (`Entity`, `Shape2D`, `Vector2D`, `Surface`), isolate da qualsiasi dipendenza esterna o effetto collaterale.
+* **Strategy Pattern (`CollisionDetector`, `ShapeCollision`)**: Gli algoritmi di detezione delle collisioni e di contenimento (`Colliding`, `Containing`) sono incapsulati in strategie intercambiabili a seconda della tipologia di forma geometrica analizzata.
+* **Game Loop Pattern (`GameLoop`)**: Un ciclo di esecuzione controllato gestisce il determinismo temporale degli aggiornamenti di stato fisici e delle richieste di rendering.
+
+### 🎮 Simulation (`monad_core.simulator`)
+* **MVC / MVVM (`presentation/chat`, `presentation/panels`)**: Separazione netta tra i componenti grafici della UI (View) e la logica di gestione dello stato/interazione utente (Controller / ViewModel).
+* **Layered Architecture (DDD Simplified)**:
+  * **Domain**: Valori e modelli puri relativi all'agente (`AgentInfo`, `UserPrompt`, `AgentResponse`).
+  * **Application**: Servizi applicativi (`AgentService`, `GameEngine`) che coordinano la logica aziendale, il mondo di simulazione (`World`) e le interazioni.
+  * **Infrastructure**: Adapter concreti verso librerie terze (`Langchain4jAiAgent`, `Langchain4jAssistant`).
+* **Factory Pattern (`infrastructure/ai`)**: Fabbriche per l'istanziazione dinamica degli agenti AI alimentati da modelli linguistici.
+
+---
+
+## Eventuali componenti del sistema distribuito
+
+### ⚙️ Engine (`monad_core.engine`)
+* **Nessun componente distribuito**: L'Engine è progettato per essere una libreria totalmente **in-process**, standalone e deterministica. Tutta l'algebra vettoriale e la fisica spaziale vengono eseguite localmente sulla CPU della macchina ospitante.
+
+### 🎮 Simulation (`monad_core.simulator`)
+* **Integrazione con LLM Remoti (AI Client-Server)**: Sebbene l'applicazione ScalaFX esegua in locale, l'infrastruttura di AI (`infrastructure/ai`) agisce come client che comunica via protocolli HTTP/REST o gRPC con provider esterni di Large Language Models (es. OpenAI, Ollama remoto o altri endpoint supportati da Langchain4j).
+* **Elaborazione Asincrona**: Le richieste inviate agli agenti AI (`UserPrompt`) e il parsing delle risposte (`AgentResponse`) avvengono mediante chiamate non-bloccanti o worker thread separati per non compromettere il frame-rate del thread grafico della simulazione.
+
+---
+
+## Scelte tecnologiche cruciali ai fini architetturali
+
+### ⚙️ Engine (`monad_core.engine`)
+* **Scala 3 (Functional Programming)**: Scelta per sfruttare l'espressività del paradigma funzionale, l'immutabilità dei dati geometrici (`Vector2D`, `Shape2D`) e il sistema di tipi avanzato per garantire correttezza a tempo di compilazione.
+* **Zero External Dependencies**: Il motore geometrico e di collisione non utilizza librerie esterne di terze parti, garantendo la massima portabilità, assenza di conflitti di dipendenze e performance ottimali.
+
+### 🎮 Simulation (`monad_core.simulator`)
+* **ScalaFX / JavaFX**: Framework GUI adottato per la costruzione dell'interfaccia utente e del rendering su Canvas 2D (`ResizableCanvas`). Fornisce un modello a eventi reattivo integrandosi nativamente con l'ecosistema JVM.
+* **Langchain4j**: Framework scelto per l'integrazione strutturata degli agenti conversazionali e l'esecuzione di prompt/tool-use sugli LLM. Astrae le chiamate API verso i modelli linguistici integrandosi con il dominio dell'applicazione.
+* **SBT (Scala Build Tool)**: Sistema di build unificato per la gestione della compilazione cross-module, l'esecuzione della test suite e la generazione degli artifact di release.
