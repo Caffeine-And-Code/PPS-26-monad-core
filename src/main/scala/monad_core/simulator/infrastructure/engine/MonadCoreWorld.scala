@@ -3,7 +3,7 @@ package monad_core.simulator.infrastructure.engine
 import monad_core.engine.core.Scene
 import monad_core.engine.core.traits.State
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, LocatableId, Surface, Team, TeamId}
+import monad_core.engine.model.*
 import monad_core.simulator.application.engine
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 

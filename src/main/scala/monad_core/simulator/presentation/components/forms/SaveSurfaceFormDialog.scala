@@ -2,8 +2,8 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Surface
-import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.base.*
+import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
 import monad_core.simulator.presentation.components.forms.parsers.{LocatableFormShapes, SurfaceFormParser}
 import monad_core.simulator.presentation.support.ScalaFxUtils

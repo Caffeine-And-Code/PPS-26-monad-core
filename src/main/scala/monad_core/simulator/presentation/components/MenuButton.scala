@@ -6,9 +6,9 @@ import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord}
 import scalafx.Includes.jfxScene2sfx
 import scalafx.beans.property.BooleanProperty
 import scalafx.beans.value.ObservableValue
-import scalafx.scene.control.{ContextMenu, MenuItem}
-import scalafx.scene.Node
 import scalafx.geometry.Side
+import scalafx.scene.Node
+import scalafx.scene.control.{ContextMenu, MenuItem}
 
 final case class MenuButtonItem(
                                  label: String,

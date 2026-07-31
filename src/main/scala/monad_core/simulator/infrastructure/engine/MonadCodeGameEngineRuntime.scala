@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.engine
 
-import monad_core.engine.core.{GameLoop, Scene}
 import monad_core.engine.core.GameLoop.*
+import monad_core.engine.core.{GameLoop, Scene}
 import monad_core.engine.public_api.{EngineFacade, Painter}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World

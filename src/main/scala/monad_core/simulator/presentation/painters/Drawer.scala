@@ -4,6 +4,7 @@ import monad_core.engine.model.*
 import monad_core.engine.public_api.Painter
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
+
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.hashing.MurmurHash3

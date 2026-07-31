@@ -2,7 +2,7 @@ package monad_core.engine.core
 
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotAddSurface, CannotAddTeam, CannotRemoveEntity, CannotRemoveNonPresentElementFromMap, CannotRemoveSurface, CannotRemoveTeam, EntityNotFound, Scene, SurfaceNotFound, TeamNotFound}
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Surface, Team, TeamId, Vector2D}
+import monad_core.engine.model.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{EitherValues, Inside}

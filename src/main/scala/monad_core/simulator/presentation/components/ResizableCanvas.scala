@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.components
 
-import javafx.scene.canvas.{Canvas => JfxCanvas}
+import javafx.scene.canvas.Canvas as JfxCanvas
 import scalafx.scene.canvas.Canvas
 
 private final class ResizableCanvas extends JfxCanvas:
