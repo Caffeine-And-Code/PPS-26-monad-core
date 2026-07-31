@@ -1,0 +1,16 @@
+{
+  "type": "StackPane",
+  "styleClass": ["root"],
+  "children": [
+    {
+      "type": "Label",
+      "styleClass": ["label"],
+      "text": "Positioned Info message"
+    },
+    {
+      "type": "Label",
+      "styleClass": ["label"],
+      "text": "Positioned Info message"
+    }
+  ]
+}

@@ -3,19 +3,20 @@ package monad_core.simulator.presentation.painters
 import monad_core.engine.model.{Entity, Shape2D, TeamId, Vector2D}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
-import org.scalatest.{BeforeAndAfterEach, Inside}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
+import org.scalatest.{BeforeAndAfterEach, Inside}
 import scalafx.scene.paint.Color
+
 import scala.util.Random
 
 class DrawerTest extends AnyFunSuite with Matchers with Inside with MockFactory with BeforeAndAfterEach:
   val CircleEntity: Entity = Entity.circle("CircleId", Vector2D(0, 0), 1).value
   val RectangleEntity: Entity = Entity.rectangle("RectangleId", Vector2D(0, 0), 10, 10).value
 
-  override def afterEach(): Unit =
+  override def beforeEach(): Unit =
     Drawer.buffer.clear()
 
   def generateRandomTeamId(): TeamId =

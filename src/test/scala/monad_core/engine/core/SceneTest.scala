@@ -2,7 +2,7 @@ package monad_core.engine.core
 
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotAddSurface, CannotAddTeam, CannotRemoveEntity, CannotRemoveNonPresentElementFromMap, CannotRemoveSurface, CannotRemoveTeam, EntityNotFound, Scene, SurfaceNotFound, TeamNotFound}
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Surface, Team, Vector2D}
+import monad_core.engine.model.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{EitherValues, Inside}
@@ -94,10 +94,10 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
   test("Adding a team with the same id as another team already present in the scene returns an error"):
     val expectedError = CannotAddTeam(CannotAddAlreadyPresentElementInMap(GenericTeam.id))
 
-    val result = for {
+    val result = for
       sceneWithTeam <- InitializedScene.addTeam(GenericTeam)
       error <- sceneWithTeam.addTeam(GenericTeam)
-    } yield error
+    yield error
 
     inside(result):
       case Left(message) => message should be(expectedError)
@@ -109,10 +109,10 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       case Left(message) => message should be(TeamNotFound(GenericTeam.id))
 
   test("An added team can be get from the scene"):
-    val result = for {
+    val result = for
       sceneWithTeam <- InitializedScene.addTeam(GenericTeam)
       fetchResult <- sceneWithTeam.getTeam(GenericTeam.id)
-    } yield fetchResult
+    yield fetchResult
 
     inside(result):
       case Right(fetchedEntity) =>
@@ -150,10 +150,10 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
   test("Adding a surface with the same id as another surface already present in the scene returns an error"):
     val expectedError = CannotAddSurface(CannotAddAlreadyPresentElementInMap(GenericSurface.id))
 
-    val addResult = for {
+    val addResult = for
       sceneWithSurface <- InitializedScene.addSurface(GenericSurface)
       error <- sceneWithSurface.addSurface(GenericSurface)
-    } yield error
+    yield error
 
     inside(addResult):
       case Left(message) => message should be(expectedError)
@@ -165,10 +165,10 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       case Left(message) => message should be(SurfaceNotFound(GenericSurface.id))
 
   test("An added surface can be get from the scene"):
-    val fetchResult = for {
+    val fetchResult = for
       sceneWithSurface <- InitializedScene.addSurface(GenericSurface)
       fetchRes <- sceneWithSurface.getSurface(GenericSurface.id)
-    } yield fetchRes
+    yield fetchRes
 
     inside(fetchResult):
       case Right(fetchedEntity) =>
@@ -202,22 +202,21 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       length = 10
     ).value
 
-    val addingResult = for {
+    val addingResult = for
       sceneWithElements <- this.addAnElementToEachMap()
       resultScene <- sceneWithElements.addEntity(entityToAdd)
-    } yield resultScene
+    yield resultScene
 
     inside(addingResult):
       case Right(updatedScene) =>
         updatedScene.surfaces.size should be(1)
         updatedScene.teams.size should be(1)
 
-
   test("removing an entity doesn't effect the surfaces and teams"):
-    val removeResult = for {
+    val removeResult = for
       sceneWithElements <- this.addAnElementToEachMap()
       resultScene <- sceneWithElements.removeEntity(GenericEntity)
-    } yield resultScene
+    yield resultScene
 
     inside(removeResult):
       case Right(updatedScene) =>
@@ -227,28 +226,26 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
   test("Adding a team doesn't effect the surfaces and entities"):
     val teamToAdd = Team.create("new team", Set.empty).value
 
-    val addingResult = for {
+    val addingResult = for
       sceneWithElements <- this.addAnElementToEachMap()
       resultScene <- sceneWithElements.addTeam(teamToAdd)
-    } yield resultScene
+    yield resultScene
 
     inside(addingResult):
       case Right(updatedScene) =>
         updatedScene.surfaces.size should be(1)
         updatedScene.entities.size should be(1)
 
-
   test("removing a team doesn't effect the surfaces and entities"):
-    val removeResult = for {
+    val removeResult = for
       sceneWithElements <- this.addAnElementToEachMap()
       resultScene <- sceneWithElements.removeTeam(GenericTeam)
-    } yield resultScene
+    yield resultScene
 
     inside(removeResult):
       case Right(updatedScene) =>
         updatedScene.surfaces.size should be(1)
         updatedScene.entities.size should be(1)
-
 
   test("Adding a surface doesn't effect the teams and entities"):
     val surfaceToAdd = Surface.rectangle(
@@ -258,24 +255,66 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
       length = 10
     ).value
 
-    val addingResult = for {
+    val addingResult = for
       sceneWithElements <- this.addAnElementToEachMap()
       resultScene <- sceneWithElements.addSurface(surfaceToAdd)
-    } yield resultScene
+    yield resultScene
 
     inside(addingResult):
       case Right(updatedScene) =>
         updatedScene.teams.size should be(1)
         updatedScene.entities.size should be(1)
 
-
   test("removing a surface doesn't effect the teams and entities"):
-    val removeResult = for {
+    val removeResult = for
       sceneWithElements <- this.addAnElementToEachMap()
       resultScene <- sceneWithElements.removeSurface(GenericSurface)
-    } yield resultScene
+    yield resultScene
 
     inside(removeResult):
       case Right(updatedScene) =>
         updatedScene.teams.size should be(1)
         updatedScene.entities.size should be(1)
+
+  test("allEntities actually retrieve all the entities of the scene"):
+    val secondGenericEntity = Entity.circle("SecondId", Vector2D(0, 0), 1).value
+    val arrangedScene =
+      (for
+        intermediateScene <- InitializedScene.addEntity(GenericEntity)
+        finalScene <- intermediateScene.addEntity(secondGenericEntity)
+      yield finalScene).value
+
+    val allFetchResult = arrangedScene.allEntities
+
+    allFetchResult.length should be(2)
+    allFetchResult should contain(GenericEntity)
+    allFetchResult should contain(secondGenericEntity)
+
+  test("allTeams actually retrieve all the teams of the scene"):
+    val secondGenericTeam = Team.apply(TeamId("SecondId").value).value
+    val arrangedScene =
+      (for
+        intermediateScene <- InitializedScene.addTeam(GenericTeam)
+        finalScene <- intermediateScene.addTeam(secondGenericTeam)
+      yield finalScene).value
+
+    val allFetchResult = arrangedScene.allTeams
+
+    allFetchResult.length should be(2)
+    allFetchResult should contain(GenericTeam)
+    allFetchResult should contain(secondGenericTeam)
+
+
+  test("allSurfaces actually retrieve all the surfaces of the scene"):
+    val secondGenericSurface = Surface.circle("SecondId", Vector2D(0, 0), 1).value
+    val arrangedScene =
+      (for
+        intermediateScene <- InitializedScene.addSurface(GenericSurface)
+        finalScene <- intermediateScene.addSurface(secondGenericSurface)
+      yield finalScene).value
+
+    val allFetchResult = arrangedScene.allSurfaces
+
+    allFetchResult.length should be(2)
+    allFetchResult should contain(GenericSurface)
+    allFetchResult should contain(secondGenericSurface)
