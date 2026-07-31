@@ -13,7 +13,7 @@ object Judgement:
     response.trim.toUpperCase match
       case "PASS" => Judgement.Pass
       case "FAIL" => Judgement.Fail
-      case other  => throw IllegalArgumentException(s"Unexpected judge response: '$other'")
+      case other  => Judgement.Fail
 
 trait LlmJudgeAssistant:
 
