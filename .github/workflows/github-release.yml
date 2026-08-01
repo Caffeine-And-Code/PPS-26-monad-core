@@ -29,7 +29,7 @@ jobs:
             
             # Controlla se la release esiste davvero o se restituisce un errore/Not Found
             if echo "$LATEST_RELEASE_JSON" | grep -q "Not Found"; then
-              echo "ℹ️ No previous release found on github. setting the last version tos 0.0.0"
+              echo "No previous release found on github. setting the last version tos 0.0.0"
               LATEST_TAG="0.0.0"
             else
               LATEST_TAG=$(echo "$LATEST_RELEASE_JSON" | jq -r '.tag_name' | sed 's/^v//')
@@ -38,7 +38,7 @@ jobs:
             echo "Last release version on GitHub: $LATEST_TAG"
             
             if [ "$LOCAL_VERSION" = "$LATEST_TAG" ]; then
-              echo "❌ ERROR: The file's version ($LOCAL_VERSION) is equal to the last release version ($LATEST_TAG)!"
+              echo "✗ ERROR: The file's version ($LOCAL_VERSION) is equal to the last release version ($LATEST_TAG)!"
               echo "Edit the build.properties to update the versione before merging in main"
               exit 1
             fi
@@ -46,12 +46,12 @@ jobs:
             HIGHEST_VERSION=$(printf '%s\n%s' "$LOCAL_VERSION" "$LATEST_TAG" | sort -V | tail -n1)
             
             if [ "$HIGHEST_VERSION" != "$LOCAL_VERSION" ]; then
-              echo "❌ ERROR: The version in build.properties ($LOCAL_VERSION) is LOWER than the one of the latest release ($LATEST_TAG)!"
+              echo "✗ ERROR: The version in build.properties ($LOCAL_VERSION) is LOWER than the one of the latest release ($LATEST_TAG)!"
               echo "Insert a valid and higher version than the current one."
               exit 1
             fi
             
-            echo "✅ Executing release of v$LOCAL_VERSION"
+            echo "✔ Executing release of v$LOCAL_VERSION"
             echo "VERSION=$LOCAL_VERSION" >> $GITHUB_ENV
 
       - name: Setup Java
