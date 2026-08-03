@@ -3,6 +3,8 @@ package monad_core.simulator.presentation.components.forms.parsers
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Shape2D, Vector2D}
 import monad_core.simulator.InvalidShapeFormFieldError
+import monad_core.simulator.errors.BaseError
+import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adapt
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{Circle, Rectangle, getEnumValue}
 
@@ -25,7 +27,7 @@ object EntityFormParser:
   def buildEntity(
                    values: Map[String, String],
                    generateId: () => String = () => Random.alphanumeric.take(10).mkString
-                 ): Either[EngineError, Entity] =
+                 ): Either[BaseError, Entity] =
     for
       position <- BaseFormParser.getSafeVector2D(values, PositionXKey, PositionYKey)
       shapeValueEither <- values.getValueSafe(ShapeKey)
@@ -33,17 +35,17 @@ object EntityFormParser:
       entity <- buildByShape(shapeValue, generateId(), position, values)
 
       entityWithSpeed <- BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey) match
-        case Some(vector) => entity.withSpeed(vector)
+        case Some(vector) => entity.withSpeed(vector).adapt()
         case _ => Right(entity)
 
       health = values.get(HealthKey).flatMap(_.toDoubleOption).map(_.toInt)
       entityWithHealth <- health match
-        case Some(h) => entityWithSpeed.withHealth(h)
+        case Some(h) => entityWithSpeed.withHealth(h).adapt()
         case None => Right(entityWithSpeed)
 
       weight = values.get(WeightKey).flatMap(_.toDoubleOption).map(_.toInt)
       entityWithWeight <- weight match
-        case Some(w) => entityWithHealth.withWeight(w)
+        case Some(w) => entityWithHealth.withWeight(w).adapt()
         case None => Right(entityWithHealth)
 
       teamId = values.get(TeamIdKey)
@@ -52,7 +54,7 @@ object EntityFormParser:
           if id.isEmpty then
             Right(entityWithWeight)
           else
-            entityWithWeight.withTeamId(id)
+            entityWithWeight.withTeamId(id).adapt()
 
         case None => Right(entityWithWeight)
     yield finalEntity
@@ -62,17 +64,17 @@ object EntityFormParser:
                                    id: String,
                                    position: Vector2D,
                                    values: Map[String, String]
-                                 ): Either[EngineError, Entity] =
+                                 ): Either[BaseError, Entity] =
     shape match
       case Circle =>
         for
           radius <- BaseFormParser.parseDouble(values, RadiusKey)
-          entity <- Entity.circle(id, position, radius)
+          entity <- Entity.circle(id, position, radius).adapt()
         yield entity
 
       case Rectangle =>
         for
           height <- BaseFormParser.parseDouble(values, HeightKey)
           length <- BaseFormParser.parseDouble(values, LengthKey)
-          entity <- Entity.rectangle(id, position, height, length)
+          entity <- Entity.rectangle(id, position, height, length).adapt()
         yield entity

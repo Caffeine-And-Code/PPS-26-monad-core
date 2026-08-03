@@ -7,6 +7,7 @@ import monad_core.engine.model.{**, Entity, Locatable, Surface}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
 import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps, SaveSurfaceFormDialog, SaveSurfaceFormDialogProps}
 import monad_core.simulator.presentation.components.{Error, MenuButtonItem, NotificationManager, ResizableCanvas}
@@ -70,12 +71,12 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
              using gameEngineRuntime: GameEngineRuntime,
              world: World
            )
-  : Either[EngineError, VBox] =
+  : Either[BaseError, VBox] =
     given Painter = Drawer
 
     val canvas = ResizableCanvas()
     val menusAnchor = Some(canvas)
-    val onError: EngineError => Unit = error => NotificationManager.show(error.message, Error)
+    val onError: BaseError => Unit = error => NotificationManager.show(error.message, Error)
 
     EntityContextMenu.attachTo(
       canvas = canvas,

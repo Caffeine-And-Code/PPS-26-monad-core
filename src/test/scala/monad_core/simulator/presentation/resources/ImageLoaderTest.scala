@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.resources
 import helpers.{MockImage, MockImageConfig}
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.ImageResourceNotFound
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -25,7 +26,7 @@ class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFac
     val imageConfig: ImageConfigRecord = MockImageConfig()
     val image: Image = MockImage()
 
-    val result: Either[EngineError, ScalaFxImage] = ImageLoader.getScalaFxImage(image, imageConfig)
+    val result: Either[BaseError, ScalaFxImage] = ImageLoader.getScalaFxImage(image, imageConfig)
 
     inside(result):
       case Right(loadedImage) =>

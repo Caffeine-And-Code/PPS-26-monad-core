@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms.base
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Locatable, Team}
 import monad_core.simulator.CannotBuildDialog
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
@@ -27,14 +28,14 @@ object FormDialog:
   private[forms] val StylesheetPath: String =
     getClass.getResource("/stylesheets/form-dialog.css").toExternalForm
 
-  def show(props: FormDialogProps): Either[EngineError, Unit] =
+  def show(props: FormDialogProps): Either[BaseError, Unit] =
     Try {
       val builder = new FormDialogBuilder(props)
       builder.display()
     }.toEither.left.map(ex => CannotBuildDialog(ex.getMessage, "FormDialog"))
     
-  extension[RightType](either: Either[EngineError, RightType])
-    private[forms] def matchToResult(onError: EngineError => Unit)(onRightResult: RightType => Unit) : Unit =
+  extension[RightType](either: Either[BaseError, RightType])
+    private[forms] def matchToResult(onError: BaseError => Unit)(onRightResult: RightType => Unit) : Unit =
       either match 
         case Left(error) => onError(error)
         case Right(result) => onRightResult(result)

@@ -2,6 +2,7 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
@@ -11,7 +12,7 @@ import scalafx.scene.Node
 final case class SaveTeamFormDialogProps(
                                           title: String,
                                           onSubmit: Team => Unit,
-                                          onError: EngineError => Unit,
+                                          onError: BaseError => Unit,
                                           possibleEnemies: Seq[Team],
                                           anchorNode: Option[Node] = None,
                                           teamToUpdate: Option[Team] = None
@@ -29,7 +30,7 @@ private[forms] final case class BuildSaveTeamFormFieldsRecord(
                                                              )
 
 object SaveTeamFormDialog:
-  def show(props: SaveTeamFormDialogProps): Either[EngineError, Unit] = {
+  def show(props: SaveTeamFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.teamToUpdate)
     val buildFieldsRecord = BuildSaveTeamFormFieldsRecord(props.possibleEnemies, defaultValues)
 

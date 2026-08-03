@@ -4,6 +4,7 @@ import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.NotificationManager
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
 import monad_core.simulator.{StartupTimeout, UnexpectedStartupFailure}
@@ -28,9 +29,9 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
            using aiAgent: AiAgent,
            world: World,
            gameEngineRuntime: GameEngineRuntime
-         ): Either[EngineError, Unit] =
+         ): Either[BaseError, Unit] =
     val latch = new CountDownLatch(1)
-    @volatile var result: Either[EngineError, Unit] = Left(StartupTimeout(StartupTimeoutSeconds))
+    @volatile var result: Either[BaseError, Unit] = Left(StartupTimeout(StartupTimeoutSeconds))
 
     val buildAndShow: Runnable = () =>
       try

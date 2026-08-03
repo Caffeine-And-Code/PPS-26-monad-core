@@ -2,6 +2,7 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Surface
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
@@ -12,7 +13,7 @@ import scalafx.scene.Node
 final case class SaveSurfaceFormDialogProps(
                                              title: String,
                                              onSubmit: Surface => Unit,
-                                             onError: EngineError => Unit,
+                                             onError: BaseError => Unit,
                                              anchorNode: Option[Node] = None,
                                              surfaceToUpdate: Option[Surface] = None
                                            )
@@ -37,7 +38,7 @@ private case class SaveSurfaceFormDefaultValues(
 object SaveSurfaceFormDialog:
   private[forms] val Shapes = Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
-  def show(props: SaveSurfaceFormDialogProps): Either[EngineError, Unit] = {
+  def show(props: SaveSurfaceFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.surfaceToUpdate)
 
     FormDialog.show(

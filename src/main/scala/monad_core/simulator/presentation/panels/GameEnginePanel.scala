@@ -6,7 +6,9 @@ import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
+import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adapt
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.beans.property.BooleanProperty
@@ -27,7 +29,7 @@ final class GameEnginePanel(
   private val TopPanelMinHeight = 80.0
 
   def build()
-  : Either[EngineError, VBox] = {
+  : Either[BaseError, VBox] = {
     buildInitialWorld(world)
     val worldSnapshot: Option[Scene] = Some(world.scene)
     val isEngineRunning = BooleanProperty(gameEngineRuntime.isRunning)
@@ -60,8 +62,8 @@ final class GameEnginePanel(
       container
   }
 
-  private[panels] def buildInitialWorld(world: World): Either[EngineError, Unit] =
-    Entity.circle("starter", Vector2D(15, 15), 15).flatMap(
+  private[panels] def buildInitialWorld(world: World): Either[BaseError, Unit] =
+    Entity.circle("starter", Vector2D(15, 15), 15).adapt().flatMap(
       entity => world.createEntity(SaveEntityCommand(entity))
     )
 }

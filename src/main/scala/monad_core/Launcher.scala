@@ -8,6 +8,7 @@ import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchai
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
@@ -33,7 +34,7 @@ object Launcher :
 
     ScalaFxLauncher(mainStage)
 
-  def outcomeFor(result: Either[EngineError, Unit]): (Boolean, String) =
+  def outcomeFor(result: Either[BaseError, Unit]): (Boolean, String) =
     result match
       case Left(error) => (false, s"Startup failed: ${error.message}")
       case Right(_)     => (true, s"${GREEN}Build Completed$RESET")

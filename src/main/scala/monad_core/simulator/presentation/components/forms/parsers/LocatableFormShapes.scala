@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms.parsers
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Shape2D
 import monad_core.simulator.InvalidShapeFormFieldError
+import monad_core.simulator.errors.BaseError
 
 private[forms] enum LocatableFormShapes:
   private[forms] case Circle
@@ -13,7 +14,7 @@ private[forms] object LocatableFormShapes:
   val RectangleLabel = "Rectangle"
 
   extension (value: String)
-    def getEnumValue: Either[EngineError, LocatableFormShapes] =
+    def getEnumValue: Either[BaseError, LocatableFormShapes] =
       value match
         case CircleLabel => Right(Circle)
         case RectangleLabel => Right(Rectangle)

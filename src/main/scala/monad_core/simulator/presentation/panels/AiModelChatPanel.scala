@@ -2,6 +2,7 @@ package monad_core.simulator.presentation.panels
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.chat.*
 import monad_core.simulator.presentation.components.ai.{AiPanelHeader, MessageBox, PromptComposer}
 import monad_core.simulator.presentation.panels.support.BaseLabelStyle
@@ -22,7 +23,7 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
 
   override def build(aiAgent: AiAgent)(using
                                        executionContext: ExecutionContext
-  ): Either[EngineError, VBox] =
+  ): Either[BaseError, VBox] =
     val viewModel = new ChatPanelViewModel(
       aiAgent,
       action => Platform.runLater(action())

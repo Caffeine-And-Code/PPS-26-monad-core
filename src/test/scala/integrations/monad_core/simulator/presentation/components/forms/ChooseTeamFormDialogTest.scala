@@ -5,6 +5,7 @@ import integrations.monad_core.simulator.presentation.support.{DialogTesting, Fo
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.TeamNotFoundDuringSelection
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -32,7 +33,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = _ => ()
     )
 
-    var result: Option[Either[EngineError, Unit]] = Option.empty
+    var result: Option[Either[BaseError, Unit]] = Option.empty
     onFxThread {
       result = Some(ChooseTeamFormDialog.show(props))
     }
@@ -77,7 +78,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     submittedTeam should be(Some(teams(2)))
 
   test("ChooseTeamFormDialog invokes onError when the teams list is empty"):
-    var capturedError: Option[EngineError] = None
+    var capturedError: Option[BaseError] = None
 
     val props = ChooseTeamFormDialogProps(
       teams = Seq.empty,

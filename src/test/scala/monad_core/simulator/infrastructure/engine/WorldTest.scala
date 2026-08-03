@@ -3,7 +3,9 @@ package monad_core.simulator.infrastructure.engine
 import monad_core.engine.core.*
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
+import monad_core.simulator.infrastructure.engine.errors.EngineErrorAdapted
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -41,7 +43,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("removeEntity removes entity successfully when present"):
     val (state, worldTest) = newWorld()
@@ -63,7 +65,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("updateEntity removes old entity and creates updated one"):
     val (state, worldTest) = newWorld()
@@ -74,11 +76,14 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     state.getEntity.expects(baseEntity.id).returns(Right(baseEntity))
     state.removeEntity.expects(baseEntity).returns(Right(intermediateState))
     intermediateState.addEntity.expects(baseEntity).returns(Right(finalState))
+    finalState.getEntity.expects(baseEntity.id).returns(Right(baseEntity))
 
     val result = worldTest.updateEntity(command)
 
     result shouldBe Right(())
     worldTest.scene shouldBe finalState
+    inside(worldTest.getEntity(baseEntity.id)):
+      case Right(fetchedEntity) => fetchedEntity should be(baseEntity)
 
   test("updateEntity propagates the state error if Entity was not found"):
     val (state, worldTest) = newWorld()
@@ -91,7 +96,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("createTeam actually creates the team"):
     val (state, worldTest) = newWorld()
@@ -114,7 +119,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("removeTeam removes team successfully when present"):
     val (state, worldTest) = newWorld()
@@ -136,7 +141,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("updateTeam removes old team and creates updated one"):
     val (state, worldTest) = newWorld()
@@ -147,11 +152,14 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     state.getTeam.expects(baseTeam.id).returns(Right(baseTeam))
     state.removeTeam.expects(baseTeam).returns(Right(intermediateState))
     intermediateState.addTeam.expects(baseTeam).returns(Right(finalState))
+    finalState.getTeam.expects(baseTeam.id).returns(Right(baseTeam))
 
     val result = worldTest.updateTeam(command)
 
     result shouldBe Right(())
     worldTest.scene shouldBe finalState
+    inside(worldTest.getTeam(baseTeam.id)):
+      case Right(fetchedTeam) => fetchedTeam should be(baseTeam)
 
   test("updateTeam propagates the state error if Team was not found"):
     val (state, worldTest) = newWorld()
@@ -164,7 +172,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("createSurface actually creates the surface"):
     val (state, worldTest) = newWorld()
@@ -188,7 +196,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("removeSurface removes surface successfully when present"):
     val (state, worldTest) = newWorld()
@@ -210,7 +218,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))
 
   test("updateSurface removes old surface and creates updated one"):
     val (state, worldTest) = newWorld()
@@ -221,11 +229,14 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     state.getSurface.expects(baseSurface.id).returns(Right(baseSurface))
     state.removeSurface.expects(baseSurface).returns(Right(intermediateState))
     intermediateState.addSurface.expects(baseSurface).returns(Right(finalState))
+    finalState.getSurface.expects(baseSurface.id).returns(Right(baseSurface))
 
     val result = worldTest.updateSurface(command)
 
     result shouldBe Right(())
     worldTest.scene shouldBe finalState
+    inside(worldTest.getSurface(baseSurface.id)):
+      case Right(fetchedSurface) => fetchedSurface should be(baseSurface)
 
   test("updateSurface propagates the state error if Surface was not found"):
     val (state, worldTest) = newWorld()
@@ -238,4 +249,4 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     inside(result):
       case Left(error) =>
-        error should be(expectedError)
+        error should be(EngineErrorAdapted(expectedError))

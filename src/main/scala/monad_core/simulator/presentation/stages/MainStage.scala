@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.stages
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildStage
 import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.NotificationManager
 import monad_core.simulator.presentation.panels.traits.{AiModelChatPanelBuilder, GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
@@ -33,7 +34,7 @@ final class MainStage(
                         using
                         aiAgent: AiAgent,
                         executionContext: ExecutionContext
-                      ): Either[EngineError, HBox] =
+                      ): Either[BaseError, HBox] =
     for
       builtGameEnginePanel <- gamePanel.build()
         .left.map(error => CannotBuildStage(error, this.toString))

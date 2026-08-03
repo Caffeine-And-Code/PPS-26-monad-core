@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.panels
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.*
 import monad_core.simulator.presentation.components.forms.*
 import monad_core.simulator.presentation.panels.support.PanelStyles
@@ -22,12 +23,12 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
            )
            (
              using world: World
-           ): Either[EngineError, VBox] = {
-    val onFormError: EngineError => Unit = err => NotificationManager.show(err.message, Error)
+           ): Either[BaseError, VBox] = {
+    val onFormError: BaseError => Unit = err => NotificationManager.show(err.message, Error)
     val editTeamsIsDisabled = BooleanProperty(true)
     val deleteTeamsIsDisabled = BooleanProperty(true)
 
-    def onTeamAction(actionResult: Either[EngineError, Unit]): Unit =
+    def onTeamAction(actionResult: Either[BaseError, Unit]): Unit =
       actionResult match
         case Left(error) => onFormError(error)
         case Right(_) =>
