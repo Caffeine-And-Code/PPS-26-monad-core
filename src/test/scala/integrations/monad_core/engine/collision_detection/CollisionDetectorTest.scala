@@ -18,7 +18,7 @@ class CollisionDetectorTest extends AnyFunSuite with Matchers:
 
     val result = detector.collision(first, second)
 
-    result shouldBe Some(Collision(Vector2D(1, 0), 1))
+    result shouldBe Some(Collision(Vector2D(1, 0), 1, Vector2D(4.5, 0)))
 
   test("detects the absence of collision between locatables using the geometry implementation"):
     val first = Entity.rectangle("en1", Vector2D(0, 0), 2, 2).value

@@ -16,8 +16,8 @@ class CollidingTest extends AnyFunSuite with Matchers with MockFactory:
 
     val cases = Table(
       ("firstEntity", "secondEntity", "expectedCollision"),
-      (Entity.circle("en1", Vector2D(10, 20), 1).value, Entity.rectangle("en2", Vector2D(3, 4), 7, 9).value, Some(Collision(Vector2D(-1, 0), 4.5))),
-      (Entity.rectangle("en1", Vector2D(10, 20), 1, 10).value, Entity.rectangle("en2", Vector2D(3, 4), 7, 9).value, Some(Collision(Vector2D(1, 0), 0))),
+      (Entity.circle("en1", Vector2D(10, 20), 1).value, Entity.rectangle("en2", Vector2D(3, 4), 7, 9).value, Some(Collision(Vector2D(-1, 0), 4.5, Vector2D(0, 0)))),
+      (Entity.rectangle("en1", Vector2D(10, 20), 1, 10).value, Entity.rectangle("en2", Vector2D(3, 4), 7, 9).value, Some(Collision(Vector2D(1, 0), 0, Vector2D(0, 0)))),
       (Entity.circle("en1", Vector2D(10, 20), 1).value, Entity.circle("en2", Vector2D(3, 4), 7).value, None)
     )
 

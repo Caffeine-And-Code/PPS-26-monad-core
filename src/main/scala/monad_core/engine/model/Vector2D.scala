@@ -35,6 +35,16 @@ extension (v: Vector2D)
   def flip: Vector2D =
     v.copy(-v.x, -v.y)
 
+  infix def dot(other: Vector2D): Double =
+    v.x * other.x + v.y * other.y
+
+  def rotated(angle: Double): Vector2D =
+    val radians = math.toRadians(angle)
+    Vector2D(
+      v.x * math.cos(radians) - v.y * math.sin(radians),
+      v.x * math.sin(radians) + v.y * math.cos(radians)
+    )
+
   def +(toAdd: Vector2D): Vector2D = v add toAdd
 
   def -(toSubtract: Vector2D): Vector2D = v subtract toSubtract

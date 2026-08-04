@@ -78,3 +78,19 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     val result = vector.flip
 
     result shouldBe Vector2D(-1, -2)
+
+  test("can calculate the dot product"):
+    val firstPoint = Vector2D(2, 3)
+    val secondPoint = Vector2D(4, -1)
+    val expectedResult = 5
+
+    val result = firstPoint.dot(secondPoint)
+
+    result shouldBe expectedResult
+
+  test("can rotate a vector using degrees"):
+    val point = Vector2D(2, 0)
+
+    val result = point.rotated(90)
+    result.x shouldBe 0.0 +- 0.1
+    result.y shouldBe 2.0 +- 0.1

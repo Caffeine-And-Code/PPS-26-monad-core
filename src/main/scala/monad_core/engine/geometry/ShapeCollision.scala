@@ -5,33 +5,46 @@ import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 
 object ShapeCollision:
 
-  private def collisionFromCircleInsideRectangle(circle: Placed[Circle], rectangle: Placed[Rectangle]): Collision =
-    val distanceToRightEdge = rectangle.center.x + rectangle.shape.halfLength - circle.center.x
-    val distanceToLeftEdge = circle.center.x - (rectangle.center.x - rectangle.shape.halfLength)
-    val distanceToTopEdge = rectangle.center.y + rectangle.shape.halfHeight - circle.center.y
-    val distanceToBottomEdge = circle.center.y - (rectangle.center.y - rectangle.shape.halfHeight)
-
-    val nearestEdge = Seq(
-      (distanceToRightEdge, Vector2D(-1, 0)),
-      (distanceToLeftEdge, Vector2D(1, 0)),
-      (distanceToTopEdge, Vector2D(0, -1)),
-      (distanceToBottomEdge, Vector2D(0, 1))
-    ).minBy(_._1)
-
-    Collision(nearestEdge._2, nearestEdge._1)
-
   private def calculateNorm(firstPoint: Vector2D, secondPoint: Vector2D): Vector2D =
     (secondPoint - firstPoint).normalized
 
-  /**
-   * return 1 if value is positive 0 otherwise (0 is considered positive).
-   */
-  private def sign(value: Double): Double = {
-    if value < 0 then -1 else 1
-  }
-
   private def clamp(value: Double, min: Double, max: Double): Double =
     math.max(min, math.min(max, value))
+
+  private def axes(rectangle: Placed[Rectangle]): Seq[Vector2D] =
+    Seq(Vector2D(1, 0).rotated(rectangle.rotation), Vector2D(0, 1).rotated(rectangle.rotation))
+
+  private def projectionRadius(rectangle: Placed[Rectangle], axis: Vector2D): Double =
+    val rectangleAxes = axes(rectangle)
+    rectangle.shape.halfLength * math.abs(rectangleAxes.head dot axis) +
+      rectangle.shape.halfHeight * math.abs(rectangleAxes.last dot axis)
+
+  private def supportPoint(rectangle: Placed[Rectangle], direction: Vector2D): Vector2D =
+    val rectangleAxes = axes(rectangle)
+    val lengthDirection = if rectangleAxes.head.dot(direction) >= 0 then 1 else -1
+    val heightDirection = if rectangleAxes.last.dot(direction) >= 0 then 1 else -1
+    rectangle.center + rectangleAxes.head * rectangle.shape.halfLength * lengthDirection +
+      rectangleAxes.last * rectangle.shape.halfHeight * heightDirection
+
+  private def localPoint(point: Vector2D, reference: Placed[?]): Vector2D =
+    (point - reference.center).rotated(-reference.rotation)
+
+  private def worldPoint(point: Vector2D, reference: Placed[?]): Vector2D =
+    reference.center + point.rotated(reference.rotation)
+
+  private def collisionFromCircleInsideRectangle(circle: Placed[Circle], rectangle: Placed[Rectangle], localCircle: Vector2D): Collision =
+    val nearestEdge = Seq(
+      (rectangle.shape.halfLength - localCircle.x, Vector2D(-1, 0), Vector2D(rectangle.shape.halfLength, localCircle.y)),
+      (rectangle.shape.halfLength + localCircle.x, Vector2D(1, 0), Vector2D(-rectangle.shape.halfLength, localCircle.y)),
+      (rectangle.shape.halfHeight - localCircle.y, Vector2D(0, -1), Vector2D(localCircle.x, rectangle.shape.halfHeight)),
+      (rectangle.shape.halfHeight + localCircle.y, Vector2D(0, 1), Vector2D(localCircle.x, -rectangle.shape.halfHeight))
+    ).minBy(_._1)
+
+    Collision(
+      nearestEdge._2.rotated(rectangle.rotation),
+      nearestEdge._1,
+      worldPoint(nearestEdge._3, rectangle)
+    )
 
   given circleCollidesWithCircle: Collides[Circle, Circle] with
 
@@ -40,47 +53,48 @@ object ShapeCollision:
       val penetrationDepth = first.shape.radius + second.shape.radius - distance
 
       Option.when(penetrationDepth >= 0):
-        Collision(calculateNorm(first.center, second.center), penetrationDepth)
+        val normal = calculateNorm(first.center, second.center)
+        val firstContact = first.center + normal * first.shape.radius
+        val secondContact = second.center - normal * second.shape.radius
+        Collision(normal, penetrationDepth, (firstContact + secondContact) * 0.5)
 
   given rectangleCollidesWithRectangle: Collides[Rectangle, Rectangle] with
 
     override def checkCollision(first: Placed[Rectangle], second: Placed[Rectangle]): Option[Collision] =
-      val halfWidthSum = first.shape.halfLength + second.shape.halfLength
-      val halfHeightSum = first.shape.halfHeight + second.shape.halfHeight
-      val distanceX = second.center.x - first.center.x
-      val distanceY = second.center.y - first.center.y
-      val overlapX = halfWidthSum - math.abs(distanceX)
-      val overlapY = halfHeightSum - math.abs(distanceY)
+      val centerDistance = second.center - first.center
+      val overlaps = (axes(first) ++ axes(second)).map: axis =>
+        val normalizedAxis = axis.normalized
+        val overlap = projectionRadius(first, normalizedAxis) + projectionRadius(second, normalizedAxis) -
+          math.abs(centerDistance dot normalizedAxis)
+        (normalizedAxis, overlap)
 
-      Option.when(overlapX >= 0 && overlapY >= 0):
-        if overlapX <= overlapY then
-          Collision(Vector2D(sign(distanceX), 0), overlapX)
-        else
-          Collision(Vector2D(0, sign(distanceY)), overlapY)
+      Option.when(overlaps.forall(_._2 >= 0)):
+        val (axis, penetrationDepth) = overlaps.minBy(_._2)
+        val normal = if centerDistance.dot(axis) >= 0 then axis else axis.flip
+        val collisionPoint = (supportPoint(first, normal) + supportPoint(second, normal.flip)) * 0.5
+        Collision(normal, penetrationDepth, collisionPoint)
 
   given circleCollidesWithRectangle: Collides[Circle, Rectangle] with
 
     override def checkCollision(circle: Placed[Circle], rectangle: Placed[Rectangle]): Option[Collision] =
-      val closestPoint = Vector2D(
-        clamp(
-          circle.center.x,
-          rectangle.center.x - rectangle.shape.halfLength,
-          rectangle.center.x + rectangle.shape.halfLength),
-        clamp(
-          circle.center.y,
-          rectangle.center.y - rectangle.shape.halfHeight,
-          rectangle.center.y + rectangle.shape.halfHeight
-        )
+      val localCircle = localPoint(circle.center, rectangle)
+      val localClosestPoint = Vector2D(
+        clamp(localCircle.x, -rectangle.shape.halfLength, rectangle.shape.halfLength),
+        clamp(localCircle.y, -rectangle.shape.halfHeight, rectangle.shape.halfHeight)
       )
-      val circleToClosestPoint = closestPoint - circle.center
+      val circleToClosestPoint = localClosestPoint - localCircle
       val distance = circleToClosestPoint.magnitude
 
       if distance > 0 then
         val penetrationDepth = circle.shape.radius - distance
         Option.when(penetrationDepth >= 0):
-          Collision(circleToClosestPoint.normalized, penetrationDepth)
+          Collision(
+            circleToClosestPoint.normalized.rotated(rectangle.rotation),
+            penetrationDepth,
+            worldPoint(localClosestPoint, rectangle)
+          )
       else
-        Some(collisionFromCircleInsideRectangle(circle, rectangle))
+        Some(collisionFromCircleInsideRectangle(circle, rectangle, localCircle))
 
   given rectangleCollidesWithCircle: Collides[Rectangle, Circle] with
 
@@ -91,13 +105,24 @@ object ShapeCollision:
   given shapeCollidesWithShape: Collides[Shape2D, Shape2D] with
 
     override def checkCollision(first: Placed[Shape2D], second: Placed[Shape2D]): Option[Collision] =
-      (first.shape, second.shape) match {
+      (first.shape, second.shape) match
         case (firstCircle: Circle, secondCircle: Circle) =>
-          circleCollidesWithCircle.checkCollision(Placed(first.center, firstCircle), Placed(second.center, secondCircle))
+          circleCollidesWithCircle.checkCollision(
+            Placed(first.center, firstCircle, first.rotation),
+            Placed(second.center, secondCircle, second.rotation)
+          )
         case (firstRectangle: Rectangle, secondRectangle: Rectangle) =>
-          rectangleCollidesWithRectangle.checkCollision(Placed(first.center, firstRectangle), Placed(second.center, secondRectangle))
+          rectangleCollidesWithRectangle.checkCollision(
+            Placed(first.center, firstRectangle, first.rotation),
+            Placed(second.center, secondRectangle, second.rotation)
+          )
         case (circle: Circle, rectangle: Rectangle) =>
-          circleCollidesWithRectangle.checkCollision(Placed(first.center, circle), Placed(second.center, rectangle))
+          circleCollidesWithRectangle.checkCollision(
+            Placed(first.center, circle, first.rotation),
+            Placed(second.center, rectangle, second.rotation)
+          )
         case (rectangle: Rectangle, circle: Circle) =>
-          rectangleCollidesWithCircle.checkCollision(Placed(first.center, rectangle), Placed(second.center, circle))
-      }
+          rectangleCollidesWithCircle.checkCollision(
+            Placed(first.center, rectangle, first.rotation),
+            Placed(second.center, circle, second.rotation)
+          )

@@ -3,9 +3,11 @@ package monad_core.engine.model
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{CannotApplyDamageToNoneHealthEntity, CannotApplyNegativeDamage, Entity, HealthCannotBeNegativeOrZero, LocatableIdCannotBeEmpty, PositionIsValid, Shape2D, Vector2D, WeightCannotBeNegative}
+import org.scalatest.EitherValues.*
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.*
 
 class EntityTest extends AnyFunSuite with Inside with Matchers:
 
@@ -24,7 +26,9 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
         entity.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
+        entity.rotation shouldBe 0
         entity.speed shouldBe None
+        entity.angularSpeed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
         entity.teamId shouldBe None
@@ -213,3 +217,38 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(withoutSpeedEntity):
       case Right(entity) => entity.isFixed shouldBe true
+
+  test("can create and rotate an entity within the valid degree interval"):
+    val rotations = Table(
+      "rotation",
+      0,
+      90,
+      360
+    )
+
+    forAll(rotations): rotation =>
+      val entity = Entity.rectangle("entity", ValidPosition, 2, 4, rotation).value
+
+      entity.rotation shouldBe rotation
+
+  test("cannot create or rotate an entity outside the valid degree interval"):
+    val entity = ValidEntity.value
+    val negativeRotation = -1
+    val excessiveRotation = 361
+
+    val creationResult = Entity.circle("entity", ValidPosition, 2, negativeRotation)
+    val rotationResult = entity.rotateTo(excessiveRotation)
+
+    creationResult shouldBe Left(RotationMustBeAValidDegreeValue(negativeRotation))
+    rotationResult shouldBe Left(RotationMustBeAValidDegreeValue(excessiveRotation))
+
+  test("can add and remove angular speed from an entity"):
+    val entity = ValidEntity.value
+    val angularSpeed = -45
+
+    val rotatingEntity = entity.withAngularSpeed(angularSpeed)
+    val fixedEntity = rotatingEntity.withoutAngularSpeed
+
+    rotatingEntity.angularSpeed shouldBe Some(angularSpeed)
+    rotatingEntity.isFixed shouldBe false
+    fixedEntity.angularSpeed shouldBe None

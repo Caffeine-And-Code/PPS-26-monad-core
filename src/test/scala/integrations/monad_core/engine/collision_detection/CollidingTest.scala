@@ -18,7 +18,7 @@ class CollidingTest extends AnyFunSuite with Inside with Matchers:
 
     val result = firstCircle hasCollisionWith secondCircle
 
-    result shouldBe Some(Collision(Vector2D(1, 0), 5))
+    result shouldBe Some(Collision(Vector2D(1, 0), 5, Vector2D(2.5, 0)))
 
   test("can detect if a circle entity is not colliding with another circle entity"):
     val firstCircle = Entity.circle("en1", Vector2D(0, 0), 5).value
@@ -34,7 +34,7 @@ class CollidingTest extends AnyFunSuite with Inside with Matchers:
 
     val result = firstRectangle hasCollisionWith secondRectangle
 
-    result shouldBe Some(Collision(Vector2D(1, 0), 0))
+    result shouldBe Some(Collision(Vector2D(1, 0), 0, Vector2D(2.5, 2.5)))
 
   test("can detect if a rectangular entity is not colliding with another rectangular entity"):
     val firstRectangle = Entity.rectangle("en1", Vector2D(0, 0), 5, 5).value
@@ -50,7 +50,7 @@ class CollidingTest extends AnyFunSuite with Inside with Matchers:
 
     val result = circle hasCollisionWith rectangle
 
-    result shouldBe Some(Collision(Vector2D(-1, 0), 3))
+    result shouldBe Some(Collision(Vector2D(-1, 0), 3, Vector2D(3, 0)))
 
   test("can detect if a circle entity is not colliding with a rectangle entity"):
     val rectangle = Entity.rectangle("en1", Vector2D(0, 0), 10, 6).value
@@ -66,7 +66,7 @@ class CollidingTest extends AnyFunSuite with Inside with Matchers:
 
     val result = circle hasCollisionWith rectangle
 
-    result shouldBe Some(Collision(Vector2D(0, -1), 2))
+    result shouldBe Some(Collision(Vector2D(0, -1), 2, Vector2D(0, 3)))
 
 
   test("can detect if a rectangle entity is colliding with a circle entity"):
@@ -75,7 +75,7 @@ class CollidingTest extends AnyFunSuite with Inside with Matchers:
 
     val result = rectangle hasCollisionWith circle
 
-    result shouldBe Some(Collision(Vector2D(1, 0), 3))
+    result shouldBe Some(Collision(Vector2D(1, 0), 3, Vector2D(3, 0)))
 
   test("can detect if a rectangle entity is not colliding with a circle entity"):
     val rectangle = Entity.rectangle("en1", Vector2D(0, 0), 10, 6).value
@@ -84,3 +84,15 @@ class CollidingTest extends AnyFunSuite with Inside with Matchers:
     val result = rectangle hasCollisionWith circle
 
     result shouldBe None
+
+  test("can detect collision between rotated locatables and return its collision point"):
+    val rectangle = Entity.rectangle("en1", Vector2D(5, 5), 2, 6, 90).value
+    val circle = Entity.circle("en2", Vector2D(5, 9), 2).value
+
+    val collision = circle.hasCollisionWith(rectangle).get
+
+    collision.normalVector.x shouldBe 0.0 +- 0.1
+    collision.normalVector.y shouldBe -1.0 +- 0.1
+    collision.penetrationDepth shouldBe 1.0 +- 0.1
+    collision.collisionPoint.x shouldBe 5.0 +- 0.1
+    collision.collisionPoint.y shouldBe 8.0 +- 0.1

@@ -19,22 +19,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       (
         Placed(Vector2D(0, 0), Shape2D.circle(2).value),
         Placed(Vector2D(3, 0), Shape2D.circle(2).value),
-        Collision(Vector2D(1, 0), 1)
+        Collision(Vector2D(1, 0), 1, Vector2D(1.5, 0))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.circle(2).value),
         Placed(Vector2D(0, 3), Shape2D.circle(2).value),
-        Collision(Vector2D(0, 1), 1)
+        Collision(Vector2D(0, 1), 1, Vector2D(0, 1.5))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.circle(2).value),
         Placed(Vector2D(-3, 0), Shape2D.circle(2).value),
-        Collision(Vector2D(-1, 0), 1)
+        Collision(Vector2D(-1, 0), 1, Vector2D(-1.5, 0))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.circle(2).value),
         Placed(Vector2D(0, -3), Shape2D.circle(2).value),
-        Collision(Vector2D(0, -1), 1)
+        Collision(Vector2D(0, -1), 1, Vector2D(0, -1.5))
       )
     )
 
@@ -62,22 +62,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(2.5, 0), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(1, 0), 2.5)
+        Collision(Vector2D(1, 0), 2.5, Vector2D(1.25, 2.5))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(0, 2.5), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(0, 1), 2.5)
+        Collision(Vector2D(0, 1), 2.5, Vector2D(2.5, 1.25))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(-2.5, 0), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(-1, 0), 2.5)
+        Collision(Vector2D(-1, 0), 2.5, Vector2D(-1.25, 2.5))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(0, -2.5), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(0, -1), 2.5)
+        Collision(Vector2D(0, -1), 2.5, Vector2D(2.5, -1.25))
       )
     )
 
@@ -105,22 +105,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       (
         Placed(Vector2D(6, 0), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(-1, 0), 1)
+        Collision(Vector2D(-1, 0), 1, Vector2D(3, 0))
       ),
       (
         Placed(Vector2D(0, 6), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, -1), 1)
+        Collision(Vector2D(0, -1), 1, Vector2D(0, 3))
       ),
       (
         Placed(Vector2D(-6, 0), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(1, 0), 1)
+        Collision(Vector2D(1, 0), 1, Vector2D(-3, 0))
       ),
       (
         Placed(Vector2D(0, -6), Shape2D.circle(4).value),
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, 1), 1)
+        Collision(Vector2D(0, 1), 1, Vector2D(0, -3))
       )
     )
 
@@ -138,6 +138,18 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     result shouldBe None
 
+  test("circle collision with a rotated rectangle returns the world collision point"):
+    val circle = Placed(Vector2D(0, 4), Shape2D.circle(2).value)
+    val rectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(2, 6).value, 90)
+
+    val collision = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle).get
+
+    collision.normalVector.x shouldBe 0.0 +- 0.1
+    collision.normalVector.y shouldBe -1.0 +- 0.1
+    collision.penetrationDepth shouldBe 1.0 +- 0.1
+    collision.collisionPoint.x shouldBe 0.0 +- 0.1
+    collision.collisionPoint.y shouldBe 3.0 +- 0.1
+
   test("circle collides with another rectangle too if it is fully inside it"):
 
     val cases = Table(
@@ -149,22 +161,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       (
         Placed(Vector2D(7, 0), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(-1, 0), 2)
+        Collision(Vector2D(-1, 0), 2, Vector2D(9, 0))
       ),
       (
         Placed(Vector2D(6, 1), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, -1), 2)
+        Collision(Vector2D(0, -1), 2, Vector2D(6, 3))
       ),
       (
         Placed(Vector2D(5, 0), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(1, 0), 2)
+        Collision(Vector2D(1, 0), 2, Vector2D(3, 0))
       ),
       (
         Placed(Vector2D(6, -1), Shape2D.circle(2).value),
         Placed(Vector2D(6, 0), Shape2D.rectangle(6, 6).value),
-        Collision(Vector2D(0, 1), 2)
+        Collision(Vector2D(0, 1), 2, Vector2D(6, -3))
       )
     )
 
@@ -184,22 +196,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
         Placed(Vector2D(6, 0), Shape2D.circle(4).value),
-        Collision(Vector2D(1, 0), 1)
+        Collision(Vector2D(1, 0), 1, Vector2D(3, 0))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
         Placed(Vector2D(0, 6), Shape2D.circle(4).value),
-        Collision(Vector2D(0, 1), 1)
+        Collision(Vector2D(0, 1), 1, Vector2D(0, 3))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
         Placed(Vector2D(-6, 0), Shape2D.circle(4).value),
-        Collision(Vector2D(-1, 0), 1)
+        Collision(Vector2D(-1, 0), 1, Vector2D(-3, 0))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value),
         Placed(Vector2D(0, -6), Shape2D.circle(4).value),
-        Collision(Vector2D(0, -1), 1)
+        Collision(Vector2D(0, -1), 1, Vector2D(0, -3))
       )
     )
 
