@@ -1,3 +1,78 @@
-# Requirement specification
+# Requisiti
+Il seguente capitolo descrive i requisiti che il software finale dovrà avere. In questo caso il software è composto da due macro aree, la relazizzazione di un engine che gestisce entità di diverse forme e la loro interazione con l'ambiente cirostante, riutilizzabile come modulo a se stante e la realizzazione dell'applicazione GUI la quale renderizza l'engine in un ambiente grafico e consente di interagirci tramite un agente AI basato un Large Language Model.
 
-Requirement specification
+## Requisiti di Business
+Dovrà essere disponibile un'applicazione con GUI ed una libreria utilizzabile da ulteriori sviluppatori software per i loro progetti, i requisiti si divideranno quindi in requisiti per il la librerie che implementa l'engine grafico 2D e requisiti per l'applicazione UI con cui si interagisce graficamente con l'engine. \
+Tramite l'engine 2D deve essere possibile
+- gestire entità grafiche con forme di cerchi e quadrati con un loro peso, una velocità, una posizione, una vita ed un team di appartenenza
+- gestire superfici grafiche le quali possono avere forme di cerchi o quadrato, con una posizione e possono applicare attrito o forza ad ogni entità che gli passa sopra
+- gestire il fatto che un entità può essere attratto dall'entità di un team diverso più vicina a lui
+- far avanzare la simulazione tick per tick applicando una simulazione della e la reazione alle collisioni in base al tempo passato da un tick all'altro
+- possibilità di gestire una scena composta da entità, superfici e teams
+
+Tramite l'applicativo GUI deve essere possibile
+- visualizzare graficamento l'andamento della scena dell'engine 2D tramite interfaccia grafica
+- interagire con gli elementi presenti nella scena dell'engine aggiungendo, modificato e rimuovendo entità superfici e teams
+- iniziare la simulazione, metterla in pausa o ripristinare la situazione iniziale
+- interagire con un agente AI che è in grado di eseguire tutte le operazioni eseguibili dalla GUI tramite richieste sotto forma di messaggio
+
+## Modelli di dominio
+
+![Diagramma dei casi d'uso](assets/monad_core_use_case_diagram.drawio.png)
+
+Glossario:
+- entità: Sono gli oggetti rappresentabili dall'engine, su di essi viengono applicate le regole del motore della fisica che ne gestisce gli spostamenti in funzione del tempo e la rezione alle collisioni con altre entità
+- superfici: Sono delle zone nella scena in cui, se un entità ci passa sopra è soggetta alla forza applicata dalla superficie che può causare attrito o accellerazione in una direzione prestabilita
+- team: ogni entità può appartenere a un team, tramite delle regole del motore della fisica applicabili è possibile fare in modo che un entità trovi in automatico la strada più breve per arrivare all'entità più vicina di un team avversario tramite un algoritmo di path finding.
+- scena: raccoglitore di entità e superfici
+- simulazione: una volta che è stata popolata la scena è possibile avviare la simulazione in cui le posizione e i dati delle entità verranno aggiornate in base alle regole della fisica applicate
+
+## Requisiti funzionali
+
+### Requisiti sviluppatore che utilizza l'engine 2D
+1. creare entità
+   1. specificare la forma tra cerchio e rettangolo, e in base alla forma le dimensioni di essa (raggio per il cerchio, altezza e lunghezza per il rettangolo), posizione (X e Y) e l'id
+   2. specificare opzionalmente il peso
+   3. specificare opzionalmente la velocità (un vettore con X e Y)
+   4. specificare opzionalmente la vita
+   5. specificare opzionalmente il team di appartenenza
+   6. aggiungergli alla scena
+2. creare superfici
+   1. specificare la forma tra cerchio e rettangolo, e in base alla forma le dimensioni di essa (raggio per il cerchio, altezza e lunghezza per il rettangolo), posizione (X e Y) e l'id
+   2. specificare opzionalmente l'attrito
+   3. specificare opzionalmente la forza che applica alle entità su di esso
+3. creare team
+   1. specificare i nemici dei team
+4. poter aggiungere entità superfici e team alla scena
+5. poter configurare il metodo di rilevamento delle collisioni
+   1. offrire un'implementazione di default
+6. poter configurare il metodo di rilevamento di un entità su una superficie
+   1. offrire un'implementazione di default
+7. poter configurare quali regole di fisica applicare sulla scena a ogni tick
+   1. offrire le regole basiche della fisica di default
+      1. risposta alle collisioni
+      2. cinetica di base
+      3. attrazione verso i nemici
+      4. rimbalzo sui muri della scena
+      5. applicazione di forze e attrito delle superfici sulle entità
+8. poter gestire il game engine
+   1. poter funzione che viene eseguita a ogni re applicazione della fisica, la funzione prenderà in input la scena dopo aver applicato la fisica
+   2. poter settare una scena iniziale
+
+### Requisiti utente della GUI
+1. poter visualizzare la scena in una schermata
+2. poter interagire con il game engine e la sua scena tramite GUI
+   1. poter creare entità specificandone ogni parametro
+   2. poter modificare ogni parametro di ogni entità
+   3. poter eliminare un'entità dalla scena
+   4. poter creare superfici specificandone ogni parametro
+   5. poter modificare ogni parametro di ogni superficie
+   6. poter eliminare una superficie dalla scena
+   7. poter creare teams specificandone ogni parametro
+   8. poter modificare ogni parametro di ogni team
+   9. poter eliminare un team
+   10. poter avviare la simulazione
+   11. poter mettere in pausa la simulazione
+   12. poter resettare la simulazione
+3. poter interagire con un assistente Ai
+   1. con l'assistente AI è possibile fare tutto ciò che è possibile fare tramite GUI mandandogli messaggi 
