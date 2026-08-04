@@ -249,7 +249,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       GameLoop(tickTime = invalidTickTime)
     }
 
-    exception shouldNot be(null)
+    exception.getMessage shouldBe "requirement failed: tick time cannot be negative or zero"
 
   test("a game loop should throw IllegalArgumentException when last time value is negative"):
     val invalidLastTime = -1L
@@ -258,7 +258,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       GameLoop(lastTime = invalidLastTime)
     }
 
-    exception shouldNot be(null)
+    exception.getMessage shouldBe "requirement failed: last time cannot be negative"
 
   test("a game loop should throw IllegalArgumentException when accumulator is negative"):
     val invalidAccumulator = -1L
@@ -267,7 +267,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       GameLoop(accumulator = invalidAccumulator)
     }
 
-    exception shouldNot be(null)
+    exception.getMessage shouldBe "requirement failed: accumulator cannot be negative"
 
   test("a game loop should throw IllegalArgumentException when max frame time is non-positive"):
     val invalidTickTime = 0L
@@ -276,7 +276,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       GameLoop(maxFrameTime = invalidTickTime)
     }
 
-    exception shouldNot be(null)
+    exception.getMessage shouldBe "requirement failed: max frame time cannot be negative or zero"
 
   test("GameLoop should throw IllegalArgumentException when max frame time is less than tick time"):
     val invalidMaxFrameTime = DefaultTickTime - 1L
@@ -285,4 +285,27 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       GameLoop(tickTime = DefaultTickTime, maxFrameTime = invalidMaxFrameTime)
     }
 
-    exception shouldNot be(null)
+    exception.getMessage shouldBe "requirement failed: max frame time cannot be less than tick time"
+
+  test("GameLoop should allow max frame time to equal tick time"):
+    noException should be thrownBy GameLoop(
+      tickTime = DefaultTickTime,
+      maxFrameTime = DefaultTickTime
+    )
+
+  test("if a running game loop is in edit mode, it should not update the physics"):
+
+    given painter: Painter = mock[Painter]
+
+    val currentTime = DefaultTickTime
+    val editLoop = GameLoop(mode = EditMode, isRunning = true)
+
+    MockPhysics.step.expects(*, *).never()
+    (MockRender.render(_: State, _: Double)(using _: Painter))
+      .expects(MockState, 1.0, painter)
+      .once()
+
+    val (currentScene, currentLoop) = editLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+
+    currentScene shouldBe MockState
+    currentLoop.lastTime shouldBe currentTime

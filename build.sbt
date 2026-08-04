@@ -106,3 +106,11 @@ lazy val root = rootProject
 ThisBuild / scalacOptions ++= Seq(
   "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
 )
+
+strykerMutate := Seq(
+  "src/main/scala/monad_core/engine/**/*.scala"
+)
+
+strykerTestFilter := Seq(
+  "monad_core.engine.*"
+)
