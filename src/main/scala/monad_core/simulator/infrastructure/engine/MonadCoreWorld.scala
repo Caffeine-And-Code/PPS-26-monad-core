@@ -1,17 +1,14 @@
 package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.core.Scene
-import monad_core.engine.core.traits.State
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
-import monad_core.simulator.application.engine
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface}
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.engine.translators.EntityTranslator.{toEngineModel, toSimulationEntity}
-import monad_core.simulator.infrastructure.engine.translators.SurfaceTranslator.{toEngineModel, toSimulationSurface}
 import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.infrastructure.engine.translators.BaseTranslator.{toSimulationEitherEntity, toSimulationEitherSurface}
+import monad_core.simulator.infrastructure.engine.translators.EntityTranslator.{toEngineModel, toSimulationEntity}
+import monad_core.simulator.infrastructure.engine.translators.SurfaceTranslator.{toEngineModel, toSimulationSurface}
 
 case class MonadCoreWorld(
                            initialScene: Scene = Scene()

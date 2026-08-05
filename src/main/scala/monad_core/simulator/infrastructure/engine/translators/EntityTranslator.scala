@@ -1,10 +1,9 @@
 package monad_core.simulator.infrastructure.engine.translators
 
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{LocatableId, Vector2D, Entity as EngineEntity, Shape2D as EngineShape}
+import monad_core.engine.model.{LocatableId, Vector2D, Entity as EngineEntity}
+import monad_core.simulator.domain.engine.MonadCoreEntity
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape}
-import monad_core.simulator.errors.BaseError
 
 private[infrastructure] object EntityTranslator:
   extension (entity: EngineEntity)
