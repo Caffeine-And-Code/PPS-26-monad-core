@@ -1,14 +1,13 @@
 package monad_core.simulator.presentation.panels
 
 import monad_core.engine.core.Scene
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
+import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.simulator.domain.engine.MonadCoreShape.SimulationCircle
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
-import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adapt
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, GameEnginePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.beans.property.BooleanProperty
@@ -63,7 +62,13 @@ final class GameEnginePanel(
   }
 
   private[panels] def buildInitialWorld(world: World): Either[BaseError, Unit] =
-    Entity.circle("starter", Vector2D(15, 15), 15).adapt().flatMap(
-      entity => world.createEntity(SaveEntityCommand(entity))
+    world.createEntity(
+      SaveEntityCommand(
+        MonadCoreEntity(
+          id = "starter",
+          position = (15, 15),
+          shape = SimulationCircle(15)
+        )
+      )
     )
 }

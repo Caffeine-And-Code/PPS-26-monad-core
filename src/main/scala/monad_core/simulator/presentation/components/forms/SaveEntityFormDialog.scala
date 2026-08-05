@@ -2,21 +2,22 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Team}
+import monad_core.simulator.domain.engine.MonadCoreEntity
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
-import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, LocatableFormShapes}
+import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, EntityFormParser, LocatableFormShapes}
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
 final case class SaveEntityFormDialogProps(
                                             title: String,
-                                            onSubmit: Entity => Unit,
+                                            onSubmit: MonadCoreEntity => Unit,
                                             onError: BaseError => Unit,
                                             teams: Seq[Team],
                                             anchorNode: Option[Node] = None,
-                                            entityToUpdate: Option[Entity] = None
+                                            entityToUpdate: Option[MonadCoreEntity] = None
                                           )
 
 private object EntityFormDefaults:
@@ -52,7 +53,7 @@ object SaveEntityFormDialog:
         onSubmit = values =>
           val result = props.entityToUpdate match
             case Some(entity) =>
-              EntityFormParser.buildEntity(values, () => entity.id.value)
+              EntityFormParser.buildEntity(values, () => entity.id)
             case None =>
               EntityFormParser.buildEntity(values)
 
@@ -61,24 +62,24 @@ object SaveEntityFormDialog:
     )
   }
 
-  private[forms] def buildDefaultValues(entityToUpdate: Option[Entity]): SaveEntityFormDefaultValues =
+  private[forms] def buildDefaultValues(entityToUpdate: Option[MonadCoreEntity]): SaveEntityFormDefaultValues =
     entityToUpdate match
       case None => SaveEntityFormDefaultValues()
       case Some(entity) =>
-        val (radius, height, length) = entity.shape.getDefaultValuesByShape
+        val (radius, width, height) = entity.shape.getDefaultValuesByShape
 
         SaveEntityFormDefaultValues(
-          x = Some(entity.position.x.toString),
-          y = Some(entity.position.y.toString),
+          x = Some(entity.position._1.toString),
+          y = Some(entity.position._2.toString),
           shape = Some(entity.shape.getEnumValue.getStringValue),
           radius = radius,
           height = height,
-          length = length,
-          teamId = entity.teamId.map(_.value),
+          length = width,
+          teamId = entity.teamId,
           weight = entity.weight.map(_.toString),
           health = entity.health.map(_.toString),
-          speedX = entity.speed.map(_.x.toString),
-          speedY = entity.speed.map(_.y.toString)
+          speedX = entity.speed.map(_._1.toString),
+          speedY = entity.speed.map(_._2.toString)
         )
 
   private[forms] def buildFields(teams: Seq[Team], defaultValues: SaveEntityFormDefaultValues): Seq[FormFieldSpec] =
@@ -91,11 +92,11 @@ object SaveEntityFormDialog:
         options = Shapes,
         dependentFields = Map(
           LocatableFormShapes.CircleLabel -> Seq(
-            TextFieldSpec(id = EntityFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
+            TextFieldSpec(id = BaseFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
           ),
           LocatableFormShapes.RectangleLabel -> Seq(
-            TextFieldSpec(id = EntityFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
-            TextFieldSpec(id = EntityFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
+            TextFieldSpec(id = BaseFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
+            TextFieldSpec(id = BaseFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
           )
         ),
         defaultValue = defaultValues.shape

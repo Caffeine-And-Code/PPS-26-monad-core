@@ -620,7 +620,7 @@
             {
               "type": "",
               "styleClass": ["cell", "indexed-cell", "list-cell"],
-              "text": "RedTeam",
+              "text": "testTeamId",
               "children": [
                 {
                   "type": "LabeledText",

@@ -1,8 +1,10 @@
 package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.model.*
+import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
+import monad_core.simulator.domain.engine.MonadCoreSurface
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
-import monad_core.simulator.presentation.components.forms.parsers.{LocatableFormShapes, SurfaceFormParser}
+import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, LocatableFormShapes, SurfaceFormParser}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -13,25 +15,25 @@ import org.scalatest.prop.Tables.Table
 
 class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val SurfaceId = "id"
-  private val SurfacePosition = Vector2D(1, 2)
-  private val SurfaceRadius = 5.0
-  private val SurfaceHeight = 6.0
-  private val SurfaceLength = 7.0
-  private val SurfaceAppliedForce = Vector2D(3, 4)
-  private val SurfaceFrictionIndex = 0.8
+  private val Id: String = "id"
+  private val Position: (Double, Double) = (1, 2)
+  private val Circle: SimulationCircle = SimulationCircle(5)
+  private val Rectangle: SimulationRectangle = SimulationRectangle(7.0, 6.0)
+  private val AppliedForce: (Double, Double) = (3, 4)
+  private val FrictionIndex: Double = 0.8
 
-  private def circleSurface: Surface = Surface.circle(SurfaceId, SurfacePosition, SurfaceRadius).value
-  private def rectangleSurface: Surface = Surface.rectangle(SurfaceId, SurfacePosition, SurfaceHeight, SurfaceLength).value
+  private def circleSurface: MonadCoreSurface = MonadCoreSurface(Id, Position, Circle)
 
-  private def completeSurface(surface: Surface): Surface =
-    val either = for
-      withFriction <- surface.withFrictionIndex(SurfaceFrictionIndex)
-      withForce <- withFriction.withAppliedForce(SurfaceAppliedForce)
-    yield withForce
-    either.value
+  private def rectangleSurface: MonadCoreSurface = MonadCoreSurface(Id, Position, Rectangle)
 
-  // ---- buildDefaultValues ----
+  private def completeSurface(surface: MonadCoreSurface): MonadCoreSurface =
+    MonadCoreSurface(
+      surface.id,
+      surface.position,
+      surface.shape,
+      appliedForce = Some(AppliedForce),
+      frictionIndex = Some(FrictionIndex)
+    )
 
   test("buildDefaultValues should return the default creation values when no surface is provided"):
     val result = SaveSurfaceFormDialog.buildDefaultValues(None)
@@ -43,10 +45,10 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     val result = SaveSurfaceFormDialog.buildDefaultValues(Some(surface))
 
-    result.x should be(Some(SurfacePosition.x.toString))
-    result.y should be(Some(SurfacePosition.y.toString))
+    result.x should be(Some(Position._1.toString))
+    result.y should be(Some(Position._2.toString))
     result.shape should be(Some(LocatableFormShapes.CircleLabel))
-    result.radius should be(Some(SurfaceRadius.toString))
+    result.radius should be(Some(Circle.radius.toString))
     result.height should be(None)
     result.length should be(None)
 
@@ -55,12 +57,12 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     val result = SaveSurfaceFormDialog.buildDefaultValues(Some(surface))
 
-    result.x should be(Some(SurfacePosition.x.toString))
-    result.y should be(Some(SurfacePosition.y.toString))
+    result.x should be(Some(Position._1.toString))
+    result.y should be(Some(Position._2.toString))
     result.shape should be(Some(LocatableFormShapes.RectangleLabel))
     result.radius should be(None)
-    result.height should be(Some(SurfaceHeight.toString))
-    result.length should be(Some(SurfaceLength.toString))
+    result.height should be(Some(Rectangle.height.toString))
+    result.length should be(Some(Rectangle.width.toString))
 
   test("buildDefaultValues should leave optional fields empty when surface doesn't have them set"):
     val surface = circleSurface
@@ -83,11 +85,10 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
       val result = SaveSurfaceFormDialog.buildDefaultValues(Some(surface))
 
-      result.frictionIndex should be(Some(SurfaceFrictionIndex.toString))
-      result.appliedForceX should be(Some(SurfaceAppliedForce.x.toString))
-      result.appliedForceY should be(Some(SurfaceAppliedForce.y.toString))
+      result.frictionIndex should be(Some(FrictionIndex.toString))
+      result.appliedForceX should be(Some(AppliedForce._1.toString))
+      result.appliedForceY should be(Some(AppliedForce._2.toString))
 
-  // ---- buildFields ----
 
   test("buildFields should build all fields with correct ids"):
     val defaultValues = SaveSurfaceFormDefaultValues()
@@ -141,10 +142,10 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         select.options should be(SaveSurfaceFormDialog.Shapes)
 
         val circleFields = select.dependentFields(LocatableFormShapes.CircleLabel)
-        circleFields.map(_.id) should be(Seq(SurfaceFormParser.RadiusKey))
+        circleFields.map(_.id) should be(Seq(BaseFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
-        rectangleFields.map(_.id) should be(Seq(SurfaceFormParser.HeightKey, SurfaceFormParser.LengthKey))
+        rectangleFields.map(_.id) should be(Seq(BaseFormParser.HeightKey, BaseFormParser.LengthKey))
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
     val defaultValues = SaveSurfaceFormDefaultValues(
@@ -163,10 +164,10 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(select.dependentFields(LocatableFormShapes.CircleLabel).head):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("5.0"))
 
-        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == SurfaceFormParser.HeightKey).value):
+        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == BaseFormParser.HeightKey).value):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
 
-        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == SurfaceFormParser.LengthKey).value):
+        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == BaseFormParser.LengthKey).value):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("7.0"))
 
   test("buildFields should default the shape select to Circle when creating a new surface"):

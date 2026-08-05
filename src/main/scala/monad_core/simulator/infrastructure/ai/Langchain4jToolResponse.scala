@@ -2,8 +2,10 @@ package monad_core.simulator.infrastructure.ai
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Shape2D, Surface, Team, Vector2D}
+import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface}
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adapt
+import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
 
 object Langchain4jToolResponse:
   def save(
@@ -40,21 +42,23 @@ object Langchain4jToolResponse:
 
       s"Result: ${values.size} $elementName found.\n$renderedValues"
 
-  def renderEntity(entity: Entity): String =
+  def renderEntity(entity: MonadCoreEntity): String =
     List(
-      s"id: ${entity.id.value}",
+      s"id: ${entity.id}",
       s"position: ${renderVector(entity.position)}",
       s"shape: ${renderShape(entity.shape)}",
       s"speed: ${entity.speed.fold("none")(renderVector)}",
       s"weight: ${entity.weight.fold("none")(_.toString)}",
-      s"health: ${entity.health.fold("none")(_.value.toString)}",
-      s"team: ${entity.teamId.fold("none")(_.value)}"
+      s"health: ${entity.health.fold("none")(_.toString)}",
+      // the following to string is required to get the actual value of the teamId.
+      // if removed the class signature is inserted in the string.
+      s"team: ${entity.teamId.fold("none")(_.toString)}"
     ).mkString("\n")
 
-  def renderSurface(surface: Surface): String =
+  def renderSurface(surface: MonadCoreSurface): String =
     List(
-      s"id: ${surface.id.value}",
-      s"position: ${renderVector(surface.position)}",
+      s"id: ${surface.id}",
+      s"position: ${renderVector((surface.position._1,surface.position._2))}",
       s"shape: ${renderShape(surface.shape)}",
       s"frictionIndex: ${surface.frictionIndex.fold("none")(_.toString)}",
       s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}"
@@ -70,39 +74,12 @@ object Langchain4jToolResponse:
       s"enemies: $enemies"
     ).mkString("\n")
 
-  def renderShape(shape: Shape2D): String =
+  private def renderShape(shape: MonadCoreShape): String =
     shape match
-      case Shape2D.Circle(radius) =>
+      case SimulationCircle(radius) =>
         s"circle, radius: $radius"
-      case Shape2D.Rectangle(height, length) =>
-        s"rectangle, height: $height, length: $length"
+      case SimulationRectangle(width, height) =>
+        s"rectangle, height: $height, length: $width"
 
-  def renderVector(vector: Vector2D): String =
-    s"(${vector.x}, ${vector.y})"
-
-  def withOptionalEntityFields(
-                                entity: Entity,
-                                teamId: String,
-                                weight: Integer,
-                                speedX: java.lang.Double,
-                                speedY: java.lang.Double
-                              ): Either[BaseError, Entity] =
-    for
-      entityWithTeam <- Option(teamId)
-        .fold(Right(entity): Either[EngineError, Entity])(entity.withTeamId).adapt()
-      entityWithWeight <- Option(weight)
-        .fold(Right(entityWithTeam): Either[BaseError, Entity])(
-          value => entityWithTeam.withWeight(value.intValue()).adapt()
-        )
-      completeEntity <- (
-        (Option(speedX), Option(speedY)) match
-          case (None, None) =>
-            Right(entityWithWeight)
-          case (Some(horizontal), Some(vertical)) =>
-            entityWithWeight.withSpeed(
-              Vector2D(horizontal.doubleValue(), vertical.doubleValue())
-            ).adapt()
-          case _ =>
-            Left(IncompleteEntitySpeed())
-        ): Either[BaseError, Entity]
-    yield completeEntity
+  private def renderVector(vector: (Double, Double)): String =
+    s"(${vector._1}, ${vector._2})"

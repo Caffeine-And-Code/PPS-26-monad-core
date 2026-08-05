@@ -2,20 +2,21 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Surface
+import monad_core.simulator.domain.engine.MonadCoreSurface
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
-import monad_core.simulator.presentation.components.forms.parsers.{LocatableFormShapes, SurfaceFormParser}
+import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, LocatableFormShapes, SurfaceFormParser}
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
 final case class SaveSurfaceFormDialogProps(
                                              title: String,
-                                             onSubmit: Surface => Unit,
+                                             onSubmit: MonadCoreSurface => Unit,
                                              onError: BaseError => Unit,
                                              anchorNode: Option[Node] = None,
-                                             surfaceToUpdate: Option[Surface] = None
+                                             surfaceToUpdate: Option[MonadCoreSurface] = None
                                            )
 
 private object SurfaceFormDefaults:
@@ -49,7 +50,7 @@ object SaveSurfaceFormDialog:
         onSubmit = values =>
           val result = props.surfaceToUpdate match
             case Some(surface) =>
-              SurfaceFormParser.buildSurface(values, () => surface.id.value)
+              SurfaceFormParser.buildSurface(values, () => surface.id)
             case None =>
               SurfaceFormParser.buildSurface(values)
 
@@ -58,21 +59,21 @@ object SaveSurfaceFormDialog:
     )
   }
 
-  private[forms] def buildDefaultValues(surfaceToUpdate: Option[Surface]): SaveSurfaceFormDefaultValues =
+  private[forms] def buildDefaultValues(surfaceToUpdate: Option[MonadCoreSurface]): SaveSurfaceFormDefaultValues =
     surfaceToUpdate match
       case None => SaveSurfaceFormDefaultValues()
       case Some(surface) =>
-        val (radius, height, length) = surface.shape.getDefaultValuesByShape
+        val (radius, width, height) = surface.shape.getDefaultValuesByShape
 
         SaveSurfaceFormDefaultValues(
-          x = Some(surface.position.x.toString),
-          y = Some(surface.position.y.toString),
+          x = Some(surface.position._1.toString),
+          y = Some(surface.position._2.toString),
           shape = Some(surface.shape.getEnumValue.getStringValue),
           radius = radius,
           height = height,
-          length = length,
-          appliedForceX = surface.appliedForce.flatMap(vector => Some(vector.x.toString)),
-          appliedForceY = surface.appliedForce.flatMap(vector => Some(vector.y.toString)),
+          length = width,
+          appliedForceX = surface.appliedForce.flatMap(vector => Some(vector._1.toString)),
+          appliedForceY = surface.appliedForce.flatMap(vector => Some(vector._2.toString)),
           frictionIndex = surface.frictionIndex.map(_.toString),
         )
 
@@ -86,11 +87,11 @@ object SaveSurfaceFormDialog:
         options = Shapes,
         dependentFields = Map(
           LocatableFormShapes.CircleLabel -> Seq(
-            TextFieldSpec(id = SurfaceFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
+            TextFieldSpec(id = BaseFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
           ),
           LocatableFormShapes.RectangleLabel -> Seq(
-            TextFieldSpec(id = SurfaceFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
-            TextFieldSpec(id = SurfaceFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
+            TextFieldSpec(id = BaseFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
+            TextFieldSpec(id = BaseFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
           )
         ),
         defaultValue = defaultValues.shape

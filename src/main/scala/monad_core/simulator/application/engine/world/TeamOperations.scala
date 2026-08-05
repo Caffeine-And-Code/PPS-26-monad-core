@@ -1,6 +1,5 @@
 package monad_core.simulator.application.engine.world
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
 import monad_core.simulator.errors.BaseError
 

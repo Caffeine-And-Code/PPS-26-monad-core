@@ -7,6 +7,8 @@ import monad_core.engine.model.{**, Entity, Locatable, Surface}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
+import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
 import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps, SaveSurfaceFormDialog, SaveSurfaceFormDialogProps}
@@ -18,30 +20,40 @@ import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
 import scalafx.scene.control.ContextMenu
 import scalafx.scene.layout.{Priority, VBox}
 
-private[panels] object MouseHitDetector:
-  extension (clickable: Locatable)
-    def checkMouseHit(mouseClickX: Double, mouseClickY: Double): Boolean =
-      val elementPositionX = clickable.position.x
-      val elementPositionY = clickable.position.y
+type Clickable = MonadCoreSurface | MonadCoreEntity
 
-      clickable.shape match
-        case Circle(radius) =>
+private[panels] object MouseHitDetector:
+  extension (clickable: Clickable)
+    private def checkGenericHit(position: (Double, Double), clickPosition: (Double, Double), shape: MonadCoreShape): Boolean =
+      val elementPositionX = position._1
+      val elementPositionY = position._2
+      val mouseClickX = clickPosition._1
+      val mouseClickY = clickPosition._2
+
+      shape match
+        case SimulationCircle(radius) =>
           val distanceX = mouseClickX - elementPositionX
           val distanceY = mouseClickY - elementPositionY
           (distanceX ** 2 + distanceY ** 2) <= (radius ** 2)
 
-        case Rectangle(width, height) =>
+        case SimulationRectangle(width, height) =>
           val halfW = width / 2
           val halfH = height / 2
           mouseClickX >= (elementPositionX - halfW) && mouseClickX <= (elementPositionX + halfW) &&
             mouseClickY >= (elementPositionY - halfH) && mouseClickY <= (elementPositionY + halfH)
 
+    def checkMouseHit(mouseClick: (Double, Double)): Boolean =
+      clickable match
+        case surface: MonadCoreSurface => checkGenericHit(surface.position, mouseClick, surface.shape)
+        case entity: MonadCoreEntity => checkGenericHit(entity.position, mouseClick, entity.shape)
+
+
 private[panels] object EntityContextMenu:
 
   def attachTo(
                 canvas: javafx.scene.canvas.Canvas,
-                findEntityAt: (Double, Double) => Option[Locatable],
-                buildMenuItems: Locatable => Seq[MenuButtonItem]
+                findEntityAt: (Double, Double) => Option[Clickable],
+                buildMenuItems: Clickable => Seq[MenuButtonItem]
               ): Unit =
 
     val contextMenu = new ContextMenu:
@@ -81,12 +93,12 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     EntityContextMenu.attachTo(
       canvas = canvas,
       findEntityAt = (x, y) =>
-        val clickableElements: List[Locatable] =
+        val clickableElements: List[Clickable] =
           List.from(world.getAllEntities).appendedAll(world.getAllSurfaces)
 
-        clickableElements.find(_.checkMouseHit(x, y)),
+        clickableElements.find(_.checkMouseHit((x, y))),
       buildMenuItems = {
-        case entity: Entity => Seq(
+        case entity: MonadCoreEntity => Seq(
           MenuButtonItem(s"Edit ${entity.id} Entity", () => SaveEntityFormDialog.show(
             props = SaveEntityFormDialogProps(
               title = "Entity Settings",
@@ -99,7 +111,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
           )),
           MenuButtonItem(s"Remove ${entity.id} Entity", () => world.removeEntity(entity.id))
         )
-        case surface: Surface => Seq(
+        case surface: MonadCoreSurface => Seq(
           MenuButtonItem(s"Edit ${surface.id} Surface", () => SaveSurfaceFormDialog.show(
             props = SaveSurfaceFormDialogProps(
               title = "Surface Settings",

@@ -24,9 +24,10 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
   val SpacingRegionIndex = 1
   val ModeButtonIndex = 2
   val StopButtonIndex = 3
-  
-  def freshSceneCanBeUpdated : BooleanProperty = BooleanProperty(false)
-  def freshSceneCannotBeUpdated : BooleanProperty = BooleanProperty(true) 
+
+  def freshSceneCanBeUpdated: BooleanProperty = BooleanProperty(false)
+
+  def freshSceneCannotBeUpdated: BooleanProperty = BooleanProperty(true)
 
   test("A GameEngineModePanel can be created"):
     val imageConfigRecord = MockImageConfig()
@@ -73,10 +74,9 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
 
     val builderResult = getOrFail(GameEngineModePanel.build(imageConfigRecord, onModeChange, onStopClick, freshSceneCanBeUpdated))
 
-    inSequence {
+    inSequence:
       onModeChange.expects(true).once()
       onModeChange.expects(false).once()
-    }
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -136,10 +136,10 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
     val onStopClick = mockFunction[Unit]
     val builderResult = getOrFail(GameEngineModePanel.build(imageConfigRecord, onModeChange, onStopClick, freshSceneCanBeUpdated))
 
-    inSequence {
+    inSequence:
       onModeChange.expects(true)
       onModeChange.expects(false)
-    }
+
     onStopClick.expects().never()
 
     inside(builderResult.children.head):
@@ -157,11 +157,11 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
     val onStopClick = mockFunction[Unit]
     val builderResult = getOrFail(GameEngineModePanel.build(imageConfigRecord, onModeChange, onStopClick, freshSceneCanBeUpdated))
 
-    inSequence {
+    inSequence:
       onModeChange.expects(true)
       onModeChange.expects(false)
       onModeChange.expects(true)
-    }
+
     onStopClick.expects()
 
     inside(builderResult.children.head):
@@ -180,7 +180,7 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
       (freshSceneCanBeUpdated, false)
     )
 
-    forAll(cases) : (isEngineRunning, expectedIsDisableValue) =>
+    forAll(cases): (isEngineRunning, expectedIsDisableValue) =>
       val imageConfigRecord: ImageConfigRecord = MockImageConfig()
       val onModeChange = mockFunction[Boolean, Unit]
       val onStopClick = mockFunction[Unit]

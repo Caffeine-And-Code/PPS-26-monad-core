@@ -1,13 +1,14 @@
 package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.agent.tool.{P, Tool}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
+import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.Langchain4jToolResponse.*
-import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adapt
+import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
 
 case class IncompleteEntitySpeed() extends BaseError("Both speedX and speedY must be provided together")
 
@@ -22,97 +23,141 @@ case class Langchain4jTools()(
 
   @Tool(Array("Gets an entity by its identifier."))
   def getEntity(
-    @P("Entity identifier") id: String
-  ): String =
-    render(LocatableId(id).adapt().flatMap(world.getEntity))(renderEntity)
+                 @P("Entity identifier") id: String
+               ): String =
+    render(world.getEntity(id))(renderEntity)
 
   @Tool(Array("Creates a circular entity."))
   def createCircleEntity(
-    @P("Unique entity identifier") id: String,
-    @P("X coordinate") x: Double,
-    @P("Y coordinate") y: Double,
-    @P("Circle radius, greater than zero") radius: Double,
-    @P(value = "Optional team identifier", required = false)
-    teamId: String = null,
-    @P(value = "Optional entity weight, zero or greater", required = false)
-    weight: Integer = null,
-    @P(value = "Optional horizontal speed; provide together with speedY", required = false)
-    speedX: java.lang.Double = null,
-    @P(value = "Optional vertical speed; provide together with speedX", required = false)
-    speedY: java.lang.Double = null
-  ): String =
+                          @P("Unique entity identifier") id: String,
+                          @P("X coordinate") x: Double,
+                          @P("Y coordinate") y: Double,
+                          @P("Circle radius, greater than zero") radius: Double,
+                          @P(value = "Optional team identifier", required = false)
+                          teamId: String = null,
+                          @P(value = "Optional entity weight, zero or greater", required = false)
+                          weight: Integer = null,
+                          @P(value = "Optional horizontal speed; provide together with speedY", required = false)
+                          speedX: java.lang.Double = null,
+                          @P(value = "Optional vertical speed; provide together with speedX", required = false)
+                          speedY: java.lang.Double = null,
+                          @P(value = "Optional health integer of the entity", required = false)
+                          health: java.lang.Integer = null
+                        ): String =
     whileEngineStopped {
-      save(
-        Entity.circle(id, Vector2D(x, y), radius).adapt()
-          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
-          .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
-        s"Entity '$id' created."
-      )
+      validateSpeed(speedX, speedY) match
+        case Left(errorMsg) => s"Error: $errorMsg"
+        case Right(speedOpt) =>
+          save(
+            world.createEntity(
+              SaveEntityCommand(
+                MonadCoreEntity(
+                  id = id,
+                  position = (x, y),
+                  shape = SimulationCircle(radius),
+                  speed = speedOpt,
+                  health = Option(health).map(_.intValue),
+                  weight = Option(weight).map(_.intValue),
+                  teamId = Option(teamId)
+                )
+              )
+            ),
+            s"Entity '$id' created."
+          )
     }
 
   @Tool(Array("Creates a rectangular entity."))
   def createRectangleEntity(
-    @P("Unique entity identifier") id: String,
-    @P("X coordinate") x: Double,
-    @P("Y coordinate") y: Double,
-    @P("Rectangle height, greater than zero") height: Double,
-    @P("Rectangle length, greater than zero") length: Double,
-    @P(value = "Optional team identifier", required = false)
-    teamId: String = null,
-    @P(value = "Optional entity weight, zero or greater", required = false)
-    weight: Integer = null,
-    @P(value = "Optional horizontal speed; provide together with speedY", required = false)
-    speedX: java.lang.Double = null,
-    @P(value = "Optional vertical speed; provide together with speedX", required = false)
-    speedY: java.lang.Double = null
-  ): String =
+                             @P("Unique entity identifier") id: String,
+                             @P("X coordinate") x: Double,
+                             @P("Y coordinate") y: Double,
+                             @P("Rectangle height, greater than zero") height: Double,
+                             @P("Rectangle length, greater than zero") length: Double,
+                             @P(value = "Optional team identifier", required = false)
+                             teamId: String = null,
+                             @P(value = "Optional entity weight, zero or greater", required = false)
+                             weight: Integer = null,
+                             @P(value = "Optional horizontal speed; provide together with speedY", required = false)
+                             speedX: java.lang.Double = null,
+                             @P(value = "Optional vertical speed; provide together with speedX", required = false)
+                             speedY: java.lang.Double = null,
+                             @P(value = "Optional health integer of the entity", required = false)
+                             health: java.lang.Integer = null
+                           ): String =
     whileEngineStopped {
-      save(
-        Entity.rectangle(id, Vector2D(x, y), height, length).adapt()
-          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
-          .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
-        s"Entity '$id' created."
-      )
+      validateSpeed(speedX, speedY) match
+        case Left(errorMsg) => s"Error: $errorMsg"
+        case Right(speedOpt) =>
+          save(
+            world.createEntity(
+              SaveEntityCommand(
+                MonadCoreEntity(
+                  id = id,
+                  position = (x, y),
+                  shape = SimulationRectangle(height = height, width = length),
+                  speed = speedOpt,
+                  health = Option(health).map(_.intValue),
+                  weight = Option(weight).map(_.intValue),
+                  teamId = Option(teamId)
+                )
+              )
+            ),
+            s"Entity '$id' created."
+          )
     }
 
   @Tool(Array("Replaces an entity with a circular entity having the same identifier."))
   def updateCircleEntity(
-    @P("Identifier of the entity to update") id: String,
-    @P("New X coordinate") x: Double,
-    @P("New Y coordinate") y: Double,
-    @P("New circle radius, greater than zero") radius: Double
-  ): String =
+                          @P("Identifier of the entity to update") id: String,
+                          @P("New X coordinate") x: Double,
+                          @P("New Y coordinate") y: Double,
+                          @P("New circle radius, greater than zero") radius: Double
+                        ): String =
     whileEngineStopped {
       save(
-        Entity.circle(id, Vector2D(x, y), radius).adapt()
-          .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
+        world.updateEntity(
+          SaveEntityCommand(
+            MonadCoreEntity(
+              id = id,
+              position = (x, y),
+              shape = SimulationCircle(radius),
+            )
+          )
+        ),
         s"Entity '$id' updated."
       )
     }
 
   @Tool(Array("Replaces an entity with a rectangular entity having the same identifier."))
   def updateRectangleEntity(
-    @P("Identifier of the entity to update") id: String,
-    @P("New X coordinate") x: Double,
-    @P("New Y coordinate") y: Double,
-    @P("New rectangle height, greater than zero") height: Double,
-    @P("New rectangle length, greater than zero") length: Double
-  ): String =
+                             @P("Identifier of the entity to update") id: String,
+                             @P("New X coordinate") x: Double,
+                             @P("New Y coordinate") y: Double,
+                             @P("New rectangle height, greater than zero") height: Double,
+                             @P("New rectangle length, greater than zero") length: Double
+                           ): String =
     whileEngineStopped {
       save(
-        Entity.rectangle(id, Vector2D(x, y), height, length).adapt()
-          .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
+        world.updateEntity(
+          SaveEntityCommand(
+            MonadCoreEntity(
+              id = id,
+              position = (x, y),
+              shape = SimulationRectangle(length, height),
+            )
+          )
+        ),
         s"Entity '$id' updated."
       )
     }
 
   @Tool(Array("Removes an entity by its identifier."))
   def removeEntity(
-    @P("Entity identifier") id: String
-  ): String =
+                    @P("Entity identifier") id: String
+                  ): String =
     whileEngineStopped {
       save(
-        LocatableId(id).adapt().flatMap(world.removeEntity),
+        world.removeEntity(id),
         s"Entity '$id' removed."
       )
     }
@@ -123,79 +168,107 @@ case class Langchain4jTools()(
 
   @Tool(Array("Gets a surface by its identifier."))
   def getSurface(
-    @P("Surface identifier") id: String
-  ): String =
-    render(LocatableId(id).adapt().flatMap(world.getSurface))(renderSurface)
+                  @P("Surface identifier") id: String
+                ): String =
+    render(world.getSurface(id))(renderSurface)
 
   @Tool(Array("Creates a circular surface."))
   def createCircleSurface(
-    @P("Unique surface identifier") id: String,
-    @P("X coordinate") x: Double,
-    @P("Y coordinate") y: Double,
-    @P("Circle radius, greater than zero") radius: Double
-  ): String =
+                           @P("Unique surface identifier") id: String,
+                           @P("X coordinate") x: Double,
+                           @P("Y coordinate") y: Double,
+                           @P("Circle radius, greater than zero") radius: Double
+                         ): String =
     whileEngineStopped {
       save(
-        Surface.circle(id, Vector2D(x, y), radius).adapt()
-          .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
+        world.createSurface(
+          SaveSurfaceCommand(
+            MonadCoreSurface(
+              id = id,
+              position = (x, y),
+              shape = SimulationCircle(radius),
+            )
+          )
+        ),
         s"Surface '$id' created."
       )
     }
 
   @Tool(Array("Creates a rectangular surface."))
   def createRectangleSurface(
-    @P("Unique surface identifier") id: String,
-    @P("X coordinate") x: Double,
-    @P("Y coordinate") y: Double,
-    @P("Rectangle height, greater than zero") height: Double,
-    @P("Rectangle length, greater than zero") length: Double
-  ): String =
+                              @P("Unique surface identifier") id: String,
+                              @P("X coordinate") x: Double,
+                              @P("Y coordinate") y: Double,
+                              @P("Rectangle height, greater than zero") height: Double,
+                              @P("Rectangle length, greater than zero") length: Double
+                            ): String =
     whileEngineStopped {
       save(
-        Surface.rectangle(id, Vector2D(x, y), height, length).adapt()
-          .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
+        world.createSurface(
+          SaveSurfaceCommand(
+            MonadCoreSurface(
+              id = id,
+              position = (x, y),
+              shape = SimulationRectangle(length, height),
+            )
+          )
+        ),
         s"Surface '$id' created."
       )
     }
 
   @Tool(Array("Replaces a surface with a circular surface having the same identifier."))
   def updateCircleSurface(
-    @P("Identifier of the surface to update") id: String,
-    @P("New X coordinate") x: Double,
-    @P("New Y coordinate") y: Double,
-    @P("New circle radius, greater than zero") radius: Double
-  ): String =
+                           @P("Identifier of the surface to update") id: String,
+                           @P("New X coordinate") x: Double,
+                           @P("New Y coordinate") y: Double,
+                           @P("New circle radius, greater than zero") radius: Double
+                         ): String =
     whileEngineStopped {
       save(
-        Surface.circle(id, Vector2D(x, y), radius).adapt()
-          .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
+        world.updateSurface(
+          SaveSurfaceCommand(
+            MonadCoreSurface(
+              id = id,
+              position = (x, y),
+              shape = SimulationCircle(radius),
+            )
+          )
+        ),
         s"Surface '$id' updated."
       )
     }
 
   @Tool(Array("Replaces a surface with a rectangular surface having the same identifier."))
   def updateRectangleSurface(
-    @P("Identifier of the surface to update") id: String,
-    @P("New X coordinate") x: Double,
-    @P("New Y coordinate") y: Double,
-    @P("New rectangle height, greater than zero") height: Double,
-    @P("New rectangle length, greater than zero") length: Double
-  ): String =
+                              @P("Identifier of the surface to update") id: String,
+                              @P("New X coordinate") x: Double,
+                              @P("New Y coordinate") y: Double,
+                              @P("New rectangle height, greater than zero") height: Double,
+                              @P("New rectangle length, greater than zero") length: Double
+                            ): String =
     whileEngineStopped {
       save(
-        Surface.rectangle(id, Vector2D(x, y), height, length).adapt()
-          .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
+        world.updateSurface(
+          SaveSurfaceCommand(
+            MonadCoreSurface(
+              id = id,
+              position = (x, y),
+              shape = SimulationRectangle(length, height),
+            )
+          )
+        ),
         s"Surface '$id' updated."
       )
     }
 
   @Tool(Array("Removes a surface by its identifier."))
   def removeSurface(
-    @P("Surface identifier") id: String
-  ): String =
+                     @P("Surface identifier") id: String
+                   ): String =
     whileEngineStopped {
       save(
-        LocatableId(id).adapt().flatMap(world.removeSurface),
+        world.removeSurface(id),
         s"Surface '$id' removed."
       )
     }
@@ -206,18 +279,18 @@ case class Langchain4jTools()(
 
   @Tool(Array("Gets a team by its identifier."))
   def getTeam(
-    @P("Team identifier") id: String
-  ): String =
-    render(TeamId(id).adapt().flatMap(world.getTeam))(renderTeam)
+               @P("Team identifier") id: String
+             ): String =
+    render(TeamId(id).adaptError().flatMap(world.getTeam))(renderTeam)
 
   @Tool(Array("Creates a team and optionally assigns enemy teams."))
   def createTeam(
-    @P("Unique team identifier") id: String,
-    @P("Comma-separated enemy team identifiers; use an empty string for none") enemies: String
-  ): String =
+                  @P("Unique team identifier") id: String,
+                  @P("Comma-separated enemy team identifiers; use an empty string for none") enemies: String
+                ): String =
     whileEngineStopped {
       save(
-        Team.create(id, parseIds(enemies)).adapt()
+        Team.create(id, parseIds(enemies)).adaptError()
           .flatMap(team => world.createTeam(SaveTeamCommand(team))),
         s"Team '$id' created."
       )
@@ -225,12 +298,12 @@ case class Langchain4jTools()(
 
   @Tool(Array("Replaces a team's enemy list."))
   def updateTeam(
-    @P("Identifier of the team to update") id: String,
-    @P("New comma-separated enemy team identifiers; use an empty string for none") enemies: String
-  ): String =
+                  @P("Identifier of the team to update") id: String,
+                  @P("New comma-separated enemy team identifiers; use an empty string for none") enemies: String
+                ): String =
     whileEngineStopped {
       save(
-        Team.create(id, parseIds(enemies)).adapt()
+        Team.create(id, parseIds(enemies)).adaptError()
           .flatMap(team => world.updateTeam(SaveTeamCommand(team))),
         s"Team '$id' updated."
       )
@@ -238,11 +311,11 @@ case class Langchain4jTools()(
 
   @Tool(Array("Removes a team by its identifier."))
   def removeTeam(
-    @P("Team identifier") id: String
-  ): String =
+                  @P("Team identifier") id: String
+                ): String =
     whileEngineStopped {
       save(
-        TeamId(id).adapt().flatMap(world.removeTeam),
+        TeamId(id).adaptError().flatMap(world.removeTeam),
         s"Team '$id' removed."
       )
     }
@@ -261,6 +334,12 @@ case class Langchain4jTools()(
     if gameEngineRuntime.isRunning then
       "Error: The world cannot be modified while the game engine is running."
     else operation
+
+  private def validateSpeed(x: java.lang.Double, y: java.lang.Double): Either[String, Option[(Double, Double)]] =
+    (Option(x), Option(y)) match
+      case (Some(sx), Some(sy)) => Right(Some((sx.doubleValue, sy.doubleValue)))
+      case (None, None) => Right(None)
+      case _ => Left("Both speedX and speedY must be provided together")
 
   private def parseIds(csv: String): Set[String] =
     csv.split(",").iterator.map(_.trim).filter(_.nonEmpty).toSet

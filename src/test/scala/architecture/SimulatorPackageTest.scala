@@ -6,9 +6,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class SimulatorPackageTest extends AnyFunSuite with Matchers with ArchitectureChecker:
-  val engineForbiddenMatcher: String = "engine"
-  val presentationForbiddenMatcher: String = "presentation"
-  val infrastructureForbiddenMatcher: String = "infrastructure"
+  val engineForbiddenMatcher: String = "monad_core.engine"
+  val presentationForbiddenMatcher: String = "monad_core.simulator.presentation"
+  val infrastructureForbiddenMatcher: String = "monad_core.simulator.infrastructure"
 
   test("engine package in simulator should only be used in infrastructure layer"):
     SimulatorApplication should notContainImport(engineForbiddenMatcher)

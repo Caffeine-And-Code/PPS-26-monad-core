@@ -8,9 +8,9 @@ private[engine] case class EngineErrorAdapted(engineError: EngineError)
 
 object ErrorsAdapter:
   extension (coreError: EngineError)
-    def adapt(): BaseError =
+    def adaptError(): BaseError =
       EngineErrorAdapted(coreError)
 
   extension [T](either: Either[EngineError, T])
-    def adapt(): Either[BaseError, T] =
-      either.left.map(_.adapt())
+    def adaptError(): Either[BaseError, T] =
+      either.left.map(_.adaptError())

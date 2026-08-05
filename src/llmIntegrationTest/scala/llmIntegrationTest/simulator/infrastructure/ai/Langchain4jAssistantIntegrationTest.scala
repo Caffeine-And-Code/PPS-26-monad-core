@@ -14,30 +14,35 @@ import org.scalatest.EitherValues.*
 import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
 import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
 import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
+import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistant, Langchain4jOllamaConfig}
 
 import scala.compiletime.uninitialized
 
 class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with MockFactory with BeforeAndAfterEach:
 
-  val circleEntity: Entity = Entity.circle("e1", Vector2D(20, 20), 50)
-    .value
-    .withWeight(70)
-    .value
-    .withSpeed(Vector2D(20, 35))
-    .value
+  val circleEntity: MonadCoreEntity = MonadCoreEntity(
+    id = "e1",
+    position = (20, 20),
+    shape = SimulationCircle(50),
+    weight = Some(70),
+    speed = Some((20, 35))
+  )
 
-  val rectangleEntity: Entity = Entity.rectangle("e2", Vector2D(4, 3), 11, 9)
-    .value
-    .withWeight(20)
-    .value
+  val rectangleEntity: MonadCoreEntity = MonadCoreEntity(
+      id = "e2",
+      position = (4, 3),
+      shape = SimulationRectangle(11, 9),
+      weight = Some(20),
+    )
 
   val ollamaConfig = Langchain4jOllamaConfig(
     url = "http://localhost:11434",
     modelName = "qwen3.5:4b"
   )
 
-  val memoryId:ConversationId = ConversationId.from("chat1").value
+  val memoryId: ConversationId = ConversationId.from("chat1").value
 
   private var world: World = uninitialized
   private var gameEngineRuntime: GameEngineRuntime = uninitialized
@@ -73,8 +78,8 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
     val result = assistant.chat(memoryId, userMessage)
 
-    result should containsInResponse(circleEntity.id.toString)
-    result should containsInResponse(rectangleEntity.id.toString)
+    result should containsInResponse(circleEntity.id)
+    result should containsInResponse(rectangleEntity.id)
     result should onlyExecuteTool("getAllEntities")
 
   test("Can create a circular entity using the assistant when game engine is in pause"):
@@ -97,18 +102,18 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
     val result = assistant.chat(memoryId, userMessage)
 
-    result should containsInResponse(List(circleEntity.id.toString, rectangleEntity.id.toString))
+    result should containsInResponse(List(circleEntity.id, rectangleEntity.id))
     result should executeOnlyTheseTools(List("getAllEntities", "start"))
 
   test("Can update an existing entity"):
     val firstMessage = "Get the circle entity with id 'my_circle' from the scene"
     val secondMessage = "update his radius to 10"
-    val circle = Entity.circle("my_circle", Vector2D(20, 20), 67).value
-    val updatedEntity = Entity.circle("my_circle", Vector2D(20, 20), 10).value
+    val circle = MonadCoreEntity("my_circle", (20, 20), SimulationCircle(67))
+    val updatedEntity = MonadCoreEntity("my_circle", (20, 20), SimulationCircle(10))
     val assistant = getAssistant
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
-    world.getEntity.expects(LocatableId("my_circle").value).returning(Right(circle)).once()
+    world.getEntity.expects("my_circle").returning(Right(circle)).once()
     world.updateEntity.expects(SaveEntityCommand(updatedEntity)).returning(Right(())).once()
 
     val firstResponse = assistant.chat(memoryId, firstMessage)
@@ -127,7 +132,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val secondResult = assistant.chat(memoryId, secondMessage)
 
     firstResult should notExecuteTools
-    secondResult should (beJudgedBy(judge) withCriteria 
+    secondResult should (beJudgedBy(judge) withCriteria
       "should tell that circle is the preferred shape")
     secondResult should notExecuteTools
 

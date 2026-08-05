@@ -25,6 +25,9 @@ class DrawerTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matc
   override def beforeEach(): Unit =
     Drawer.getBuffer.clear()
 
+  override def afterEach(): Unit =
+    Drawer.getBuffer.clear()
+
   def enlistCircle(drawable: Locatable): Unit =
     Drawer.drawCircle(drawable, Color.Red)
 
