@@ -2,6 +2,7 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
+import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
@@ -11,21 +12,21 @@ import scalafx.scene.Node
 
 final case class SaveTeamFormDialogProps(
                                           title: String,
-                                          onSubmit: Team => Unit,
+                                          onSubmit: MonadCoreTeam => Unit,
                                           onError: BaseError => Unit,
-                                          possibleEnemies: Seq[Team],
+                                          possibleEnemies: Seq[MonadCoreTeam],
                                           anchorNode: Option[Node] = None,
-                                          teamToUpdate: Option[Team] = None
+                                          teamToUpdate: Option[MonadCoreTeam] = None
                                         )
 
 
 final case class SaveTeamFormDefaultValues(
                                             teamName: Option[String] = Option.empty,
-                                            enemies: Seq[TeamId] = Seq.empty
+                                            enemies: Seq[String] = Seq.empty
                                           )
 
 private[forms] final case class BuildSaveTeamFormFieldsRecord(
-                                                               possibleEnemies: Seq[Team],
+                                                               possibleEnemies: Seq[MonadCoreTeam],
                                                                defaultValues: SaveTeamFormDefaultValues
                                                              )
 
@@ -52,12 +53,12 @@ object SaveTeamFormDialog:
     )
   }
 
-  private[forms] def buildDefaultValues(teamToUpdate: Option[Team]): SaveTeamFormDefaultValues =
+  private[forms] def buildDefaultValues(teamToUpdate: Option[MonadCoreTeam]): SaveTeamFormDefaultValues =
     teamToUpdate match
       case None => SaveTeamFormDefaultValues()
       case Some(team) =>
         SaveTeamFormDefaultValues(
-          teamName = Some(team.id.value),
+          teamName = Some(team.id),
           enemies = Seq.from(team.enemies),
         )
 
@@ -77,7 +78,7 @@ object SaveTeamFormDialog:
       MultiSelectFieldSpec(
         id = TeamFormParser.EnemiesKey,
         label = "Enemies",
-        options = record.possibleEnemies.map(_.id.value),
-        defaultValues = record.defaultValues.enemies.map(_.value)
+        options = record.possibleEnemies.map(_.id),
+        defaultValues = record.defaultValues.enemies
       )
     )

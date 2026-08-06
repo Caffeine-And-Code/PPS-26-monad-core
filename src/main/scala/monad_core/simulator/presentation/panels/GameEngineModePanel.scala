@@ -1,6 +1,5 @@
 package monad_core.simulator.presentation.panels
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.errors.BaseError
@@ -74,7 +73,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
               props = SaveEntityFormDialogProps(
                 title = "Entity Settings",
                 anchorNode = contextMenuAnchor,
-                onSubmit = entity => world.createEntity(SaveEntityCommand(entity)),
+                onSubmit = entity => world.createEntity(SaveEntityCommand(entity)) match {
+                  case Left(value) => onFormError(value)
+                  case Right(value) => Right(())
+                },
                 teams = world.getAllTeams,
                 onError = onFormError
               )
@@ -110,10 +112,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                   onSubmit = team =>
                     SaveTeamFormDialog.show(
                       props = SaveTeamFormDialogProps(
-                        title = s"${team.id.value} Settings",
+                        title = s"${team.id} Settings",
                         anchorNode = contextMenuAnchor,
                         onSubmit = team => world.updateTeam(SaveTeamCommand(team)),
-                        possibleEnemies = world.getAllTeams.filterNot(_.id.value == team.id.value),
+                        possibleEnemies = world.getAllTeams.filterNot(_.id == team.id),
                         onError = onFormError,
                         teamToUpdate = Some(team)
                       )

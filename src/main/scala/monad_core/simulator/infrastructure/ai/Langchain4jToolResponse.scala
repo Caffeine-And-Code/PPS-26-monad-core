@@ -2,7 +2,7 @@ package monad_core.simulator.infrastructure.ai
 
 import monad_core.engine.model.Team
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 
 object Langchain4jToolResponse:
@@ -62,13 +62,13 @@ object Langchain4jToolResponse:
       s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}"
     ).mkString("\n")
 
-  def renderTeam(team: Team): String =
+  def renderTeam(team: MonadCoreTeam): String =
     val enemies =
       if team.enemies.isEmpty then "none"
-      else team.enemies.iterator.map(_.value).toList.sorted.mkString(", ")
+      else team.enemies.iterator.toList.sorted.mkString(", ")
 
     List(
-      s"id: ${team.id.value}",
+      s"id: ${team.id}",
       s"enemies: $enemies"
     ).mkString("\n")
 

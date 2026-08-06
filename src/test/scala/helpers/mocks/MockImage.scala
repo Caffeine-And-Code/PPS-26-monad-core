@@ -1,4 +1,4 @@
-package helpers
+package helpers.mocks
 
 import monad_core.simulator.presentation.resources.Image
 

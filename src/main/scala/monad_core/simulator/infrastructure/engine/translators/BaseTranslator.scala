@@ -1,11 +1,12 @@
 package monad_core.simulator.infrastructure.engine.translators
 
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity as EngineEntity, Shape2D as EngineShape, Surface as EngineSurface}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface}
+import monad_core.engine.model.{Entity as EngineEntity, Shape2D as EngineShape, Surface as EngineSurface, Team as EngineTeam}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.infrastructure.engine.translators.EntityTranslator.toSimulationEntity
 import monad_core.simulator.infrastructure.engine.translators.SurfaceTranslator.toSimulationSurface
+import monad_core.simulator.infrastructure.engine.translators.TeamTranslator.toSimulationTeam
 
 object BaseTranslator:
   def determineShape(shape2D: EngineShape): MonadCoreShape =
@@ -20,3 +21,7 @@ object BaseTranslator:
   extension (either: Either[EngineError, EngineSurface])
     def toSimulationEitherSurface: Either[EngineError, MonadCoreSurface] =
       either.map(_.toSimulationSurface)
+  
+  extension (either: Either[EngineError, EngineTeam])
+    def toSimulationEitherTeam: Either[EngineError, MonadCoreTeam] =
+      either.map(_.toSimulationTeam)

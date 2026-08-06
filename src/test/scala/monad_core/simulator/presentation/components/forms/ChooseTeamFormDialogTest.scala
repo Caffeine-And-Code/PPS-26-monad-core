@@ -1,6 +1,8 @@
 package monad_core.simulator.presentation.components.forms
 
+import helpers.arrangers.MonadCoreTeamArranger
 import monad_core.engine.model.*
+import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.presentation.components.forms.base.SelectFieldSpec
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -9,11 +11,7 @@ import org.scalatest.matchers.should.Matchers
 
 class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val teams: Seq[Team] = Seq(
-    Team(TeamId("RedTeam").value, Set.empty).value,
-    Team(TeamId("BlueTeam").value, Set.empty).value,
-    Team(TeamId("GreenTeam").value, Set.empty).value
-  )
+  private val teams: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams 
 
   test("buildFields should build a single select field with the correct id and label"):
     val fields = ChooseTeamFormDialog.buildSelect(teams)
@@ -29,7 +27,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.head):
       case select: SelectFieldSpec =>
-        select.options should be(teams.map(_.id.value))
+        select.options should be(teams.map(_.id))
 
   test("buildFields should return an empty options list when no teams are provided"):
     val fields = ChooseTeamFormDialog.buildSelect(Seq.empty)

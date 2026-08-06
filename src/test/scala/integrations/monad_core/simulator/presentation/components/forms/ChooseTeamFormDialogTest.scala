@@ -5,6 +5,7 @@ import integrations.monad_core.simulator.presentation.support.{DialogTesting, Fo
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.TeamNotFoundDuringSelection
+import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -17,10 +18,10 @@ import scalafx.stage.Stage
 class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with DialogTesting with FormTesting:
   val TeamComboBoxIndex: Int = 0
 
-  private val teams: Seq[Team] = Seq(
-    Team(TeamId("RedTeam").value, Set.empty).value,
-    Team(TeamId("BlueTeam").value, Set.empty).value,
-    Team(TeamId("GreenTeam").value, Set.empty).value
+  private val teams: Seq[MonadCoreTeam] = Seq(
+    MonadCoreTeam("RedTeam", Set.empty),
+    MonadCoreTeam("BlueTeam", Set.empty),
+    MonadCoreTeam("GreenTeam", Set.empty)
   )
 
   private def selectTeamInComboBox(teamIndex: Int): Unit =
@@ -42,7 +43,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       case Right(_) => ()
 
   test("ChooseTeamFormDialog invokes onSubmit with the first team by default"):
-    var submittedTeam: Option[Team] = None
+    var submittedTeam: Option[MonadCoreTeam] = None
 
     val props = ChooseTeamFormDialogProps(
       teams = teams,
@@ -59,7 +60,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     submittedTeam should be(Some(teams.head))
 
   test("ChooseTeamFormDialog invokes onSubmit with the team selected by the user"):
-    var submittedTeam: Option[Team] = None
+    var submittedTeam: Option[MonadCoreTeam] = None
 
     val props = ChooseTeamFormDialogProps(
       teams = teams,

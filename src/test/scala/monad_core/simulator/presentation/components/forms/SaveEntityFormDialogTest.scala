@@ -1,7 +1,8 @@
 package monad_core.simulator.presentation.components.forms
 
+import helpers.arrangers.MonadCoreTeamArranger
 import monad_core.engine.model.{TeamId as TeamToRemoveId, *}
-import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, EntityFormParser, LocatableFormShapes}
@@ -26,6 +27,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
   private def circleEntity: MonadCoreEntity = MonadCoreEntity(Id, Position, Circle)
   private def rectangleEntity: MonadCoreEntity = MonadCoreEntity(Id, Position, Rectangle)
+
+  private val teams: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
 
   private def completeEntity(entity: MonadCoreEntity): MonadCoreEntity =
     MonadCoreEntity(
@@ -95,11 +98,6 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
       result.health should be(Some(Health.toString))
       result.speedX should be(Some(Speed._1.toString))
       result.speedY should be(Some(Speed._2.toString))
-
-  private val teams: Seq[Team] = Seq(
-    Team(TeamToRemoveId("RedTeam").value, Set.empty).value,
-    Team(TeamToRemoveId("BlueTeam").value, Set.empty).value
-  )
 
   test("buildFields should build all top-level fields with correct ids"):
     val defaultValues = SaveEntityFormDefaultValues()
@@ -194,7 +192,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.find(_.id == EntityFormParser.TeamIdKey).value):
       case select: SelectFieldSpec =>
-        select.options should be(teams.map(_.id.value))
+        select.options should be(teams.map(_.id))
         select.defaultValue should be(Some("RedTeam"))
 
   test("buildFields should return an empty team options list when no teams are provided"):

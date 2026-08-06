@@ -6,7 +6,7 @@ import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
@@ -325,7 +325,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     result shouldBe "Result: no teams found."
 
   test("list all teams in the world returns the list"):
-    val team = Team.create("blue", Set("red", "green")).value
+    val team = MonadCoreTeam("blue", Set("red", "green"))
     (() => world.getAllTeams).expects().returning(List(team)).once()
 
     val result = tools.getAllTeams
@@ -337,8 +337,8 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
         |enemies: green, red""".stripMargin
 
   test("when get team is called returns the formatted team"):
-    val team = Team.create("blue", Set("red")).value
-    world.getTeam.expects(TeamId("blue").value).returning(Right(team)).once()
+    val team = MonadCoreTeam("blue", Set("red"))
+    world.getTeam.expects("blue").returning(Right(team)).once()
 
     val result = tools.getTeam("blue")
 
@@ -348,40 +348,48 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
         |enemies: red""".stripMargin
 
   test("when create team is called returns a success message"):
-    val team = Team.create("blue", Set("red", "green")).value
-    world.createTeam
-      .expects(SaveTeamCommand(team))
-      .returning(Right(Scene(teams = Map(team.id -> team))))
-      .once()
-
-    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
-
+    val id = "blue"
+    val enemies = Set("red", "green")
+    val team = MonadCoreTeam(id, enemies)
+    val engineTeam =  Team.create(id, enemies).value
+    
+    inSequence:
+      (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+      world.createTeam
+        .expects(SaveTeamCommand(team))
+        .returning(Right(Scene(teams = Map(engineTeam.id -> engineTeam))))
+        .once()
+    
     val result = tools.createTeam("blue", "red, green")
 
     result shouldBe "Success: Team 'blue' created."
 
   test("when update team is called returns a success message"):
-    val team = Team.create("blue", Set("yellow")).value
-    world.updateTeam
-      .expects(SaveTeamCommand(team))
-      .returning(Right(Scene(teams = Map(team.id -> team))))
-      .once()
-
-    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
-
+    val id = "blue"
+    val enemies = Set("yellow")
+    val team = MonadCoreTeam(id, enemies)
+    val engineTeam =  Team.create(id, enemies).value
+    
+    inSequence:
+      (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+      world.updateTeam
+        .expects(SaveTeamCommand(team))
+        .returning(Right(Scene(teams = Map(engineTeam.id -> engineTeam))))
+        .once()
+  
     val result = tools.updateTeam("blue", "yellow")
 
     result shouldBe "Success: Team 'blue' updated."
 
   test("when remove team is called returns a success message"):
-    val id = TeamId("blue").value
+    val id = "blue"
     world.removeTeam.expects(id).returning(Right(Scene())).once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
 
-    val result = tools.removeTeam("blue")
+    val result = tools.removeTeam(id)
 
-    result shouldBe "Success: Team 'blue' removed."
+    result shouldBe s"Success: Team '$id' removed."
 
   test("can not call tools that modify the World while engine is running"):
     (() => gameEngineRuntime.isRunning).expects().returning(true).once()

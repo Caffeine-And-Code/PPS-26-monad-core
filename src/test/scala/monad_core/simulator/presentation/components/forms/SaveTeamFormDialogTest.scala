@@ -1,6 +1,8 @@
 package monad_core.simulator.presentation.components.forms
 
+import helpers.arrangers.MonadCoreTeamArranger
 import monad_core.engine.model.*
+import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.presentation.components.forms.base.{MultiSelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -11,15 +13,11 @@ import org.scalatest.matchers.should.Matchers
 
 class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val RedTeamId = TeamId("RedTeam").value
-  private val BlueTeamId = TeamId("BlueTeam").value
-  private val GreenTeamId = TeamId("GreenTeam").value
+  private val RedTeamId = MonadCoreTeamArranger.RedTeamId
+  private val BlueTeamId = MonadCoreTeamArranger.BlueTeamId
+  private val GreenTeamId = MonadCoreTeamArranger.GreenTeamId
 
-  private val possibleEnemies: Seq[Team] = Seq(
-    Team(RedTeamId, Set.empty).value,
-    Team(BlueTeamId, Set.empty).value,
-    Team(GreenTeamId, Set.empty).value
-  )
+  private val possibleEnemies: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
   
   test("buildDefaultValues should return empty defaults when no team is provided"):
     val result = SaveTeamFormDialog.buildDefaultValues(None)
@@ -27,19 +25,19 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
     result should be(SaveTeamFormDefaultValues())
 
   test("buildDefaultValues should map a team's id and empty enemies"):
-    val team = Team(RedTeamId, Set.empty).value
+    val team = MonadCoreTeam(RedTeamId, Set.empty)
 
     val result = SaveTeamFormDialog.buildDefaultValues(Some(team))
 
-    result.teamName should be(Some(RedTeamId.value))
+    result.teamName should be(Some(RedTeamId))
     result.enemies should be(Seq.empty)
 
   test("buildDefaultValues should map a team's enemies"):
-    val team = Team(RedTeamId, Set(BlueTeamId, GreenTeamId)).value
+    val team = MonadCoreTeam(RedTeamId, Set(BlueTeamId, GreenTeamId))
 
     val result = SaveTeamFormDialog.buildDefaultValues(Some(team))
 
-    result.teamName should be(Some(RedTeamId.value))
+    result.teamName should be(Some(RedTeamId))
     result.enemies should contain theSameElementsAs Seq(BlueTeamId, GreenTeamId)
   
   test("buildTeamCreationFields should build the name field followed by the enemies field"):
@@ -68,8 +66,8 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.find(_.id == TeamFormParser.EnemiesKey).value):
       case multi: MultiSelectFieldSpec =>
-        multi.options should be(possibleEnemies.map(_.id.value))
-        multi.defaultValues should be(Seq(BlueTeamId.value))
+        multi.options should be(possibleEnemies.map(_.id))
+        multi.defaultValues should be(Seq(BlueTeamId))
 
   test("buildTeamCreationFields should return an empty options list when no possible enemies are provided"):
     val record = BuildSaveTeamFormFieldsRecord(Seq.empty, SaveTeamFormDefaultValues())
@@ -94,8 +92,8 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.find(_.id == TeamFormParser.EnemiesKey).value):
       case multi: MultiSelectFieldSpec =>
-        multi.options should be(possibleEnemies.map(_.id.value))
-        multi.defaultValues should be(Seq(GreenTeamId.value))
+        multi.options should be(possibleEnemies.map(_.id))
+        multi.defaultValues should be(Seq(GreenTeamId))
 
   test("buildTeamEditFields should return an empty options list when no possible enemies are provided"):
     val record = BuildSaveTeamFormFieldsRecord(Seq.empty, SaveTeamFormDefaultValues())

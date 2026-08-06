@@ -1,6 +1,6 @@
 package integrations.monad_core.simulator.presentation.panels
 
-import helpers.{MockImage, MockImageConfig}
+import helpers.mocks.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.core.Scene
 import monad_core.simulator.application.engine.GameEngineRuntime

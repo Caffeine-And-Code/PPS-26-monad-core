@@ -2,7 +2,7 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Team}
-import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
@@ -15,7 +15,7 @@ final case class SaveEntityFormDialogProps(
                                             title: String,
                                             onSubmit: MonadCoreEntity => Unit,
                                             onError: BaseError => Unit,
-                                            teams: Seq[Team],
+                                            teams: Seq[MonadCoreTeam],
                                             anchorNode: Option[Node] = None,
                                             entityToUpdate: Option[MonadCoreEntity] = None
                                           )
@@ -82,7 +82,7 @@ object SaveEntityFormDialog:
           speedY = entity.speed.map(_._2.toString)
         )
 
-  private[forms] def buildFields(teams: Seq[Team], defaultValues: SaveEntityFormDefaultValues): Seq[FormFieldSpec] =
+  private[forms] def buildFields(teams: Seq[MonadCoreTeam], defaultValues: SaveEntityFormDefaultValues): Seq[FormFieldSpec] =
     Seq(
       TextFieldSpec(id = EntityFormParser.PositionXKey, label = "Initial X Position", defaultValue = defaultValues.x),
       TextFieldSpec(id = EntityFormParser.PositionYKey, label = "Initial Y Position", defaultValue = defaultValues.y),
@@ -108,7 +108,7 @@ object SaveEntityFormDialog:
       SelectFieldSpec(
         id = EntityFormParser.TeamIdKey,
         label = "Team",
-        options = teams.map(_.id.value),
+        options = teams.map(_.id),
         defaultValue = defaultValues.teamId
       )
     )

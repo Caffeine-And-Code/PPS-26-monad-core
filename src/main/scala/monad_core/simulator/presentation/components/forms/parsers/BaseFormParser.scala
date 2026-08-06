@@ -1,7 +1,5 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.Vector2D
 import monad_core.simulator.domain.engine.MonadCoreShape
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.errors.BaseError

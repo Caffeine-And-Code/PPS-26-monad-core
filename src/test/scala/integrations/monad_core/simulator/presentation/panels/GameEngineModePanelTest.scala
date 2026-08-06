@@ -1,6 +1,6 @@
 package integrations.monad_core.simulator.presentation.panels
 
-import helpers.MockImageConfig
+import helpers.mocks.MockImageConfig
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import javafx.scene.control.Button
 import javafx.scene.layout.HBox

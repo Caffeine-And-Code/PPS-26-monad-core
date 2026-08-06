@@ -3,7 +3,7 @@ package monad_core.simulator.infrastructure.engine
 import monad_core.engine.core.*
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.domain.engine.MonadCoreShape.SimulationCircle
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
@@ -26,6 +26,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
   
   val baseSimulationEntity: MonadCoreEntity = MonadCoreEntity(id, position, SimulationCircle(radius))
   val baseSimulationSurface: MonadCoreSurface = MonadCoreSurface(id, position, SimulationCircle(radius))
+  val baseSimulationTeam: MonadCoreTeam = MonadCoreTeam(id, Set.empty)
 
   def newWorld(): (Scene, World) =
     val state: Scene = mock[Scene]
@@ -111,7 +112,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     val (state, worldTest) = newWorld()
     val nextState: Scene = mock[Scene]
     state.addTeam.expects(baseTeam).returns(Right(nextState))
-    val command = SaveTeamCommand(baseTeam)
+    val command = SaveTeamCommand(baseSimulationTeam)
 
     val result = worldTest.createTeam(command)
 
@@ -122,7 +123,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     val (state, worldTest) = newWorld()
     val expectedError = CannotAddTeam(CannotAddAlreadyPresentElementInMap(baseTeam.id))
     state.addTeam.expects(baseTeam).returns(Left(expectedError))
-    val command = SaveTeamCommand(baseTeam)
+    val command = SaveTeamCommand(baseSimulationTeam)
 
     val result = worldTest.createTeam(command)
 
@@ -136,7 +137,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     state.getTeam.expects(baseTeam.id).returns(Right(baseTeam))
     state.removeTeam.expects(baseTeam).returns(Right(nextState))
 
-    val result = worldTest.removeTeam(baseTeam.id)
+    val result = worldTest.removeTeam(baseSimulationTeam.id)
 
     result shouldBe Right(())
     worldTest.scene shouldBe nextState
@@ -146,7 +147,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     val expectedError = TeamNotFound(baseTeam.id)
     state.getTeam.expects(baseTeam.id).returns(Left(expectedError))
 
-    val result = worldTest.removeTeam(baseTeam.id)
+    val result = worldTest.removeTeam(baseSimulationTeam.id)
 
     inside(result):
       case Left(error) =>
@@ -156,7 +157,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     val (state, worldTest) = newWorld()
     val intermediateState = mock[Scene]
     val finalState = mock[Scene]
-    val command = SaveTeamCommand(baseTeam)
+    val command = SaveTeamCommand(baseSimulationTeam)
 
     state.getTeam.expects(baseTeam.id).returns(Right(baseTeam))
     state.removeTeam.expects(baseTeam).returns(Right(intermediateState))
@@ -167,12 +168,12 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     result shouldBe Right(())
     worldTest.scene shouldBe finalState
-    inside(worldTest.getTeam(baseTeam.id)):
-      case Right(fetchedTeam) => fetchedTeam should be(baseTeam)
+    inside(worldTest.getTeam(baseSimulationTeam.id)):
+      case Right(fetchedTeam) => fetchedTeam should be(baseSimulationTeam)
 
   test("updateTeam propagates the state error if Team was not found"):
     val (state, worldTest) = newWorld()
-    val command = SaveTeamCommand(baseTeam)
+    val command = SaveTeamCommand(baseSimulationTeam)
     val expectedError = TeamNotFound(baseTeam.id)
 
     state.getTeam.expects(baseTeam.id).returns(Left(expectedError))

@@ -1,10 +1,11 @@
 package integrations.monad_core.simulator.presentation.components.forms
 
+import helpers.arrangers.MonadCoreTeamArranger
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
-import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
@@ -20,6 +21,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
   val WeightFieldIndex: Int = 5
   val HealthFieldIndex: Int = 6
   val GenericCircleEntity: MonadCoreEntity = MonadCoreEntity(id = "id", position = (0.0, 0.0), shape = SimulationCircle(6))
+  val TestTeams : Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams 
 
   private def selectShapeInComboBox(shapeIndex: Int): Unit =
     val ShapeComboBoxIndex = 0
@@ -30,11 +32,6 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
 
   private def selectRectangleInComboBox(): Unit =
     selectShapeInComboBox(1)
-
-  private val testTeams: Seq[Team] = Seq(
-    Team(TeamId("RedTeam").value, Set.empty).value,
-    Team(TeamId("BlueTeam").value, Set.empty).value
-  )
 
   private def buildCompleteEntity(entity: MonadCoreEntity): MonadCoreEntity =
     MonadCoreEntity(
@@ -52,7 +49,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Create Entity",
       onSubmit = _ => (),
       onError = _ => (),
-      teams = testTeams
+      teams = TestTeams
     )
 
     onFxThread {
@@ -66,7 +63,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Edit Entity",
       onSubmit = _ => (),
       onError = _ => (),
-      teams = testTeams,
+      teams = TestTeams,
       entityToUpdate = Some(GenericCircleEntity)
     )
 
@@ -83,7 +80,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Add Entity Test",
       onSubmit = entity => submittedEntity = Some(entity),
       onError = err => fail(s"Unexpected error: $err"),
-      teams = testTeams
+      teams = TestTeams
     )
 
     onFxThread {
@@ -112,7 +109,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Add Entity Test",
       onSubmit = entity => submittedEntity = Some(entity),
       onError = err => fail(s"Unexpected error: $err"),
-      teams = testTeams,
+      teams = TestTeams,
       entityToUpdate = Some(entityToUpdate)
     )
 
@@ -143,7 +140,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Invalid Entity Test",
       onSubmit = _ => fail("onSubmit should not be called with invalid inputs"),
       onError = err => capturedError = Some(err),
-      teams = testTeams
+      teams = TestTeams
     )
 
     onFxThread {
@@ -162,7 +159,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Edit Entity Test",
       onSubmit = entity => submittedEntity = Some(entity),
       onError = err => fail(s"Unexpected error: $err"),
-      teams = testTeams,
+      teams = TestTeams,
       entityToUpdate = Some(circleEntityToUpdate)
     )
 
@@ -183,7 +180,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Edit Entity Test",
       onSubmit = entity => submittedEntity = Some(entity),
       onError = err => fail(s"Unexpected error: $err"),
-      teams = testTeams,
+      teams = TestTeams,
       entityToUpdate = Some(circleEntityToUpdate)
     )
 
@@ -210,7 +207,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Edit Entity Test",
       onSubmit = entity => submittedEntity = Some(entity),
       onError = err => fail(s"Unexpected error: $err"),
-      teams = testTeams,
+      teams = TestTeams,
       entityToUpdate = Some(rectangleEntityToUpdate)
     )
 
@@ -237,7 +234,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Edit Entity Test",
       onSubmit = entity => submittedEntity = Some(entity),
       onError = err => fail(s"Unexpected error: $err"),
-      teams = testTeams,
+      teams = TestTeams,
       entityToUpdate = Some(rectangleEntityToUpdate)
     )
 
@@ -255,7 +252,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Visual Save Entity Test",
       onSubmit = _ => (),
       onError = _ => (),
-      teams = testTeams
+      teams = TestTeams
     )
 
     onFxThread {
@@ -275,7 +272,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Visual Save Entity Test",
       onSubmit = _ => (),
       onError = _ => (),
-      teams = testTeams
+      teams = TestTeams
     )
 
     onFxThread {
@@ -294,7 +291,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Visual Save Entity Test",
       onSubmit = _ => (),
       onError = _ => (),
-      teams = testTeams
+      teams = TestTeams
     )
 
     onFxThread {
@@ -313,7 +310,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       title = "Visual Save Entity Test",
       onSubmit = _ => (),
       onError = _ => (),
-      teams = testTeams
+      teams = TestTeams
     )
 
     onFxThread {

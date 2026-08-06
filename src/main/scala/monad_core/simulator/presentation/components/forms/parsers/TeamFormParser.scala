@@ -1,35 +1,35 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.engine.model.{Team, TeamId}
+import monad_core.simulator.MissingKeyInFormError
+import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 
 object TeamFormParser:
   val TeamIdKey = "id"
   val EnemiesKey = "enemies"
 
-  def buildTeam(values: Map[String, String]): Either[BaseError, Team] =
+  def buildTeam(values: Map[String, String]): Either[BaseError, MonadCoreTeam] =
     for
       id <- values.getValueSafe(TeamIdKey)
-      teamId <- TeamId(id).adaptError()
+      _ <- if id.nonEmpty then Right(()) else Left(MissingKeyInFormError("teamId"))
+      enemies <- values.getValueSafe(EnemiesKey)
+    yield MonadCoreTeam(
+      id = id,
+      enemies = parseEnemies(enemies)
+    )
 
-      teamWithId <- Team.apply(teamId).adaptError()
-      team <- buildUpdatedTeam(values, teamWithId)
-    yield team
-
-  def buildUpdatedTeam(values: Map[String, String], teamToUpdate: Team): Either[BaseError, Team] =
+  def buildUpdatedTeam(values: Map[String, String], teamToUpdate: MonadCoreTeam): Either[BaseError, MonadCoreTeam] =
     for
       enemies <- values.getValueSafe(EnemiesKey)
-      enemyIds <- parseEnemies(enemies)
+    yield MonadCoreTeam(
+      id = teamToUpdate.id,
+      enemies = parseEnemies(enemies)
+    )
 
-      team <- Team.apply(teamToUpdate.id, enemyIds).adaptError()
-    yield team
-
-  private[parsers] def parseEnemies(raw: String): Either[BaseError, Set[TeamId]] =
-    val tokens = raw.split(",").map(_.trim).filter(_.nonEmpty).toList
-
-    tokens.foldLeft(Right(Set.empty[TeamId]): Either[BaseError, Set[TeamId]]) {
-      case (Right(acc), token) => TeamId(token).adaptError().map(acc + _)
-      case (Left(err), _) => Left(err)
-    }
+  private[parsers] def parseEnemies(raw: String): Set[String] =
+    raw
+      .split(",")
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .toList.toSet

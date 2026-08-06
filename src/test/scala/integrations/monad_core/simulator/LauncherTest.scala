@@ -1,6 +1,6 @@
 package integrations.monad_core.simulator
 
-import helpers.MockImage
+import helpers.mocks.MockImage
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
 import monad_core.Launcher
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound}

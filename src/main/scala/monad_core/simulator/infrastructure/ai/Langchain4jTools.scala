@@ -5,7 +5,7 @@ import monad_core.engine.model.*
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.Langchain4jToolResponse.*
 import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
@@ -281,7 +281,7 @@ case class Langchain4jTools()(
   def getTeam(
                @P("Team identifier") id: String
              ): String =
-    render(TeamId(id).adaptError().flatMap(world.getTeam))(renderTeam)
+    render(world.getTeam(id))(renderTeam)
 
   @Tool(Array("Creates a team and optionally assigns enemy teams."))
   def createTeam(
@@ -290,8 +290,14 @@ case class Langchain4jTools()(
                 ): String =
     whileEngineStopped {
       save(
-        Team.create(id, parseIds(enemies)).adaptError()
-          .flatMap(team => world.createTeam(SaveTeamCommand(team))),
+        world.createTeam(
+          SaveTeamCommand(
+            MonadCoreTeam(
+              id = id,
+              enemies = parseIds(enemies)
+            )
+          )
+        ),
         s"Team '$id' created."
       )
     }
@@ -303,8 +309,14 @@ case class Langchain4jTools()(
                 ): String =
     whileEngineStopped {
       save(
-        Team.create(id, parseIds(enemies)).adaptError()
-          .flatMap(team => world.updateTeam(SaveTeamCommand(team))),
+        world.updateTeam(
+          SaveTeamCommand(
+            MonadCoreTeam(
+              id = id,
+              enemies = parseIds(enemies)
+            )
+          )
+        ),
         s"Team '$id' updated."
       )
     }
@@ -315,7 +327,7 @@ case class Langchain4jTools()(
                 ): String =
     whileEngineStopped {
       save(
-        TeamId(id).adaptError().flatMap(world.removeTeam),
+        world.removeTeam(id),
         s"Team '$id' removed."
       )
     }

@@ -54,7 +54,7 @@ class TeamFormParserTest extends AnyFunSuite with Inside with Matchers:
   test("parseEnemies should return an empty set when raw string is empty"):
     val result = TeamFormParser.parseEnemies("")
 
-    result.value should be(Set.empty[TeamId])
+    result should be(Set.empty[String])
 
   test("parseEnemies should return an empty set when raw string is only whitespace/commas"):
     val cases = Table(
@@ -67,18 +67,18 @@ class TeamFormParserTest extends AnyFunSuite with Inside with Matchers:
     forAll(cases): raw =>
       val result = TeamFormParser.parseEnemies(raw)
 
-      result.value should be(Set.empty[TeamId])
+      result should be(Set.empty[String])
 
   test("parseEnemies should trim tokens and ignore empty ones between separators"):
-    val expected = Set(TeamId(EnemyOneValue).value, TeamId(EnemyTwoValue).value)
+    val expected = Set(EnemyOneValue, EnemyTwoValue)
 
     val result = TeamFormParser.parseEnemies(s" $EnemyOneValue , ,$EnemyTwoValue ,")
 
-    result.value should be(expected)
+    result should be(expected)
 
   test("parseEnemies should deduplicate repeated ids"):
-    val expected = Set(TeamId(EnemyOneValue).value)
+    val expected = Set(EnemyOneValue)
 
     val result = TeamFormParser.parseEnemies(s"$EnemyOneValue,$EnemyOneValue,$EnemyOneValue")
 
-    result.value should be(expected)
+    result should be(expected)
