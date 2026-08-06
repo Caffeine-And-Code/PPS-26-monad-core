@@ -34,7 +34,6 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
 
     assertMatchesArchitecturalSnapshotOfStage("launcher_scene_snapshot", mainWindow.get)
 
-
   test("buildLauncher generates a valid visual snapshot"):
     Launcher.main(Array.empty)
 

@@ -1,11 +1,7 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.Shape2D
-import monad_core.simulator.InvalidShapeFormFieldError
 import monad_core.simulator.domain.engine.MonadCoreShape
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.errors.BaseError
 
 private[forms] enum LocatableFormShapes:
   private[forms] case Circle

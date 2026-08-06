@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms.parsers
 import monad_core.simulator.domain.engine.MonadCoreSurface
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
+
 import scala.util.Random
 
 object SurfaceFormParser {

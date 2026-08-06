@@ -1,6 +1,5 @@
 package monad_core.simulator.presentation.components
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildButton
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}

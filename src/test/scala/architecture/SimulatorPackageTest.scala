@@ -14,8 +14,8 @@ class SimulatorPackageTest extends AnyFunSuite with Matchers with ArchitectureCh
   test("engine package in simulator should only be used in infrastructure layer"):
     val packageExceptions: Set[String] = Set("public_api")
 
-    SimulatorApplication should notContainImportWithExceptions(engineForbiddenMatcher, packageExceptions)
     SimulatorPresentation should notContainImportWithExceptions(engineForbiddenMatcher, packageExceptions)
+    SimulatorApplication should notContainImportWithExceptions(engineForbiddenMatcher, packageExceptions)
     SimulatorDomain should notContainImportWithExceptions(engineForbiddenMatcher, packageExceptions)
     Simulator should notContainImportWithExceptions(engineForbiddenMatcher, packageExceptions)
 

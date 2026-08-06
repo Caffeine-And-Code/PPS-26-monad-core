@@ -1,6 +1,5 @@
 package monad_core.simulator.presentation.stages
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World

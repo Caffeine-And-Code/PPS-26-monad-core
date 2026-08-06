@@ -1,9 +1,6 @@
 package monad_core.simulator.presentation.panels
 
 import javafx.scene.input.{MouseButton, MouseEvent}
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.{**, Entity, Locatable, Surface}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
@@ -34,11 +31,13 @@ private[panels] object MouseHitDetector:
         case SimulationCircle(radius) =>
           val distanceX = mouseClickX - elementPositionX
           val distanceY = mouseClickY - elementPositionY
-          (distanceX ** 2 + distanceY ** 2) <= (radius ** 2)
+
+          (distanceX * distanceX + distanceY * distanceY) <= (radius * radius)
 
         case SimulationRectangle(width, height) =>
           val halfW = width / 2
           val halfH = height / 2
+
           mouseClickX >= (elementPositionX - halfW) && mouseClickX <= (elementPositionX + halfW) &&
             mouseClickY >= (elementPositionY - halfH) && mouseClickY <= (elementPositionY + halfH)
 

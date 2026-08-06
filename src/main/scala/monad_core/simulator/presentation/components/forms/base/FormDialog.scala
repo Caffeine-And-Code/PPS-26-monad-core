@@ -1,7 +1,5 @@
 package monad_core.simulator.presentation.components.forms.base
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Locatable, Team}
 import monad_core.simulator.CannotBuildDialog
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*

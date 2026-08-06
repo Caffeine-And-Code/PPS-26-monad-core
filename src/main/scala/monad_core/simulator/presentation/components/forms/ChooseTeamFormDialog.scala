@@ -1,7 +1,5 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Team, TeamId}
 import monad_core.simulator.TeamNotFoundDuringSelection
 import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError

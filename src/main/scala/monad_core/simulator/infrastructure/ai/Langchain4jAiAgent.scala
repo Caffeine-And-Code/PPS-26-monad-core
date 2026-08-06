@@ -4,6 +4,7 @@ import dev.langchain4j.memory.ChatMemory
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
 import monad_core.simulator.domain.ai.{AgentInfo, AgentResponse, AgentResponseError, ConversationNotFoundError}
 import monad_core.simulator.errors.BaseError
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
 import scala.util.Try

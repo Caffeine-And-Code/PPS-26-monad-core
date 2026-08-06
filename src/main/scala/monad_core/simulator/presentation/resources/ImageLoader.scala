@@ -1,6 +1,5 @@
 package monad_core.simulator.presentation.resources
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.ImageResourceNotFound
 import monad_core.simulator.errors.BaseError
 import scalafx.scene.image.Image as ScalaFxImage
