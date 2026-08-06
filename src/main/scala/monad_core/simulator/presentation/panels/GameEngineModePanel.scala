@@ -73,10 +73,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
               props = SaveEntityFormDialogProps(
                 title = "Entity Settings",
                 anchorNode = contextMenuAnchor,
-                onSubmit = entity => world.createEntity(SaveEntityCommand(entity)) match {
-                  case Left(value) => onFormError(value)
-                  case Right(value) => Right(())
-                },
+                onSubmit = entity => world.createEntity(SaveEntityCommand(entity)),
                 teams = world.getAllTeams,
                 onError = onFormError
               )
@@ -85,25 +82,25 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
               isDisabled = isEngineRunning,
               label = "Add a Team",
               onSelect = () => SaveTeamFormDialog.show(
-              props = SaveTeamFormDialogProps(
-                title = "Team Settings",
-                anchorNode = contextMenuAnchor,
-                onSubmit = team => onTeamAction(world.createTeam(SaveTeamCommand(team))),
-                possibleEnemies = world.getAllTeams,
-                onError = onFormError
-              )
-            )),
+                props = SaveTeamFormDialogProps(
+                  title = "Team Settings",
+                  anchorNode = contextMenuAnchor,
+                  onSubmit = team => onTeamAction(world.createTeam(SaveTeamCommand(team))),
+                  possibleEnemies = world.getAllTeams,
+                  onError = onFormError
+                )
+              )),
             MenuButtonItem(
               isDisabled = isEngineRunning,
-              label = "Add a Surface", 
+              label = "Add a Surface",
               onSelect = () => SaveSurfaceFormDialog.show(
-              props = SaveSurfaceFormDialogProps(
-                title = "Surface Settings",
-                anchorNode = contextMenuAnchor,
-                onSubmit = surface => world.createSurface(SaveSurfaceCommand(surface)),
-                onError = onFormError
-              )
-            )),
+                props = SaveSurfaceFormDialogProps(
+                  title = "Surface Settings",
+                  anchorNode = contextMenuAnchor,
+                  onSubmit = surface => world.createSurface(SaveSurfaceCommand(surface)),
+                  onError = onFormError
+                )
+              )),
             MenuButtonItem(
               label = "Edit a Team",
               onSelect = () => ChooseTeamFormDialog.show(
