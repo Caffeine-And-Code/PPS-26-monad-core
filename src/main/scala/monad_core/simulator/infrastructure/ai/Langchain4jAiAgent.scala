@@ -14,6 +14,9 @@ case class Langchain4jAiAgent(
                              agentInfo: AgentInfo
                              )
 extends AiAgent:
+
+  override def getAgentInfo: AgentInfo = agentInfo
+
   override def ask(command: AskAgentCommand): Future[Either[AgentResponseError, AgentResponse]] =
     Future {
       blocking {

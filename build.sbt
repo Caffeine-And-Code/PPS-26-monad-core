@@ -94,7 +94,7 @@ lazy val root = rootProject
       }
     }
   ).settings(
-    assembly / mainClass := Some("Launcher"),
+    assembly / mainClass := Some("monad_core.Launcher"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList("META-INF", _*) => MergeStrategy.discard
