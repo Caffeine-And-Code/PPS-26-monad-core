@@ -1,266 +1,152 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.model.*
+import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.traits.State
+import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
+import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
 import monad_core.engine.model.Entity.*
+import monad_core.engine.model.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.model.{Entity, LocatableId, Surface, Vector2D}
-import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsRule, PhysicsState}
-import monad_core.engine.physics.rules.SurfaceDetection
+import monad_core.engine.physics.helper.PhysicsConstantHelper.*
+import monad_core.engine.physics.helper.PhysicsEntityHelper.*
+import monad_core.engine.physics.helper.{PhysicsDetectorHelper, PhysicsSceneHelper}
+import monad_core.engine.physics.helper.PhysicsSurfaceHelper.*
 import monad_core.engine.physics.rules.SurfaceDynamicsRule.given
+import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class SurfaceDynamicsRuleTest extends AnyFunSuite with Matchers with MockFactory:
+class SurfaceDynamicsRuleTest extends AnyFunSuite with Matchers with MockFactory with PhysicsDetectorHelper  with PhysicsSceneHelper:
+  
+  private val Rule = SurfaceDynamicsRule.surfaceDynamicsRule
 
-  trait TestScene
-  trait TestDetector
-
-  given TestDetector = mock[TestDetector]
-  given SurfaceDetection[TestDetector] = mock[SurfaceDetection[TestDetector]]
-
-  private val DeltaTimeOneSecond = 1_000_000_000L
-  private val NegativeDt = -1L
-  private val EntityRadius = 1.0
-  private val InitialScene = mock[TestScene]
-
-  private def makeEntity(id: String, position: Vector2D): Entity =
-    Entity.circle(id = id, position = position, radius = EntityRadius).value
-
-  private def makeMovingEntity(id: String, position: Vector2D, speed: Vector2D): Entity =
-    makeEntity(id, position).withSpeed(speed).value
-
-  private def makeSurface(id: String, position: Vector2D, radius: Double): Surface =
-    Surface.circle(id = id, position = position, radius = radius).value
-
-  private def addWeight(entity: Entity, weight: Int): Entity =
-    entity.withWeight(weight).value
+  private val MockScene = mock[State]
+  given CollisionDetector = mock[CollisionDetector]
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
-    val mockState = mock[PhysicsState[TestScene]]
-    given PhysicsState[TestScene] = mockState
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], NegativeDt)
+    
+    val result = Rule.apply(MockScene, NegativeDt)(using summon[CollisionDetector])
 
     result.shouldBe(Left(NegativeDeltaTime(NegativeDt)))
 
   test("the rule should return the unchanged scene when there are no entities"):
-    val mockState = mock[PhysicsState[TestScene]]
+    val scene = sceneWithSurfaces(List(), List())
 
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map.empty)
-      .once()
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-    (mockState.getSurfaces(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map.empty)
-      .once()
+    result shouldBe scene
 
-    given PhysicsState[TestScene] = mockState
+  test("the rule should not update an entity when it is fixed"):
+    
+    val fixedEntity = makeFixedEntityCircle(
+      id = "fixed"
+    )
+    
+    val surface = makeSurfaceCircle(
+      position = Vector2D(0, 0),
+      radius = 5.0
+    )
+      .withAppliedForce(Vector2D(10, 0)).value
+      .withFrictionIndex(0.1).value
 
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond).value
+    val scene = sceneWithSurfaces(List(fixedEntity), List(surface))
+    
+    given CollisionDetector = detectorWithContaining(
+      contains = Map((fixedEntity.id.value, surface.id.value) -> true)
+    )
 
-    result shouldBe InitialScene
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-  test("the rule should not update an entity when it has no speed"):
-    val entityId = "entity"
-    val entityPositionX = 0.0
-    val entityPositionY = 0.0
-    val entityPosition = Vector2D(entityPositionX, entityPositionY)
-    val surfaceId = "surface"
-    val surfacePositionX = 0.0
-    val surfacePositionY = 0.0
-    val surfacePosition = Vector2D(surfacePositionX, surfacePositionY)
-    val surfaceRadius = 5.0
-    val surfaceForceX = 10.0
-    val surfaceForceY = 0.0
-    val surfaceForce = Vector2D(surfaceForceX, surfaceForceY)
-    val surfaceFrictionIndex = 0.1
-
-    val mockState = mock[PhysicsState[TestScene]]
-    val mockDetection = summon[SurfaceDetection[TestDetector]]
-
-    val entity = makeEntity(id = entityId, position = entityPosition)
-    val surface = makeSurface(id = surfaceId, position = surfacePosition, radius = surfaceRadius)
-      .withAppliedForce(surfaceForce).value
-      .withFrictionIndex(surfaceFrictionIndex).value
-
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(entity.id -> entity))
-      .once()
-
-    (mockState.getSurfaces(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(surface.id -> surface))
-      .once()
-
-    given PhysicsState[TestScene] = mockState
-
-    mockState.updateEntity.expects(*, *, *).never()
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond).value
-
-    result shouldBe InitialScene
+    val resultEntity = result.allEntities.find(_.id == fixedEntity.id).value
+    
+    resultEntity.speed shouldBe fixedEntity.speed
 
   test("the rule should not update an entity when it is outside the surface"):
-    val entityId = "entity"
-    val entityPositionX = 0.0
-    val entityPositionY = 0.0
-    val entityPosition = Vector2D(entityPositionX, entityPositionY)
-    val entitySpeedX = 1.0
-    val entitySpeedY = 1.0
-    val entitySpeed = Vector2D(entitySpeedX, entitySpeedY)
-    val surfaceId = "surface"
-    val surfacePositionX = 10.0
-    val surfacePositionY = 10.0
-    val surfacePosition = Vector2D(surfacePositionX, surfacePositionY)
-    val surfaceRadius = 1.0
-    val surfaceForceX = 10.0
-    val surfaceForceY = 0.0
-    val surfaceForce = Vector2D(surfaceForceX, surfaceForceY)
-    val surfaceFrictionIndex = 0.1
+    
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(0, 0),
+      speed = Vector2D(1, 1)
+    )
+    
+    val surface = makeSurfaceCircle(
+      position = Vector2D(10, 10),
+      radius = 5.0
+    )
+      .withAppliedForce(Vector2D(10, 0)).value
+      .withFrictionIndex(0.1).value
 
-    val mockState = mock[PhysicsState[TestScene]]
-    val mockDetection = summon[SurfaceDetection[TestDetector]]
+    val scene = sceneWithSurfaces(List(entity), List(surface))
 
-    val entity = makeMovingEntity(id = entityId, position = entityPosition, speed = entitySpeed)
-    val surface = makeSurface(id = surfaceId, position = surfacePosition, radius = surfaceRadius)
-      .withAppliedForce(surfaceForce).value
-      .withFrictionIndex(surfaceFrictionIndex).value
+    given CollisionDetector = detectorWithContaining(
+      contains = Map((entity.id.value, surface.id.value) -> false)
+    )
 
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(entity.id -> entity))
-      .once()
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-    (mockState.getSurfaces(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(surface.id -> surface))
-      .once()
-
-    (mockDetection.isInside(_: TestDetector, _: Entity, _: Surface))
-      .expects(*, entity, surface)
-      .returning(false)
-      .once()
-
-    given PhysicsState[TestScene] = mockState
-
-    mockState.updateEntity.expects(*, *, *).never()
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond).value
-
-    result shouldBe InitialScene
+    val resultEntity = result.allEntities.find(_.id == entity.id).value
+    
+    resultEntity.speed shouldBe entity.speed
 
   test("the rule should not update an entity when surface has no force and no friction"):
-    val entityId = "entity"
-    val entityPositionX = 0.0
-    val entityPositionY = 0.0
-    val entityPosition = Vector2D(entityPositionX, entityPositionY)
-    val entitySpeedX = 1.0
-    val entitySpeedY = 1.0
-    val entitySpeed = Vector2D(entitySpeedX, entitySpeedY)
-    val surfaceId = "surface"
-    val surfacePositionX = 0.0
-    val surfacePositionY = 0.0
-    val surfacePosition = Vector2D(surfacePositionX, surfacePositionY)
-    val surfaceRadius = 1.0
+    
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(0, 0),
+      speed = Vector2D(1, 1)
+    )
+    
+    val surface = makeSurfaceCircle(
+      position = Vector2D(0, 0),
+      radius = 5.0
+    )
 
-    val mockState = mock[PhysicsState[TestScene]]
-    val mockDetection = summon[SurfaceDetection[TestDetector]]
+    val scene = sceneWithSurfaces(List(entity), List(surface))
 
-    val entity = makeMovingEntity(id = entityId, position = entityPosition, speed = entitySpeed)
-    val surface = makeSurface(id = surfaceId, position = surfacePosition, radius = surfaceRadius)
+    given CollisionDetector = detectorWithContaining(
+      contains = Map((entity.id.value, surface.id.value) -> true)
+    )
 
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(entity.id -> entity))
-      .once()
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-    (mockState.getSurfaces(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(surface.id -> surface))
-      .once()
-
-    (mockDetection.isInside(_: TestDetector, _: Entity, _: Surface))
-      .expects(*, entity, surface)
-      .returning(true)
-      .once()
-
-    given PhysicsState[TestScene] = mockState
-
-    mockState.updateEntity.expects(*, *, *).never()
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond).value
-
-    result shouldBe InitialScene
+    val resultEntity = result.allEntities.find(_.id == entity.id).value
+    
+    resultEntity.speed shouldBe entity.speed
 
   test("the rule should apply force and friction when entity is inside the surface"):
-    val entityId = "entity"
-    val entityPositionX = 0.0
-    val entityPositionY = 0.0
-    val entityPosition = Vector2D(entityPositionX, entityPositionY)
-    val entitySpeedX = 2.0
-    val entitySpeedY = 0.0
-    val entitySpeed = Vector2D(entitySpeedX, entitySpeedY)
-    val entityWeight = 10
-    val surfaceId = "surface"
-    val surfacePositionX = 0.0
-    val surfacePositionY = 0.0
-    val surfacePosition = Vector2D(surfacePositionX, surfacePositionY)
-    val surfaceRadius = 5.0
-    val surfaceForceX = 10.0
-    val surfaceForceY = 0.0
-    val surfaceForce = Vector2D(surfaceForceX, surfaceForceY)
-    val surfaceFrictionIndex = 0.1
-    val finalScene = mock[TestScene]
-
-    val mockState = mock[PhysicsState[TestScene]]
-    val mockDetection = summon[SurfaceDetection[TestDetector]]
-
-    val entity = addWeight(
-      makeMovingEntity(id = entityId, position = entityPosition, speed = entitySpeed),
-      weight = entityWeight
+    
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(0, 0),
+      speed = Vector2D(1, 1)
+    ).withWeight(1).value
+    
+    val surface = makeSurfaceCircle(
+      position = Vector2D(0, 0),
+      radius = 5.0
     )
-    val surface = makeSurface(id = surfaceId, position = surfacePosition, radius = surfaceRadius)
-              .withAppliedForce(surfaceForce).value
-              .withFrictionIndex(surfaceFrictionIndex).value
+      .withAppliedForce(Vector2D(10, 0)).value
+      .withFrictionIndex(0.1).value
 
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(entity.id -> entity))
-      .once()
+    val expectedSpeedAfterForce = PhysicsUtil.nextSpeed(
+      entity.speed.value,
+      PhysicsUtil.acceleration(surface.appliedForce.value, entity.weight).value,
+      DeltaTimeOneSecond
+    ).value
+    val expectedSpeedAfterFriction = PhysicsUtil.applyFriction(
+      expectedSpeedAfterForce,
+      surface.frictionIndex.value,
+      DeltaTimeOneSecond
+    ).value
 
-    (mockState.getSurfaces(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(surface.id -> surface))
-      .once()
+    val scene = sceneWithSurfaces(List(entity), List(surface))
 
-    (mockDetection.isInside(_: TestDetector, _: Entity, _: Surface))
-      .expects(*, entity, surface)
-      .returning(true)
-      .once()
+    given CollisionDetector = detectorWithContaining(
+      contains = Map((entity.id.value, surface.id.value) -> true)
+    )
 
-    var caughtEntity: Option[Entity] = None
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-    (mockState.updateEntity(_: TestScene, _: LocatableId, _: Entity))
-      .expects(InitialScene, entity.id, *)
-      .onCall: (_, _, updatedEntity) =>
-        caughtEntity = Some(updatedEntity)
-        finalScene
-
-    given PhysicsState[TestScene] = mockState
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond).value
-
-    result shouldBe finalScene
-    caughtEntity.value.speed.isDefined shouldBe true
+    val resultEntity = result.allEntities.find(_.id == entity.id).value
+    
+    resultEntity.speed.value shouldBe expectedSpeedAfterFriction

@@ -1,7 +1,12 @@
 package monad_core.simulator.application.engine
 
+import monad_core.engine.collision_detection.CollisionDetector
+
 import java.util.concurrent.atomic.AtomicReference
-import monad_core.engine.core.{GameLoop, PhysicsMock, RendererManager}
+import monad_core.engine.core.{GameLoop, RendererManager}
+import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
+import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
+import monad_core.engine.physics.core.PhysicsManager
 import monad_core.engine.public_api.{EngineFacade, Painter}
 import monad_core.simulator.application.engine.world.World
 import scalafx.animation.AnimationTimer
@@ -15,9 +20,13 @@ final case class GameEngine(
                            )
 
 object GameEngine:
+  
+  given CollisionDetector = CollisionDetector.fromGeometry
 
+  private val physics: PhysicsManager = PhysicsManager.default()
+  
   private[application] def tick(world: World, loop: GameLoop, currentTime: Long)(using painter: Painter): (World, GameLoop) =
-    val (newState, newLoop) = EngineFacade.tick(loop, world.snapshot, currentTime)(using painter, PhysicsMock, RendererManager)
+    val (newState, newLoop) = EngineFacade.tick(loop, world.snapshot, currentTime)(using painter, physics, RendererManager)
     (World(newState), newLoop)
 
   def apply(onFrame: World => Unit)(using painter: Painter): GameEngine =

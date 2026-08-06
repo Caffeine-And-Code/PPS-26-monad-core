@@ -1,28 +1,45 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.physics.core.{OutOfBoundEntity, PhysicsError, PhysicsRule, PhysicsState, PhysicsUtil}
+import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.traits.State
+import monad_core.engine.model.Entity
+import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.utils.{PhysicsUtil, SceneUpdateEntity}
 
-object KinematicsRule:
+private[physics] object KinematicsRule:
 
   private val id = "kinematics"
-  
-  given kinematicsRule[S, CD](using state: PhysicsState[S]): PhysicsRule[S, CD] with
-    
+
+  given kinematicsRule: PhysicsRule with
+
     override val ruleId: String = KinematicsRule.id
-    
-    override def apply(scene: S)(using detector: CD, dt: Long): Either[PhysicsError, S] =
+
+    override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
       for
         _ <- PhysicsUtil.deltaSeconds(dt)
-        entities = state.getEntities(scene)
+        entities = scene.allEntities.filterNot(_.isFixed)
 
-        updatedScene <- entities.foldLeft[Either[PhysicsError, S]](Right(scene)):
-          case (Left(err), _) => Left(err)
-          case (Right(currentScene), (entityId, entity)) =>
-            entity.speed match
-              case None => Right(currentScene)
-              case Some(speed) =>
-                for
-                  nextPos <- PhysicsUtil.nextPosition(entity.position, speed, dt)
-                  moved   <- entity.moveTo(nextPos).left.map(_ => OutOfBoundEntity(nextPos))
-                yield state.updateEntity(currentScene, entityId, moved)
+        updatedEntities <- applyKinematics(scene, entities, dt)
+
+        updatedScene <- SceneUpdateEntity.updateEntities(scene, updatedEntities)
+
       yield updatedScene
+
+    private def applyKinematics(scene: State, entities: List[Entity], dt: Long): Either[PhysicsError, List[Entity]] =
+      entities.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
+        case (Left(err), _) => Left(err)
+        case (Right(updatedEntities), entity) =>
+          moveEntity(scene, entity, dt).map(updatedEntities :+ _)
+      }
+
+    private def moveEntity(scene: State, entity: Entity, dt: Long): Either[PhysicsError, Entity] =
+      entity.speed match
+        case Some(speed) =>
+          val nextPos = PhysicsUtil.nextPosition(entity.position, speed, dt, scene.UpperLeftCorner, scene.LowerRightCorner)
+          nextPos match {
+            case Right(pos) => entity.moveTo(pos).left.map(PhysicsDomainError.apply)
+            case Left(err) => Left(err)
+          }
+        case None => Right(entity)
+
+

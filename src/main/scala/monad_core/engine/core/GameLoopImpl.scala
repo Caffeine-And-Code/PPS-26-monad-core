@@ -40,13 +40,14 @@ private case class GameLoopImpl(
           Right((currentScene, remainingTime))
         else
           val updatedScene = physics.step(currentScene, tickTime)
-          runFixedUpdate(remainingTime - tickTime, updatedScene)
+          updatedScene match
+            case Left(err) => Left(err)
+            case Right(updatedScene) => runFixedUpdate(remainingTime - tickTime, updatedScene)
 
       for
         res <- runFixedUpdate(remainingTime, state)
         (currentScene, currentAccumulator) = res
-        _ = {
-          val alpha = currentAccumulator.toDouble / tickTime.toDouble
-          render.render(currentScene, alpha)
-        }
-      yield (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+        alpha = currentAccumulator.toDouble / tickTime.toDouble
+      yield
+        render.render(currentScene, alpha)
+        (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))

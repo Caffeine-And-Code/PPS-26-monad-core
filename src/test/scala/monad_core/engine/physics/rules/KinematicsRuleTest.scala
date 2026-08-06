@@ -1,10 +1,13 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.model.Entity.*
-import monad_core.engine.physics.core.*
+import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.traits.State
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
-import monad_core.engine.physics.core.{NegativeDeltaTime, OutOfBoundEntity, PhysicsRule, PhysicsState}
-import monad_core.engine.physics.rules.KinematicsRule.given
+import monad_core.engine.physics.core.*
+import monad_core.engine.physics.helper.PhysicsConstantHelper.*
+import monad_core.engine.physics.helper.PhysicsEntityHelper.*
+import monad_core.engine.physics.helper.{PhysicsDetectorHelper, PhysicsSceneHelper}
+import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -12,176 +15,117 @@ import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class KinematicsRuleTest extends AnyFunSuite with Matchers with MockFactory:
+class KinematicsRuleTest extends AnyFunSuite with Matchers with MockFactory with PhysicsDetectorHelper with PhysicsSceneHelper:
 
-  trait TestScene
-  trait TestDetector
+  private val Rule = KinematicsRule.kinematicsRule
 
-  given TestDetector = mock[TestDetector]
-
-  private val DeltaTimeOneSecond = 1_000_000_000L
-  private val EntityRadius = 1.0
-  private val NegativeDt = -1L
-  private val InitialScene = mock[TestScene]
-
-  private def makeEntity(id: String, position: Vector2D): Entity =
-    Entity.circle(id = id, position = position, radius = EntityRadius).value
-
-  private def makeMovingEntity(id: String, position: Vector2D, speed: Vector2D): Entity =
-    makeEntity(id, position).withSpeed(speed).value
-
+  private val MockScene = mock[State]
+  given CollisionDetector = mock[CollisionDetector]
+  
   test("the rule should return NegativeDeltaTime when delta time is negative"):
-    given PhysicsState[TestScene] = mock[PhysicsState[TestScene]]
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], NegativeDt)
+    
+    val result = Rule.apply(MockScene, NegativeDt)(using summon[CollisionDetector])
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged scene when the entities map is empty"):
-    val mockState = mock[PhysicsState[TestScene]]
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map.empty)
-
-    given PhysicsState[TestScene] = mockState
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond)
+    val scene = sceneWithEntities(List())
     
-    result.value shouldBe InitialScene
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+
+    result.value shouldBe scene
 
   test("the rule should not update the scene if the entity has no speed (fixed entity)"):
-    val fixedEntityPositionX = 5.0
-    val fixedEntityPositionY = 5.0
-    val fixedEntityPosition = Vector2D(fixedEntityPositionX, fixedEntityPositionY)
-    val fixedEntity = makeEntity("fixed", fixedEntityPosition)
-    given TestDetector = mock[TestDetector]
+    val fixedEntity = makeFixedEntityCircle()
 
-    val mockState = mock[PhysicsState[TestScene]]
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(fixedEntity.id -> fixedEntity))
-
-    given PhysicsState[TestScene] = mockState
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond)
+    val scene = sceneWithEntities(List(fixedEntity))
     
-    result.value shouldBe InitialScene
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+
+    val resultEntity = result.value.allEntities.find(_.id == fixedEntity.id).value
+    
+    resultEntity.position shouldBe fixedEntity.position
 
   test("the rule should move an entity with speed successfully and update the scene"):
-    val movingEntityPositionX = 2.0
-    val movingEntityPositionY = 3.0
-    val movingEntityPosition = Vector2D(movingEntityPositionX, movingEntityPositionY)
-    val movingEntitySpeedX = 4.0
-    val movingEntitySpeedY = 5.0
-    val movingEntitySpeed = Vector2D(movingEntitySpeedX, movingEntitySpeedY)
-    val expectedPositionX = 6.0
-    val expectedPositionY = 8.0
-    val expectedPosition = Vector2D(expectedPositionX, expectedPositionY)
-
-    val movingEntity = makeMovingEntity(
-      "moving",
-      movingEntityPosition,
-      movingEntitySpeed
+    
+    val movingEntity = makeMovingEntityCircle(
+      id = "moving"
     )
+    
+    val scene = sceneWithEntities(List(movingEntity))
 
-    val finalScene = mock[TestScene]
-    val mockState = mock[PhysicsState[TestScene]]
+    val expectedPosition = PhysicsUtil.nextPosition(
+      movingEntity.position,
+      movingEntity.speed.value,
+      DeltaTimeOneSecond,
+      scene.UpperLeftCorner,
+      scene.LowerRightCorner
+    ).value
+    
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(movingEntity.id -> movingEntity))
-
-    var changedEntity: Option[Entity] = None
-
-    (mockState.updateEntity(_: TestScene, _: LocatableId, _: Entity))
-      .expects(InitialScene, movingEntity.id, *)
-      .onCall { (_, _, updatedEntity) =>
-        changedEntity = Some(updatedEntity)
-        finalScene
-      }
-
-    given PhysicsState[TestScene] = mockState
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond)
-
-    result.value shouldBe finalScene
-    changedEntity.value.position shouldBe expectedPosition
+    val resultEntity = result.value.allEntities.find(_.id == movingEntity.id).value
+    
+    resultEntity.position shouldBe expectedPosition
 
   test("the rule should propagate domain error when entity movement results in an invalid position"):
-    val validPositionX = 0.0
-    val validPositionY = 0.0
-    val validPosition = Vector2D(validPositionX, validPositionY)
-    val validSpeedX = -1.0
-    val validSpeedY = 0.0
-    val validSpeed = Vector2D(validSpeedX, validSpeedY)
-    val invalidPositionX = -1.0
-    val invalidPositionY = 0.0
-    val invalidPosition = Vector2D(invalidPositionX, invalidPositionY)
 
-    val invalidMoving = makeMovingEntity("invalid", validPosition, validSpeed)
-    given TestDetector = mock[TestDetector]
+    val invalidMoving = makeMovingEntityCircle(
+      id = "invalidMoving",
+      position = Vector2D(0, 0),
+      speed = Vector2D(-1, 0)
+    )
+    
+    val scene = sceneWithEntities(List(invalidMoving))
 
-    val mockState = mock[PhysicsState[TestScene]]
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(invalidMoving.id -> invalidMoving))
-
-    given PhysicsState[TestScene] = mockState
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond)
-
-    result shouldBe Left(OutOfBoundEntity(invalidPosition))
+    val invalidPosition = PhysicsUtil.nextPosition(
+      invalidMoving.position,
+      invalidMoving.speed.value,
+      DeltaTimeOneSecond,
+      scene.UpperLeftCorner,
+      scene.LowerRightCorner
+    )
+    
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+  
+    result shouldBe invalidPosition
 
   test("the rule should move multiple entities with speed successfully and update the scene"):
-    val entity1PositionX = 1.0
-    val entity1PositionY = 1.0
-    val entity1Position = Vector2D(entity1PositionX, entity1PositionY)
-    val entity1SpeedX = 1.0
-    val entity1SpeedY = 0.0
-    val entity1Speed = Vector2D(entity1SpeedX, entity1SpeedY)
-    val entity2PositionX = 2.0
-    val entity2PositionY = 2.0
-    val entity2Position = Vector2D(entity2PositionX, entity2PositionY)
-    val entity2SpeedX = 0.0
-    val entity2SpeedY = 1.0
-    val entity2Speed = Vector2D(entity2SpeedX, entity2SpeedY)
-    val expectedPosition1X = 2.0
-    val expectedPosition1Y = 1.0
-    val expectedPosition1 = Vector2D(expectedPosition1X, expectedPosition1Y)
-    val expectedPosition2X = 2.0
-    val expectedPosition2Y = 3.0
-    val expectedPosition2 = Vector2D(expectedPosition2X, expectedPosition2Y)
+    
+    val entity1 = makeMovingEntityCircle(
+      id = "entity1",
+      position = Vector2D(0, 0),
+      speed = Vector2D(1, 0)
+    )
+    
+    val entity2 = makeMovingEntityCircle(
+      id = "entity2",
+      position = Vector2D(0, 0),
+      speed = Vector2D(0, 1)
+    )
+    
+    val scene = sceneWithEntities(List(entity1, entity2))
 
-    val entity1 = makeMovingEntity("entity1", entity1Position, entity1Speed)
-    val entity2 = makeMovingEntity("entity2", entity2Position, entity2Speed)
+    val expectedPosition1 = PhysicsUtil.nextPosition(
+      entity1.position,
+      entity1.speed.value,
+      DeltaTimeOneSecond,
+      scene.UpperLeftCorner,
+      scene.LowerRightCorner
+    ).value
 
-    val finalScene = mock[TestScene]
-    val mockState = mock[PhysicsState[TestScene]]
+    val expectedPosition2 = PhysicsUtil.nextPosition(
+      entity2.position,
+      entity2.speed.value,
+      DeltaTimeOneSecond,
+      scene.UpperLeftCorner,
+      scene.LowerRightCorner
+    ).value
+    
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
-    (mockState.getEntities(_: TestScene))
-      .expects(InitialScene)
-      .returning(Map(entity1.id -> entity1, entity2.id -> entity2))
-
-    var changedEntities: Map[LocatableId, Entity] = Map.empty
-
-    (mockState.updateEntity(_: TestScene, _: LocatableId, _: Entity))
-      .expects(*, *, *)
-      .anyNumberOfTimes()
-      .onCall { (_, id, updatedEntity) =>
-        changedEntities += (id -> updatedEntity)
-        finalScene
-      }
-
-    given PhysicsState[TestScene] = mockState
-
-    val rule = summon[PhysicsRule[TestScene, TestDetector]]
-    val result = rule.apply(InitialScene)(using summon[TestDetector], DeltaTimeOneSecond)
-
-    result.value shouldBe finalScene
-    changedEntities(entity1.id).position shouldBe expectedPosition1
-    changedEntities(entity2.id).position shouldBe expectedPosition2
+    val resultEntity1 = result.value.allEntities.find(_.id == entity1.id).value
+    val resultEntity2 = result.value.allEntities.find(_.id == entity2.id).value
+    
+    resultEntity1.position shouldBe expectedPosition1
+    resultEntity2.position shouldBe expectedPosition2

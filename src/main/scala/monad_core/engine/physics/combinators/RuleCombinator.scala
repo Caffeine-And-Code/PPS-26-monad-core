@@ -1,19 +1,21 @@
 package monad_core.engine.physics.combinators
 
+import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.traits.State
 import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
 
-object RuleCombinator:
+private[physics] object RuleCombinator:
 
-  def sequence[S, CD](rules: Seq[PhysicsRule[S, CD]]): PhysicsRule[S, CD] =
-    new PhysicsRule[S, CD]:
-      override def apply(scene: S)(using detector: CD, dt: Long): Either[PhysicsError, S] =
-        rules.foldLeft[Either[PhysicsError, S]](Right(scene)): (currentSceneResult, rule) =>
-          currentSceneResult.flatMap(currentScene => rule(currentScene))
+  def sequence(rules: Seq[PhysicsRule]): PhysicsRule =
+    new PhysicsRule:
+      override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
+        rules.foldLeft[Either[PhysicsError, State]](Right(scene)): (currentSceneResult, rule) =>
+          currentSceneResult.flatMap(currentScene => rule(currentScene, dt))
 
-  extension [S, CD](self: PhysicsRule[S, CD])
+  extension (self: PhysicsRule)
 
-    private infix def andThen(next: PhysicsRule[S, CD]): PhysicsRule[S, CD] =
+    private infix def andThen(next: PhysicsRule): PhysicsRule =
       sequence(Seq(self, next))
 
-    infix def +(next: PhysicsRule[S, CD]): PhysicsRule[S, CD] =
+    infix def +(next: PhysicsRule): PhysicsRule =
       self andThen next

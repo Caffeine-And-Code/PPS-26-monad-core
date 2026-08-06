@@ -16,3 +16,12 @@ case class PhysicsDomainError(cause: EngineError)
 
 case class PhysicsRuleError(cause: String)
   extends PhysicsError(s"Physics rule failed: $cause")
+
+case class ZeroMassError()
+  extends PhysicsError(s"Mass cannot be zero")
+
+case class RayIntersectedAMissingEntity(entityId: String)
+  extends PhysicsError(s"Intersected entity is missing: $entityId")
+
+case class RayIntersectedNothing(startId: String, targetId: String)
+  extends PhysicsError(s"RayCast intersected nothing: $startId -> $targetId")

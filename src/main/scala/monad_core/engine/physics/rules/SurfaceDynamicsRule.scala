@@ -1,75 +1,74 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.errors.EngineError
+import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.traits.State
 import monad_core.engine.model.{Entity, Surface, Vector2D}
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule, PhysicsState, PhysicsUtil}
+import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.utils.PhysicsUtil
+import monad_core.engine.physics.utils.SceneUpdateEntity
 
-trait SurfaceDetection[CD]:
-  def isInside(detector: CD, entity: Entity, surface: Surface): Boolean
-
-object SurfaceDynamicsRule:
+private[physics] object SurfaceDynamicsRule:
 
   private val id = "surface-dynamics"
-  
-  given surfaceDynamicsRule[S, CD](using state: PhysicsState[S], surfaceDetection: SurfaceDetection[CD]): PhysicsRule[S, CD] with
+
+  given surfaceDynamicsRule: PhysicsRule with
 
     override val ruleId: String = SurfaceDynamicsRule.id
 
-    override def apply(scene: S)(using detector: CD, dt: Long): Either[PhysicsError, S] =
+    override def apply(scene: State, dt: Long)(using collisionDetector: CollisionDetector): Either[PhysicsError, State] =
       for
         _ <- PhysicsUtil.deltaSeconds(dt)
+        entities = scene.allEntities.filterNot(_.isFixed)
+        surfaces = scene.allSurfaces
 
-        entities = state.getEntities(scene)
-        surfaces = state.getSurfaces(scene)
+        entitiesInsideSurfaces = findEntitiesInsideSurfaces(entities, surfaces)
 
-        updatedScene <- entities.foldLeft[Either[PhysicsError, S]](Right(scene)):
-          case (Left(err), _) => Left(err)
-          case (Right(currentScene), (entityId, entity)) =>
-            surfaces.values.foldLeft[Either[PhysicsError, Entity]](Right(entity)):
-              case (Left(err), _) => Left(err)
-              case (Right(currentEntity), surface) =>
-                currentEntity.speed match
-                  case None =>
-                    Right(currentEntity)
+        updatedEntities <- applySurfacesToEntities(entitiesInsideSurfaces, dt)
 
-                  case Some(_) =>
-                    if surfaceDetection.isInside(detector, currentEntity, surface)
-                    then applySurfaceDynamics(currentEntity, surface, dt)
-                    else Right(currentEntity)
-            .map: finalEntity =>
-              if finalEntity == entity then
-                currentScene
-              else
-                state.updateEntity(currentScene, entityId, finalEntity)
+        updatedScene <- SceneUpdateEntity.updateEntities(scene, updatedEntities)
       yield updatedScene
 
-    private def applySurfaceDynamics(entity: Entity, surface: Surface, dt: Long)(using CD): Either[PhysicsError, Entity] =
-      entity.speed match
-        case None =>
-          Right(entity)
+  private def findEntitiesInsideSurfaces(entities: List[Entity], surfaces: List[Surface])(using collisionDetector: CollisionDetector): Seq[(Entity, Surface)] =
+    for
+      entity <- entities
+      surface <- surfaces
+      if collisionDetector.isInside(entity, surface)
+    yield (entity, surface)
 
-        case Some(speed) if surface.appliedForce.isEmpty && surface.frictionIndex.isEmpty =>
-          Right(entity)
+  private def applySurfacesToEntities(containing: Seq[(Entity, Surface)], dt: Long): Either[PhysicsError, List[Entity]] =
+    containing.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
+      case (Left(err), _) => Left(err)
+      case (Right(updatedEntities), (entity, surface)) =>
+        applySurfaceDynamics(entity, surface, dt).map { updatedEntity =>
+          updatedEntities :+ updatedEntity
+        }
+    }
 
-        case Some(speed) =>
-          for
-            speedAfterForce <-
-              (surface.appliedForce, entity.weight) match
-                case (Some(force), Some(weight)) =>
-                  PhysicsUtil
-                    .acceleration(force, Right(weight))
-                    .left
-                    .map(PhysicsDomainError.apply)
-                    .flatMap(acc => PhysicsUtil.nextSpeed(speed, acc, dt))
-                case _ =>
-                  Right(speed)
+  private def applySurfaceDynamics(entity: Entity, surface: Surface, dt: Long): Either[PhysicsError, Entity] =
+    entity.speed match
+      case None =>
+        Right(entity)
 
-            speedAfterFriction <-
-              surface.frictionIndex.fold[Either[PhysicsError, Vector2D]](Right(speedAfterForce)): friction =>
-                PhysicsUtil.applyFriction(speedAfterForce, friction, dt)
+      case Some(speed) =>
+        for
+          speedAfterForce <-
+            surface.appliedForce match
+              case Some(force) =>
+                PhysicsUtil
+                  .acceleration(force, entity.weight)
+                  .left
+                  .map(PhysicsDomainError.apply)
+                  .flatMap(acc => PhysicsUtil.nextSpeed(speed, acc, dt))
+              case _ =>
+                Right(speed)
 
-            updatedEntity <- entity
-              .withSpeed(speedAfterFriction)
-              .left
-              .map(PhysicsDomainError.apply)
-          yield updatedEntity
+          speedAfterFriction <-
+            surface.frictionIndex.fold[Either[PhysicsError, Vector2D]](Right(speedAfterForce)) { friction =>
+              PhysicsUtil.applyFriction(speedAfterForce, friction, dt)
+            }
+
+          updatedEntity <- entity
+            .withSpeed(speedAfterFriction)
+            .left
+            .map(PhysicsDomainError.apply)
+        yield updatedEntity

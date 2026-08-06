@@ -12,8 +12,8 @@ extension (v: Vector2D)
   infix def add(toAdd: Vector2D): Vector2D =
     Vector2D(v.x + toAdd.x, v.y + toAdd.y)
 
-  infix def sub(toAdd: Vector2D): Vector2D =
-    Vector2D(v.x - toAdd.x, v.y - toAdd.y)
+  infix def sub(toSub: Vector2D): Vector2D =
+    Vector2D(v.x - toSub.x, v.y - toSub.y)
 
   infix def times(scalar: Double): Vector2D =
     Vector2D(v.x * scalar, v.y * scalar)
