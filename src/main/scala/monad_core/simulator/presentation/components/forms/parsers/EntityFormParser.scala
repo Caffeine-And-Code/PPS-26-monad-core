@@ -29,7 +29,7 @@ object EntityFormParser:
       speed = BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey)
       health = values.get(HealthKey).flatMap(_.toDoubleOption).map(_.toInt)
       weight = values.get(WeightKey).flatMap(_.toDoubleOption).map(_.toInt)
-      teamId = values.get(TeamIdKey)
+      teamId = values.get(TeamIdKey).filterNot(id => id.isEmpty)
 
       entity = MonadCoreEntity(
         id = generateId(),

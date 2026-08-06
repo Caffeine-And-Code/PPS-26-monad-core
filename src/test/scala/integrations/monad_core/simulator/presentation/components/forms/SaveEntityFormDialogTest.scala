@@ -1,16 +1,14 @@
 package integrations.monad_core.simulator.presentation.components.forms
 
-import helpers.arrangers.MonadCoreTeamArranger
+import helpers.arrangers.ShapeKind.{Circle, Rectangle}
+import helpers.arrangers.{MonadCoreEntityArranger, MonadCoreTeamArranger}
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.*
+import monad_core.simulator.domain.engine.MonadCoreShape.SimulationCircle
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -20,8 +18,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
   val RadiusFieldIndex: Int = 2
   val WeightFieldIndex: Int = 5
   val HealthFieldIndex: Int = 6
-  val GenericCircleEntity: MonadCoreEntity = MonadCoreEntity(id = "id", position = (0.0, 0.0), shape = SimulationCircle(6))
-  val TestTeams : Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams 
+  val GenericCircleEntity: MonadCoreEntity = MonadCoreEntityArranger.arrangeRedEntity(Circle)
+  val TestTeams: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
 
   private def selectShapeInComboBox(shapeIndex: Int): Unit =
     val ShapeComboBoxIndex = 0
@@ -32,17 +30,6 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
 
   private def selectRectangleInComboBox(): Unit =
     selectShapeInComboBox(1)
-
-  private def buildCompleteEntity(entity: MonadCoreEntity): MonadCoreEntity =
-    MonadCoreEntity(
-      entity.id,
-      entity.position,
-      entity.shape,
-      health = Some(10),
-      weight = Some(11),
-      teamId = Some("testTeamId"),
-      speed = Some((1.0, 1.0))
-    )
 
   test("SaveEntityFormDialog opens successfully"):
     val props = SaveEntityFormDialogProps(
@@ -99,7 +86,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     submittedEntity shouldBe defined
 
   test("SaveEntityFormDialog invokes onSubmit with constructed Entity on valid input, with passed entityToUpdate"):
-    val entityToUpdate = buildCompleteEntity(GenericCircleEntity)
+    val entityToUpdate = MonadCoreEntityArranger.arrangeRedEntity(Circle, withOptionals = true)
     var submittedEntity: Option[MonadCoreEntity] = None
     val expectedRadius = 10.0
     val expectedWeight = 70.0
@@ -152,7 +139,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     capturedError shouldBe defined
 
   test("SaveEntityFormDialog displays visually the circle entity values passed"):
-    val circleEntityToUpdate: MonadCoreEntity = buildCompleteEntity(GenericCircleEntity)
+    val circleEntityToUpdate: MonadCoreEntity = MonadCoreEntityArranger.arrangeRedEntity(Circle, withOptionals = true)
     var submittedEntity: Option[MonadCoreEntity] = Option.empty
 
     val props = SaveEntityFormDialogProps(
@@ -173,7 +160,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     }
 
   test("SaveEntityFormDialog displays architecturally the circle entity values passed"):
-    val circleEntityToUpdate: MonadCoreEntity = buildCompleteEntity(GenericCircleEntity)
+    val circleEntityToUpdate: MonadCoreEntity = MonadCoreEntityArranger.arrangeRedEntity(Circle, withOptionals = true)
     var submittedEntity: Option[MonadCoreEntity] = Option.empty
 
     val props = SaveEntityFormDialogProps(
@@ -194,13 +181,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     }
 
   test("SaveEntityFormDialog displays visually the rectangle entity values passed"):
-    val rectangleEntityToUpdate: MonadCoreEntity = buildCompleteEntity(
-      MonadCoreEntity(
-        id = "id",
-        position = (0.0, 0.0),
-        shape = SimulationRectangle(6, 10)
-      )
-    )
+    val rectangleEntityToUpdate: MonadCoreEntity = MonadCoreEntityArranger.arrangeRedEntity(Rectangle, withOptionals = true)
     var submittedEntity: Option[MonadCoreEntity] = Option.empty
 
     val props = SaveEntityFormDialogProps(
@@ -221,13 +202,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     }
 
   test("SaveEntityFormDialog displays architecturally the rectangle entity values passed"):
-    val rectangleEntityToUpdate: MonadCoreEntity = buildCompleteEntity(
-      MonadCoreEntity(
-        id = "id",
-        position = (0.0, 0.0),
-        shape = SimulationRectangle(6, 10)
-      )
-    )
+    val rectangleEntityToUpdate: MonadCoreEntity = MonadCoreEntityArranger.arrangeRedEntity(Rectangle, withOptionals = true)
     var submittedEntity: Option[MonadCoreEntity] = Option.empty
 
     val props = SaveEntityFormDialogProps(

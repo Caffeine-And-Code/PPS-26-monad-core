@@ -1,12 +1,10 @@
 package monad_core.simulator.presentation.components.forms
 
 import helpers.arrangers.MonadCoreTeamArranger
-import monad_core.engine.model.{TeamId as TeamToRemoveId, *}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, EntityFormParser, LocatableFormShapes}
-import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -192,7 +190,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.find(_.id == EntityFormParser.TeamIdKey).value):
       case select: SelectFieldSpec =>
-        select.options should be(teams.map(_.id))
+        select.options should be(teams.map(_.id).appended(""))
         select.defaultValue should be(Some("RedTeam"))
 
   test("buildFields should return an empty team options list when no teams are provided"):
@@ -201,4 +199,5 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
     val fields = SaveEntityFormDialog.buildFields(Seq.empty, defaultValues)
 
     inside(fields.find(_.id == EntityFormParser.TeamIdKey).value):
-      case select: SelectFieldSpec => select.options should be(Seq.empty)
+      case select: SelectFieldSpec =>
+        select.options should be(Seq(""))

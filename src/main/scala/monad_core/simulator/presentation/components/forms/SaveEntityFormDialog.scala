@@ -1,7 +1,5 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Team}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
@@ -108,7 +106,7 @@ object SaveEntityFormDialog:
       SelectFieldSpec(
         id = EntityFormParser.TeamIdKey,
         label = "Team",
-        options = teams.map(_.id),
+        options = teams.map(_.id).appended(""),
         defaultValue = defaultValues.teamId
       )
     )

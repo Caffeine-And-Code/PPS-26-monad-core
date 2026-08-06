@@ -5,7 +5,7 @@ import monad_core.engine.core.Scene
 import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.painters.Drawer
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -31,7 +31,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val firstFrame = new CountDownLatch(1)
     val received = new AtomicReference[World]()
 
-    val engine = MonadCodeGameEngineRuntime()
+    val engine = MonadCoreGameEngineRuntime()
 
     engine.reset(MonadCoreWorld(Scene()))
     engine.attach(world => {
@@ -46,7 +46,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
   test("play and pause do not break the frame loop"):
     val frames = new CountDownLatch(3)
 
-    val engine = MonadCodeGameEngineRuntime()
+    val engine = MonadCoreGameEngineRuntime()
 
     engine.reset(MonadCoreWorld(Scene()))
     engine.attach(_ => frames.countDown())
@@ -65,7 +65,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val frameAfterReset  = new CountDownLatch(1)
     val received = new AtomicReference[World]()
 
-    val engine = MonadCodeGameEngineRuntime()
+    val engine = MonadCoreGameEngineRuntime()
 
     engine.attach { world =>
       if world.getAllEntities == worldAfterReset.getAllEntities then

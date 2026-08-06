@@ -12,7 +12,7 @@ object BaseTranslator:
   def determineShape(shape2D: EngineShape): MonadCoreShape =
     shape2D match
       case EngineShape.Circle(radius) => SimulationCircle(radius)
-      case EngineShape.Rectangle(length, height) => SimulationRectangle(length, height)
+      case EngineShape.Rectangle(height, length) => SimulationRectangle(width = length, height = height)
 
   extension (either: Either[EngineError, EngineEntity])
     def toSimulationEitherEntity: Either[EngineError, MonadCoreEntity] =
@@ -21,7 +21,7 @@ object BaseTranslator:
   extension (either: Either[EngineError, EngineSurface])
     def toSimulationEitherSurface: Either[EngineError, MonadCoreSurface] =
       either.map(_.toSimulationSurface)
-  
+
   extension (either: Either[EngineError, EngineTeam])
     def toSimulationEitherTeam: Either[EngineError, MonadCoreTeam] =
       either.map(_.toSimulationTeam)

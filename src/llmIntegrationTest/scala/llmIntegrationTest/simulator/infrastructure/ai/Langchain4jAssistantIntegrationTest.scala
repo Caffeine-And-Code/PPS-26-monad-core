@@ -1,41 +1,31 @@
 package llmIntegrationTest.simulator.infrastructure.ai
 
+import helpers.arrangers.MonadCoreEntityArranger.DefaultCircleRadius
+import helpers.arrangers.{MonadCoreEntityArranger, ShapeKind}
 import llmIntegrationTest.langchain4j.judge.LlmJudgeAssistant
-import monad_core.engine.model.{Entity, LocatableId, Vector2D}
+import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
+import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
+import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.domain.ai.ConversationId
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.simulator.domain.engine.MonadCoreShape.SimulationCircle
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistant, Langchain4jOllamaConfig}
 import org.scalactic.Prettifier.default
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.EitherValues.*
-import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
-import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
-import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
-import monad_core.simulator.domain.engine.MonadCoreEntity
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistant, Langchain4jOllamaConfig}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import scala.compiletime.uninitialized
 
 class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with MockFactory with BeforeAndAfterEach:
 
-  val circleEntity: MonadCoreEntity = MonadCoreEntity(
-    id = "e1",
-    position = (20, 20),
-    shape = SimulationCircle(50),
-    weight = Some(70),
-    speed = Some((20, 35))
-  )
+  val circleEntity: MonadCoreEntity = MonadCoreEntityArranger.arrangeRedEntity(ShapeKind.Circle, withOptionals = true)
 
-  val rectangleEntity: MonadCoreEntity = MonadCoreEntity(
-      id = "e2",
-      position = (4, 3),
-      shape = SimulationRectangle(11, 9),
-      weight = Some(20),
-    )
+  val rectangleEntity: MonadCoreEntity = MonadCoreEntityArranger.arrangeRedEntity(ShapeKind.Rectangle, withOptionals = true)
 
   val ollamaConfig = Langchain4jOllamaConfig(
     url = "http://localhost:11434",
@@ -83,7 +73,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     result should onlyExecuteTool("getAllEntities")
 
   test("Can create a circular entity using the assistant when game engine is in pause"):
-    val userMessage = "Create a circle entity with id e1 with center in 20,20 and a radius of 50, his weight is 70, and a speed of 20,35"
+    val userMessage = s"Create a circle entity with id ${circleEntity.id} with center in ${circleEntity.position._1},${circleEntity.position._2} and a radius of $DefaultCircleRadius, his weight is ${circleEntity.weight.get}, a speed of ${circleEntity.speed.get._1},${circleEntity.speed.get._2}, with health of ${circleEntity.health.get} and associated to the ${circleEntity.teamId.get} team"
     val assistant = getAssistant
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()

@@ -1,7 +1,5 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.Surface
 import monad_core.simulator.domain.engine.MonadCoreSurface
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*

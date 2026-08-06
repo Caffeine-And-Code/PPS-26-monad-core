@@ -6,7 +6,7 @@ import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.stages.ScalaFxLauncher
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound, UnexpectedStartupFailure}
@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext
 class ScalaFxLauncherTest extends AnyFunSuite with Matchers with MockFactory:
   given mockedAgent: AiAgent = mock[AiAgent]
 
-  given runtime: MonadCodeGameEngineRuntime = MonadCodeGameEngineRuntime()
+  given runtime: MonadCoreGameEngineRuntime = MonadCoreGameEngineRuntime()
 
   given world: World = MonadCoreWorld(Scene())
 

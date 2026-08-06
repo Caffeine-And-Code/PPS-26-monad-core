@@ -5,7 +5,7 @@ import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.core.Scene
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.GameEnginePanel
 import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, SceneRendererPanelBuilder}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
@@ -19,7 +19,7 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
 class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
-  given runtime: MonadCodeGameEngineRuntime = MonadCodeGameEngineRuntime()
+  given runtime: MonadCoreGameEngineRuntime = MonadCoreGameEngineRuntime()
 
   given world: World = MonadCoreWorld(Scene())
 

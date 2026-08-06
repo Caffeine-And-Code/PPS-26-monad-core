@@ -5,7 +5,7 @@ import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
-import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
@@ -38,7 +38,7 @@ object Launcher :
 
     given world: World = MonadCoreWorld()
 
-    given gameEngine: GameEngineRuntime = MonadCodeGameEngineRuntime()
+    given gameEngine: GameEngineRuntime = MonadCoreGameEngineRuntime()
 
     given aiAgent: AiAgent = Langchain4jAgentFactory
       .buildOllama(

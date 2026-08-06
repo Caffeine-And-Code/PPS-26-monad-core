@@ -13,6 +13,7 @@ private[infrastructure] object EntityTranslator:
         position = (entity.position.x, entity.position.y),
         shape = BaseTranslator.determineShape(entity.shape),
         speed = entity.speed.flatMap(speed => Option.apply(speed.x, speed.y)),
+        weight = entity.weight.flatMap(weight => Option.apply(weight.value)),
         health = entity.health.flatMap(health => Option.apply(health.value)),
         teamId = entity.teamId.flatMap(teamId => Option.apply(teamId.value))
       )

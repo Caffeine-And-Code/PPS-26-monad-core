@@ -7,3 +7,7 @@ opaque type Weight = Int
 object Weight:
   def apply(w: Int): Either[EngineError, Weight] =
     Either.cond(w >= 0, w, WeightCannotBeNegative())
+
+  extension (weight: Weight)
+
+    def value: Int = weight

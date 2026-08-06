@@ -7,7 +7,7 @@ import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import scalafx.animation.AnimationTimer
 
-final class MonadCodeGameEngineRuntime extends GameEngineRuntime:
+final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
   private var gameLoop = GameLoop()
   private var currentWorld: Option[World] = None
   private var timer: Option[AnimationTimer] = None
@@ -43,5 +43,5 @@ final class MonadCodeGameEngineRuntime extends GameEngineRuntime:
 
   override def isRunning: Boolean = gameLoop.isRunning
 
-object MonadCodeGameEngineRuntime:
-  def apply(): MonadCodeGameEngineRuntime = new MonadCodeGameEngineRuntime
+object MonadCoreGameEngineRuntime:
+  def apply(): MonadCoreGameEngineRuntime = new MonadCoreGameEngineRuntime
