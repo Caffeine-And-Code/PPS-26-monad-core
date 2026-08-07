@@ -1,6 +1,6 @@
 package monad_core.engine.public_api
 
-import monad_core.engine.model.{Entity, Locatable, Shape2D, TeamId}
+import monad_core.engine.model.{Locatable, TeamId}
 import scalafx.scene.paint.Color
 
 trait Painter:

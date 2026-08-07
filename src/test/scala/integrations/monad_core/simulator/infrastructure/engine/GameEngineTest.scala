@@ -7,8 +7,8 @@ import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.domain.engine.MonadCoreEntity
 import monad_core.simulator.domain.engine.MonadCoreShape.SimulationCircle
+import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
-import monad_core.simulator.presentation.painters.Drawer
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.util.concurrent.atomic.AtomicReference
@@ -16,7 +16,7 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
-  given Painter = Drawer
+  given Painter = PaintArchitect
 
   private val AwaitTimeout = 5L
 

@@ -2,7 +2,7 @@ package monad_core.simulator.presentation.panels
 
 import javafx.scene.input.{MouseButton, MouseEvent}
 import monad_core.engine.public_api.Painter
-import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface}
@@ -10,7 +10,7 @@ import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
 import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps, SaveSurfaceFormDialog, SaveSurfaceFormDialogProps}
 import monad_core.simulator.presentation.components.{Error, MenuButtonItem, NotificationManager, ResizableCanvas}
-import monad_core.simulator.presentation.painters.Drawer
+import monad_core.simulator.presentation.painters.ShapePainter
 import monad_core.simulator.presentation.panels.MouseHitDetector.checkMouseHit
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
@@ -80,10 +80,11 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
   def build()
            (
              using gameEngineRuntime: GameEngineRuntime,
-             world: World
+             world: World,
+             architect: ShapeArchitect,
+             painter: Painter
            )
   : Either[BaseError, VBox] =
-    given Painter = Drawer
 
     val canvas = ResizableCanvas()
     val menusAnchor = Some(canvas)
@@ -129,7 +130,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
       }
     )
 
-    val onFrame: World => Unit = _ => Drawer.flush(canvas.graphicsContext2D)
+    val onFrame: World => Unit = _ => ShapePainter.paint(canvas.graphicsContext2D)
 
     gameEngineRuntime.attach(onFrame)
     gameEngineRuntime.resetToSnapshot()

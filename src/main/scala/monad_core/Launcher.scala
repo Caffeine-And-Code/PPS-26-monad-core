@@ -1,10 +1,12 @@
 package monad_core
 
+import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.ai.AiAgent
-import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
+import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
@@ -14,8 +16,8 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}
 
-object Launcher :
-  private def buildLauncher()(using World, GameEngineRuntime): ScalaFxLauncher =
+object Launcher:
+  private def buildLauncher()(using World, GameEngineRuntime, ShapeArchitect, Painter): ScalaFxLauncher =
     val imageConfig = BaseImageConfig()
 
     val gamePanel = GameEnginePanel(
@@ -34,7 +36,7 @@ object Launcher :
   def outcomeFor(result: Either[BaseError, Unit]): RouteResponse =
     result match
       case Left(error) => RouteResponse(success = false, message = s"Startup failed: ${error.message}")
-      case Right(_)     => RouteResponse(success = true, message = s"${GREEN}Build Completed$RESET")
+      case Right(_) => RouteResponse(success = true, message = s"${GREEN}Build Completed$RESET")
 
   private def evaluateModel(): RouteResponse =
     RouteResponse(
@@ -54,6 +56,8 @@ object Launcher :
           modelName = sys.env.getOrElse("MONAD_CORE_MODEL_NAME", "gemma4:e4b")
         )
       )
+    
+    given paintArchitect: Painter & ShapeArchitect = PaintArchitect
 
     lazy val evaluateModelRoute = evaluateModel()
     lazy val guiRoute = outcomeFor(buildLauncher().run())
