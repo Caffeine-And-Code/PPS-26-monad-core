@@ -22,7 +22,7 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
       initialWorld = mock[World],
       prompt = "Create a circle",
       language = AgentEvaluationLanguage.English,
-      toolCalls = Seq(ToolCall.CreateCircle("circle-1")),
+      toolCalls = Seq(ToolCall.CreateCircleEntity("circle-1", 10, 20, 5)),
       expectation = "A circle is created"
     )
 
