@@ -97,10 +97,16 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     EntityContextMenu.attachTo(
       canvas = canvas,
       findEntityAt = (x, y) =>
-        val clickableElements: List[Clickable] =
-          List.from(world.getAllEntities).appendedAll(world.getAllSurfaces)
-
-        clickableElements.find(_.checkMouseHit((x, y))),
+        (for
+          entities <- world.getAllEntities
+          surfaces <- world.getAllSurfaces
+          clickableElements = List.from(entities).appendedAll(surfaces)
+        yield clickableElements.find(_.checkMouseHit((x, y)))) match 
+          case Right(value) => value
+          case Left(error) => 
+            onError(error)
+            None
+        ,
       buildMenuItems = {
         case entity: MonadCoreEntity => Seq(
           MenuButtonItem(s"Edit ${entity.id} Entity", () => SaveEntityFormDialog.show(
@@ -108,7 +114,12 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
               title = "Entity Settings",
               anchorNode = menusAnchor,
               onSubmit = entity => onSubmit(SaveEntityCommand(entity), world.updateEntity),
-              teams = world.getAllTeams,
+              teams = world.getAllTeams match 
+                case Right(teams) => teams
+                case Left(error) => 
+                  onError(error)
+                  List.empty
+              ,
               onError = onError,
               entityToUpdate = Some(entity)
             )

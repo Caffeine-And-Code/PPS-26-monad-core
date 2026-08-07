@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.panels
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.*
 import monad_core.simulator.presentation.components.forms.*
@@ -30,6 +31,13 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
     def onFormSubmit[T](submitResult: T, action: T => Unit): Unit =
       action(submitResult)
       gameEngineRuntime.createSnapshot()
+      
+    def getTeamsSafely(providedWorld: World): List[MonadCoreTeam] =
+      providedWorld.getAllTeams match
+        case Right(teams) => teams
+        case Left(error) =>
+          onFormError(error)
+          List.empty
 
     val editTeamsIsDisabled = BooleanProperty(true)
     val deleteTeamsIsDisabled = BooleanProperty(true)
@@ -38,8 +46,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
       actionResult match
         case Left(error) => onFormError(error)
         case Right(_) =>
-          editTeamsIsDisabled.value = world.getAllTeams.length <= 1
-          deleteTeamsIsDisabled.value = world.getAllTeams.isEmpty
+          val teams = getTeamsSafely(world)
+
+          editTeamsIsDisabled.value = teams.length <= 1
+          deleteTeamsIsDisabled.value = teams.isEmpty
 
     for
       playPauseBtn <- IconButton.buildToggle(
@@ -81,7 +91,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                 title = "Entity Settings",
                 anchorNode = contextMenuAnchor,
                 onSubmit = entity => onFormSubmit(SaveEntityCommand(entity), world.createEntity),
-                teams = world.getAllTeams,
+                teams = getTeamsSafely(world),
                 onError = onFormError
               )
             )),
@@ -93,7 +103,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                   title = "Team Settings",
                   anchorNode = contextMenuAnchor,
                   onSubmit = team => onFormSubmit(SaveTeamCommand(team), command => onTeamAction(world.createTeam(command))),
-                  possibleEnemies = world.getAllTeams,
+                  possibleEnemies = getTeamsSafely(world),
                   onError = onFormError
                 )
               )),
@@ -119,12 +129,12 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                         title = s"${team.id} Settings",
                         anchorNode = contextMenuAnchor,
                         onSubmit = team => onFormSubmit(SaveTeamCommand(team), command => world.updateTeam(command)),
-                        possibleEnemies = world.getAllTeams.filterNot(_.id == team.id),
+                        possibleEnemies = getTeamsSafely(world).filterNot(_.id == team.id),
                         onError = onFormError,
                         teamToUpdate = Some(team)
                       )
                     ),
-                  teams = world.getAllTeams,
+                  teams = getTeamsSafely(world),
                   onError = onFormError
                 )
               ),
@@ -136,7 +146,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                 props = ChooseTeamFormDialogProps(
                   anchorNode = contextMenuAnchor,
                   onSubmit = team => onFormSubmit(team.id, id => onTeamAction(world.removeTeam(id))),
-                  teams = world.getAllTeams,
+                  teams = getTeamsSafely(world),
                   onError = onFormError
                 )
               ),

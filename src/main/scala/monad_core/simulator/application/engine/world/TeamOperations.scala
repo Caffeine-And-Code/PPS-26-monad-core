@@ -8,7 +8,7 @@ case class SaveTeamCommand(
                           )
 
 private[world] trait TeamOperations:
-  def getAllTeams: List[MonadCoreTeam]
+  def getAllTeams: Either[BaseError, List[MonadCoreTeam]]
 
   def getTeam(id: String): Either[BaseError, MonadCoreTeam]
 

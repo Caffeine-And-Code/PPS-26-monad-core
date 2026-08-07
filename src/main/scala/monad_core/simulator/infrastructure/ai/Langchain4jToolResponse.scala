@@ -16,6 +16,14 @@ object Langchain4jToolResponse:
       case Right(_) =>
         s"Success: $successMessage"
 
+  def getSafeList[T](
+                      result: Either[BaseError, List[T]]
+                    )(onSuccess: List[T] => String): String =
+    result match
+      case Left(error) =>
+        s"Error: ${error.message}"
+      case Right(list) => onSuccess(list)
+
   def render[A](
                  result: Either[BaseError, A]
                )(
@@ -56,7 +64,7 @@ object Langchain4jToolResponse:
   def renderSurface(surface: MonadCoreSurface): String =
     List(
       s"id: ${surface.id}",
-      s"position: ${renderVector((surface.position._1,surface.position._2))}",
+      s"position: ${renderVector((surface.position._1, surface.position._2))}",
       s"shape: ${renderShape(surface.shape)}",
       s"frictionIndex: ${surface.frictionIndex.fold("none")(_.toString)}",
       s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}"

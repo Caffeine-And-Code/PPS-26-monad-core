@@ -51,7 +51,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     Langchain4jTools()(using world, gameEngineRuntime)
 
   test("list all entities in the world returns empty if scene is empty"):
-    (() => world.getAllEntities).expects().returning(List.empty).once()
+    (() => world.getAllEntities).expects().returning(Right(List.empty)).once()
 
     val result = tools.getAllEntities
 
@@ -60,7 +60,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   test("list all entities in the world returns the list"):
     val circle = MonadCoreEntity("circle", (posX, posY), SimulationCircle(radius))
     val rectangle = MonadCoreEntity("rectangle", (posX, posY), SimulationRectangle(rectangleLength, height))
-    (() => world.getAllEntities).expects().returning(List(circle, rectangle)).once()
+    (() => world.getAllEntities).expects().returning(Right(List(circle, rectangle))).once()
 
     val result = tools.getAllEntities
 
@@ -227,14 +227,14 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     result shouldBe s"Success: Entity '$entityId' removed."
 
   test("list all surfaces in the world returns empty if scene is empty"):
-    (() => world.getAllSurfaces).expects().returning(List.empty).once()
+    (() => world.getAllSurfaces).expects().returning(Right(List.empty)).once()
 
     val result = tools.getAllSurfaces
 
     result shouldBe "Result: no surfaces found."
 
   test("list all surfaces in the world returns the list"):
-    (() => world.getAllSurfaces).expects().returning(List(baseSimulationCircleSurface)).once()
+    (() => world.getAllSurfaces).expects().returning(Right(List(baseSimulationCircleSurface))).once()
 
     val result = tools.getAllSurfaces
 
@@ -318,7 +318,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     result shouldBe s"Success: Surface '$surfaceId' removed."
 
   test("list all teams in the world returns empty if scene is empty"):
-    (() => world.getAllTeams).expects().returning(List.empty).once()
+    (() => world.getAllTeams).expects().returning(Right(List.empty)).once()
 
     val result = tools.getAllTeams
 
@@ -326,7 +326,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("list all teams in the world returns the list"):
     val team = MonadCoreTeam("blue", Set("red", "green"))
-    (() => world.getAllTeams).expects().returning(List(team)).once()
+    (() => world.getAllTeams).expects().returning(Right(List(team))).once()
 
     val result = tools.getAllTeams
 

@@ -23,7 +23,7 @@ class ScalaFxLauncherTest extends AnyFunSuite with Matchers with MockFactory:
 
   given runtime: MonadCoreGameEngineRuntime = MonadCoreGameEngineRuntime()
 
-  given world: World = MonadCoreWorld(Scene())
+  given world: World = MonadCoreWorld()
 
   test("ScalaFxLauncher starts up, shows the stage, and shuts down cleanly"):
     val mainStage: MainStageBuilder = mock[MainStageBuilder]

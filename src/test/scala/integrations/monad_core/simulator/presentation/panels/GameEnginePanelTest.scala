@@ -6,6 +6,7 @@ import monad_core.engine.core.Scene
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.domain.engine.MonadCoreScene
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.presentation.panels.GameEnginePanel
@@ -25,7 +26,7 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
 
   given ShapeArchitect & Painter = PaintArchitect
   
-  given World = MonadCoreWorld(Scene())
+  given World = MonadCoreWorld()
 
   val modePanel: GameEngineModePanelBuilder = mock[GameEngineModePanelBuilder]
   val sceneRenderer: SceneRendererPanelBuilder = mock[SceneRendererPanelBuilder]

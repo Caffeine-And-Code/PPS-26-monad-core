@@ -1,14 +1,14 @@
 package integrations.monad_core.simulator.infrastructure.engine
 
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import monad_core.engine.core.Scene
-import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
-import monad_core.simulator.domain.engine.MonadCoreEntity
 import monad_core.simulator.domain.engine.MonadCoreShape.SimulationCircle
+import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreScene}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
+import org.scalatest.EitherValues.convertEitherToValuable
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.util.concurrent.atomic.AtomicReference
@@ -23,16 +23,14 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
   private val StarterEntityId = "starter"
 
   private def idsExcludingStarter(world: World): Set[String] =
-    world.getAllEntities.map(_.id).toSet - StarterEntityId
+    world.getAllEntities.value.map(_.id).toSet - StarterEntityId
 
   private def worldWithOneEntity(id: String): World =
-    val entity = getOrFail(Entity.circle(id, Vector2D(0, 0), 1))
-    val scene = Scene()
-    val world = for
-      newScene <- scene.addEntity(entity)
-    yield MonadCoreWorld(newScene)
+    val entity = MonadCoreEntity(id, (0,0), SimulationCircle(2))
 
-    getOrFail(world)
+    MonadCoreWorld(MonadCoreScene(
+      entities = List(entity)
+    ))
 
   test("init starts the loop and delivers frames through onFrame"):
     val firstFrame = new CountDownLatch(1)
@@ -40,21 +38,23 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     val engine = MonadCoreGameEngineRuntime()
 
-    engine.initializeWorld(MonadCoreWorld(Scene()))
+    engine.initializeWorld(MonadCoreWorld(MonadCoreScene()))
     engine.attach(world => {
       received.set(world)
       firstFrame.countDown()
     })
 
     assert(firstFrame.await(AwaitTimeout, TimeUnit.SECONDS), "onFrame was never called after init")
-    received.get().getAllEntities.length should be(1)
+    inside(received.get().getAllEntities):
+      case Right(entities) =>
+        entities.length should be(1)
 
   test("play and pause do not break the frame loop"):
     val frames = new CountDownLatch(3)
 
     val engine = MonadCoreGameEngineRuntime()
 
-    engine.initializeWorld(MonadCoreWorld(Scene()))
+    engine.initializeWorld(MonadCoreWorld(MonadCoreScene()))
     engine.attach(_ => frames.countDown())
     engine.start()
     engine.stop()
@@ -116,7 +116,8 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     engine.resetToSnapshot()
 
-    frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS) shouldBe true
+    val hasWaitedForNextFrame = frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS)
+    hasWaitedForNextFrame should be(true)
     idsExcludingStarter(received.get()) shouldBe Set("keeper")
 
   test("resetToSnapshot without a prior createSnapshot does not crash and leaves the loop deliverable"):

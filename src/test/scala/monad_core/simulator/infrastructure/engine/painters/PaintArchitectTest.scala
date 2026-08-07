@@ -20,6 +20,9 @@ class PaintArchitectTest extends AnyFunSuite with Matchers with Inside with Mock
   override def beforeEach(): Unit =
     PaintArchitect.drainBuffer()
 
+  override def afterEach(): Unit =
+    PaintArchitect.drainBuffer()
+
   def generateRandomTeamId(): TeamId =
     TeamId(Random.nextString(5)).value
 

@@ -1,14 +1,12 @@
 package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.agent.tool.{P, Tool}
-import monad_core.engine.model.*
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.Langchain4jToolResponse.*
-import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
 
 case class IncompleteEntitySpeed() extends BaseError("Both speedX and speedY must be provided together")
 
@@ -19,7 +17,7 @@ case class Langchain4jTools()(
 
   @Tool(Array("Lists all entities in the world."))
   def getAllEntities: String =
-    renderList(world.getAllEntities, "entities")(renderEntity)
+    getSafeList(world.getAllEntities)(renderList(_, "entities")(renderEntity))
 
   @Tool(Array("Gets an entity by its identifier."))
   def getEntity(
@@ -164,7 +162,7 @@ case class Langchain4jTools()(
 
   @Tool(Array("Lists all surfaces in the world."))
   def getAllSurfaces: String =
-    renderList(world.getAllSurfaces, "surfaces")(renderSurface)
+    getSafeList(world.getAllSurfaces)(renderList(_, "surfaces")(renderSurface))
 
   @Tool(Array("Gets a surface by its identifier."))
   def getSurface(
@@ -275,7 +273,7 @@ case class Langchain4jTools()(
 
   @Tool(Array("Lists all teams in the world."))
   def getAllTeams: String =
-    renderList(world.getAllTeams, "teams")(renderTeam)
+    getSafeList(world.getAllTeams)(renderList(_, "teams")(renderTeam))
 
   @Tool(Array("Gets a team by its identifier."))
   def getTeam(

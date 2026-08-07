@@ -8,7 +8,7 @@ case class SaveEntityCommand(
                             )
 
 private[world] trait EntityOperations:
-  def getAllEntities: List[MonadCoreEntity]
+  def getAllEntities: Either[BaseError,List[MonadCoreEntity]]
 
   def getEntity(entityId: String): Either[BaseError, MonadCoreEntity]
 

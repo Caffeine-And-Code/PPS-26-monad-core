@@ -64,7 +64,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val userMessage = "witch entities are in the scene?"
     val assistant = getAssistant
 
-    (() => world.getAllEntities).expects().returns(List(circleEntity, rectangleEntity)).once()
+    (() => world.getAllEntities).expects().returns(Right(List(circleEntity, rectangleEntity))).once()
 
     val result = assistant.chat(memoryId, userMessage)
 
@@ -87,7 +87,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val userMessage = "First list all entities in the scene, then start the game engine."
     val assistant = getAssistant
 
-    (() => world.getAllEntities).expects().returning(List(circleEntity, rectangleEntity)).once()
+    (() => world.getAllEntities).expects().returning(Right(List(circleEntity, rectangleEntity))).once()
     (() => gameEngineRuntime.start()).expects().once()
 
     val result = assistant.chat(memoryId, userMessage)

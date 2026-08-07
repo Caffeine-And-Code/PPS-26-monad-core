@@ -8,7 +8,7 @@ case class SaveSurfaceCommand(
                              )
 
 private[world] trait SurfaceOperations:
-  def getAllSurfaces: List[MonadCoreSurface]
+  def getAllSurfaces: Either[BaseError, List[MonadCoreSurface]]
 
   def getSurface(id: String): Either[BaseError, MonadCoreSurface]
 
