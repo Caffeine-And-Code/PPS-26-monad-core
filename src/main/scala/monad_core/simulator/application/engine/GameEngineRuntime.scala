@@ -6,6 +6,8 @@ import monad_core.simulator.application.engine.world.World
 trait GameEngineRuntime:
   def start(): Unit
   def stop(): Unit
-  def reset(word: World): Unit
   def attach(renderer: World => Unit)(using Painter): Unit
   def isRunning: Boolean
+  def createSnapshot() : Unit
+  def resetToSnapshot() : Unit
+  def initializeWorld(world: World) : Unit

@@ -5,7 +5,9 @@ import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import javafx.scene.control.Button
 import javafx.scene.layout.HBox
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import org.scalamock.scalatest.MockFactory
@@ -16,9 +18,11 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import scalafx.Includes.{jfxButton2sfx, jfxHBox2sfx}
 import scalafx.beans.property.BooleanProperty
+import scalafx.scene.layout.VBox
 
 class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
   given mockWorld: World = mock[World]
+  given mockEngineRuntime : GameEngineRuntime = mock[GameEngineRuntime]
 
   val ToolsButtonIndex = 0
   val SpacingRegionIndex = 1
@@ -34,7 +38,7 @@ class GameEngineModePanelTest extends AnyFunSuite with Inside with Matchers with
     val onModeChange = mockFunction[Boolean, Unit]
     val onStopClick = mockFunction[Unit]
 
-    val builderResult = GameEngineModePanel.build(imageConfigRecord, onModeChange, onStopClick, freshSceneCanBeUpdated)
+    val builderResult: Either[BaseError, VBox] = GameEngineModePanel.build(imageConfigRecord, onModeChange, onStopClick, freshSceneCanBeUpdated)
 
     inside(builderResult):
       case Right(scene) =>

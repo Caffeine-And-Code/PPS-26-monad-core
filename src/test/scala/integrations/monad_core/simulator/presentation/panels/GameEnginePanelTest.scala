@@ -34,8 +34,9 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
     onStopClick.expects().never()
 
   def setupCorrectModePanel(): Unit =
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World))
-      .expects(*, *, *, *, *).returns(
+    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+      .expects(*, *, *, *, *, *)
+      .returns(
         Right(
           new VBox {
             children = Seq()
@@ -44,13 +45,13 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
       )
 
   def setupInvalidModePanel(): Unit =
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World))
-      .expects(*, *, *, *, *)
+    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+      .expects(*, *, *, *, *, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
   def setupNeverCalledModePanel(): Unit =
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World))
-      .expects(*, *, *, *, *)
+    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+      .expects(*, *, *, *, *, *)
       .never()
 
   def setupCorrectSceneRenderer(): Unit = {
@@ -110,8 +111,9 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
     // SceneRenderer runs first and succeeds, then ModePanel receives bad config and fails
     setupCorrectSceneRenderer()
     val badImageConfig: ImageConfigRecord = mock[ImageConfigRecord]
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World))
-      .expects(badImageConfig, *, *, *, *)
+
+    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+      .expects(badImageConfig, *, *, *, *, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
     val enginePanel = GameEnginePanel(modePanel, sceneRenderer, badImageConfig)

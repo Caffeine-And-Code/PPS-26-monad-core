@@ -1,6 +1,7 @@
 package monad_core.simulator.presentation.panels
 
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.*
@@ -21,9 +22,15 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
              isEngineRunning: BooleanProperty
            )
            (
-             using world: World
+             using world: World,
+             gameEngineRuntime: GameEngineRuntime
            ): Either[BaseError, VBox] = {
     val onFormError: BaseError => Unit = err => NotificationManager.show(err.message, Error)
+
+    def onFormSubmit[T](submitResult: T, action: T => Unit): Unit =
+      action(submitResult)
+      gameEngineRuntime.createSnapshot()
+
     val editTeamsIsDisabled = BooleanProperty(true)
     val deleteTeamsIsDisabled = BooleanProperty(true)
 
@@ -73,7 +80,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
               props = SaveEntityFormDialogProps(
                 title = "Entity Settings",
                 anchorNode = contextMenuAnchor,
-                onSubmit = entity => world.createEntity(SaveEntityCommand(entity)),
+                onSubmit = entity => onFormSubmit(SaveEntityCommand(entity), world.createEntity),
                 teams = world.getAllTeams,
                 onError = onFormError
               )
@@ -85,7 +92,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                 props = SaveTeamFormDialogProps(
                   title = "Team Settings",
                   anchorNode = contextMenuAnchor,
-                  onSubmit = team => onTeamAction(world.createTeam(SaveTeamCommand(team))),
+                  onSubmit = team => onFormSubmit(SaveTeamCommand(team), command => onTeamAction(world.createTeam(command))),
                   possibleEnemies = world.getAllTeams,
                   onError = onFormError
                 )
@@ -97,7 +104,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                 props = SaveSurfaceFormDialogProps(
                   title = "Surface Settings",
                   anchorNode = contextMenuAnchor,
-                  onSubmit = surface => world.createSurface(SaveSurfaceCommand(surface)),
+                  onSubmit = surface => onFormSubmit(SaveSurfaceCommand(surface), world.createSurface),
                   onError = onFormError
                 )
               )),
@@ -111,7 +118,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                       props = SaveTeamFormDialogProps(
                         title = s"${team.id} Settings",
                         anchorNode = contextMenuAnchor,
-                        onSubmit = team => world.updateTeam(SaveTeamCommand(team)),
+                        onSubmit = team => onFormSubmit(SaveTeamCommand(team), command => world.updateTeam(command)),
                         possibleEnemies = world.getAllTeams.filterNot(_.id == team.id),
                         onError = onFormError,
                         teamToUpdate = Some(team)
@@ -128,7 +135,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
               onSelect = () => ChooseTeamFormDialog.show(
                 props = ChooseTeamFormDialogProps(
                   anchorNode = contextMenuAnchor,
-                  onSubmit = team => onTeamAction(world.removeTeam(team.id)),
+                  onSubmit = team => onFormSubmit(team.id, id => onTeamAction(world.removeTeam(id))),
                   teams = world.getAllTeams,
                   onError = onFormError
                 )

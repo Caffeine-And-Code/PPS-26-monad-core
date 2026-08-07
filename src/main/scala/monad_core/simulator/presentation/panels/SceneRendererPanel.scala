@@ -89,6 +89,10 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     val menusAnchor = Some(canvas)
     val onError: BaseError => Unit = error => NotificationManager.show(error.message, Error)
 
+    def onSubmit[T](submitResult: T, action: T => Unit): Unit =
+      action(submitResult)
+      gameEngineRuntime.createSnapshot()
+
     EntityContextMenu.attachTo(
       canvas = canvas,
       findEntityAt = (x, y) =>
@@ -102,25 +106,25 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
             props = SaveEntityFormDialogProps(
               title = "Entity Settings",
               anchorNode = menusAnchor,
-              onSubmit = entity => world.updateEntity(SaveEntityCommand(entity)),
+              onSubmit = entity => onSubmit(SaveEntityCommand(entity), world.updateEntity),
               teams = world.getAllTeams,
               onError = onError,
               entityToUpdate = Some(entity)
             )
           )),
-          MenuButtonItem(s"Remove ${entity.id} Entity", () => world.removeEntity(entity.id))
+          MenuButtonItem(s"Remove ${entity.id} Entity", () => onSubmit(entity.id, world.removeEntity))
         )
         case surface: MonadCoreSurface => Seq(
           MenuButtonItem(s"Edit ${surface.id} Surface", () => SaveSurfaceFormDialog.show(
             props = SaveSurfaceFormDialogProps(
               title = "Surface Settings",
               anchorNode = menusAnchor,
-              onSubmit = surface => world.updateSurface(SaveSurfaceCommand(surface)),
+              onSubmit = surface => onSubmit(SaveSurfaceCommand(surface), world.updateSurface),
               onError = onError,
               surfaceToUpdate = Some(surface)
             )
           )),
-          MenuButtonItem(s"Remove ${surface.id} Surface", () => world.removeSurface(surface.id))
+          MenuButtonItem(s"Remove ${surface.id} Surface", () => onSubmit(surface.id, world.removeSurface))
         )
       }
     )
@@ -128,7 +132,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     val onFrame: World => Unit = _ => Drawer.flush(canvas.graphicsContext2D)
 
     gameEngineRuntime.attach(onFrame)
-    gameEngineRuntime.reset(world)
+    gameEngineRuntime.resetToSnapshot()
 
     val container = new VBox:
       children = Seq(canvas)
