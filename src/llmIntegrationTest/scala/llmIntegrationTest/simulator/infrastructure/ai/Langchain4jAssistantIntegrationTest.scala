@@ -15,7 +15,6 @@ import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
 import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
 import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistant, Langchain4jOllamaConfig}
-
 import scala.compiletime.uninitialized
 
 class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with MockFactory with BeforeAndAfterEach:
@@ -34,7 +33,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
   val ollamaConfig = Langchain4jOllamaConfig(
     url = "http://localhost:11434",
-    modelName = "qwen3.5:4b"
+    modelName = "gemma4:e4b"
   )
 
   val memoryId:ConversationId = ConversationId.from("chat1").value
@@ -153,7 +152,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val result = assistant.chat(memoryId, userMessage)
 
     val judgeCriteria =
-      "The assistant should say that the entity was not created because the engine is running."
+      "The assistant should say that the action can not be done because the engine is running."
     result should (beJudgedBy(judgeAssistant) withCriteria judgeCriteria)
     result should onlyExecuteTool("createCircleEntity")
 
