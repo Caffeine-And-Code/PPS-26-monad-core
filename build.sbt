@@ -94,7 +94,7 @@ lazy val root = rootProject
       }
     }
   ).settings(
-    assembly / mainClass := Some("Launcher"),
+    assembly / mainClass := Some("monad_core.Launcher"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList("META-INF", _*) => MergeStrategy.discard
@@ -105,4 +105,12 @@ lazy val root = rootProject
 
 ThisBuild / scalacOptions ++= Seq(
   "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
+)
+
+strykerMutate := Seq(
+  "src/main/scala/monad_core/engine/**/*.scala"
+)
+
+strykerTestFilter := Seq(
+  "monad_core.engine.*"
 )

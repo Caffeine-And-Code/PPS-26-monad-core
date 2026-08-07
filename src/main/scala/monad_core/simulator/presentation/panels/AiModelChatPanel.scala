@@ -28,7 +28,10 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
       action => Platform.runLater(action())
     )
     val header = AiPanelHeader(
-      AiPanelHeader.Props(() => viewModel.onClearHistory())
+      AiPanelHeader.Props(
+        onClear= () => viewModel.onClearHistory(),
+        modelName = aiAgent.getAgentInfo.modelName
+      )
     )
     val messages = MessageBox()
     val prompt = PromptComposer(

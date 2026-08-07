@@ -17,6 +17,6 @@ case class CleanHistoryCommand(
 trait AiAgent :
   def ask(command: AskAgentCommand): Future[Either[AgentResponseError, AgentResponse]]
 
-  val agentInfo: AgentInfo
+  def getAgentInfo: AgentInfo
 
   def cleanHistory(command: CleanHistoryCommand): Either[BaseError, Unit]

@@ -8,6 +8,8 @@ import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchai
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
+import monad_core.simulator.presentation.routes.RouteType.{All, Route}
+import monad_core.simulator.presentation.routes.{RouteResponse, Router}
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}
@@ -29,10 +31,15 @@ object Launcher :
 
     ScalaFxLauncher(mainStage)
 
-  def outcomeFor(result: Either[BaseError, Unit]): (Boolean, String) =
+  def outcomeFor(result: Either[BaseError, Unit]): RouteResponse =
     result match
-      case Left(error) => (false, s"Startup failed: ${error.message}")
-      case Right(_)     => (true, s"${GREEN}Build Completed$RESET")
+      case Left(error) => RouteResponse(success = false, message = s"Startup failed: ${error.message}")
+      case Right(_)     => RouteResponse(success = true, message = s"${GREEN}Build Completed$RESET")
+
+  private def evaluateModel(): RouteResponse =
+    RouteResponse(
+      success = true, message = "Model evaluated"
+    )
 
   def main(args: Array[String]): Unit =
 
@@ -44,14 +51,25 @@ object Launcher :
       .buildOllama(
         Langchain4jOllamaConfig(
           url = sys.env.getOrElse("MONAD_CORE_OLLAMA_URL", "http://localhost:11434"),
-          modelName = sys.env.getOrElse("MONAD_CORE_MODEL_NAME", "qwen3.5:4b")
+          modelName = sys.env.getOrElse("MONAD_CORE_MODEL_NAME", "gemma4:e4b")
         )
       )
 
-    val (success, message) = outcomeFor(buildLauncher().run())
+    lazy val evaluateModelRoute = evaluateModel()
+    lazy val guiRoute = outcomeFor(buildLauncher().run())
 
-    if success then
-      Console.println(s"$RESET$message")
-    else
-      Console.err.println(message)
-      sys.exit(1)
+    val result = Router()
+      .on(Route("evaluate-model"), () => evaluateModelRoute)
+      .on(All(), () => guiRoute)
+      .evaluate(args)
+
+    result match
+      case Left(error) =>
+        Console.err.println(error.message)
+        sys.exit(1)
+      case Right(response) =>
+        if response.success then
+          Console.println(s"$RESET${response.message}")
+        else
+          Console.err.println(response.message)
+          sys.exit(1)

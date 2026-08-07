@@ -3,7 +3,7 @@ package integrations.monad_core.simulator.presentation.panels
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
-import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError, ConversationId, UserPrompt}
+import monad_core.simulator.domain.ai.{AgentInfo, AgentResponse, AgentResponseError, ConversationId, UserPrompt}
 import monad_core.simulator.presentation.panels.AiModelChatPanel
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -19,17 +19,21 @@ class AiModelChatPanelTest
     with MockFactory
     with ScalaFxInit:
 
+  val agentModel = "model"
+
   given ExecutionContext = ExecutionContext.parasitic
 
   test("submit is disabled until a prompt is entered"):
-    val panel = buildPanel(mock[AiAgent])
+    val aiAgent = createAiAgent()
+    val panel = buildPanel(aiAgent)
 
     onFxThread {
       submitButton(panel).isDisable shouldBe true
     }
 
   test("submit is disabled when prompt is empty"):
-    val panel = buildPanel(mock[AiAgent])
+    val aiAgent = createAiAgent()
+    val panel = buildPanel(aiAgent)
 
     onFxThread {
       val prompt = promptField(panel)
@@ -43,7 +47,7 @@ class AiModelChatPanelTest
     }
 
   test("after prompt submits, it render the user and the assistant messages"):
-    val aiAgent = mock[AiAgent]
+    val aiAgent = createAiAgent()
     val prompt = "Hello"
     val response = "Hi!"
     val userPrompt = UserPrompt.from(prompt).value
@@ -65,7 +69,7 @@ class AiModelChatPanelTest
     }
 
   test("it renders the error message when the AI ask request fails"):
-    val aiAgent = mock[AiAgent]
+    val aiAgent = createAiAgent()
     val prompt = "Hello"
     val error = AgentResponseError("Agent unavailable")
     val conversationId = ConversationId.from("chat1").value
@@ -87,8 +91,8 @@ class AiModelChatPanelTest
     }
 
   test("prompt and submit are disabled while waiting for the AI response"):
+    val aiAgent = createAiAgent()
     val pendingResponse = Promise[Either[AgentResponseError, AgentResponse]]()
-    val aiAgent = mock[AiAgent]
     val panel = buildPanel(aiAgent)
 
     aiAgent.ask.expects(*).returning(pendingResponse.future).once()
@@ -102,14 +106,15 @@ class AiModelChatPanelTest
     }
 
   test("clear is disabled when there are no messages"):
-    val panel = buildPanel(mock[AiAgent])
+    val aiAgent = createAiAgent()
+    val panel = buildPanel(aiAgent)
 
     onFxThread {
       clearButton(panel).isDisable shouldBe true
     }
 
   test("clear removes all messages and cleans the AI history"):
-    val aiAgent = mock[AiAgent]
+    val aiAgent = createAiAgent()
     val prompt = "Hello"
     val response = "Hi!"
     val conversationId = ConversationId.from("chat1").value
@@ -138,6 +143,22 @@ class AiModelChatPanelTest
       clearButton(panel).isDisable shouldBe true
     }
 
+  test("show model name on ai chat panel header"):
+    val aiAgent = createAiAgent()
+    val panel = buildPanel(aiAgent)
+
+    onFxThread {
+      headerSubtitle(panel) shouldBe s"($agentModel)"
+    }
+
+  private def createAiAgent(): AiAgent =
+    val aiAgent = mock[AiAgent]
+    (() => aiAgent.getAgentInfo)
+      .expects()
+      .returning(AgentInfo("provider", agentModel))
+      .once()
+    aiAgent
+
   private def buildPanel(aiAgent: AiAgent): ScalaFxVBox =
     onFxThread {
       AiModelChatPanel.build(aiAgent).value
@@ -160,3 +181,8 @@ class AiModelChatPanelTest
     descendants(messages).collect {
       case label: javafx.scene.control.Label => label.getText
     }
+
+  private def headerSubtitle(panel: ScalaFxVBox): String = {
+    val label = panel.delegate.lookup("#chat-subtitle").asInstanceOf[javafx.scene.control.Label]
+    label.textProperty().getValue
+  }
