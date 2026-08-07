@@ -145,7 +145,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         circleFields.map(_.id) should be(Seq(BaseFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
-        rectangleFields.map(_.id) should be(Seq(BaseFormParser.HeightKey, BaseFormParser.LengthKey))
+        rectangleFields.map(_.id) should be(Seq(BaseFormParser.LengthKey, BaseFormParser.HeightKey))
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
     val defaultValues = SaveSurfaceFormDefaultValues(

@@ -24,6 +24,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
   private val TeamId: String = "teamIdValue"
 
   private def circleEntity: MonadCoreEntity = MonadCoreEntity(Id, Position, Circle)
+
   private def rectangleEntity: MonadCoreEntity = MonadCoreEntity(Id, Position, Rectangle)
 
   private val teams: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
@@ -158,7 +159,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         circleFields.map(_.id) should be(Seq(BaseFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
-        rectangleFields.map(_.id) should be(Seq(BaseFormParser.HeightKey, BaseFormParser.LengthKey))
+        rectangleFields.map(_.id) should be(Seq(BaseFormParser.LengthKey, BaseFormParser.HeightKey))
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
     val defaultValues = SaveEntityFormDefaultValues(

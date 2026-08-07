@@ -2,16 +2,17 @@ package monad_core.simulator.presentation.panels
 
 import javafx.scene.input.{MouseButton, MouseEvent}
 import monad_core.engine.public_api.Painter
-import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
+import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
 import monad_core.simulator.presentation.components.forms.{SaveEntityFormDialog, SaveEntityFormDialogProps, SaveSurfaceFormDialog, SaveSurfaceFormDialogProps}
-import monad_core.simulator.presentation.components.{Error, MenuButtonItem, NotificationManager, ResizableCanvas}
+import monad_core.simulator.presentation.components.{MenuButtonItem, ResizableCanvas}
 import monad_core.simulator.presentation.painters.ShapePainter
 import monad_core.simulator.presentation.panels.MouseHitDetector.checkMouseHit
+import monad_core.simulator.presentation.panels.support.FormUtilities.{displayError, getTeamsSafely, onActionMakeSnapshot}
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
 import scalafx.scene.control.ContextMenu
@@ -88,11 +89,6 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
 
     val canvas = ResizableCanvas()
     val menusAnchor = Some(canvas)
-    val onError: BaseError => Unit = error => NotificationManager.show(error.message, Error)
-
-    def onSubmit[T](submitResult: T, action: T => Unit): Unit =
-      action(submitResult)
-      gameEngineRuntime.createSnapshot()
 
     EntityContextMenu.attachTo(
       canvas = canvas,
@@ -104,7 +100,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
         yield clickableElements.find(_.checkMouseHit((x, y)))) match 
           case Right(value) => value
           case Left(error) => 
-            onError(error)
+            displayError(error)
             None
         ,
       buildMenuItems = {
@@ -113,30 +109,25 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
             props = SaveEntityFormDialogProps(
               title = "Entity Settings",
               anchorNode = menusAnchor,
-              onSubmit = entity => onSubmit(SaveEntityCommand(entity), world.updateEntity),
-              teams = world.getAllTeams match 
-                case Right(teams) => teams
-                case Left(error) => 
-                  onError(error)
-                  List.empty
-              ,
-              onError = onError,
+              onSubmit = entity => onActionMakeSnapshot(SaveEntityCommand(entity), world.updateEntity),
+              teams = getTeamsSafely(world),
+              onError = displayError,
               entityToUpdate = Some(entity)
             )
           )),
-          MenuButtonItem(s"Remove ${entity.id} Entity", () => onSubmit(entity.id, world.removeEntity))
+          MenuButtonItem(s"Remove ${entity.id} Entity", () => onActionMakeSnapshot(entity.id, world.removeEntity))
         )
         case surface: MonadCoreSurface => Seq(
           MenuButtonItem(s"Edit ${surface.id} Surface", () => SaveSurfaceFormDialog.show(
             props = SaveSurfaceFormDialogProps(
               title = "Surface Settings",
               anchorNode = menusAnchor,
-              onSubmit = surface => onSubmit(SaveSurfaceCommand(surface), world.updateSurface),
-              onError = onError,
+              onSubmit = surface => onActionMakeSnapshot(SaveSurfaceCommand(surface), world.updateSurface),
+              onError = displayError,
               surfaceToUpdate = Some(surface)
             )
           )),
-          MenuButtonItem(s"Remove ${surface.id} Surface", () => onSubmit(surface.id, world.removeSurface))
+          MenuButtonItem(s"Remove ${surface.id} Surface", () => onActionMakeSnapshot(surface.id, world.removeSurface))
         )
       }
     )

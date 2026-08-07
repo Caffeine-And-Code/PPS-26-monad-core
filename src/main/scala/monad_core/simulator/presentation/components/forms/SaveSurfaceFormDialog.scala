@@ -5,7 +5,7 @@ import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
-import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, LocatableFormShapes, SurfaceFormParser}
+import monad_core.simulator.presentation.components.forms.parsers.{LocatableFormShapes, SurfaceFormParser}
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
@@ -83,14 +83,10 @@ object SaveSurfaceFormDialog:
         id = SurfaceFormParser.ShapeKey,
         label = "Shape",
         options = Shapes,
-        dependentFields = Map(
-          LocatableFormShapes.CircleLabel -> Seq(
-            TextFieldSpec(id = BaseFormParser.RadiusKey, label = "Radius", defaultValue = defaultValues.radius)
-          ),
-          LocatableFormShapes.RectangleLabel -> Seq(
-            TextFieldSpec(id = BaseFormParser.HeightKey, label = "Width", defaultValue = defaultValues.height),
-            TextFieldSpec(id = BaseFormParser.LengthKey, label = "Height", defaultValue = defaultValues.length)
-          )
+        dependentFields = FormDialog.buildShapeFields(
+          defaultValues.radius,
+          widthDefaultValue = defaultValues.length,
+          heightDefaultValue = defaultValues.height
         ),
         defaultValue = defaultValues.shape
       ),

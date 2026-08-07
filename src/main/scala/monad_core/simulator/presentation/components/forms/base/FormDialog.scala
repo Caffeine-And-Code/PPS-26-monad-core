@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms.base
 import monad_core.simulator.CannotBuildDialog
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
+import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, LocatableFormShapes}
 import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
@@ -31,13 +32,28 @@ object FormDialog:
       val builder = new FormDialogBuilder(props)
       builder.display()
     }.toEither.left.map(ex => CannotBuildDialog(ex.getMessage, "FormDialog"))
-    
-  extension[RightType](either: Either[BaseError, RightType])
-    private[forms] def matchToResult(onError: BaseError => Unit)(onRightResult: RightType => Unit) : Unit =
-      either match 
+
+  private[forms] def buildShapeFields(
+                                       radiusDefaultValue: Option[String],
+                                       widthDefaultValue: Option[String],
+                                       heightDefaultValue: Option[String]
+                                     ): Map[String, Seq[FormFieldSpec]] =
+    Map(
+      LocatableFormShapes.CircleLabel -> Seq(
+        TextFieldSpec(id = BaseFormParser.RadiusKey, label = "Radius", defaultValue = radiusDefaultValue)
+      ),
+      LocatableFormShapes.RectangleLabel -> Seq(
+        TextFieldSpec(id = BaseFormParser.LengthKey, label = "Width", defaultValue = widthDefaultValue),
+        TextFieldSpec(id = BaseFormParser.HeightKey, label = "Height", defaultValue = heightDefaultValue)
+      )
+    )
+
+  extension [RightType](either: Either[BaseError, RightType])
+    private[forms] def matchToResult(onError: BaseError => Unit)(onRightResult: RightType => Unit): Unit =
+      either match
         case Left(error) => onError(error)
         case Right(result) => onRightResult(result)
-      
+
 
 private final class FormDialogBuilder(props: FormDialogProps):
 

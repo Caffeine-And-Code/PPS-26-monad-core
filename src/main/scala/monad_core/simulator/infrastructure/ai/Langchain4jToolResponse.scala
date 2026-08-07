@@ -1,6 +1,5 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.engine.model.Team
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError

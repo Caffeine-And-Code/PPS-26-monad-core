@@ -5,7 +5,7 @@ import scalafx.scene.Node
 import scalafx.stage.Window
 
 private[presentation] object ScalaFxUtils {
-  def ownerWindowOf(node: Node): Option[Window] =
+  private def ownerWindowOf(node: Node): Option[Window] =
     Option(node.scene.value).flatMap(s => Option(s.window.value))
     
   def ownerWindowOfOption(node: Option[Node]) : Option[Window] =
