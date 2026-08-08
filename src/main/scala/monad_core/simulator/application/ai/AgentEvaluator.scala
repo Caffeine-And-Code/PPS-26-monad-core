@@ -15,7 +15,6 @@ trait AgentEvaluator:
       correctLanguageChoose = getPercentualScore(validResponses.map(_.correctLanguageChoose)),
       languageCorrectness = getPercentualScore(validResponses.map(_.languageCorrectness)),
       correctToolCalls = getPercentualScore(validResponses.map(_.correctToolCalls)),
-      correctToolParams = getPercentualScore(validResponses.map(_.correctToolParams)),
       expectationMaintained = getPercentualScore(validResponses.map(_.expectationMaintained)),
       evaluationFailed = invalidResponses.length
     )
@@ -31,4 +30,4 @@ trait AgentEvaluator:
     case AgentEvaluationResult.Bool(result) => if (result) 100 else 0
     case AgentEvaluationResult.Score(result) => result
     case AgentEvaluationResult.CorrectChooses(correctChooses, on) =>
-      if (on == 0) 0 else Math.round((correctChooses.toDouble / on) * 100).toInt
+      if (on == 0) 100 else Math.round((correctChooses.toDouble / on) * 100).toInt

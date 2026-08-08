@@ -31,7 +31,6 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
       correctLanguageChoose = AgentEvaluationResult.Bool(true),
       languageCorrectness = AgentEvaluationResult.Score(80),
       correctToolCalls = AgentEvaluationResult.CorrectChooses(4, 5),
-      correctToolParams = AgentEvaluationResult.CorrectChooses(3, 5),
       expectationMaintained = AgentEvaluationResult.Bool(false)
     )
     val evaluator = FakeAgentEvaluator(Seq(Right(response)))
@@ -41,7 +40,6 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
     result.correctLanguageChoose shouldBe 100
     result.languageCorrectness shouldBe 80
     result.correctToolCalls shouldBe 80
-    result.correctToolParams shouldBe 60
     result.expectationMaintained shouldBe 0
     result.evaluationFailed shouldBe 0
 
@@ -50,7 +48,6 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
       correctLanguageChoose = AgentEvaluationResult.Bool(true),
       languageCorrectness = AgentEvaluationResult.Score(80),
       correctToolCalls = AgentEvaluationResult.CorrectChooses(1, 1),
-      correctToolParams = AgentEvaluationResult.CorrectChooses(1, 1),
       expectationMaintained = AgentEvaluationResult.Bool(true)
     )
     val evaluator = FakeAgentEvaluator(Seq(Right(response), Left(EvaluationError())))
@@ -65,4 +62,17 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
 
     val result = evaluator.evaluate(Seq.empty)
 
-    result shouldBe AgentEvaluationRecup(0, 0, 0, 0, 0, 0)
+    result shouldBe AgentEvaluationRecup(0, 0, 0, 0, 0)
+
+  test("an evaluation without expected tool calls has full tool scores"):
+    val response = AgentEvaluationResponse(
+      correctLanguageChoose = AgentEvaluationResult.Bool(true),
+      languageCorrectness = AgentEvaluationResult.Score(80),
+      correctToolCalls = AgentEvaluationResult.CorrectChooses(0, 0),
+      expectationMaintained = AgentEvaluationResult.Bool(true)
+    )
+    val evaluator = FakeAgentEvaluator(Seq(Right(response)))
+
+    val result = evaluator.evaluate(Seq(evaluationTest))
+
+    result.correctToolCalls shouldBe 100

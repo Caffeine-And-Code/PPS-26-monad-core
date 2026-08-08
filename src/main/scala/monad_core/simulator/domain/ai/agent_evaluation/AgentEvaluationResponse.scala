@@ -4,6 +4,5 @@ case class AgentEvaluationResponse(
                                     correctLanguageChoose: AgentEvaluationResult.Bool,
                                     languageCorrectness: AgentEvaluationResult.Score,
                                     correctToolCalls: AgentEvaluationResult.CorrectChooses,
-                                    correctToolParams: AgentEvaluationResult.CorrectChooses,
                                     expectationMaintained: AgentEvaluationResult.Bool
                                   )

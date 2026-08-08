@@ -17,12 +17,10 @@ class AgentEvaluationResponseTest extends AnyFunSuite with Matchers:
       correctLanguageChoose,
       languageCorrectness,
       correctToolCalls,
-      correctToolParams,
       expectationMaintained
     )
 
     result.correctLanguageChoose shouldBe correctLanguageChoose
     result.languageCorrectness shouldBe languageCorrectness
     result.correctToolCalls shouldBe correctToolCalls
-    result.correctToolParams shouldBe correctToolParams
     result.expectationMaintained shouldBe expectationMaintained

@@ -11,7 +11,6 @@ class AgentEvaluationRecupTest extends AnyFunSuite with Matchers:
       correctLanguageChoose = 100,
       languageCorrectness = 80,
       correctToolCalls = 75,
-      correctToolParams = 50,
       expectationMaintained = 100,
       evaluationFailed = 2
     )
@@ -19,6 +18,5 @@ class AgentEvaluationRecupTest extends AnyFunSuite with Matchers:
     result.correctLanguageChoose shouldBe 100
     result.languageCorrectness shouldBe 80
     result.correctToolCalls shouldBe 75
-    result.correctToolParams shouldBe 50
     result.expectationMaintained shouldBe 100
     result.evaluationFailed shouldBe 2
