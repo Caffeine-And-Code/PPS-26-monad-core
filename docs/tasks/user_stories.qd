@@ -172,7 +172,7 @@
 - Visualizzare risposta agente (real-time). [5]
 - Gestire eventuali errori di comunicazione. [5]
 
-### User Story 13 - Tools dell'agente LLM 
+### User Story 13 - Tools dell'agente LLM [23]
 
 **Come** agente LLM  
 **voglio** richiamare funzioni del motore  
@@ -180,10 +180,11 @@
 
 #### Tasks
 
-- Implementare tools per le funzionalità create
-- Renderli accessibili all'agente
+- Implementare tools per le funzionalità create [13]
+- Renderli accessibili all'agente [2]
+- Sviluppo Agentic Framework [8]
 
-### User Story 14 (opzionale) - Testing dell'agente LLM
+### User Story 14 - Studio metodologia di test LLM e validazione [16]
 
 **Come** sviluppatore  
 **voglio** verificare il comportamento dell'agente  
@@ -191,25 +192,21 @@
 
 #### Tasks
 
-- Creare casi di test conversazionali.
-- Simulare richieste utente.
-- Verificare tools invocati.
-- Analizzare errori dell'agente.
+- Studio delle best practice per il testing di agenti AI [8]
+- Validazione dei test per LLM tramite Langchain4j [8]
 
-### User Story 15 (opzionale) - Stress Testing
+### User Story 15 - Testing dell'agente LLM 
 
 **Come** sviluppatore  
-**voglio** testare il comportamento sotto carico  
-**così da** valutare le prestazioni.
+**voglio** verificare il comportamento dell'agente  
+**così da** garantire chiamate corrette ai tools.
 
 #### Tasks
 
-- Creare molte entità contemporaneamente.
-- Misurare tempo di aggiornamento.
-- Misurare FPS.
-- Analizzare colli di bottiglia.
+- test level 1
+- valutare test level 2 e 3
 
-### User Story 16 (opzionale) - Rotazione delle entità
+### User Story 16 - Rotazione delle entità
 
 **Come** sviluppatore  
 **voglio** permettere alle entità di ruotare  
@@ -221,3 +218,28 @@
 - Rotazione delle entità logica.
 - Aggiornamento sistema di collisioni.
 - Aggiornamento reazioni fisiche.
+
+### User Story 17 (opzionale) - Stress Testing [21]
+
+**Come** sviluppatore  
+**voglio** testare il comportamento sotto carico  
+**così da** valutare le prestazioni.
+
+#### Tasks
+
+- Sviluppo di framework per stress testing dell'engine. [8]
+- Creazione di molte entità contemporaneamente. [2]
+- Misurare tempo di aggiornamento. [2]
+- Misurare FPS. [2]
+- Analizzare colli di bottiglia. [2]
+- Valutare l'impiego di Prolog nei test. [5]
+
+### User Story 18 - game engine runtime
+come sviluppatore
+voglio avere un runtime pronto per usare l'engine
+così da avere delle utilità per gestire l'engine
+
+#### Tasks
+- case class che gestisca il tick e la scena
+- possibilità di overridare la scena
+- callback quando cambia la scena in base al tick

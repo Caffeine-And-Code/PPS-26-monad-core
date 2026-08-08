@@ -25,5 +25,11 @@ jobs:
       - name: Setup SBT
         uses: sbt/setup-sbt@v1
 
-      - name: Run tests
-        run: sbt test
+      - name: Install Xvfb and Fonts
+        run: sudo apt-get update && sudo apt-get install -y xvfb fonts-dejavu
+
+      - name: Run unit and integration tests
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 &
+          export DISPLAY=:99
+          sbt test
