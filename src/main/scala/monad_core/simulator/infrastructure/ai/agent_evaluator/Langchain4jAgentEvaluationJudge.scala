@@ -26,9 +26,11 @@ trait Langchain4jAgentEvaluationJudgeAssistant:
   ))
   @UserMessage(Array(
     "Expected language: {{expectedLanguage}}",
-    "User prompt: {{userPrompt}}",
+    "User prompts in conversation order:",
+    "{{userPrompts}}",
     "Expected outcome: {{expectedOutcome}}",
-    "Assistant response: {{assistantResponse}}",
+    "Assistant responses in conversation order:",
+    "{{assistantResponses}}",
     "Final world entities:",
     "{{entities}}",
     "Final world surfaces:",
@@ -38,9 +40,9 @@ trait Langchain4jAgentEvaluationJudgeAssistant:
   ))
   def evaluate(
     @V("expectedLanguage") expectedLanguage: String,
-    @V("userPrompt") userPrompt: String,
+    @V("userPrompts") userPrompts: String,
     @V("expectedOutcome") expectedOutcome: String,
-    @V("assistantResponse") assistantResponse: String,
+    @V("assistantResponses") assistantResponses: String,
     @V("entities") entities: String,
     @V("surfaces") surfaces: String,
     @V("teams") teams: String
@@ -62,16 +64,16 @@ case class Langchain4jAgentEvaluationJudge(
 
   def evaluate(
     test: AgentEvaluationTest,
-    agentResponse: String,
+    agentResponses: Seq[String],
     finalWorld: World
   ): Either[BaseError, Langchain4jAgentEvaluationJudgement] =
     for
       judgement <- Try {
         assistant.evaluate(
           expectedLanguage = test.language.toString,
-          userPrompt = test.prompt,
+          userPrompts = renderMessages(test.prompts),
           expectedOutcome = test.expectation,
-          assistantResponse = agentResponse,
+          assistantResponses = renderMessages(agentResponses),
           entities = render(finalWorld.getAllEntities)(renderEntity),
           surfaces = render(finalWorld.getAllSurfaces)(renderSurface),
           teams = render(finalWorld.getAllTeams)(renderTeam)
@@ -87,6 +89,12 @@ case class Langchain4jAgentEvaluationJudge(
   private def render[A](values: List[A])(renderer: A => String): String =
     if values.isEmpty then "none"
     else values.map(renderer).mkString("\n---\n")
+
+  private def renderMessages(messages: Seq[String]): String =
+    if messages.isEmpty then "none"
+    else messages.zipWithIndex.map:
+      (message, index) => s"${index + 1}: $message"
+    .mkString("\n")
 
 object Langchain4jAgentEvaluationJudge:
 

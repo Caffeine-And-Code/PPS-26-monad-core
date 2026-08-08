@@ -22,14 +22,15 @@ case class LangchainAgentEvaluator(
 
   override def evaluateCase(test: AgentEvaluationTest): Either[BaseError, AgentEvaluationResponse] =
     Try {
-      val evaluationWorld = MonadCoreWorld(test.initialWorld.scene)
+      val evaluationWorld = MonadCoreWorld(test.initialScene)
       val engineControl = HeadlessEngineControl()
       val assistant = assistantBuilder.build(evaluationWorld, engineControl)
-      val result = assistant.chat(evaluationConversationId, test.prompt)
+      val results = test.prompts.map:
+        prompt => assistant.chat(evaluationConversationId, prompt)
 
       for
-        actualToolCalls <- mapToolCalls(result.toolExecutions().asScala.toSeq)
-        judgement <- evaluationJudge.evaluate(test, result.content(), evaluationWorld)
+        actualToolCalls <- mapToolCalls(results.flatMap(_.toolExecutions().asScala))
+        judgement <- evaluationJudge.evaluate(test, results.map(_.content()), evaluationWorld)
       yield AgentEvaluationResponse(
         correctLanguageChoose = judgement.correctLanguageChoose,
         languageCorrectness = judgement.languageCorrectness,

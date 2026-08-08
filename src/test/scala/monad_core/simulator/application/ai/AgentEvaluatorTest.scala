@@ -1,13 +1,12 @@
 package monad_core.simulator.application.ai
 
-import monad_core.simulator.application.engine.world.World
+import monad_core.engine.core.Scene
 import monad_core.simulator.domain.ai.agent_evaluation.*
 import monad_core.simulator.errors.BaseError
-import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class AgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
+class AgentEvaluatorTest extends AnyFunSuite with Matchers:
 
   private case class EvaluationError() extends BaseError("evaluation failed")
 
@@ -19,8 +18,8 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
 
   private def evaluationTest: AgentEvaluationTest =
     AgentEvaluationTest(
-      initialWorld = mock[World],
-      prompt = "Create a circle",
+      initialScene = Scene(),
+      prompts = Seq("Create a circle"),
       language = AgentEvaluationLanguage.English,
       toolCalls = Seq(ToolCall.CreateCircleEntity("circle-1", 10, 20, 5)),
       expectation = "A circle is created"

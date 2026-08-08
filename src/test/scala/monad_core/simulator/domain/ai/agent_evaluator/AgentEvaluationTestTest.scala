@@ -1,24 +1,23 @@
 package monad_core.simulator.domain.ai.agent_evaluator
 
-import monad_core.simulator.application.engine.world.World
+import monad_core.engine.core.Scene
 import monad_core.simulator.domain.ai.agent_evaluation.{AgentEvaluationLanguage, AgentEvaluationTest, ToolCall}
-import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class AgentEvaluationTestTest extends AnyFunSuite with Matchers with MockFactory:
+class AgentEvaluationTestTest extends AnyFunSuite with Matchers:
 
   test("can create an AgentEvaluationTest"):
-    val initialWorld = mock[World]
-    val prompt = "Create a circle"
+    val initialScene = Scene()
+    val prompts = Seq("Create a circle", "Change its radius")
     val language = AgentEvaluationLanguage.English
     val toolCalls = Seq(ToolCall.CreateCircleEntity("circle-1", 10, 20, 5))
     val expectation = "A circle is created"
 
-    val result = AgentEvaluationTest(initialWorld, prompt, language, toolCalls, expectation)
+    val result = AgentEvaluationTest(initialScene, prompts, language, toolCalls, expectation)
 
-    result.initialWorld shouldBe initialWorld
-    result.prompt shouldBe prompt
+    result.initialScene shouldBe initialScene
+    result.prompts shouldBe prompts
     result.language shouldBe language
     result.toolCalls shouldBe toolCalls
     result.expectation shouldBe expectation

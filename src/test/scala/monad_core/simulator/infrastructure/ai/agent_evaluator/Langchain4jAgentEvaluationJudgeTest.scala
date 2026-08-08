@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.ai.agent_evaluator
 
 import dev.langchain4j.model.chat.ChatModel
-import dev.langchain4j.service.output.ServiceOutputParser
+import monad_core.engine.core.Scene
 import monad_core.simulator.domain.ai.agent_evaluation.{AgentEvaluationLanguage, AgentEvaluationResult, AgentEvaluationTest}
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
 import org.scalamock.scalatest.MockFactory
@@ -12,8 +12,10 @@ import org.scalatest.matchers.should.Matchers
 class Langchain4jAgentEvaluationJudgeTest extends AnyFunSuite with Matchers with MockFactory:
 
   private val prompt = "Create a circle"
+  private val secondPrompt = "Change its radius"
   private val expectation = "The circle is created"
   private val agentResponse = "The circle was created"
+  private val secondAgentResponse = "The radius was changed"
 
   test("can evaluate an agent response"):
     val assistant = mock[Langchain4jAgentEvaluationJudgeAssistant]
@@ -28,15 +30,15 @@ class Langchain4jAgentEvaluationJudgeTest extends AnyFunSuite with Matchers with
 
     assistant.evaluate.expects(
       AgentEvaluationLanguage.English.toString,
-      prompt,
+      s"1: $prompt\n2: $secondPrompt",
       expectation,
-      agentResponse,
+      s"1: $agentResponse\n2: $secondAgentResponse",
       "none",
       "none",
       "none"
     ).returns(judgeResponse).once()
 
-    val result = judge.evaluate(test, agentResponse, world).value
+    val result = judge.evaluate(test, Seq(agentResponse, secondAgentResponse), world).value
 
     result.correctLanguageChoose shouldBe AgentEvaluationResult.Bool(true)
     result.languageCorrectness shouldBe AgentEvaluationResult.Score(80)
@@ -50,7 +52,11 @@ class Langchain4jAgentEvaluationJudgeTest extends AnyFunSuite with Matchers with
       .throws(new RuntimeException("invalid response"))
       .once()
 
-    val result = judge.evaluate(evaluationTest, agentResponse, MonadCoreWorld())
+    val result = judge.evaluate(
+      evaluationTest,
+      Seq(agentResponse, secondAgentResponse),
+      MonadCoreWorld()
+    )
 
     result shouldBe a[Left[InvalidAgentEvaluationJudgement, ?]]
 
@@ -63,8 +69,8 @@ class Langchain4jAgentEvaluationJudgeTest extends AnyFunSuite with Matchers with
 
   private def evaluationTest: AgentEvaluationTest =
     AgentEvaluationTest(
-      initialWorld = MonadCoreWorld(),
-      prompt = prompt,
+      initialScene = Scene(),
+      prompts = Seq(prompt, secondPrompt),
       language = AgentEvaluationLanguage.English,
       toolCalls = Seq.empty,
       expectation = expectation
