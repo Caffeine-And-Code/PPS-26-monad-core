@@ -25,6 +25,7 @@ trait SnapshotTesting extends Matchers:
     if !snapshotFile.exists() then
       snapshotFile.getParentFile.mkdirs()
       Files.writeString(snapshotPath, normalizedActual)
+      
       fail(s"Snapshot Baseline created at: ${snapshotPath.toAbsolutePath}. Run again the tests to confirm.")
     else
       val expectedContent = Files.readString(snapshotPath)

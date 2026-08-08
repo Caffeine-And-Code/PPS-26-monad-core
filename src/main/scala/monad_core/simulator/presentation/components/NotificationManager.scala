@@ -21,7 +21,7 @@ case class Notification(
                          severity: NotificationType
                        )
 
-object NotificationManager {
+object NotificationManager:
   private val NotificationHeight = 40
   private val PaddingTopBetweenNotifications = 10
 
@@ -32,11 +32,10 @@ object NotificationManager {
   def attach(rootOverlay: StackPane): Unit =
     overlay = Some(rootOverlay)
 
-  def detach(): Unit = {
+  def detach(): Unit =
     overlay = None
     notifications = Queue.empty
-  }
-
+  
   private[components] def getNotificationColor(severity: NotificationType = Info): String =
     severity match
       case Info => "#333333"
@@ -73,7 +72,7 @@ object NotificationManager {
       root.children.add(snackbar)
       notifications = notifications.enqueue(Notification(message, severity))
 
-      if (animationsEnabled) {
+      if animationsEnabled then
         val fadeIn = new FadeTransition(Duration(300), snackbar) {
           fromValue = 0
           toValue = 1
@@ -102,6 +101,4 @@ object NotificationManager {
           pause.onFinished = _ =>
             fadeOut.play()
             notifications = notifications.dequeue._2
-      }
     }
-}
