@@ -52,6 +52,14 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     result shouldBe None
 
+  test("circles touching at their boundaries collide with zero penetration"):
+    val firstCircle = Placed(Vector2D(0, 0), Shape2D.circle(2).value)
+    val secondCircle = Placed(Vector2D(4, 0), Shape2D.circle(2).value)
+
+    val result = ShapeCollision.circleCollidesWithCircle.checkCollision(firstCircle, secondCircle)
+
+    result shouldBe Some(Collision(Vector2D(1, 0), 0))
+
   test("rectangle collides with another rectangle"):
     val cases = Table(
       (
@@ -95,6 +103,30 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     result shouldBe None
 
+  test("rectangles touching at their boundaries collide with zero penetration"):
+    val firstRectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(4, 4).value)
+    val secondRectangle = Placed(Vector2D(4, 0), Shape2D.rectangle(4, 4).value)
+
+    val result = ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
+
+    result shouldBe Some(Collision(Vector2D(1, 0), 0))
+
+  test("rectangles touching vertically collide with zero penetration"):
+    val firstRectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(4, 4).value)
+    val secondRectangle = Placed(Vector2D(0, 4), Shape2D.rectangle(4, 4).value)
+
+    val result = ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
+
+    result shouldBe Some(Collision(Vector2D(0, 1), 0))
+
+  test("rectangle collision returns full overlaps on the horizontal axis"):
+    val firstRectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(4, 4).value)
+    val secondRectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(4, 4).value)
+
+    val result = ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
+
+    result shouldBe Some(Collision(Vector2D(1, 0), 4))
+
   test("circle collides with a rectangle"):
     val cases = Table(
       (
@@ -137,6 +169,14 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     val result = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle)
 
     result shouldBe None
+
+  test("a circle touching a rectangle boundary collides with zero penetration"):
+    val circle = Placed(Vector2D(5, 0), Shape2D.circle(2).value)
+    val rectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(6, 6).value)
+
+    val result = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle)
+
+    result shouldBe Some(Collision(Vector2D(-1, 0), 0))
 
   test("circle collides with another rectangle too if it is fully inside it"):
 
