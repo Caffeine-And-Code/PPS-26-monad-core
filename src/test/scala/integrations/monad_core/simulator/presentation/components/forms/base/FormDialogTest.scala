@@ -2,12 +2,13 @@ package integrations.monad_core.simulator.presentation.components.forms.base
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.simulator.presentation.components.forms.*
 import monad_core.simulator.presentation.components.forms.base.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.prop.Tables.Table
 import scalafx.Includes.*
 import scalafx.scene.control.{Button, ComboBox}
 
@@ -20,13 +21,11 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
       label = "Shape",
       options = Seq("Circle", "Rectangle"),
       defaultValue = Some("Circle"),
-      dependentFields = Map(
-        "Circle" -> Seq(TextFieldSpec(id = "radius", label = "Radius", defaultValue = Some("5.0"))),
-        "Rectangle" -> Seq(
-          TextFieldSpec(id = "height", label = "Height", defaultValue = Some("10.0")),
-          TextFieldSpec(id = "width", label = "Width", defaultValue = Some("20.0"))
-        )
-      )
+      dependentFields = FormDialog.buildShapeFields(
+        radiusDefaultValue = Some("5.0"),
+        widthDefaultValue = Some("10.0"),
+        heightDefaultValue = Some("20.0")
+      ),
     )
   )
 
@@ -93,8 +92,8 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
     submittedValues shouldBe Map(
       "name" -> "Entity_1",
       "shape" -> "Rectangle",
-      "height" -> "10.0",
-      "width" -> "20.0"
+      "length" -> "10.0",
+      "height" -> "20.0"
     )
 
   test("FormDialog matches structural JSON snapshot of submitted values"):

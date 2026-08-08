@@ -33,7 +33,7 @@ object FormDialog:
       builder.display()
     }.toEither.left.map(ex => CannotBuildDialog(ex.getMessage, "FormDialog"))
 
-  private[forms] def buildShapeFields(
+  def buildShapeFields(
                                        radiusDefaultValue: Option[String],
                                        widthDefaultValue: Option[String],
                                        heightDefaultValue: Option[String]

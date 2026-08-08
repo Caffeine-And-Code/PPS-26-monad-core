@@ -11,6 +11,7 @@ object SceneTranslator:
 
   private def sequence[A](eithers: List[Either[EngineError, A]]): Either[EngineError, List[A]] =
     val (errors, values) = eithers.partitionMap(identity)
+    
     errors match
       case firstError :: _ => Left(firstError)
       case Nil             => Right(values)
