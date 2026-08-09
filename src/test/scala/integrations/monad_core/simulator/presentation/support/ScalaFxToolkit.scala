@@ -2,7 +2,7 @@ package integrations.monad_core.simulator.presentation.support
 
 import javafx.application.Platform
 
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.{Level, Logger}
 

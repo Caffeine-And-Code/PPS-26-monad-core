@@ -7,12 +7,10 @@ class AgentResponseTest extends AnyFunSuite with Matchers :
 
   test("can create an agent response"):
     val response = "I am Jimmy your assistant"
-    val tokenUsed = 27
 
-    val result = AgentResponse(response, tokenUsed)
+    val result = AgentResponse(response)
 
     result.response shouldBe response
-    result.tokenUsed shouldBe tokenUsed
 
   test("can create an agent response error"):
     val error = "Impossible to load API"

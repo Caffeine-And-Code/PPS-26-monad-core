@@ -271,3 +271,26 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
   test("GameLoop should be InvalidMaxFrameTimeTickTimeRatio when max frame time is less than tick time"):
     val invalidMaxFrameTime = DefaultTickTime - 1L
     GameLoop(tickTime = DefaultTickTime, maxFrameTime = invalidMaxFrameTime) shouldBe Left(InvalidMaxFrameTimeTickTimeRatio(invalidMaxFrameTime, DefaultTickTime))
+
+  test("GameLoop should allow max frame time to equal tick time"):
+    noException should be thrownBy GameLoop(
+      tickTime = DefaultTickTime,
+      maxFrameTime = DefaultTickTime
+    )
+
+  test("if a running game loop is in edit mode, it should not update the physics"):
+
+    given painter: Painter = mock[Painter]
+
+    val currentTime = DefaultTickTime
+    val editLoop = GameLoop(mode = EditMode, isRunning = true)
+
+    MockPhysics.step.expects(*, *).never()
+    (MockRender.render(_: State, _: Double)(using _: Painter))
+      .expects(MockState, 1.0, painter)
+      .once()
+
+    val (currentScene, currentLoop) = editLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+
+    currentScene shouldBe MockState
+    currentLoop.lastTime shouldBe currentTime

@@ -26,6 +26,15 @@ class ShapeContainmentTest extends AnyFunSuite with Matchers:
 
     result shouldBe false
 
+  test("circle contains a point on its boundary"):
+    val circle = Shape2D.circle(5).value
+    val position = Vector2D(0, 0)
+    val boundaryPoint = Vector2D(3, 4)
+
+    val result = ShapeContainment.circleContainsPoint.checkIfContains(Placed(position, circle), boundaryPoint)
+
+    result shouldBe true
+
   test("rectangle contains a point"):
     val rectangle = Shape2D.rectangle(4, 6).value
     val position = Vector2D(3, 3)

@@ -28,21 +28,18 @@ class Shape2DTest extends AnyFunSuite with Matchers with Inside:
         length shouldBe validLength
 
   test("cannot create a circle with invalid radius"):
-    val invalidRadius = 0
+    val invalidRadii = Seq(0, -1)
 
-    val circle = Shape2D.circle(invalidRadius)
-
-    circle shouldBe Left(RadiusMustBeGreaterThanZero())
+    invalidRadii.foreach: invalidRadius =>
+      Shape2D.circle(invalidRadius) shouldBe Left(RadiusMustBeGreaterThanZero())
 
   test("cannot create a rectangle with invalid height and length"):
-    val invalidLength = 0
+    val invalidLengths = Seq(0, -1)
     val validLength = 1
-    val invalidHeight = 0
+    val invalidHeights = Seq(0, -1)
     val validHeight = 1
 
-    val rectangleWithInvalidHeight = Shape2D.rectangle(invalidHeight, validLength)
-    val rectangleWithInvalidLength = Shape2D.rectangle(validHeight, invalidLength)
-
-    rectangleWithInvalidHeight shouldBe Left(HeightMustBeGreaterThanZero())
-    rectangleWithInvalidLength shouldBe Left(LengthMustBeGreaterThanZero())
-
+    invalidHeights.foreach: invalidHeight =>
+      Shape2D.rectangle(invalidHeight, validLength) shouldBe Left(HeightMustBeGreaterThanZero())
+    invalidLengths.foreach: invalidLength =>
+      Shape2D.rectangle(validHeight, invalidLength) shouldBe Left(LengthMustBeGreaterThanZero())
