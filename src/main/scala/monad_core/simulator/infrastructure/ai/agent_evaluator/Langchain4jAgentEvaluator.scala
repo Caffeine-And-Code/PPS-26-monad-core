@@ -2,6 +2,7 @@ package monad_core.simulator.infrastructure.ai.agent_evaluator
 
 import dev.langchain4j.service.tool.ToolExecution
 import monad_core.simulator.application.ai.AgentEvaluator
+import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.domain.ai.ConversationId
 import monad_core.simulator.domain.ai.agent_evaluation.{AgentEvaluationResponse, AgentEvaluationResult, AgentEvaluationTest, ToolCall}
 import monad_core.simulator.errors.BaseError
@@ -18,10 +19,10 @@ case class Langchain4jAgentEvaluator(
   assistantBuilder: Langchain4jAssistantBuilder,
   toolCallMapper: Langchain4jToolCallMapper,
   evaluationJudge: Langchain4jAgentEvaluationJudge
-) extends AgentEvaluator:
+)(using logger: Logger) extends AgentEvaluator:
 
-  override def evaluateCase(test: AgentEvaluationTest): Either[BaseError, AgentEvaluationResponse] =
-    Try {
+  override def evaluateCase(test: AgentEvaluationTest): Either[BaseError, AgentEvaluationResponse] = {
+    val result = Try {
       val evaluationWorld = MonadCoreWorld(test.initialScene)
       val engineControl = HeadlessEngineControl()
       val assistant = assistantBuilder.build(evaluationWorld, engineControl)
@@ -41,6 +42,10 @@ case class Langchain4jAgentEvaluator(
       .left
       .map(error => AgentEvaluationExecutionError(error.getMessage))
       .flatMap(result => result)
+
+    logger.info(evaluationCompletedLog(test, result))
+    result
+  }
 
   private val evaluationConversationId: ConversationId =
     ConversationId.from("agent-evaluation").toOption.get
@@ -62,12 +67,19 @@ case class Langchain4jAgentEvaluator(
 
     AgentEvaluationResult.CorrectChooses(correct, Math.max(expected.length, actual.length))
 
+  private def evaluationCompletedLog(
+    test: AgentEvaluationTest,
+    result: Either[BaseError, AgentEvaluationResponse]
+  ): String =
+    val status = if result.isRight then "success" else "failure"
+    s"event=agent_evaluation_test_completed status=$status prompts=${test.prompts.length} expected_tool_calls=${test.toolCalls.length}"
+
 object Langchain4jAgentEvaluator:
 
   def buildOllama(
     agentConfig: Langchain4jOllamaConfig,
     judgeConfig: Langchain4jOllamaConfig
-  ): Langchain4jAgentEvaluator =
+  )(using Logger): Langchain4jAgentEvaluator =
     val agentModel = Langchain4jAgentFactory.buildOllamaModel(agentConfig)
     val judgeModel = Langchain4jAgentFactory.buildOllamaModel(judgeConfig)
 

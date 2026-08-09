@@ -4,10 +4,12 @@ import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
 import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistantFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.infrastructure.logging.ConsoleLogger
 import monad_core.simulator.presentation.agent_evaluation.{AgentEvaluationArguments, AgentEvaluationRuntime, AgentEvaluatorConsolePrinter, AgentEvaluatorPrinter}
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{ArgumentRoutingRoute, RouteResponse, Router}
@@ -57,6 +59,7 @@ object Launcher :
     val arguments = AgentEvaluationArguments.parse(args)
 
     given agentEvaluationPrinter: AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
+    given Logger = ConsoleLogger
 
     given agentEvaluator: AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
       agentConfig = Langchain4jOllamaConfig(

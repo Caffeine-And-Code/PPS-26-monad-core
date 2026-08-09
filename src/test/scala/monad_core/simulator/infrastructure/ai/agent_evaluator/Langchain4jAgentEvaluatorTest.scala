@@ -7,6 +7,7 @@ import dev.langchain4j.service.tool.{ToolExecution, ToolExecutionResult}
 import monad_core.engine.core.Scene
 import monad_core.simulator.application.engine.EngineControl
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.domain.ai.ConversationId
 import monad_core.simulator.domain.ai.agent_evaluation.*
 import monad_core.simulator.infrastructure.ai.{Langchain4jAssistant, Langchain4jAssistantBuilder, Langchain4jOllamaConfig}
@@ -35,6 +36,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val assistantBuilder = mock[Langchain4jAssistantBuilder]
     val assistant = mock[Langchain4jAssistant]
     val judge = mock[Langchain4jAgentEvaluationJudge]
+    val logger = mock[Logger]
     val initialScene = Scene()
     val expectedToolCall: ToolCall.CreateCircleEntity =
       ToolCall.CreateCircleEntity(circleId, x, y, expectedRadius)
@@ -42,6 +44,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val resultWithToolCall = assistantResult(Seq(toolExecution(expectedToolCall)))
     val judgement = successfulJudgement
     var evaluationWorld = Option.empty[World]
+    given Logger = logger
     val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     assistantBuilder.build.expects(*, *).onCall:
@@ -50,6 +53,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
         assistant
     assistant.chat.expects(conversationId, prompt).returns(resultWithToolCall).once()
     judge.evaluate.expects(test, Seq(agentResponse), *).returns(Right(judgement)).once()
+    logger.info.expects(completedLog("success", prompts = 1, expectedToolCalls = 1)).once()
 
     val result = evaluator.evaluateCase(test).value
 
@@ -63,14 +67,17 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val assistantBuilder = mock[Langchain4jAssistantBuilder]
     val assistant = mock[Langchain4jAssistant]
     val judge = mock[Langchain4jAgentEvaluationJudge]
+    val logger = mock[Logger]
     val initialScene = Scene()
     val test = evaluationTest(initialScene, Seq.empty)
     val judgement = successfulJudgement
+    given Logger = logger
     val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat.expects(conversationId, prompt).returns(assistantResult(Seq.empty)).once()
     judge.evaluate.expects(test, Seq(agentResponse), *).returns(Right(judgement)).once()
+    logger.info.expects(completedLog("success", prompts = 1, expectedToolCalls = 0)).once()
 
     val result = evaluator.evaluateCase(test).value
 
@@ -80,6 +87,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val assistantBuilder = mock[Langchain4jAssistantBuilder]
     val assistant = mock[Langchain4jAssistant]
     val judge = mock[Langchain4jAgentEvaluationJudge]
+    val logger = mock[Logger]
     val firstToolCall: ToolCall.CreateCircleEntity =
       ToolCall.CreateCircleEntity(circleId, x, y, expectedRadius)
     val secondToolCall: ToolCall.CreateCircleEntity =
@@ -87,6 +95,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val prompts = Seq(prompt, secondPrompt)
     val test = evaluationTest(Scene(), Seq(firstToolCall, secondToolCall), prompts)
     val judgement = successfulJudgement
+    given Logger = logger
     val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
@@ -99,6 +108,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     judge.evaluate.expects(test, Seq(agentResponse, secondAgentResponse), *)
       .returns(Right(judgement))
       .once()
+    logger.info.expects(completedLog("success", prompts = 2, expectedToolCalls = 2)).once()
 
     val result = evaluator.evaluateCase(test).value
 
@@ -108,11 +118,14 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val assistantBuilder = mock[Langchain4jAssistantBuilder]
     val assistant = mock[Langchain4jAssistant]
     val judge = mock[Langchain4jAgentEvaluationJudge]
+    val logger = mock[Logger]
     val test = evaluationTest(Scene(), Seq.empty)
     val errorMessage = "model unavailable"
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat.expects(conversationId, prompt).throws(new RuntimeException(errorMessage)).once()
+    logger.info.expects(completedLog("failure", prompts = 1, expectedToolCalls = 0)).once()
+    given Logger = logger
     val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     val result = evaluator.evaluateCase(test)
@@ -128,6 +141,8 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
       url = "http://localhost:11434",
       modelName = "judge-model"
     )
+    val logger = mock[Logger]
+    given Logger = logger
 
     val result = Langchain4jAgentEvaluator.buildOllama(agentConfig, judgeConfig)
 
@@ -180,3 +195,6 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
       .content(response)
       .toolExecutions(toolExecutions.asJava)
       .build()
+
+  private def completedLog(status: String, prompts: Int, expectedToolCalls: Int): String =
+    s"event=agent_evaluation_test_completed status=$status prompts=$prompts expected_tool_calls=$expectedToolCalls"
