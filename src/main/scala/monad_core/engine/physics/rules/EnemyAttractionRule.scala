@@ -5,7 +5,7 @@ import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
-import monad_core.engine.physics.utils.{PhysicsUtil, SceneUpdateEntity}
+import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object EnemyAttractionRule:
 
@@ -32,7 +32,7 @@ private[physics] object EnemyAttractionRule:
           scene.LowerRightCorner
         )
         
-        updatedScene <- SceneUpdateEntity.updateEntities(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
         
       yield updatedScene
       
@@ -82,7 +82,7 @@ private[physics] object EnemyAttractionRule:
               val direction = (targetPos - entity.position).normalized
               val speed = direction * AttractionAcceleration
 
-              entity.withSpeed(speed).left.map(PhysicsDomainError.apply)
+              entity.withSpeed(entity.speed.get + speed).left.map(PhysicsDomainError.apply)
             case Right(None) =>
               Right(entity)
           

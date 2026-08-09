@@ -47,6 +47,7 @@
           EnemyAttractionRule.enemyAttractionRule,
           SurfaceDynamicsRule.surfaceDynamicsRule,
           CollisionResolutionRule.collisionResolutionRule,
+          BorderContactRule.borderContactRule,
           KinematicsRule.kinematicsRule
         )
       )

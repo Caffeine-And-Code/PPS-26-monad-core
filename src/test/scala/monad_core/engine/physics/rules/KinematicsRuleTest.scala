@@ -78,7 +78,7 @@ class KinematicsRuleTest extends AnyFunSuite with Matchers with MockFactory with
     
     val scene = sceneWithEntities(List(invalidMoving))
 
-    val invalidPosition = PhysicsUtil.nextPosition(
+    val invalidPositionError = PhysicsUtil.nextPosition(
       invalidMoving.position,
       invalidMoving.speed.value,
       DeltaTimeOneSecond,
@@ -87,8 +87,8 @@ class KinematicsRuleTest extends AnyFunSuite with Matchers with MockFactory with
     )
     
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
-  
-    result shouldBe invalidPosition
+
+    result shouldBe invalidPositionError
 
   test("the rule should move multiple entities with speed successfully and update the scene"):
     

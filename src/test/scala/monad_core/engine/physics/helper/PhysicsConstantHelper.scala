@@ -2,6 +2,7 @@ package monad_core.engine.physics.helper
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
+import monad_core.engine.model.Vector2D
 import org.scalamock.scalatest.MockFactory
 
 private[physics] object PhysicsConstantHelper:

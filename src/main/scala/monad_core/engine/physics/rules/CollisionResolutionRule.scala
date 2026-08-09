@@ -6,8 +6,7 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
-import monad_core.engine.physics.utils.PhysicsUtil
-import monad_core.engine.physics.utils.SceneUpdateEntity
+import monad_core.engine.physics.utils.{CollisionMap, CollisionResolver, PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object CollisionResolutionRule:
   private val id = "collision-resolution"
@@ -23,186 +22,37 @@ private[physics] object CollisionResolutionRule:
         
         activeCollisions = findCollisions(entities)
         
-        updatedEntities <- resolveCollisions(entities, activeCollisions)
+        updatedEntities <- CollisionResolver(activeCollisions)
 
         updatedScene <-
           if activeCollisions.isEmpty then
             Right(scene)
           else
-            SceneUpdateEntity.updateEntities(scene, updatedEntities)
+            SceneEntitiesUpdate(scene, updatedEntities)
 
       yield updatedScene
 
-  private def findCollisions(entities: List[Entity])(using detector: CollisionDetector): Seq[(Entity, Entity, Collision)] =
-    entities.combinations(2).flatMap {
-      case Seq(e1, e2) =>
-        if e1.speed.isDefined || e2.speed.isDefined then
-          detector.collision(e1, e2).map(col => (e1, e2, col))
-        else
-          None
-      case _ => None
-    }.toSeq
+    private def findCollisions(
+                                entities: List[Entity]
+                              )(using detector: CollisionDetector): CollisionMap =
+      entities
+        .combinations(2)
+        .collect {
+          case Seq(e1, e2)
+            if !(e1.isFixed && e2.isFixed) =>
+            collisionBetween(e1, e2)
+        }
+        .flatten
+        .toList
+        .groupMap(_._1)(_._2)
 
-  private def resolveCollisions(
-                                 entities: List[Entity],
-                                 collisions: Seq[(Entity, Entity, Collision)]
-                               ): Either[PhysicsError,List[Entity]] =
-
-    collisions
-      .foldLeft(Right(entities.map(e => e.id -> e).toMap)
-        : Either[PhysicsError,Map[LocatableId,Entity]]) {
-
-        case (mapEither,(e1,e2,col)) =>
-
-          mapEither.flatMap { map =>
-
-            for
-              (updated1,updated2) <-
-                resolveCollision(
-                  map(e1.id),
-                  map(e2.id),
-                  col
-                )
-
-            yield
-              map
-                .updated(updated1.id,updated1)
-                .updated(updated2.id,updated2)
-          }
+    private def collisionBetween(
+                                  e1: Entity,
+                                  e2: Entity
+                                )(using detector: CollisionDetector): List[(Entity, (Entity, Collision))] =
+      detector.collision(e1, e2).toList.flatMap { collision =>
+        List(
+          e1 -> (e2, collision),
+          e2 -> (e1, collision.copy(normalVector = collision.normalVector.flip))
+        )
       }
-      .map(_.values.toList)
-
-  private def resolveCollision(
-                                e1: Entity,
-                                e2: Entity,
-                                collision: Collision
-                              ): Either[PhysicsError, (Entity, Entity)] =
-
-    (e1.isFixed, e2.isFixed) match
-
-      // mobile vs fixed
-      case (false, true) =>
-        resolveMobileFixed(
-          e1,
-          e2,
-          collision.normalVector,
-          collision.penetrationDepth
-        )
-
-      // fixed vs mobile
-      case (true, false) =>
-        resolveMobileFixed(
-          e2,
-          e1,
-          collision.normalVector * -1,
-          collision.penetrationDepth
-        )
-
-      // mobile vs mobile
-      case (false, false) =>
-        resolveMobileMobile(
-          e1,
-          e2,
-          collision.normalVector,
-          collision.penetrationDepth
-        )
-        
-      case (true, true) => 
-        Right((e1, e2))
-
-  private def resolveMobileFixed(
-                                   mobile: Entity,
-                                   fixed: Entity,
-                                   collisionNormal: Vector2D,
-                                   penetrationDepth: Double
-                                 ): Either[PhysicsError, (Entity, Entity)] =
-    for
-
-      newPosition <- Right(
-        PhysicsUtil.pushMobileOverlappingFixed(
-          mobile.position,
-          collisionNormal,
-          penetrationDepth
-        )
-      )
-
-      moved <- mobile
-        .moveTo(newPosition)
-        .left
-        .map(PhysicsDomainError.apply)
-
-      reflected <- moved.withSpeed(
-        PhysicsUtil.reflectOnFixed(
-          moved.speed.get,
-          collisionNormal
-        )
-      )
-      .left
-      .map(PhysicsDomainError.apply)
-
-    yield
-      (reflected, fixed)
-
-  private def resolveMobileMobile(
-                                   e1: Entity,
-                                   e2: Entity,
-                                   collisionNormal: Vector2D,
-                                   penetrationDepth: Double
-                                 ): Either[PhysicsError, (Entity, Entity)] =
-    for
-      newPosition1 <- PhysicsUtil.pushMobileOverlappingMobile(
-        e1.position,
-        collisionNormal,
-        penetrationDepth,
-        e1.weight,
-        e2.weight
-      )
-
-      newPosition2 <- PhysicsUtil.pushMobileOverlappingMobile(
-        e2.position,
-        collisionNormal * -1.0,
-        penetrationDepth,
-        e2.weight,
-        e1.weight
-      )
-
-      moved1 <- e1
-        .moveTo(newPosition1)
-        .left
-        .map(PhysicsDomainError.apply)
-
-      moved2 <- e2
-        .moveTo(newPosition2)
-        .left
-        .map(PhysicsDomainError.apply)
-
-      speedReflected1 <- PhysicsUtil.reflectOnMobile(
-        moved1.speed.get,
-        moved2.speed.get,
-        collisionNormal,
-        moved1.weight,
-        moved2.weight
-      ).left.map(PhysicsDomainError.apply)
-
-      reflected1 <- moved1.withSpeed(
-        speedReflected1
-      )
-      .left
-      .map(PhysicsDomainError.apply)
-
-      speedReflected2 <- PhysicsUtil.reflectOnMobile(
-        moved2.speed.get,
-        moved1.speed.get,
-        collisionNormal * -1.0,
-        moved2.weight,
-        moved1.weight
-      ).left.map(PhysicsDomainError.apply)
-
-      reflected2 <- moved2.withSpeed(
-        speedReflected2
-      )
-      .left
-      .map(PhysicsDomainError.apply)
-
-    yield
-      (reflected1, reflected2)

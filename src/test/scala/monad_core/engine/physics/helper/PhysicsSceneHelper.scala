@@ -11,7 +11,7 @@ private[physics] trait PhysicsSceneHelper:
 
   def sceneWithEntities(entities: List[Entity]): State =
     val scene = mock[State]
-
+    
     (() => scene.allEntities)
       .expects()
       .returning(entities)
@@ -43,6 +43,38 @@ private[physics] trait PhysicsSceneHelper:
           val updatedEntities = scene.allEntities :+ entity
 
           Right(sceneWithEntities(updatedEntities))
+        }
+      }
+      .anyNumberOfTimes()
+
+    scene
+
+  def sceneWithEntitiesNotRemoving(entities: List[Entity]): State =
+    val scene = mock[State]
+
+    (() => scene.allEntities)
+      .expects()
+      .returning(entities)
+      .anyNumberOfTimes()
+
+    scene.removeEntity
+      .expects(*)
+      .onCall { (entity: Entity) =>
+        Right(sceneWithEntitiesNotRemoving(entities))
+      }
+      .anyNumberOfTimes()
+
+    scene.addEntity
+      .expects(*)
+      .onCall { (entity: Entity) =>
+        val isInScene = scene.allEntities.exists(_.id == entity.id)
+
+        if (isInScene) {
+          Left(CannotAddEntity(CannotAddAlreadyPresentElementInMap(entity.id)))
+        } else {
+          val updatedEntities = scene.allEntities :+ entity
+
+          Right(sceneWithEntitiesNotRemoving(updatedEntities))
         }
       }
       .anyNumberOfTimes()

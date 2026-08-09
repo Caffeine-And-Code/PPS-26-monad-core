@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
   
   private val MockAction = mockFunction[State, Long, Either[PhysicsError, State]]
-  private val DefaultRuleCount = 4
+  private val DefaultRuleCount = 5
 
   private val Rule1Id = "rule1"
   private val Rule2Id = "rule2"
@@ -34,13 +34,14 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     manager.isEnabled(Rule2) shouldBe true
     manager.rules shouldBe Vector(Rule1, Rule2)
 
-  test("default should create an engine with the standard 4 rules initialized and enabled"):
+  test("default should create an engine with the standard rules initialized and enabled"):
     DefaultManager.rules should have size DefaultRuleCount
     DefaultManager.enabledRules should have size DefaultRuleCount
 
     DefaultManager.isEnabled(EnemyAttractionRule.enemyAttractionRule) shouldBe true
     DefaultManager.isEnabled(SurfaceDynamicsRule.surfaceDynamicsRule) shouldBe true
     DefaultManager.isEnabled(CollisionResolutionRule.collisionResolutionRule) shouldBe true
+    DefaultManager.isEnabled(BorderContactRule.borderContactRule) shouldBe true
     DefaultManager.isEnabled(KinematicsRule.kinematicsRule) shouldBe true
 
   test("isEnabled should return true if the rule is active, false otherwise"): 
@@ -63,7 +64,10 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val updatedManager = DefaultManager.disable(KinematicsRule.kinematicsRule)
 
     updatedManager.isEnabled(KinematicsRule.kinematicsRule) shouldBe false
-    updatedManager.isEnabled(EnemyAttractionRule.enemyAttractionRule) shouldBe true
+    DefaultManager.isEnabled(EnemyAttractionRule.enemyAttractionRule) shouldBe true
+    DefaultManager.isEnabled(SurfaceDynamicsRule.surfaceDynamicsRule) shouldBe true
+    DefaultManager.isEnabled(CollisionResolutionRule.collisionResolutionRule) shouldBe true
+    DefaultManager.isEnabled(BorderContactRule.borderContactRule) shouldBe true
 
   test("enable should add a specific rule to the enabled set"):
     val initialManager = PhysicsManager(Vector(Rule1)).disable(Rule1)

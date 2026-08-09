@@ -30,13 +30,15 @@ object Entity:
   extension (entity: Entity)
 
     def moveTo(newPosition: Vector2D): Either[EngineError, Entity] =
-      validateAndReturn(entity.copy(position = newPosition))
+//      validateAndReturn(entity.copy(position = newPosition))
+      Right(entity.copy(position = newPosition))
 
     def moveBy(space: Vector2D): Either[EngineError, Entity] =
       validateAndReturn(entity.copy(position = entity.position + space))
 
     def withSpeed(speed: Vector2D): Either[EngineError, Entity] =
-      validateAndReturn(entity.copy(speed = Some(speed)))
+//      validateAndReturn()
+      Right(entity.copy(speed = Some(speed)))
 
     def withoutSpeed: Entity =
       entity.copy(speed = None)

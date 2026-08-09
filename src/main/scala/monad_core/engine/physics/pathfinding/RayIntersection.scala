@@ -2,7 +2,7 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.{-, LocatableId, Vector2D}
 
-object RayIntersection:
+private[pathfinding] object RayIntersection:
 
   private val Epsilon: Double = 1e-10
   
@@ -46,7 +46,7 @@ object RayIntersection:
     val cross = rayDirection.x * segment.y -
       rayDirection.y * segment.x
 
-    if (math.abs(cross) < Epsilon) then
+    if math.abs(cross) < Epsilon then
       None
     else
       val diff = vertex1 - rayStart

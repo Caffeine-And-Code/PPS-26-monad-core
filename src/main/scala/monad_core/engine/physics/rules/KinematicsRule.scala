@@ -4,7 +4,7 @@ import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
-import monad_core.engine.physics.utils.{PhysicsUtil, SceneUpdateEntity}
+import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object KinematicsRule:
 
@@ -21,7 +21,7 @@ private[physics] object KinematicsRule:
 
         updatedEntities <- applyKinematics(scene, entities, dt)
 
-        updatedScene <- SceneUpdateEntity.updateEntities(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
 
       yield updatedScene
 
@@ -33,13 +33,8 @@ private[physics] object KinematicsRule:
       }
 
     private def moveEntity(scene: State, entity: Entity, dt: Long): Either[PhysicsError, Entity] =
-      entity.speed match
-        case Some(speed) =>
-          val nextPos = PhysicsUtil.nextPosition(entity.position, speed, dt, scene.UpperLeftCorner, scene.LowerRightCorner)
-          nextPos match {
-            case Right(pos) => entity.moveTo(pos).left.map(PhysicsDomainError.apply)
-            case Left(err) => Left(err)
-          }
-        case None => Right(entity)
-
-
+      val nextPos = PhysicsUtil.nextPosition(entity.position, entity.speed.get, dt, scene.UpperLeftCorner, scene.LowerRightCorner)
+      nextPos match {
+        case Right(pos) => entity.moveTo(pos).left.map(PhysicsDomainError.apply)
+        case Left(err) => Left(err)
+      }

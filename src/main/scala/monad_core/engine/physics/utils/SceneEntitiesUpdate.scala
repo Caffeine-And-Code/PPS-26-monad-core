@@ -2,11 +2,11 @@ package monad_core.engine.physics.utils
 
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRuleError}
+import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRuleError}
 
-private[physics] object SceneUpdateEntity:
+private[physics] object SceneEntitiesUpdate:
 
-  def updateEntities(
+  def apply(
                       scene: State,
                       updatedEntities: List[Entity]
                     ): Either[PhysicsError, State] =
@@ -24,9 +24,9 @@ private[physics] object SceneUpdateEntity:
     for
       sceneWithoutEntity <- scene
         .removeEntity(updatedEntity)
-        .left.map(err => PhysicsRuleError(err.toString))
+        .left.map(err => PhysicsDomainError(err))
 
       updatedScene <- sceneWithoutEntity
         .addEntity(updatedEntity)
-        .left.map(err => PhysicsRuleError(err.toString))
+        .left.map(err => PhysicsDomainError(err))
     yield updatedScene

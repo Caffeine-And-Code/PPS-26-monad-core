@@ -1,7 +1,7 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{NegativeDeltaTime, ZeroMassError}
+import monad_core.engine.physics.core.{NegativeDeltaTime, OutOfBoundEntity, ZeroMassError}
 import monad_core.engine.physics.helper.PhysicsConstantHelper.*
 import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.helper.PhysicsTeamHelper.*
@@ -80,6 +80,21 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
+  test("nextPosition should return an error for out-of-bounds position"):
+    val position = Vector2D(0.0, 0.0)
+    val speed = Vector2D(-1.0, -1.0)
+    val dt = 500_000_000L
+
+    val result = PhysicsUtil.nextPosition(
+      position = position,
+      speed = speed,
+      deltaTime = dt,
+      upperLeftCorner = UpperLeftCorner,
+      lowerRightCorner = LowerRightCorner
+    )
+
+    result shouldBe Left(OutOfBoundEntity(Vector2D(-0.5, -0.5)))
+
   test("acceleration should be force divided by a (positive) mass"):
     val force = Vector2D(10.0, 20.0)
     val massValue = 2
@@ -89,15 +104,11 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       force = force,
       mass = Some(Weight(massValue).value)
     )
-
-    Console.println(s"Expected: $expectedAcceleration, Result: ${result.value}")
     
     result.value shouldBe expectedAcceleration
 
   test("acceleration should return an error for missing mass"):
     val force = Vector2D(10.0, 20.0)
-    val zeroMassValue = 0
-    val negativeMassValue = -2
     
     val resultMissingMass = PhysicsUtil.acceleration(
       force = force,
@@ -106,38 +117,12 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     
     resultMissingMass shouldBe Left(ZeroMassError())
 
-  test("nextSpeed applies acceleration for the elapsed time"):
-    val speed = Vector2D(1.0, 2.0)
-    val acceleration = Vector2D(4.0, 6.0)
-    val dt = 500_000_000L
-    val dtS = PhysicsUtil.deltaSeconds(dt).value
-    val expectedNextSpeed = Vector2D(speed.x + acceleration.x * dtS, speed.y + acceleration.y * dtS)
-
-    val result = PhysicsUtil.nextSpeed(
-      speed = speed,
-      acceleration = acceleration,
-      deltaTime = dt
-    )
-
-    result.value shouldBe expectedNextSpeed
-
-  test("nextSpeed should return an error for negative delta time"):
-    val speed = Vector2D(1.0, 2.0)
-    val acceleration = Vector2D(4.0, 6.0)
-
-    val result = PhysicsUtil.nextSpeed(
-      speed = speed,
-      acceleration = acceleration,
-      deltaTime = NegativeDt
-    )
-
-    result shouldBe Left(NegativeDeltaTime(NegativeDt))
-
   test("friction should reduce speed proportionally to elapsed time"):
     val speed = Vector2D(10.0, 4.0)
     val frictionIndex = 2.0
     val dt = 500_000_000L
-    val expectedFrictionFactor = 1.0 - frictionIndex * (dt.toDouble / 1_000_000_000.0)
+    val dtS = PhysicsUtil.deltaSeconds(dt).value
+    val expectedFrictionFactor = 1.0 - frictionIndex * dtS
     val expectedFrictionSpeed = Vector2D(speed.x * expectedFrictionFactor, speed.y * expectedFrictionFactor)
 
     val result = PhysicsUtil.applyFriction(
@@ -175,45 +160,242 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
     
   test("squaredDistance avoids an unnecessary square root"):
-    val firstVectorX = 1.0
-    val firstVectorY = 2.0
-    val firstVector = Vector2D(firstVectorX, firstVectorY)
-    val secondVectorX = 4.0
-    val secondVectorY = 6.0
-    val secondVector = Vector2D(secondVectorX, secondVectorY)
-    val expectedValue = math.pow((secondVectorX - firstVectorX), 2) + math.pow((secondVectorY - firstVectorY), 2)
+    val vector1 = Vector2D(1.0, 2.0)
+    val vector2 = Vector2D(4.0, 6.0)
+    val expectedValue = math.pow(vector2.x - vector1.x, 2) + math.pow(vector2.y - vector1.y, 2)
 
     val result = PhysicsUtil.squaredDistance(
-      first = firstVector,
-      second = secondVector
+      first = vector1,
+      second = vector2
     )
 
     result shouldBe expectedValue
-  
-  test("direction returns None when the two positions coincide"):
-    val fromToVector = Vector2D(3.0, 4.0)
 
-    val result = PhysicsUtil.direction(
-      from = fromToVector,
-      to = fromToVector
+  test("distance should compute the Euclidean distance between two vectors"):
+    val vector1 = Vector2D(1.0, 2.0)
+    val vector2 = Vector2D(4.0, 6.0)
+    val expectedValue = math.sqrt(PhysicsUtil.squaredDistance(vector1, vector2))
+
+    val result = PhysicsUtil.distance(
+      first = vector1,
+      second = vector2
     )
+
+    result shouldBe expectedValue
+
+  test("reflectOnFixed should return the same speed if the velocity is along the normal"):
+    val speed = Vector2D(1.0, 0.0)
+    val normal = Vector2D(1.0, 0.0)
+
+    val result = PhysicsUtil.reflectOnFixed(
+      speed = speed,
+      normal = normal
+    )
+
+    result shouldBe speed
+
+  test("reflectOnFixed should return an updated speed if the velocity is against the normal"):
+    val speed = Vector2D(-1.0, 0.0)
+    val normal = Vector2D(1.0, 0.0)
+    val expectedSpeed = Vector2D(1.0, 0.0)
+
+    val result = PhysicsUtil.reflectOnFixed(
+      speed = speed,
+      normal = normal
+    )
+
+    result shouldBe expectedSpeed
+
+  test("reflectOnFixed should return a new speed after collision with a fixed object"):
+    val speed = Vector2D(-3.0, 4.0)
+    val normal = Vector2D(1.0, 0.0)
+    val expectedSpeed = Vector2D(3.0, 4.0)
+
+    val result = PhysicsUtil.reflectOnFixed(
+      speed = speed,
+      normal = normal
+    )
+
+    result shouldBe expectedSpeed
+
+  test("pushMobileOverlappingFixed should return a new position after resolving overlap with a fixed object"):
+    val position = Vector2D(5.0, 5.0)
+    val normal = Vector2D(1.0, 0.0)
+    val penetrationDepth = 2.0
+    val expectedPosition = Vector2D(7.0, 5.0)
+
+    val result = PhysicsUtil.pushMobileOverlappingFixed(
+      position = position,
+      normal = normal,
+      penetrationDepth = penetrationDepth
+    )
+
+    result shouldBe expectedPosition
+
+  test("reflectOnMobile should return an accelerated speed if the velocity is along the normal"):
+    val speed = Vector2D(1.0, 0.0)
+    val otherSpeed = Vector2D(2.0, 0.0)
+    val normal = Vector2D(1.0, 0.0)
+    val mass = Some(Weight(2).value)
+    val massOther = Some(Weight(3).value)
+
+    val expectedSpeed = Vector2D(2.2, 0.0)
+
+    val result = PhysicsUtil.reflectOnMobile(
+      speed = speed,
+      otherSpeed = otherSpeed,
+      normal = normal,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result.value shouldBe expectedSpeed
+
+  test("reflectOnMobile should return an accelerated speed"):
+    val speed = Vector2D(1.0, 1.0)
+    val otherSpeed = Vector2D(2.0, 0.0)
+    val normal = Vector2D(1.0, 0.0)
+    val mass = Some(Weight(2).value)
+    val massOther = Some(Weight(3).value)
+
+    val expectedSpeed = Vector2D(2.2, 1.0)
+
+    val result = PhysicsUtil.reflectOnMobile(
+      speed = speed,
+      otherSpeed = otherSpeed,
+      normal = normal,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result.value shouldBe expectedSpeed
+
+  test("reflectOnMobile should return a flipped speed for a force against the normal"):
+    val speed = Vector2D(-2.0, 0.0)
+    val otherSpeed = Vector2D(2.0, 0.0)
+    val normal = Vector2D(1.0, 0.0)
+    val mass = Some(Weight(2).value)
+    val massOther = Some(Weight(3).value)
+
+    val result = PhysicsUtil.reflectOnMobile(
+      speed = speed,
+      otherSpeed = otherSpeed,
+      normal = normal,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result.value.x >= 0.0 shouldBe true
+    result.value.y shouldBe 0.0
+
+  test("reflectOnMobile should return an error for missing mass"):
+    val speed = Vector2D(1.0, 0.0)
+    val otherSpeed = Vector2D(2.0, 0.0)
+    val normal = Vector2D(1.0, 0.0)
+    val mass = None
+    val massOther = Some(Weight(3).value)
+
+    val result = PhysicsUtil.reflectOnMobile(
+      speed = speed,
+      otherSpeed = otherSpeed,
+      normal = normal,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result shouldBe Left(ZeroMassError())
+
+  test("reflectOnMobile should return an error for missing other mass"):
+    val speed = Vector2D(1.0, 0.0)
+    val otherSpeed = Vector2D(2.0, 0.0)
+    val normal = Vector2D(1.0, 0.0)
+    val mass = Some(Weight(2).value)
+    val massOther = None
+
+    val result = PhysicsUtil.reflectOnMobile(
+      speed = speed,
+      otherSpeed = otherSpeed,
+      normal = normal,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result shouldBe Left(ZeroMassError())
+
+  test("pushMobileOverlappingMobile should return a new position after resolving overlap with another mobile object"):
+    val position = Vector2D(5.0, 5.0)
+    val normal = Vector2D(1.0, 0.0)
+    val penetrationDepth = 2.0
+    val massValue = 2.0
+    val massOtherValue = 3.0
+    val mass = Some(Weight(massValue.toInt).value)
+    val massOther = Some(Weight(massOtherValue.toInt).value)
+    val expectedPosition = position + (normal * penetrationDepth * (massValue / (massValue + massOtherValue)))
+
+    val result = PhysicsUtil.pushMobileOverlappingMobile(
+      position = position,
+      normal = normal,
+      penetrationDepth = penetrationDepth,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result.value shouldBe expectedPosition
+
+  test("pushMobileOverlappingMobile should return an error for missing mass"):
+    val position = Vector2D(5.0, 5.0)
+    val normal = Vector2D(1.0, 0.0)
+    val penetrationDepth = 2.0
+    val mass = None
+    val massOther = Some(Weight(3).value)
+
+    val result = PhysicsUtil.pushMobileOverlappingMobile(
+      position = position,
+      normal = normal,
+      penetrationDepth = penetrationDepth,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result shouldBe Left(ZeroMassError())
+
+  test("pushMobileOverlappingMobile should return an error for missing other mass"):
+    val position = Vector2D(5.0, 5.0)
+    val normal = Vector2D(1.0, 0.0)
+    val penetrationDepth = 2.0
+    val mass = Some(Weight(2).value)
+    val massOther = None
+
+    val result = PhysicsUtil.pushMobileOverlappingMobile(
+      position = position,
+      normal = normal,
+      penetrationDepth = penetrationDepth,
+      mass = mass,
+      massOther = massOther
+    )
+
+    result shouldBe Left(ZeroMassError())
+
+  test("nearestEnemy should return None when the entity has no team"):
+    val entity = makeMovingEntityCircle(
+      id = "entity1"
+    )
+
+    val result = PhysicsUtil.nearestEnemy(entity, List(entity), List())
 
     result shouldBe None
-  
-  test("direction returns the normalized vector toward the target"):
-    val fromVector = Vector2D(0.0, 0.0)
-    val toVector = Vector2D(3.0, 4.0)
 
-    val delta = Vector2D(toVector.x - fromVector.x, toVector.y - fromVector.y)
-    val squaredLength = PhysicsUtil.squaredDistance(fromVector, toVector)
-    val expected = delta * (1.0 / math.sqrt(squaredLength))
-
-    val result = PhysicsUtil.direction(
-      from = fromVector,
-      to = toVector
+  test("nearestEnemy should return None when the entity's team is not found"):
+    val entity = addTeam(
+      makeMovingEntityCircle(
+        id = "entity1"
+      ),
+      "teamA"
     )
 
-    result.value shouldBe expected
+    val result = PhysicsUtil.nearestEnemy(entity, List(entity), List())
+
+    result shouldBe None
 
   test("nearestEnemy should return None when there are no other entities"):
     
@@ -282,7 +464,6 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     
     val entity = addTeam(
       makeMovingEntityCircle(
-        id = "entity",
         position = Vector2D(0.0, 0.0)
       ),
       "teamA"

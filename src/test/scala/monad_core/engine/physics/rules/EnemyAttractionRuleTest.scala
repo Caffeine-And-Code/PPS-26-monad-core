@@ -6,8 +6,8 @@ import monad_core.engine.model.*
 import monad_core.engine.physics.core.*
 import monad_core.engine.physics.helper.PhysicsConstantHelper.*
 import monad_core.engine.physics.helper.PhysicsEntityHelper.*
-import monad_core.engine.physics.helper.{PhysicsDetectorHelper, PhysicsSceneHelper}
 import monad_core.engine.physics.helper.PhysicsTeamHelper.*
+import monad_core.engine.physics.helper.{PhysicsDetectorHelper, PhysicsSceneHelper}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.rules.EnemyAttractionRule
 import org.scalamock.scalatest.MockFactory
@@ -27,19 +27,19 @@ class EnemyAttractionRuleTest extends AnyFunSuite with Matchers with MockFactory
   private val MockScene = mock[State]
   given CollisionDetector = mock[CollisionDetector]
 
-  private def calculateRayCastSpeed(entity: Entity, enemy: Entity): Vector2D =
+  private def calculateRayCastSpeed(entity: Entity, enemy: Entity, allEntities: List[Entity]): Vector2D =
 
     val targetPos = RayCast(
       to = enemy,
       from = entity,
-      entitiesVertexes = VertexFinder.apply(List(entity, enemy)),
-      entities = List(entity, enemy),
+      entitiesVertexes = VertexFinder.apply(allEntities),
+      entities = allEntities,
       upperLeftSceneCorner = MockScene.UpperLeftCorner,
       lowerRightSceneCorner = MockScene.LowerRightCorner
     )
 
     val direction = (targetPos.value.value - entity.position).normalized
-    direction * AttractionAcceleration
+    entity.speed.value + direction * AttractionAcceleration
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
@@ -121,7 +121,7 @@ class EnemyAttractionRuleTest extends AnyFunSuite with Matchers with MockFactory
     val entityTeam = makeTeam(entity.teamId.value.value, Set(enemy.teamId.value.value))
     val enemyTeam = makeTeam(enemy.teamId.value.value)
 
-    val expectedSpeed = calculateRayCastSpeed(entity, enemy)
+    val expectedSpeed = calculateRayCastSpeed(entity, enemy, List(entity, enemy))
 
     val scene = sceneWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
@@ -161,8 +161,8 @@ class EnemyAttractionRuleTest extends AnyFunSuite with Matchers with MockFactory
     val entityTeam = makeTeam(entity1.teamId.value.value, Set(enemy.teamId.value.value))
     val enemyTeam = makeTeam(enemy.teamId.value.value)
 
-    val expectedSpeed1 = calculateRayCastSpeed(entity1, enemy)
-    val expectedSpeed2 = calculateRayCastSpeed(entity2, enemy)
+    val expectedSpeed1 = calculateRayCastSpeed(entity1, enemy, List(entity1, entity2, enemy))
+    val expectedSpeed2 = calculateRayCastSpeed(entity2, enemy, List(entity1, entity2, enemy))
 
     val scene = sceneWithTeams(List(entity1, entity2, enemy), List(entityTeam, enemyTeam))
     

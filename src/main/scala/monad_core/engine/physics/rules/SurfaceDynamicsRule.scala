@@ -2,10 +2,10 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.model.{Entity, Surface, Vector2D}
+import monad_core.engine.model.{+, Entity, Surface, Vector2D}
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
 import monad_core.engine.physics.utils.PhysicsUtil
-import monad_core.engine.physics.utils.SceneUpdateEntity
+import monad_core.engine.physics.utils.SceneEntitiesUpdate
 
 private[physics] object SurfaceDynamicsRule:
 
@@ -25,7 +25,7 @@ private[physics] object SurfaceDynamicsRule:
 
         updatedEntities <- applySurfacesToEntities(entitiesInsideSurfaces, dt)
 
-        updatedScene <- SceneUpdateEntity.updateEntities(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
 
   private def findEntitiesInsideSurfaces(entities: List[Entity], surfaces: List[Surface])(using collisionDetector: CollisionDetector): Seq[(Entity, Surface)] =
@@ -45,30 +45,30 @@ private[physics] object SurfaceDynamicsRule:
     }
 
   private def applySurfaceDynamics(entity: Entity, surface: Surface, dt: Long): Either[PhysicsError, Entity] =
-    entity.speed match
-      case None =>
-        Right(entity)
+    for
+      speed = entity.speed.get
 
-      case Some(speed) =>
-        for
-          speedAfterForce <-
-            surface.appliedForce match
-              case Some(force) =>
-                PhysicsUtil
-                  .acceleration(force, entity.weight)
-                  .left
-                  .map(PhysicsDomainError.apply)
-                  .flatMap(acc => PhysicsUtil.nextSpeed(speed, acc, dt))
-              case _ =>
-                Right(speed)
+      speedAfterForce <-
+        surface.appliedForce match
+          case Some(force) =>
+            PhysicsUtil
+              .acceleration(force, entity.weight)
+              .map(acceleration => speed + acceleration)
+          case _ =>
+            Right(speed)
+      
+      speedAfterFriction <-
+        surface.frictionIndex match
+          case Some(friction) =>
+            PhysicsUtil
+              .applyFriction(speedAfterForce, friction, dt)
+              .left
+              .map(PhysicsDomainError.apply)
+          case _ =>
+            Right(speedAfterForce)
 
-          speedAfterFriction <-
-            surface.frictionIndex.fold[Either[PhysicsError, Vector2D]](Right(speedAfterForce)) { friction =>
-              PhysicsUtil.applyFriction(speedAfterForce, friction, dt)
-            }
-
-          updatedEntity <- entity
-            .withSpeed(speedAfterFriction)
-            .left
-            .map(PhysicsDomainError.apply)
-        yield updatedEntity
+      updatedEntity <- entity
+        .withSpeed(speedAfterFriction)
+        .left
+        .map(PhysicsDomainError.apply)
+    yield updatedEntity

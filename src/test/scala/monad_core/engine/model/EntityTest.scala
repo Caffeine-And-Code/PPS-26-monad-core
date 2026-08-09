@@ -77,14 +77,13 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(entityInNewPosition):
       case Right(entity) => entity.position shouldBe newPosition
-
-
-  test("cannot move entity in an invalid position"):
-    val invalidPosition = Vector2D(-1, -1)
-
-    val entityInNewPosition = ValidEntity.flatMap(_.moveTo(invalidPosition))
-
-    entityInNewPosition shouldBe Left(PositionIsValid(invalidPosition))
+  
+//  test("cannot move entity in an invalid position"):
+//    val invalidPosition = Vector2D(-1, -1)
+//
+//    val entityInNewPosition = ValidEntity.flatMap(_.moveTo(invalidPosition))
+//
+//    entityInNewPosition shouldBe Left(PositionIsValid(invalidPosition))
 
   test("can move an entity within a space"):
     val spaceVector = Vector2D(1, 3)

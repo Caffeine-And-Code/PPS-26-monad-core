@@ -8,13 +8,10 @@ private[physics] object PhysicsUtil:
 
   private val NanosecondsPerSecond = 1_000_000_000.0
   private val VectorZero: Vector2D = Vector2D(0.0, 0.0)
-  private val LongZero: Long = 0L
-  private val DoubleZero: Double = 0.0
-  private val Numerator = 1.0
 
   def deltaSeconds(deltaTime: Long): Either[PhysicsError, Double] =
     deltaTime match
-      case t if t < LongZero => Left(NegativeDeltaTime(deltaTime))
+      case t if t < 0L => Left(NegativeDeltaTime(deltaTime))
       case t           => Right(t.toDouble / NanosecondsPerSecond)
 
   def displacement(speed: Vector2D, deltaTime: Long): Either[PhysicsError, Vector2D] =
@@ -44,18 +41,11 @@ private[physics] object PhysicsUtil:
   def acceleration(
     force: Vector2D,
     mass: Option[Weight]
-  ): Either[EngineError, Vector2D] =
+  ): Either[PhysicsError, Vector2D] =
     val actualMass = actualDoubleWeight(mass)
     actualMass match
       case Left(err) => Left(err)
-      case Right(m)  => Right(force * (Numerator / m))
-
-  def nextSpeed(
-    speed: Vector2D,
-    acceleration: Vector2D,
-    deltaTime: Long
-  ): Either[PhysicsError, Vector2D] =
-    displacement(acceleration, deltaTime).map(speed + _)
+      case Right(m)  => Right(force * (1.0 / m))
 
   def applyFriction(
     speed: Vector2D,
@@ -63,7 +53,7 @@ private[physics] object PhysicsUtil:
     deltaTime: Long
   ): Either[PhysicsError, Vector2D] =
     deltaSeconds(deltaTime).map(seconds =>
-      val factor = math.max(DoubleZero, Numerator - frictionIndex * seconds)
+      val factor = math.max(0.0, 1.0 - frictionIndex * seconds)
       speed * factor
     )
 
@@ -75,23 +65,13 @@ private[physics] object PhysicsUtil:
   def distance(first: Vector2D, second: Vector2D): Double =
     math.sqrt(squaredDistance(first, second))
 
-  def direction(
-    from: Vector2D,
-    to: Vector2D
-  ): Option[Vector2D] =
-    val delta = Vector2D(to.x - from.x, to.y - from.y)
-    val squaredLength = squaredDistance(from, to)
-
-    Option.when(squaredLength > DoubleZero):
-      delta * (Numerator / math.sqrt(squaredLength))
-
   def reflectOnFixed(
     speed: Vector2D,
     normal: Vector2D
   ): Vector2D =
     val speedAlongNormal = speed dot normal
 
-    if speedAlongNormal >= DoubleZero then
+    if speedAlongNormal >= 0.0 then
       speed
     else
       speed - (normal * (2.0 * speedAlongNormal))
@@ -118,24 +98,20 @@ private[physics] object PhysicsUtil:
      mass: Option[Weight],
      massOther: Option[Weight]
   ): Either[PhysicsError, Vector2D] =
-    val actualMass = actualDoubleWeight(mass)
-    val actualOtherMass = actualDoubleWeight(massOther)
 
-    (actualMass, actualOtherMass) match
-      case (Left(err), _) => Left(err)
-      case (_, Left(err)) => Left(err)
-      case (Right(actualMass), Right(actualOtherMass)) =>
-        val relativeVelocity = speed - otherSpeed
+    for
+      actualMass <- actualDoubleWeight(mass)
+      actualOtherMass <- actualDoubleWeight(massOther)
 
-        val velocityAlongNormal = relativeVelocity dot normal
+      relativeVelocity = speed - otherSpeed
 
-        if velocityAlongNormal >= DoubleZero then
-          Right(speed)
-        else
-          val impulse =
-            -2.0 * velocityAlongNormal / (Numerator / actualMass + Numerator / actualOtherMass)
+      velocityAlongNormal = relativeVelocity dot normal
 
-          Right(speed + (normal * (impulse / actualMass)))
+      impulse = -2.0 * velocityAlongNormal / (1.0 / actualMass + 1.0 / actualOtherMass)
+
+      actualSpeed = speed + (normal * (impulse / actualMass))
+
+    yield actualSpeed
 
   def pushMobileOverlappingMobile(
     position: Vector2D,
@@ -144,20 +120,17 @@ private[physics] object PhysicsUtil:
     mass: Option[Weight],
     massOther: Option[Weight]
   ): Either[PhysicsError, Vector2D] =
+    for
+      actualMass <- actualDoubleWeight(mass)
+      actualOtherMass <- actualDoubleWeight(massOther)
 
-    val actualMass = actualDoubleWeight(mass)
-    val actualOtherMass = actualDoubleWeight(massOther)
+      totalWeight = actualMass + actualOtherMass
+      ratio = actualMass / totalWeight
 
-    (actualMass, actualOtherMass) match
-      case (Left(err), _) => Left(err)
-      case (_, Left(err)) => Left(err)
-      case (Right(actualMass), Right(actualOtherMass)) =>
-        val totalWeight = actualMass + actualOtherMass
-        val ratio = actualMass / totalWeight
+      correction = normal * (penetrationDepth * ratio)
 
-        val correction = normal * (penetrationDepth * ratio)
-
-        Right(position + correction)
+      newPosition = position + correction
+    yield newPosition
 
   def nearestEnemy(
     entity: Entity,
