@@ -1,13 +1,16 @@
 package monad_core
 
 import monad_core.engine.errors.EngineError
-import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
+import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
+import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistantFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.presentation.agent_evaluation.{AgentEvaluationArguments, AgentEvaluationRuntime, AgentEvaluatorConsolePrinter, AgentEvaluatorPrinter}
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
-import monad_core.simulator.presentation.routes.{Router, ArgumentRoutingRoute, RouteResponse}
+import monad_core.simulator.presentation.routes.{ArgumentRoutingRoute, RouteResponse, Router}
 import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
@@ -15,7 +18,19 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 import scala.Console.{GREEN, RESET}
 
 object Launcher :
-  private def buildLauncher()(using World, GameEngineRuntime): ScalaFxLauncher =
+  private def guiApplication(): Either[EngineError, Unit] =
+    given world: World = MonadCoreWorld()
+
+    given gameEngine: GameEngineRuntime = MonadCodeGameEngineRuntime()
+
+    given aiAgent: AiAgent = Langchain4jAgentFactory
+      .buildOllama(
+        Langchain4jOllamaConfig(
+          url = sys.env.getOrElse("MONAD_CORE_OLLAMA_URL", "http://localhost:11434"),
+          modelName = sys.env.getOrElse("MONAD_CORE_MODEL_NAME", "gemma4:e4b")
+        )
+      )
+
     val imageConfig = BaseImageConfig()
 
     val gamePanel = GameEnginePanel(
@@ -29,34 +44,42 @@ object Launcher :
       chatPanel = AiModelChatPanel
     )
 
-    ScalaFxLauncher(mainStage)
+    ScalaFxLauncher(mainStage).run()
 
   def outcomeFor(result: Either[EngineError, Unit]): RouteResponse =
     result match
       case Left(error) => RouteResponse(success = false, message = s"Startup failed: ${error.message}")
       case Right(_)     => RouteResponse(success = true, message = s"${GREEN}Build Completed$RESET")
 
-  private def evaluateModel(): RouteResponse =
-    RouteResponse(
-      success = true, message = "Model evaluated"
+  private def evaluateModel(args: Array[String]): RouteResponse = {
+    Console.println("Started model evaluation")
+
+    val arguments = AgentEvaluationArguments.parse(args)
+
+    given agentEvaluationPrinter: AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
+
+    given agentEvaluator: AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
+      agentConfig = Langchain4jOllamaConfig(
+        url = arguments.testModelUrl,
+        modelName = arguments.testModel
+      ),
+      judgeConfig = Langchain4jOllamaConfig(
+        url = arguments.judgeModelUrl,
+        modelName = arguments.judgeModel
+      )
     )
+    given agentEvaluatorDataset: AgentEvaluationDataset = HardcodedAgentEvaluationDataset
+
+    AgentEvaluationRuntime.handle()
+
+    RouteResponse(
+      success = true, message = "Finished model evaluation"
+    )
+  }
 
   def main(args: Array[String]): Unit =
-
-    given world: World = MonadCoreWorld()
-
-    given gameEngine: GameEngineRuntime = MonadCodeGameEngineRuntime()
-
-    given aiAgent: AiAgent = Langchain4jAgentFactory
-      .buildOllama(
-        Langchain4jOllamaConfig(
-          url = sys.env.getOrElse("MONAD_CORE_OLLAMA_URL", "http://localhost:11434"),
-          modelName = sys.env.getOrElse("MONAD_CORE_MODEL_NAME", "gemma4:e4b")
-        )
-      )
-
-    lazy val evaluateModelRoute = evaluateModel()
-    lazy val guiRoute = outcomeFor(buildLauncher().run())
+    lazy val evaluateModelRoute = evaluateModel(args)
+    lazy val guiRoute = outcomeFor(guiApplication())
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)

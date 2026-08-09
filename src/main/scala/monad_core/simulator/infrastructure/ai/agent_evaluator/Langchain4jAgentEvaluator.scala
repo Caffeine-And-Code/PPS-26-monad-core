@@ -14,7 +14,7 @@ import scala.util.Try
 case class AgentEvaluationExecutionError(reason: String)
   extends BaseError(s"Agent evaluation failed: $reason")
 
-case class LangchainAgentEvaluator(
+case class Langchain4jAgentEvaluator(
   assistantBuilder: Langchain4jAssistantBuilder,
   toolCallMapper: Langchain4jToolCallMapper,
   evaluationJudge: Langchain4jAgentEvaluationJudge
@@ -62,16 +62,16 @@ case class LangchainAgentEvaluator(
 
     AgentEvaluationResult.CorrectChooses(correct, Math.max(expected.length, actual.length))
 
-object LangchainAgentEvaluator:
+object Langchain4jAgentEvaluator:
 
   def buildOllama(
     agentConfig: Langchain4jOllamaConfig,
     judgeConfig: Langchain4jOllamaConfig
-  ): LangchainAgentEvaluator =
+  ): Langchain4jAgentEvaluator =
     val agentModel = Langchain4jAgentFactory.buildOllamaModel(agentConfig)
     val judgeModel = Langchain4jAgentFactory.buildOllamaModel(judgeConfig)
 
-    LangchainAgentEvaluator(
+    Langchain4jAgentEvaluator(
       assistantBuilder = Langchain4jAssistantFactory(agentModel),
       toolCallMapper = Langchain4jToolCallMapper(),
       evaluationJudge = Langchain4jAgentEvaluationJudge.build(judgeModel)

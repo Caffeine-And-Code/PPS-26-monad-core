@@ -18,7 +18,7 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.jdk.CollectionConverters.*
 
-class LangchainAgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
+class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockFactory:
 
   private val prompt = "Create a circle"
   private val secondPrompt = "Create another circle"
@@ -42,7 +42,7 @@ class LangchainAgentEvaluatorTest extends AnyFunSuite with Matchers with MockFac
     val resultWithToolCall = assistantResult(Seq(toolExecution(expectedToolCall)))
     val judgement = successfulJudgement
     var evaluationWorld = Option.empty[World]
-    val evaluator = LangchainAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     assistantBuilder.build.expects(*, *).onCall:
       (world: World, _: EngineControl) =>
@@ -66,7 +66,7 @@ class LangchainAgentEvaluatorTest extends AnyFunSuite with Matchers with MockFac
     val initialScene = Scene()
     val test = evaluationTest(initialScene, Seq.empty)
     val judgement = successfulJudgement
-    val evaluator = LangchainAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat.expects(conversationId, prompt).returns(assistantResult(Seq.empty)).once()
@@ -87,7 +87,7 @@ class LangchainAgentEvaluatorTest extends AnyFunSuite with Matchers with MockFac
     val prompts = Seq(prompt, secondPrompt)
     val test = evaluationTest(Scene(), Seq(firstToolCall, secondToolCall), prompts)
     val judgement = successfulJudgement
-    val evaluator = LangchainAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat.expects(conversationId, prompt)
@@ -113,7 +113,7 @@ class LangchainAgentEvaluatorTest extends AnyFunSuite with Matchers with MockFac
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat.expects(conversationId, prompt).throws(new RuntimeException(errorMessage)).once()
-    val evaluator = LangchainAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
 
     val result = evaluator.evaluateCase(test)
 
@@ -129,9 +129,9 @@ class LangchainAgentEvaluatorTest extends AnyFunSuite with Matchers with MockFac
       modelName = "judge-model"
     )
 
-    val result = LangchainAgentEvaluator.buildOllama(agentConfig, judgeConfig)
+    val result = Langchain4jAgentEvaluator.buildOllama(agentConfig, judgeConfig)
 
-    result shouldBe a[LangchainAgentEvaluator]
+    result shouldBe a[Langchain4jAgentEvaluator]
 
   private def evaluationTest(
     initialScene: Scene,
