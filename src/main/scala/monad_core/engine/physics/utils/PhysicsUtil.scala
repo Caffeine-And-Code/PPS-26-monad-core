@@ -51,11 +51,12 @@ private[physics] object PhysicsUtil:
     speed: Vector2D,
     frictionIndex: Double,
     deltaTime: Long
-  ): Either[PhysicsError, Vector2D] =
-    deltaSeconds(deltaTime).map(seconds =>
-      val factor = math.max(0.0, 1.0 - frictionIndex * seconds)
-      speed * factor
-    )
+  ): Either[PhysicsError, Vector2D] = {
+    for
+      seconds <- deltaSeconds(deltaTime)
+      factor = math.max(0.0, 1.0 - frictionIndex * seconds)
+    yield speed * factor
+  }
 
   def squaredDistance(first: Vector2D, second: Vector2D): Double =
     val dx = second.x - first.x

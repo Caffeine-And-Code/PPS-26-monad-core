@@ -41,3 +41,13 @@ object GameLoop:
       _ <- Either.cond(maxFrameTime > 0, (), InvalidMaxFrameTime(maxFrameTime))
       _ <- Either.cond(maxFrameTime >= tickTime, (), InvalidMaxFrameTimeTickTimeRatio(maxFrameTime, tickTime))
     yield GameLoopImpl(mode, tickTime, isRunning, lastTime, accumulator, maxFrameTime)
+    
+  def default(): GameLoop =
+    GameLoopImpl(
+      mode = LoopMode.EditMode,
+      tickTime = DefaultTickTime,
+      isRunning = false,
+      lastTime = InitialTime,
+      accumulator = InitialAccumulatorValue,
+      maxFrameTime = DefaultMaxFrameTime
+    )

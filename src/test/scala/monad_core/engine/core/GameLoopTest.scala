@@ -290,7 +290,17 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       .expects(MockState, 1.0, painter)
       .once()
 
-    val (currentScene, currentLoop) = editLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (currentScene, currentLoop) = editLoop.value.tick(MockState, currentTime)(using MockPhysics, MockRender, painter).value
 
     currentScene shouldBe MockState
     currentLoop.lastTime shouldBe currentTime
+    
+  test("default game loop should be valid and have default values"):
+    val defaultLoop = GameLoop.default()
+
+    defaultLoop.mode shouldBe EditMode
+    defaultLoop.tickTime shouldBe DefaultTickTime
+    defaultLoop.isRunning shouldBe false
+    defaultLoop.lastTime shouldBe InitialTime
+    defaultLoop.accumulator shouldBe 0L
+    defaultLoop.maxFrameTime shouldBe DefaultMaxFrameTime
