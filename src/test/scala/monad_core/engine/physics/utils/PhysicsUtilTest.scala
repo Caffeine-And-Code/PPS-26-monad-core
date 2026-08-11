@@ -20,16 +20,16 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val nano = 1_500_000_000L
     val expectedSeconds = 1.5
     
-    PhysicsUtil.deltaSeconds(nano).value shouldBe expectedSeconds
+    PhysicsUtil.timeLongToSeconds(nano).value shouldBe expectedSeconds
 
   test("deltaSeconds treats a negative delta time as zero"):
 
-    PhysicsUtil.deltaSeconds(NegativeDt) shouldBe Left(NegativeDeltaTime(NegativeDt))
+    PhysicsUtil.timeLongToSeconds(NegativeDt) shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("displacement should multiply speed by elapsed seconds"):
     val speed = Vector2D(2.0, 4.0)
     val dt = 500_000_000L
-    val dtS = PhysicsUtil.deltaSeconds(dt).value
+    val dtS = PhysicsUtil.timeLongToSeconds(dt).value
     val expectedDisplacement = Vector2D(speed.x * dtS, speed.y * dtS)
 
     val result = PhysicsUtil.displacement(
@@ -53,7 +53,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val position = Vector2D(5.0, 2.0)
     val speed = Vector2D(4.0, 6.0)
     val dt = 500_000_000L
-    val dtS = PhysicsUtil.deltaSeconds(dt).value
+    val dtS = PhysicsUtil.timeLongToSeconds(dt).value
     val expectedNextPosition = Vector2D(position.x + speed.x * dtS, position.y + speed.y * dtS)
 
     val result = PhysicsUtil.nextPosition(
@@ -121,7 +121,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val speed = Vector2D(10.0, 4.0)
     val frictionIndex = 2.0
     val dt = 500_000_000L
-    val dtS = PhysicsUtil.deltaSeconds(dt).value
+    val dtS = PhysicsUtil.timeLongToSeconds(dt).value
     val expectedFrictionFactor = 1.0 - frictionIndex * dtS
     val expectedFrictionSpeed = Vector2D(speed.x * expectedFrictionFactor, speed.y * expectedFrictionFactor)
 

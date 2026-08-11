@@ -7,18 +7,18 @@ import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
 import monad_core.engine.physics.pathfinding.SizeHelper
-import monad_core.engine.physics.utils.{BorderWall, BorderWallType, CollisionMap, CollisionResolver, PhysicsUtil, SceneEntitiesUpdate}
+import monad_core.engine.physics.utils.*
 
 private[physics] object BorderContactRule:
-  private val id = "border-contact"
+  private val Id = "border-contact"
 
   given borderContactRule: PhysicsRule with
 
-    override val ruleId: String = BorderContactRule.id
+    override val RuleId: String = BorderContactRule.Id
 
     override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
       for
-        _ <- PhysicsUtil.deltaSeconds(dt)
+        _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
 
         activeCollisions <- findCollisions(entities, scene.UpperLeftCorner, scene.LowerRightCorner)
@@ -26,12 +26,7 @@ private[physics] object BorderContactRule:
 
         updatedEntities <- CollisionResolver(activeCollisions)
 
-        updatedScene <-
-          if activeCollisions.isEmpty then
-            Right(scene)
-          else
-            SceneEntitiesUpdate(scene, updatedEntities)
-
+        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
       
     private def findCollisions(

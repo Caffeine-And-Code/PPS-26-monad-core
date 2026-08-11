@@ -3,7 +3,6 @@ package monad_core.engine.physics.utils
 import monad_core.engine.errors.EngineError
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, Vector2D}
-import monad_core.engine.physics.pathfinding.SizeHelper.{horizontalShapeSize, verticalShapeSize}
 
 enum BorderWallType:
   case Left, Right, Top, Bottom
@@ -47,7 +46,7 @@ object BorderWall:
 
   private def moveWall(wall: Either[EngineError, Entity], position: Vector2D): Either[EngineError, Entity] =
     wall match
-      case Right(w) => w.moveTo(position)
+      case Right(w) => Right(w.moveTo(position))
       case Left(err) => Left(err)
   
   private def leftWall(

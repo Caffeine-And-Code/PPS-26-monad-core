@@ -1,7 +1,6 @@
 package monad_core.engine.model
 
 import monad_core.engine.errors.EngineError
-import monad_core.engine.core.traits.State
 
 trait Locatable:
   def id: LocatableId

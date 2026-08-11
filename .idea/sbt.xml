@@ -7,12 +7,11 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="C:\Users\wfaff\Desktop\PPS-26-monad-core" />
-            <option value="C:\Users\wfaff\Desktop\PPS-26-monad-core\project" />
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/project" />
           </set>
         </option>
         <option name="sbtVersion" value="2.0.0" />
-        <option name="separateProdAndTestSourcesIsExplicit" value="true" />
       </SbtProjectSettings>
     </option>
   </component>

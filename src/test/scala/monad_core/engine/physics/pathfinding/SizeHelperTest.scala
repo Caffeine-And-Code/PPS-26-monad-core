@@ -1,7 +1,7 @@
 package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.Vector2D
+import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import PathCircle.*
 import PathRectangle.*
@@ -22,11 +22,23 @@ class SizeHelperTest extends AnyFunSuite with Matchers :
     radius = 2.0
   )
 
+  private def expectedVSize(entity: Entity): Double =
+    entity.shape match
+      case rectangle: Rectangle =>
+        rectangle.verticalSize(entity.position)
+      case circle: Circle =>
+        circle.verticalSize()
+
+  private def expectedHSize(entity: Entity): Double =
+    entity.shape match
+      case rectangle: Rectangle =>
+        rectangle.horizontalSize(entity.position)
+      case circle: Circle =>
+        circle.horizontalSize()
+
   test("this extension should find the vertical size of a rectangle") :
 
-    val expectedVerticalSize = EntityRectangle
-      .shape.asInstanceOf[Rectangle]
-      .verticalSize(EntityRectangle.position)
+    val expectedVerticalSize = expectedVSize(EntityRectangle)
 
     val actualVerticalSize = verticalShapeSize(EntityRectangle)
 
@@ -34,9 +46,7 @@ class SizeHelperTest extends AnyFunSuite with Matchers :
 
   test("this extension should find the vertical size of a circle"):
 
-    val expectedVerticalSize = EntityCircle
-      .shape.asInstanceOf[Circle]
-      .verticalSize()
+    val expectedVerticalSize = expectedVSize(EntityCircle)
 
     val actualVerticalSize = verticalShapeSize(EntityCircle)
 
@@ -44,9 +54,7 @@ class SizeHelperTest extends AnyFunSuite with Matchers :
 
   test("this extension should find the horizontal size of a rectangle"):
 
-    val expectedHorizontalSize = EntityRectangle
-      .shape.asInstanceOf[Rectangle]
-      .horizontalSize(EntityRectangle.position)
+    val expectedHorizontalSize = expectedHSize(EntityRectangle)
 
     val actualHorizontalSize = horizontalShapeSize(EntityRectangle)
 
@@ -54,9 +62,7 @@ class SizeHelperTest extends AnyFunSuite with Matchers :
 
   test("this extension should find the horizontal size of a circle"):
 
-    val expectedHorizontalSize = EntityCircle
-      .shape.asInstanceOf[Circle]
-      .horizontalSize()
+    val expectedHorizontalSize = expectedHSize(EntityCircle)
 
     val actualHorizontalSize = horizontalShapeSize(EntityCircle)
 

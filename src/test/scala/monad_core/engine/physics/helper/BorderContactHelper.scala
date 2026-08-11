@@ -55,7 +55,7 @@ object BorderContactHelper :
       id = entityId,
       position = values._1,
       radius = DefaultRadius
-    ).withSpeed(values._2).value
+    ).withSpeed(values._2)
 
     val wallCollision = BorderWall(
       entity,
@@ -123,7 +123,7 @@ object BorderContactHelper :
     val entity = makeMovingEntityCircle(
       position = values._1,
       radius = DefaultRadius
-    ).withSpeed(values._2).value
+    ).withSpeed(values._2)
     
     val verticalWall = BorderWall(
       entity,

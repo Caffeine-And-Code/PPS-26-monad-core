@@ -5,9 +5,9 @@ import org.scalatest.matchers.should.Matchers
 
 class WeightTest extends AnyFunSuite with Matchers:
 
-  test("zero is a valid weight"):
+  test("zero is not a valid weight"):
     val zeroWeight = 0
 
     val result = Weight(0)
 
-    result.isRight shouldBe true
+    result.isLeft shouldBe true

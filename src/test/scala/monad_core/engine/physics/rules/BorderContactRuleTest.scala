@@ -108,7 +108,8 @@ class BorderContactRuleTest extends AnyFunSuite
 
     val entity = makeMovingEntityCircle(
       position = Vector2D(50, 50),
-    ).withSpeed(Vector2D(1, 1)).value
+      speed = Vector2D(1, 1)
+    )
 
     val scene = sceneWithEntities(List(entity))
     given CollisionDetector = detectorWithoutCollision()

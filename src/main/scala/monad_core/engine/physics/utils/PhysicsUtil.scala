@@ -9,14 +9,14 @@ private[physics] object PhysicsUtil:
   private val NanosecondsPerSecond = 1_000_000_000.0
   private val VectorZero: Vector2D = Vector2D(0.0, 0.0)
 
-  def deltaSeconds(deltaTime: Long): Either[PhysicsError, Double] =
+  def timeLongToSeconds(deltaTime: Long): Either[PhysicsError, Double] =
     deltaTime match
       case t if t < 0L => Left(NegativeDeltaTime(deltaTime))
       case t           => Right(t.toDouble / NanosecondsPerSecond)
 
   def displacement(speed: Vector2D, deltaTime: Long): Either[PhysicsError, Vector2D] =
     for
-      seconds <- deltaSeconds(deltaTime)
+      seconds <- timeLongToSeconds(deltaTime)
     yield speed * seconds
 
   def nextPosition(
@@ -53,7 +53,7 @@ private[physics] object PhysicsUtil:
     deltaTime: Long
   ): Either[PhysicsError, Vector2D] = {
     for
-      seconds <- deltaSeconds(deltaTime)
+      seconds <- timeLongToSeconds(deltaTime)
       factor = math.max(0.0, 1.0 - frictionIndex * seconds)
     yield speed * factor
   }

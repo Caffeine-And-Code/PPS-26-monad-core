@@ -162,7 +162,7 @@ class CollisionResolverTest extends AnyFunSuite
 
     val expectedPositionAfter12 = expectedPositionMobileMobile(entity1, entity2, collision12).value
     val expectedSpeedAfter12 = expectedSpeedMobileMobile(entity1, entity2, collision12).value
-    val entityAfter1 = entity1.moveTo(expectedPositionAfter12).value.withSpeed(expectedSpeedAfter12).value
+    val entityAfter1 = entity1.moveTo(expectedPositionAfter12).withSpeed(expectedSpeedAfter12)
 
     val expectedPosition1 = expectedPositionMobileFixed(entityAfter1, collision13)
     val expectedSpeed1 = expectedSpeedMobileFixed(entityAfter1, collision13)

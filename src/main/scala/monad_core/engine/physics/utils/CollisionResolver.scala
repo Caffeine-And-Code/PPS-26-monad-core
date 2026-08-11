@@ -73,7 +73,7 @@ object CollisionResolver :
 
     newPosition match
       case Left(err) => Left(err)
-      case Right(p) => entity.moveTo(p).left.map(PhysicsDomainError.apply)
+      case Right(p) => Right(entity.moveTo(p))
 
   private def resolveMultipleBounces(
                                  entity: Entity,
@@ -86,7 +86,7 @@ object CollisionResolver :
       case (Right(updatedSpeed), (otherEntity, collision)) =>
         resolveBounce(entity, otherEntity, updatedSpeed, collision)
     }.flatMap { finalSpeed =>
-      entity.withSpeed(finalSpeed).left.map(PhysicsDomainError.apply)
+      Right(entity.withSpeed(finalSpeed))
     }
 
   private def resolveBounce(

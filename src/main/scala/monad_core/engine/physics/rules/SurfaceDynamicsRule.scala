@@ -2,22 +2,21 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.model.{+, Entity, Surface, Vector2D}
+import monad_core.engine.model.{+, Entity, Surface}
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
-import monad_core.engine.physics.utils.PhysicsUtil
-import monad_core.engine.physics.utils.SceneEntitiesUpdate
+import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object SurfaceDynamicsRule:
 
-  private val id = "surface-dynamics"
+  private val Id = "surface-dynamics"
 
   given surfaceDynamicsRule: PhysicsRule with
 
-    override val ruleId: String = SurfaceDynamicsRule.id
+    override val RuleId: String = SurfaceDynamicsRule.Id
 
     override def apply(scene: State, dt: Long)(using collisionDetector: CollisionDetector): Either[PhysicsError, State] =
       for
-        _ <- PhysicsUtil.deltaSeconds(dt)
+        _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
         surfaces = scene.allSurfaces
 
@@ -67,8 +66,5 @@ private[physics] object SurfaceDynamicsRule:
           case _ =>
             Right(speedAfterForce)
 
-      updatedEntity <- entity
-        .withSpeed(speedAfterFriction)
-        .left
-        .map(PhysicsDomainError.apply)
+      updatedEntity = entity.withSpeed(speedAfterFriction)
     yield updatedEntity

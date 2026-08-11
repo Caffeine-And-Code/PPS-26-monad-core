@@ -1,8 +1,7 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
 import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Shape2D, Vector2D}
-import monad_core.simulator.InvalidShapeFormFieldError
+import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{Circle, Rectangle, getEnumValue}
 
@@ -32,9 +31,9 @@ object EntityFormParser:
       shapeValue <- shapeValueEither.getEnumValue
       entity <- buildByShape(shapeValue, generateId(), position, values)
 
-      entityWithSpeed <- BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey) match
+      entityWithSpeed = BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey) match
         case Some(vector) => entity.withSpeed(vector)
-        case _ => Right(entity)
+        case _ => entity
 
       health = values.get(HealthKey).flatMap(_.toDoubleOption).map(_.toInt)
       entityWithHealth <- health match

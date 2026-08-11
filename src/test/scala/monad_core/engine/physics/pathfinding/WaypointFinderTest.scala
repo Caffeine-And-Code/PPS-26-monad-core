@@ -15,7 +15,10 @@ class WaypointFinderTest extends AnyFunSuite with Matchers :
     
     val target = Entity.circle("target", Vector2D(10, 10), 2).value
 
-    val circleShape = target.shape.asInstanceOf[Circle]
+    val circleShape = target.shape match {
+      case circle: Circle => circle
+      case _ => fail("Target entity is not a circle")
+    }
 
     val dx = Start.position.x - target.position.x
     val dy = Start.position.y - target.position.y
@@ -41,8 +44,11 @@ class WaypointFinderTest extends AnyFunSuite with Matchers :
 
   test("WaypointFinder should return the correct waypoints for a rectangle target") :
     val target = Entity.rectangle("target", Vector2D(10, 10), 4, 6).value
-
-    val rectangleShape = target.shape.asInstanceOf[Rectangle]
+    
+    val rectangleShape = target.shape match {
+      case rectangle: Rectangle => rectangle
+      case _ => fail("Target entity is not a rectangle")
+    }
 
     val vertices = rectangleShape.vertexes(target.position)
 

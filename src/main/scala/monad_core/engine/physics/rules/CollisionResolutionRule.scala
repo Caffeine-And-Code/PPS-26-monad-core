@@ -2,41 +2,36 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.errors.EngineError
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
 import monad_core.engine.physics.utils.{CollisionMap, CollisionResolver, PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object CollisionResolutionRule:
-  private val id = "collision-resolution"
+  private val Id = "collision-resolution"
+  private val CombinationSize = 2
 
   given collisionResolutionRule: PhysicsRule with
 
-    override val ruleId: String = CollisionResolutionRule.id
+    override val RuleId: String = CollisionResolutionRule.Id
 
     override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
       for
-        _ <- PhysicsUtil.deltaSeconds(dt)
+        _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities
         
         activeCollisions = findCollisions(entities)
         
         updatedEntities <- CollisionResolver(activeCollisions)
 
-        updatedScene <-
-          if activeCollisions.isEmpty then
-            Right(scene)
-          else
-            SceneEntitiesUpdate(scene, updatedEntities)
-
+        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
 
     private def findCollisions(
                                 entities: List[Entity]
                               )(using detector: CollisionDetector): CollisionMap =
       entities
-        .combinations(2)
+        .combinations(CollisionResolutionRule.CombinationSize)
         .collect {
           case Seq(e1, e2)
             if !(e1.isFixed && e2.isFixed) =>

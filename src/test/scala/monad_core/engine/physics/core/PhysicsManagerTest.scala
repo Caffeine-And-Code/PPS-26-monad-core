@@ -71,7 +71,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("enable should add a specific rule to the enabled set"):
     val initialManager = PhysicsManager(Vector(Rule1)).disable(Rule1)
-    
+
     val updatedManager = initialManager.enable(Rule1)
 
     initialManager.isEnabled(Rule1) shouldBe false

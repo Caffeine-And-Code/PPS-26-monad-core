@@ -3,22 +3,21 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object EnemyAttractionRule:
-
-  private val id = "enemy-attraction"
+  private val Id = "enemy-attraction"
   private val AttractionAcceleration = 1.0
 
   given enemyAttractionRule: PhysicsRule with
 
-    override val ruleId: String = EnemyAttractionRule.id
+    override val RuleId: String = EnemyAttractionRule.Id
 
     override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
       for
-        _ <- PhysicsUtil.deltaSeconds(dt)
+        _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities
         teams = scene.allTeams
         
@@ -31,9 +30,7 @@ private[physics] object EnemyAttractionRule:
           scene.UpperLeftCorner,
           scene.LowerRightCorner
         )
-        
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
-        
       yield updatedScene
       
     private def applyEnemyAttraction(
@@ -82,7 +79,7 @@ private[physics] object EnemyAttractionRule:
               val direction = (targetPos - entity.position).normalized
               val speed = direction * AttractionAcceleration
 
-              entity.withSpeed(entity.speed.get + speed).left.map(PhysicsDomainError.apply)
+              Right(entity.withSpeed(entity.speed.get + speed))
             case Right(None) =>
               Right(entity)
           

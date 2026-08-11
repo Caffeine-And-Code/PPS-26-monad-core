@@ -42,7 +42,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
 
   test("this function should update entities in the scene") :
 
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).value.withSpeed(Vector2D(2, 2)).value
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
     val initialScene = sceneWithEntities(List(Entity1))
 
@@ -56,7 +56,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
 
   test("this function should only update entities that are in the updated list") :
 
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).value.withSpeed(Vector2D(2, 2)).value
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
     val initialScene = sceneWithEntities(List(Entity1, Entity2))
 
@@ -75,8 +75,8 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
 
   test("this function should update multiple entities that are in the updated list"):
 
-    val updatedEntity1 = Entity1.moveTo(Vector2D(11, 11)).value.withSpeed(Vector2D(2, 2)).value
-    val updatedEntity2 = Entity2.moveTo(Vector2D(21, 21)).value.withSpeed(Vector2D(3, 3)).value
+    val updatedEntity1 = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
+    val updatedEntity2 = Entity2.moveTo(Vector2D(21, 21)).withSpeed(Vector2D(3, 3))
 
     val initialScene = sceneWithEntities(List(Entity1, Entity2))
 
@@ -95,7 +95,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
 
   test("this function should return an error if an entity in the updated list is not in the scene") :
 
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).value.withSpeed(Vector2D(2, 2)).value
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
     val initialScene = sceneWithEntities(List(Entity2))
 
@@ -111,7 +111,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
     
   test("this function should return an error if it tries to add an entity that is already in the scene") :
     
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).value.withSpeed(Vector2D(2, 2)).value
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
     val initialScene = sceneWithEntitiesNotRemoving(List(Entity1))
 

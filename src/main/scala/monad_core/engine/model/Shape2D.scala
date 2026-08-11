@@ -3,8 +3,8 @@ package monad_core.engine.model
 import monad_core.engine.errors.EngineError
 
 enum Shape2D:
-  case Circle (radius: Double)
-  case Rectangle (height: Double, length: Double)
+  case Circle private[model](radius: Double)
+  case Rectangle private[model](height: Double, length: Double)
 
 object Shape2D:
   def circle(radius: Double): Either[EngineError, Circle] =

@@ -1,9 +1,10 @@
 package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.*
-import monad_core.engine.model.Shape2D.Circle
+import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.physics.core.{RayIntersectedAMissingEntity, RayIntersectedNothing}
 import monad_core.engine.physics.helper.PhysicsEntityHelper.{makeMovingEntityCircle, makeMovingEntityRectangle}
+import monad_core.engine.physics.pathfinding.PathRectangle.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.compatible.Assertion
@@ -24,8 +25,18 @@ class RayCastTest extends AnyFunSuite with Matchers :
   )
 
   private def rawToActualWaypoint(raw: Vector2D, obstacle: Entity): Vector2D =
-    val horizontalDisplacement = From.shape.asInstanceOf[Circle].radius + EpsilonDisplace
-    val verticalDisplacement = From.shape.asInstanceOf[Circle].radius + EpsilonDisplace
+    
+    val (horizontalDisplacement, verticalDisplacement) = From.shape match
+      case circle:Circle =>
+        (
+          circle.radius + EpsilonDisplace,
+          circle.radius + EpsilonDisplace
+        )
+      case rectangle:Rectangle =>
+        (
+          rectangle.horizontalSize(From.position) + EpsilonDisplace,
+          rectangle.verticalSize(From.position) + EpsilonDisplace
+        )
 
     val normalToWaypoint = (raw - obstacle.position).normalized
     val moduleToWaypoint = (raw - obstacle.position).magnitude

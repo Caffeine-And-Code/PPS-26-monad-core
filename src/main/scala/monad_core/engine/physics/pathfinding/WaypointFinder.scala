@@ -1,22 +1,22 @@
 package monad_core.engine.physics.pathfinding
 
-import monad_core.engine.model.Shape2D.Circle
-import monad_core.engine.model.Shape2D.Rectangle
 import monad_core.engine.model.*
-import PathRectangle.vertexes
+import monad_core.engine.model.Shape2D.{Circle, Rectangle}
+import monad_core.engine.physics.pathfinding.PathRectangle.vertexes
 import monad_core.engine.physics.utils.PhysicsUtil
 
 private[pathfinding] object WaypointFinder :
+
+  private val WaypointsNumber = 2
+
   def apply(start: Entity, target: Entity): List[Vector2D] =
     target.shape match
-      case Circle(_) =>
-        findWaypointsForCircle(start, target)
-      case Rectangle(_, _) =>
-        findRectangleWaypoints(start, target)
+      case circle: Circle =>
+        findWaypointsForCircle(start, target, circle)
+      case rectangle: Rectangle =>
+        findRectangleWaypoints(start, target, rectangle)
   
-  private def findWaypointsForCircle(start: Entity, target: Entity): List[Vector2D] =
-    
-    val circle = target.shape.asInstanceOf[Circle]
+  private def findWaypointsForCircle(start: Entity, target: Entity, circle: Circle): List[Vector2D] =
     
     val dx = start.position.x - target.position.x
     val dy = start.position.y - target.position.y
@@ -40,10 +40,9 @@ private[pathfinding] object WaypointFinder :
   
   private def findRectangleWaypoints(
                                       start: Entity,
-                                      target: Entity
-                                    ): List[Vector2D] = 
-
-    val rectangle = target.shape.asInstanceOf[Rectangle]
+                                      target: Entity,
+                                      rectangle: Rectangle
+                                    ): List[Vector2D] =
 
     val vertexes = rectangle.vertexes(target.position)
 
@@ -54,5 +53,5 @@ private[pathfinding] object WaypointFinder :
         vertex -> angleScore(centerDirection, vertex - start.position)
       }
       .sortBy(_._2)
-      .take(2)
+      .take(WaypointsNumber)
       .map(_._1)

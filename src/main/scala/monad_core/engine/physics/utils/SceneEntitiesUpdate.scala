@@ -9,7 +9,16 @@ private[physics] object SceneEntitiesUpdate:
   def apply(
                       scene: State,
                       updatedEntities: List[Entity]
-                    ): Either[PhysicsError, State] =
+                    ): Either[PhysicsError, State] = 
+    if updatedEntities.isEmpty then
+      Right(scene)
+    else
+      updateSceneWithEntities(scene, updatedEntities)
+  
+  private def updateSceneWithEntities(
+                            scene: State,
+                            updatedEntities: List[Entity]
+                          ): Either[PhysicsError, State] =
     updatedEntities.foldLeft(Right(scene): Either[PhysicsError, State]) {
       (currentScene, entity) =>
         currentScene.flatMap { s =>

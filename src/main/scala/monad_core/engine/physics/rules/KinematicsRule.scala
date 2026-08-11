@@ -3,26 +3,24 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object KinematicsRule:
-
-  private val id = "kinematics"
+  private val Id = "kinematics"
 
   given kinematicsRule: PhysicsRule with
 
-    override val ruleId: String = KinematicsRule.id
+    override val RuleId: String = KinematicsRule.Id
 
     override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
       for
-        _ <- PhysicsUtil.deltaSeconds(dt)
+        _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
 
         updatedEntities <- applyKinematics(scene, entities, dt)
 
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
-
       yield updatedScene
 
     private def applyKinematics(scene: State, entities: List[Entity], dt: Long): Either[PhysicsError, List[Entity]] =
@@ -33,8 +31,13 @@ private[physics] object KinematicsRule:
       }
 
     private def moveEntity(scene: State, entity: Entity, dt: Long): Either[PhysicsError, Entity] =
-      val nextPos = PhysicsUtil.nextPosition(entity.position, entity.speed.get, dt, scene.UpperLeftCorner, scene.LowerRightCorner)
-      nextPos match {
-        case Right(pos) => entity.moveTo(pos).left.map(PhysicsDomainError.apply)
+      PhysicsUtil.nextPosition(
+        entity.position,
+        entity.speed.get,
+        dt,
+        scene.UpperLeftCorner,
+        scene.LowerRightCorner
+      ) match {
+        case Right(pos) => Right(entity.moveTo(pos))
         case Left(err) => Left(err)
       }

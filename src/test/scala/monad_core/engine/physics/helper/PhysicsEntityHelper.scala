@@ -10,7 +10,7 @@ private[physics] object PhysicsEntityHelper:
               position: Vector2D = Vector2D(0, 0),
               radius: Double = PhysicsConstantHelper.DefaultRadius
             ): Entity =
-    Entity.circle(id, Vector2D(0, 0), radius).value.moveTo(position).value
+    Entity.circle(id, Vector2D(0, 0), radius).value.moveTo(position)
 
   def makeMovingEntityCircle(
                     id: String = "entity",
@@ -18,7 +18,7 @@ private[physics] object PhysicsEntityHelper:
                     radius: Double = PhysicsConstantHelper.DefaultRadius,
                     speed: Vector2D = Vector2D(0, 0)
                   ): Entity =
-    makeFixedEntityCircle(id, position, radius).withSpeed(speed).value
+    makeFixedEntityCircle(id, position, radius).withSpeed(speed)
 
 
   def makeFixedEntityRectangle(
@@ -27,7 +27,7 @@ private[physics] object PhysicsEntityHelper:
                              width: Double = PhysicsConstantHelper.DefaultDimension,
                              height: Double = PhysicsConstantHelper.DefaultDimension
                            ): Entity =
-    Entity.rectangle(id = id, position = Vector2D(0, 0), length = width, height = height).value.moveTo(position).value
+    Entity.rectangle(id = id, position = Vector2D(0, 0), length = width, height = height).value.moveTo(position)
   
   def makeMovingEntityRectangle(
                               id: String = "entity",
@@ -36,4 +36,4 @@ private[physics] object PhysicsEntityHelper:
                               height: Double = PhysicsConstantHelper.DefaultDimension,
                               speed: Vector2D = Vector2D(0, 0)
                             ): Entity =
-    makeFixedEntityRectangle(id = id, position = position, width = width, height = height).withSpeed(speed).value
+    makeFixedEntityRectangle(id = id, position = position, width = width, height = height).withSpeed(speed)

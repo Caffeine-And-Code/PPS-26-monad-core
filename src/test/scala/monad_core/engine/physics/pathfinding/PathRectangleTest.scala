@@ -1,14 +1,15 @@
 package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.Shape2D.Rectangle
-import monad_core.engine.model.Vector2D
+import monad_core.engine.model.{Shape2D, Vector2D}
 import PathRectangle.*
+import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class PathRectangleTest extends AnyFunSuite with Matchers :
 
-  val Shape: Rectangle = Rectangle(length = 4.0, height = 3.0)
+  val Shape: Rectangle = Shape2D.rectangle(length = 4.0, height = 3.0).value
   val Position = Vector2D(4.0, 5.0)
 
   test("this extension should generate correct vertexes for a given rectangle, its center, and number of vertexes") :
