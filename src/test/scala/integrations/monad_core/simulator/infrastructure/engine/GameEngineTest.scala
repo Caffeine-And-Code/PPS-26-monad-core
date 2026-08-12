@@ -54,7 +54,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     engine.stop()
     engine.start()
 
-    assert(frames.await(AwaitTimeout, TimeUnit.SECONDS), "false engine stopped delivering frames after play/pause")
+    assert(frames.await(AwaitTimeout, TimeUnit.SECONDS), "engine stopped delivering frames after play/pause")
 
 
   test("reset replaces the world; frames observed afterwards reflect the new world, not the old one"):

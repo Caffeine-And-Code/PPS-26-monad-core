@@ -7,6 +7,6 @@ import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
 object PhysicsRuleHelper :
   def makeDummyRule(id: String = "rule-id", action: (State, Long) => Either[PhysicsError, State]): PhysicsRule =
     new PhysicsRule:
-      override val ruleId: String = id
+      override val RuleId: String = id
       override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
         action(scene, dt)

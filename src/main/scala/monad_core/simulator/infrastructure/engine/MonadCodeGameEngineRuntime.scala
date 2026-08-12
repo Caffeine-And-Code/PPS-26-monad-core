@@ -23,7 +23,6 @@ final class MonadCodeGameEngineRuntime extends GameEngineRuntime:
 
   override def stop(): Unit =
     gameLoop = gameLoop.stop()
-    timer.foreach(_.stop())
     
   override def reset(world: World): Unit =
     gameLoop = GameLoop.default()
