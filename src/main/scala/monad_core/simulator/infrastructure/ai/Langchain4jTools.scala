@@ -11,7 +11,7 @@ case class IncompleteEntitySpeed() extends EngineError("Both speedX and speedY m
 
 case class Langchain4jTools()(using
     world: World,
-    gameEngineRuntime: GameEngineRuntime
+    gameEngineRuntime: EngineControl
 ):
 
   @Tool(Array("Lists all entities in the world."))
