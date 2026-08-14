@@ -7,7 +7,7 @@ trait PhysicsRule:
   val RuleId = ""
   def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State]
 
-  override def equals(obj: Any): Boolean = 
+  override def equals(obj: Any): Boolean =
     obj match
       case that: PhysicsRule if this.RuleId.nonEmpty && that.RuleId.nonEmpty =>
         this.RuleId == that.RuleId

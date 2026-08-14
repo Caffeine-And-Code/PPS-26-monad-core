@@ -11,8 +11,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
-  
-  private val MockAction = mockFunction[State, Long, Either[PhysicsError, State]]
+
+  private val MockAction       = mockFunction[State, Long, Either[PhysicsError, State]]
   private val DefaultRuleCount = 5
 
   private val Rule1Id = "rule1"
@@ -22,7 +22,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
   private val Rule1 = makeDummyRule(Rule1Id, MockAction)
   private val Rule2 = makeDummyRule(Rule2Id, MockAction)
   private val Rule3 = makeDummyRule(Rule3Id, MockAction)
-  
+
   private val DefaultManager = PhysicsManager.default()
 
   given CollisionDetector = mock[CollisionDetector]
@@ -44,10 +44,10 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     DefaultManager.isEnabled(BorderContactRule.borderContactRule) shouldBe true
     DefaultManager.isEnabled(KinematicsRule.kinematicsRule) shouldBe true
 
-  test("isEnabled should return true if the rule is active, false otherwise"): 
+  test("isEnabled should return true if the rule is active, false otherwise"):
     val MissingRuleId = "missingRule"
-    val missingRule = makeDummyRule(MissingRuleId, MockAction)
-    val manager = PhysicsManager(Vector(Rule1))
+    val missingRule   = makeDummyRule(MissingRuleId, MockAction)
+    val manager       = PhysicsManager(Vector(Rule1))
 
     manager.isEnabled(Rule1) shouldBe true
     manager.isEnabled(missingRule) shouldBe false
@@ -99,13 +99,13 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val action1 = MockAction
     val action2 = MockAction
 
-    val rule1 = makeDummyRule(Rule1Id, MockAction)
-    val rule2 = makeDummyRule(Rule2Id, MockAction)
+    val rule1   = makeDummyRule(Rule1Id, MockAction)
+    val rule2   = makeDummyRule(Rule2Id, MockAction)
     val manager = PhysicsManager(Vector(rule1, rule2))
 
-    val initialScene = mock[State]
+    val initialScene    = mock[State]
     val sceneAfterRule1 = mock[State]
-    val finalScene = mock[State]
+    val finalScene      = mock[State]
 
     action1.expects(initialScene, DeltaTimeOneSecond).returning(Right(sceneAfterRule1)).once()
     action2.expects(sceneAfterRule1, DeltaTimeOneSecond).returning(Right(finalScene)).once()
@@ -125,9 +125,9 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
     val manager = PhysicsManager(Vector(rule1, rule2, rule3)).disable(rule2)
 
-    val initialScene = mock[State]
+    val initialScene    = mock[State]
     val sceneAfterRule1 = mock[State]
-    val finalScene = mock[State]
+    val finalScene      = mock[State]
 
     action1.expects(initialScene, DeltaTimeOneSecond).returning(Right(sceneAfterRule1)).once()
     action2.expects(*, *).never()
@@ -141,13 +141,16 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val action1 = MockAction
     val action2 = MockAction
 
-    val rule1 = makeDummyRule(Rule1Id, MockAction)
-    val rule2 = makeDummyRule(Rule2Id, MockAction)
+    val rule1   = makeDummyRule(Rule1Id, MockAction)
+    val rule2   = makeDummyRule(Rule2Id, MockAction)
     val manager = PhysicsManager(Vector(rule1, rule2))
 
     val initialScene = mock[State]
 
-    action1.expects(initialScene, DeltaTimeOneSecond).returning(Left(PhysicsRuleError("Test error"))).once()
+    action1
+      .expects(initialScene, DeltaTimeOneSecond)
+      .returning(Left(PhysicsRuleError("Test error")))
+      .once()
     action2.expects(*, *).never()
 
     val result = manager.step(initialScene, DeltaTimeOneSecond)

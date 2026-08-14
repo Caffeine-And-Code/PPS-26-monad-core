@@ -9,7 +9,7 @@ import SizeHelper.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class SizeHelperTest extends AnyFunSuite with Matchers :
+class SizeHelperTest extends AnyFunSuite with Matchers:
 
   private val EntityRectangle = makeFixedEntityRectangle(
     position = Vector2D(5.0, 6.0),
@@ -36,7 +36,7 @@ class SizeHelperTest extends AnyFunSuite with Matchers :
       case circle: Circle =>
         circle.horizontalSize()
 
-  test("this extension should find the vertical size of a rectangle") :
+  test("this extension should find the vertical size of a rectangle"):
 
     val expectedVerticalSize = expectedVSize(EntityRectangle)
 

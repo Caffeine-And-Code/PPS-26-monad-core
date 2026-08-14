@@ -8,16 +8,16 @@ import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class WaypointFinderTest extends AnyFunSuite with Matchers :
+class WaypointFinderTest extends AnyFunSuite with Matchers:
   private val Start = Entity.circle("start", Vector2D(0, 0), 1).value
-  
-  test("WaypointFinder should return the correct waypoints for a circle target") :
-    
+
+  test("WaypointFinder should return the correct waypoints for a circle target"):
+
     val target = Entity.circle("target", Vector2D(10, 10), 2).value
 
     val circleShape = target.shape match {
       case circle: Circle => circle
-      case _ => fail("Target entity is not a circle")
+      case _              => fail("Target entity is not a circle")
     }
 
     val dx = Start.position.x - target.position.x
@@ -36,18 +36,17 @@ class WaypointFinderTest extends AnyFunSuite with Matchers :
       PointOnCircle(target.position, circleShape.radius, angle1),
       PointOnCircle(target.position, circleShape.radius, angle2)
     )
-    
+
     val waypoints = WaypointFinder(Start, target)
 
     waypoints should contain theSameElementsAs expectedWaypoints
-  
 
-  test("WaypointFinder should return the correct waypoints for a rectangle target") :
+  test("WaypointFinder should return the correct waypoints for a rectangle target"):
     val target = Entity.rectangle("target", Vector2D(10, 10), 4, 6).value
-    
+
     val rectangleShape = target.shape match {
       case rectangle: Rectangle => rectangle
-      case _ => fail("Target entity is not a rectangle")
+      case _                    => fail("Target entity is not a rectangle")
     }
 
     val vertices = rectangleShape.vertexes(target.position)
@@ -62,7 +61,7 @@ class WaypointFinderTest extends AnyFunSuite with Matchers :
       .sortBy(_._2)
       .take(2)
       .map(_._1)
-    
+
     val waypoints = WaypointFinder(Start, target)
 
     waypoints should contain theSameElementsAs expectedWaypoints

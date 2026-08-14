@@ -4,8 +4,8 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{LocatableId, Surface}
 
 case class SaveSurfaceCommand(
-                               surface: Surface
-                             )
+    surface: Surface
+)
 
 private[world] trait SurfaceOperations:
   def getAllSurfaces: List[Surface]

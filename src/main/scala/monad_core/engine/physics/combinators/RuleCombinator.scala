@@ -8,7 +8,9 @@ private[physics] object RuleCombinator:
 
   def sequence(rules: Seq[PhysicsRule]): PhysicsRule =
     new PhysicsRule:
-      override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
+      override def apply(scene: State, dt: Long)(using
+          detector: CollisionDetector
+      ): Either[PhysicsError, State] =
         rules.foldLeft[Either[PhysicsError, State]](Right(scene)): (currentSceneResult, rule) =>
           currentSceneResult.flatMap(currentScene => rule(currentScene, dt))
 

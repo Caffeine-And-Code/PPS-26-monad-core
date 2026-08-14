@@ -12,8 +12,13 @@ import scalafx.scene.paint.Color
 
 import scala.util.Random
 
-class DrawerTest extends AnyFunSuite with Matchers with Inside with MockFactory with BeforeAndAfterEach:
-  val CircleEntity: Entity = Entity.circle("CircleId", Vector2D(0, 0), 1).value
+class DrawerTest
+    extends AnyFunSuite
+    with Matchers
+    with Inside
+    with MockFactory
+    with BeforeAndAfterEach:
+  val CircleEntity: Entity    = Entity.circle("CircleId", Vector2D(0, 0), 1).value
   val RectangleEntity: Entity = Entity.rectangle("RectangleId", Vector2D(0, 0), 10, 10).value
 
   override def beforeEach(): Unit =
@@ -74,7 +79,7 @@ class DrawerTest extends AnyFunSuite with Matchers with Inside with MockFactory 
       generateRandomTeamId(),
       generateRandomTeamId(),
       generateRandomTeamId(),
-      generateRandomTeamId(),
+      generateRandomTeamId()
     )
 
     forAll(teamIds): teamId =>
@@ -90,10 +95,10 @@ class DrawerTest extends AnyFunSuite with Matchers with Inside with MockFactory 
     color1 should be(color2)
 
   test("Different TeamIds get different colors"):
-    val firstTeamId = TeamId("TeamA").value
+    val firstTeamId  = TeamId("TeamA").value
     val secondTeamId = TeamId("TeamB").value
 
-    val firstColor = Drawer.teamIdColorRelation(firstTeamId)
+    val firstColor  = Drawer.teamIdColorRelation(firstTeamId)
     val secondColor = Drawer.teamIdColorRelation(secondTeamId)
 
     firstColor should not be secondColor

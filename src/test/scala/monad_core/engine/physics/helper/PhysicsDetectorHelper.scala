@@ -5,10 +5,10 @@ import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, Surface, Vector2D}
 import org.scalamock.scalatest.MockFactory
 
-private[physics] trait PhysicsDetectorHelper :
+private[physics] trait PhysicsDetectorHelper:
 
   self: MockFactory =>
-  
+
   def detectorWithoutCollision(): CollisionDetector =
     val detector = mock[CollisionDetector]
 
@@ -20,14 +20,16 @@ private[physics] trait PhysicsDetectorHelper :
     detector
 
   def detectorWithCollisions(
-    collisions: Map[(String, String), (Vector2D, Double)]
+      collisions: Map[(String, String), (Vector2D, Double)]
   ): CollisionDetector =
     val detector = mock[CollisionDetector]
 
     detector.collision
       .expects(*, *)
       .onCall { (entity1, entity2) =>
-        collisions.get((entity1.id.value, entity2.id.value)).map { case (normal, depth) => Collision(normal, depth) }
+        collisions.get((entity1.id.value, entity2.id.value)).map { case (normal, depth) =>
+          Collision(normal, depth)
+        }
       }
       .anyNumberOfTimes()
 

@@ -16,28 +16,30 @@ class VertexFinderTest extends AnyFunSuite with Matchers:
     val entities = List.empty
 
     val result = VertexFinder(entities)
-    
+
     result shouldBe Map.empty
 
   test("the VertexFinder should return a map with vertexes for each entity"):
-    val circleEntity = makeFixedEntityCircle("circle", Vector2D(0, 0), 1.0)
+    val circleEntity    = makeFixedEntityCircle("circle", Vector2D(0, 0), 1.0)
     val rectangleEntity = makeFixedEntityRectangle("rectangle", Vector2D(1, 1), 2.0, 3.0)
 
     val entities = List(circleEntity, rectangleEntity)
 
-    val expectedMap = entities.map(entity =>
-      entity.id -> (entity.shape match
-        case circle: Circle => circle.vertexes(entity.position, CircleVertexesNumber)
-        case rectangle: Rectangle => rectangle.vertexes(entity.position)
+    val expectedMap = entities
+      .map(entity =>
+        entity.id -> (entity.shape match
+          case circle: Circle       => circle.vertexes(entity.position, CircleVertexesNumber)
+          case rectangle: Rectangle => rectangle.vertexes(entity.position)
+        )
       )
-    ).toMap
+      .toMap
 
     val result = VertexFinder(entities)
 
     result should contain key circleEntity.id
     result should contain key rectangleEntity.id
 
-    val circleVertexes = result(circleEntity.id)
+    val circleVertexes    = result(circleEntity.id)
     val rectangleVertexes = result(rectangleEntity.id)
 
     circleVertexes should contain theSameElementsAs expectedMap(circleEntity.id)

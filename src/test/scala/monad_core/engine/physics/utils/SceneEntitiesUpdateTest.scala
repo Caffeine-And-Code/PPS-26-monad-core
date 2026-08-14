@@ -1,6 +1,11 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotRemoveEntity, CannotRemoveNonPresentElementFromMap}
+import monad_core.engine.core.{
+  CannotAddAlreadyPresentElementInMap,
+  CannotAddEntity,
+  CannotRemoveEntity,
+  CannotRemoveNonPresentElementFromMap
+}
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.PhysicsDomainError
 import monad_core.engine.physics.helper.PhysicsEntityHelper.makeMovingEntityCircle
@@ -11,10 +16,11 @@ import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class SceneEntitiesUpdateTest extends AnyFunSuite
-  with Matchers
-  with MockFactory
-  with PhysicsSceneHelper:
+class SceneEntitiesUpdateTest
+    extends AnyFunSuite
+    with Matchers
+    with MockFactory
+    with PhysicsSceneHelper:
 
   private val Entity1 = makeMovingEntityCircle(
     id = "entity1",
@@ -28,7 +34,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
     speed = Vector2D(2, 2)
   )
 
-  test("this function should return the same scene if the list of updated entities is empty") :
+  test("this function should return the same scene if the list of updated entities is empty"):
     val initialScene = sceneWithEntities(List(Entity1))
 
     val result = SceneEntitiesUpdate(initialScene, List()).value
@@ -40,7 +46,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
     resultEntity.position shouldBe Entity1.position
     resultEntity.speed shouldBe Entity1.speed
 
-  test("this function should update entities in the scene") :
+  test("this function should update entities in the scene"):
 
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
@@ -54,7 +60,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
     resultEntity.position shouldBe updatedEntity.position
     resultEntity.speed shouldBe updatedEntity.speed
 
-  test("this function should only update entities that are in the updated list") :
+  test("this function should only update entities that are in the updated list"):
 
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
@@ -93,7 +99,7 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
     resultEntity2.position shouldBe updatedEntity2.position
     resultEntity2.speed shouldBe updatedEntity2.speed
 
-  test("this function should return an error if an entity in the updated list is not in the scene") :
+  test("this function should return an error if an entity in the updated list is not in the scene"):
 
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
@@ -108,9 +114,11 @@ class SceneEntitiesUpdateTest extends AnyFunSuite
         )
       )
     )
-    
-  test("this function should return an error if it tries to add an entity that is already in the scene") :
-    
+
+  test(
+    "this function should return an error if it tries to add an entity that is already in the scene"
+  ):
+
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
     val initialScene = sceneWithEntitiesNotRemoving(List(Entity1))

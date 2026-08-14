@@ -7,20 +7,20 @@ import monad_core.engine.physics.helper.PhysicsEntityHelper.makeMovingEntityCirc
 import monad_core.engine.physics.utils.{BorderWall, BorderWallType}
 import org.scalatest.EitherValues.convertEitherToValuable
 
-object BorderContactHelper :
+object BorderContactHelper:
 
   def generateSingleWallEntities(
-                            borderType: BorderWallType,
-                            upperLeft: Vector2D,
-                            lowerRight: Vector2D,
-                            entityId: String = "entity"
-                                ): (
+      borderType: BorderWallType,
+      upperLeft: Vector2D,
+      lowerRight: Vector2D,
+      entityId: String = "entity"
+  ): (
       Entity,
       Entity,
       Collision,
       Vector2D,
       Vector2D
-    ) =
+  ) =
     val values = borderType match
       case BorderWallType.Left =>
         (
@@ -69,11 +69,11 @@ object BorderContactHelper :
     (entity, wallCollision._1, wallCollision._2, values._3, values._4)
 
   def generateCornerEntities(
-                              borderTypeV: BorderWallType,
-                              borderTypeH: BorderWallType,
-                              upperLeft: Vector2D,
-                              lowerRight: Vector2D
-                            ): (
+      borderTypeV: BorderWallType,
+      borderTypeH: BorderWallType,
+      upperLeft: Vector2D,
+      lowerRight: Vector2D
+  ): (
       Entity,
       Entity,
       Collision,
@@ -81,12 +81,12 @@ object BorderContactHelper :
       Collision,
       Vector2D,
       Vector2D
-    ) =
+  ) =
 
     val values = (borderTypeV, borderTypeH) match
       case (BorderWallType.Left, BorderWallType.Top) =>
         (
-          Vector2D(upperLeft.x - 10, upperLeft.y -10),
+          Vector2D(upperLeft.x - 10, upperLeft.y - 10),
           Vector2D(-1, -1),
           Vector2D(upperLeft.x + DefaultRadius, upperLeft.y + DefaultRadius),
           Vector2D(1, 1)
@@ -119,12 +119,12 @@ object BorderContactHelper :
           Vector2D(0, 0),
           Vector2D(0, 0)
         )
-        
+
     val entity = makeMovingEntityCircle(
       position = values._1,
       radius = DefaultRadius
     ).withSpeed(values._2)
-    
+
     val verticalWall = BorderWall(
       entity,
       DefaultRadius,
@@ -133,7 +133,7 @@ object BorderContactHelper :
       lowerRight,
       borderTypeV
     ).value
-    
+
     val horizontalWall = BorderWall(
       entity,
       DefaultRadius,

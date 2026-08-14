@@ -1,7 +1,12 @@
 package monad_core.engine.physics.helper
 
 import monad_core.engine.core.traits.State
-import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotRemoveEntity, CannotRemoveNonPresentElementFromMap}
+import monad_core.engine.core.{
+  CannotAddAlreadyPresentElementInMap,
+  CannotAddEntity,
+  CannotRemoveEntity,
+  CannotRemoveNonPresentElementFromMap
+}
 import monad_core.engine.model.{Entity, Surface, Team}
 import org.scalamock.scalatest.MockFactory
 
@@ -11,7 +16,7 @@ private[physics] trait PhysicsSceneHelper:
 
   def sceneWithEntities(entities: List[Entity]): State =
     val scene = mock[State]
-    
+
     (() => scene.allEntities)
       .expects()
       .returning(entities)
@@ -82,9 +87,9 @@ private[physics] trait PhysicsSceneHelper:
     scene
 
   def sceneWithTeams(
-                 entities: List[Entity],
-                 teams: List[Team]
-               ): State =
+      entities: List[Entity],
+      teams: List[Team]
+  ): State =
     val scene = mock[State]
 
     (() => scene.allEntities)
@@ -130,9 +135,9 @@ private[physics] trait PhysicsSceneHelper:
     scene
 
   def sceneWithSurfaces(
-                      entities: List[Entity],
-                      surfaces: List[Surface]
-                    ): State =
+      entities: List[Entity],
+      surfaces: List[Surface]
+  ): State =
     val scene = mock[State]
 
     (() => scene.allEntities)

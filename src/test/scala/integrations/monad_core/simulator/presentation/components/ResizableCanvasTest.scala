@@ -36,7 +36,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     }
 
   test("ResizableCanvas should report its preferred size as its current width and height"):
-    val expectedWidth = 200
+    val expectedWidth  = 200
     val expectedHeight = 150
 
     onFxThread {
@@ -49,7 +49,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     }
 
   test("ResizableCanvas should update its width and height when resized"):
-    val expectedWidth = 300
+    val expectedWidth  = 300
     val expectedHeight = 250
 
     onFxThread {
@@ -62,7 +62,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
     }
 
   test("ResizableCanvas should reflect resize in its own preferred size afterwards"):
-    val expectedWidth = 80
+    val expectedWidth  = 80
     val expectedHeight = 60
 
     onFxThread {
@@ -77,7 +77,7 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
   test("ResizableCanvas matches visual snapshot when placed in a resizable container"):
     onFxThread {
       val canvas = ResizableCanvas()
-      val gc = canvas.graphicsContext2D
+      val gc     = canvas.graphicsContext2D
       gc.setFill(Color.Red)
       gc.fillRect(0, 0, 100, 100)
 
@@ -93,7 +93,11 @@ class ResizableCanvasTest extends AnyFunSuite with Matchers with ScalaFxInit wit
       }
       stage.show()
 
-      assertMatchesVisualSnapshot("resizable_canvas_filled_container", root, maxDiffPercentage = 5.0)
+      assertMatchesVisualSnapshot(
+        "resizable_canvas_filled_container",
+        root,
+        maxDiffPercentage = 5.0
+      )
     }
 
   test("ResizableCanvas matches architectural snapshot when placed in a resizable container"):

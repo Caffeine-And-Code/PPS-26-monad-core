@@ -15,8 +15,8 @@ class RouterTest extends AnyFunSuite with Matchers:
     router.routes.isEmpty shouldBe true
 
   test("can add routes to route list"):
-    val router = Router()
-    val routeR1 = Route("r1")
+    val router   = Router()
+    val routeR1  = Route("r1")
     val allRoute = All()
 
     val result = router
@@ -28,10 +28,10 @@ class RouterTest extends AnyFunSuite with Matchers:
     result.routes.map(_.routeRender()) shouldBe Seq(successRouteResponse, successRouteResponse)
 
   test("can evaluate witch route to use based on args"):
-    val router = Router()
-    val routeToChoose = "r1"
-    val anotherRoute = "r2"
-    val args: Array[String] = Array(routeToChoose)
+    val router                = Router()
+    val routeToChoose         = "r1"
+    val anotherRoute          = "r2"
+    val args: Array[String]   = Array(routeToChoose)
     val routeResponseToChoose = RouteResponse(true, "right")
 
     val result: Either[RouteNotFoundError, RouteResponse] = router
@@ -42,10 +42,10 @@ class RouterTest extends AnyFunSuite with Matchers:
     result shouldBe Right(routeResponseToChoose)
 
   test("the Route All is a flag for indicating all routes"):
-    val router = Router()
-    val routeToChoose = All()
-    val anotherRoute = "r2"
-    val args: Array[String] = Array()
+    val router                = Router()
+    val routeToChoose         = All()
+    val anotherRoute          = "r2"
+    val args: Array[String]   = Array()
     val routeResponseToChoose = RouteResponse(true, "right")
 
     val result: Either[RouteNotFoundError, RouteResponse] = router
@@ -56,8 +56,8 @@ class RouterTest extends AnyFunSuite with Matchers:
     result shouldBe Right(routeResponseToChoose)
 
   test("when no route is found it returns an Error"):
-    val router = Router()
-    val anotherRoute = "r2"
+    val router              = Router()
+    val anotherRoute        = "r2"
     val args: Array[String] = Array()
 
     val result: Either[RouteNotFoundError, RouteResponse] = router

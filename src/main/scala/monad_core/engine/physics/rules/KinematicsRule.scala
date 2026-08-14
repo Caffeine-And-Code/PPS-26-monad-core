@@ -13,7 +13,9 @@ private[physics] object KinematicsRule:
 
     override val RuleId: String = KinematicsRule.Id
 
-    override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
+    override def apply(scene: State, dt: Long)(using
+        detector: CollisionDetector
+    ): Either[PhysicsError, State] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
@@ -23,7 +25,11 @@ private[physics] object KinematicsRule:
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
 
-    private def applyKinematics(scene: State, entities: List[Entity], dt: Long): Either[PhysicsError, List[Entity]] =
+    private def applyKinematics(
+        scene: State,
+        entities: List[Entity],
+        dt: Long
+    ): Either[PhysicsError, List[Entity]] =
       entities.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
         case (Left(err), _) => Left(err)
         case (Right(updatedEntities), entity) =>
@@ -39,5 +45,5 @@ private[physics] object KinematicsRule:
         scene.LowerRightCorner
       ) match {
         case Right(pos) => Right(entity.moveTo(pos))
-        case Left(err) => Left(err)
+        case Left(err)  => Left(err)
       }

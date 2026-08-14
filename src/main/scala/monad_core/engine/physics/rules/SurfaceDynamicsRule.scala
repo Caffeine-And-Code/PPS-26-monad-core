@@ -14,7 +14,9 @@ private[physics] object SurfaceDynamicsRule:
 
     override val RuleId: String = SurfaceDynamicsRule.Id
 
-    override def apply(scene: State, dt: Long)(using collisionDetector: CollisionDetector): Either[PhysicsError, State] =
+    override def apply(scene: State, dt: Long)(using
+        collisionDetector: CollisionDetector
+    ): Either[PhysicsError, State] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
@@ -27,14 +29,19 @@ private[physics] object SurfaceDynamicsRule:
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
 
-  private def findEntitiesInsideSurfaces(entities: List[Entity], surfaces: List[Surface])(using collisionDetector: CollisionDetector): Seq[(Entity, Surface)] =
+  private def findEntitiesInsideSurfaces(entities: List[Entity], surfaces: List[Surface])(using
+      collisionDetector: CollisionDetector
+  ): Seq[(Entity, Surface)] =
     for
-      entity <- entities
+      entity  <- entities
       surface <- surfaces
       if collisionDetector.isInside(entity, surface)
     yield (entity, surface)
 
-  private def applySurfacesToEntities(containing: Seq[(Entity, Surface)], dt: Long): Either[PhysicsError, List[Entity]] =
+  private def applySurfacesToEntities(
+      containing: Seq[(Entity, Surface)],
+      dt: Long
+  ): Either[PhysicsError, List[Entity]] =
     containing.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
       case (Left(err), _) => Left(err)
       case (Right(updatedEntities), (entity, surface)) =>
@@ -43,7 +50,11 @@ private[physics] object SurfaceDynamicsRule:
         }
     }
 
-  private def applySurfaceDynamics(entity: Entity, surface: Surface, dt: Long): Either[PhysicsError, Entity] =
+  private def applySurfaceDynamics(
+      entity: Entity,
+      surface: Surface,
+      dt: Long
+  ): Either[PhysicsError, Entity] =
     for
       speed = entity.speed.get
 
@@ -55,7 +66,7 @@ private[physics] object SurfaceDynamicsRule:
               .map(acceleration => speed + acceleration)
           case _ =>
             Right(speed)
-      
+
       speedAfterFriction <-
         surface.frictionIndex match
           case Some(friction) =>

@@ -4,10 +4,11 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Shape2D, Surface, Team, Vector2D}
 
 object Langchain4jToolResponse:
+
   def save(
-                    result: Either[EngineError, Unit],
-                    successMessage: String
-                  ): String =
+      result: Either[EngineError, Unit],
+      successMessage: String
+  ): String =
     result match
       case Left(error) =>
         s"Error: ${error.message}"
@@ -15,21 +16,21 @@ object Langchain4jToolResponse:
         s"Success: $successMessage"
 
   def render[A](
-                         result: Either[EngineError, A]
-                       )(
-                         format: A => String
-                       ): String =
+      result: Either[EngineError, A]
+  )(
+      format: A => String
+  ): String =
     result.fold(
       error => s"Error: ${error.message}",
       value => s"Result:\n${format(value)}"
     )
 
   def renderList[A](
-                             values: List[A],
-                             elementName: String
-                           )(
-                             format: A => String
-                           ): String =
+      values: List[A],
+      elementName: String
+  )(
+      format: A => String
+  ): String =
     if values.isEmpty then s"Result: no $elementName found."
     else
       val renderedValues = values.zipWithIndex
@@ -79,18 +80,18 @@ object Langchain4jToolResponse:
     s"(${vector.x}, ${vector.y})"
 
   def withOptionalEntityFields(
-                                        entity: Entity,
-                                        teamId: String,
-                                        weight: Integer,
-                                        speedX: java.lang.Double,
-                                        speedY: java.lang.Double
-                                      ): Either[EngineError, Entity] =
+      entity: Entity,
+      teamId: String,
+      weight: Integer,
+      speedX: java.lang.Double,
+      speedY: java.lang.Double
+  ): Either[EngineError, Entity] =
     for
       entityWithTeam <- Option(teamId)
         .fold(Right(entity): Either[EngineError, Entity])(entity.withTeamId)
       entityWithWeight <- Option(weight)
-        .fold(Right(entityWithTeam): Either[EngineError, Entity])(
-          value => entityWithTeam.withWeight(value.intValue())
+        .fold(Right(entityWithTeam): Either[EngineError, Entity])(value =>
+          entityWithTeam.withWeight(value.intValue())
         )
       completeEntity <- (
         (Option(speedX), Option(speedY)) match
@@ -104,5 +105,5 @@ object Langchain4jToolResponse:
             )
           case _ =>
             Left(IncompleteEntitySpeed())
-        ): Either[EngineError, Entity]
+      ): Either[EngineError, Entity]
     yield completeEntity

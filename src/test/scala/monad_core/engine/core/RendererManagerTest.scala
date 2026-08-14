@@ -16,10 +16,10 @@ class RendererManagerTest extends AnyFunSuite with Matchers with MockFactory:
   test("renderer manager should draw surfaces using the base color"):
     given painter: Painter = mock[Painter]
 
-    val baseColor = Color.Gray
+    val baseColor     = Color.Gray
     val circleSurface = Surface.circle("s1", ZeroVector, 10.0).value
-    val rectSurface = Surface.rectangle("s2", ZeroVector, 20.0, 30.0).value
-    val mockState = mock[State]
+    val rectSurface   = Surface.rectangle("s2", ZeroVector, 20.0, 30.0).value
+    val mockState     = mock[State]
 
     (() => painter.baseColor).expects().returning(baseColor).anyNumberOfTimes()
 
@@ -36,11 +36,11 @@ class RendererManagerTest extends AnyFunSuite with Matchers with MockFactory:
     given painter: Painter = mock[Painter]
 
     val teamRedId = TeamId("red").value
-    val redColor = Color.Red
+    val redColor  = Color.Red
     val baseColor = Color.Black
 
-    val team = Team(teamRedId).value
-    val entity = Entity.circle("e1", ZeroVector, 5.0).value.withTeamId(teamRedId.value).value
+    val team      = Team(teamRedId).value
+    val entity    = Entity.circle("e1", ZeroVector, 5.0).value.withTeamId(teamRedId.value).value
     val mockState = mock[State]
 
     (() => painter.baseColor).expects().returning(baseColor).anyNumberOfTimes()
@@ -57,9 +57,9 @@ class RendererManagerTest extends AnyFunSuite with Matchers with MockFactory:
   test("renderer manager should draw entities using base color when teamId is None"):
     given painter: Painter = mock[Painter]
 
-    val baseColor = Color.White
+    val baseColor         = Color.White
     val entityWithoutTeam = Entity.rectangle("e2", ZeroVector, 10.0, 10.0).value
-    val mockState = mock[State]
+    val mockState         = mock[State]
 
     (() => painter.baseColor).expects().returning(baseColor).anyNumberOfTimes()
 

@@ -6,42 +6,40 @@ import monad_core.engine.model.{+, Entity, Vector2D}
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError}
 import monad_core.engine.physics.utils.CollisionMap
 
-object CollisionResolver :
+object CollisionResolver:
 
   def apply(
       collisions: CollisionMap
-    ): Either[PhysicsError, List[Entity]] = {
-
-    collisions.filterNot(_._1.isFixed).foldLeft(Right(List.empty): Either[PhysicsError, List[Entity]]) {
-      case (Left(err), _) => Left(err)
-      case (Right(updatedEntities), (entity, entityCollisions)) =>
-        resolveCollisions(entity, entityCollisions).map(updatedEntity => updatedEntities :+ updatedEntity)
-    }
-  }
+  ): Either[PhysicsError, List[Entity]] =
+    collisions
+      .filterNot(_._1.isFixed)
+      .foldLeft(Right(List.empty): Either[PhysicsError, List[Entity]]) {
+        case (Left(err), _) => Left(err)
+        case (Right(updatedEntities), (entity, entityCollisions)) =>
+          resolveCollisions(entity, entityCollisions).map(updatedEntity =>
+            updatedEntities :+ updatedEntity
+          )
+      }
 
   private def resolveCollisions(
-                        entity: Entity,
-                        collisions: List[(Entity, Collision)]
-                      ) : Either[PhysicsError, Entity] = {
+      entity: Entity,
+      collisions: List[(Entity, Collision)]
+  ): Either[PhysicsError, Entity] =
     resolveMultipleCollisions(entity, collisions)
-  }
 
   private def resolveMultipleCollisions(
-                              entity: Entity,
-                              collisions: List[(Entity, Collision)]
-                            ): Either[PhysicsError, Entity] = {
-
+      entity: Entity,
+      collisions: List[(Entity, Collision)]
+  ): Either[PhysicsError, Entity] =
     for
       deOverlappedEntity <- resolveMultipleOverlaps(entity, collisions)
-      resolvedEntity <- resolveMultipleBounces(deOverlappedEntity, collisions)
+      resolvedEntity     <- resolveMultipleBounces(deOverlappedEntity, collisions)
     yield resolvedEntity
-  }
 
   private def resolveMultipleOverlaps(
-                                       entity: Entity,
-                                       collisions: List[(Entity, Collision)]
-                                     ): Either[PhysicsError, Entity] =
-
+      entity: Entity,
+      collisions: List[(Entity, Collision)]
+  ): Either[PhysicsError, Entity] =
     collisions.foldLeft(Right(entity): Either[PhysicsError, Entity]) {
       case (Left(err), _) => Left(err)
       case (Right(updatedEntity), (otherEntity, collision)) =>
@@ -49,10 +47,10 @@ object CollisionResolver :
     }
 
   private def resolveOverlap(
-                              entity: Entity,
-                              other: Entity,
-                              collision: Collision
-                            ): Either[PhysicsError, Entity] =
+      entity: Entity,
+      other: Entity,
+      collision: Collision
+  ): Either[PhysicsError, Entity] =
     val newPosition =
       if other.isFixed then
         Right(
@@ -73,28 +71,30 @@ object CollisionResolver :
 
     newPosition match
       case Left(err) => Left(err)
-      case Right(p) => Right(entity.moveTo(p))
+      case Right(p)  => Right(entity.moveTo(p))
 
   private def resolveMultipleBounces(
-                                 entity: Entity,
-                                 collisions: List[(Entity, Collision)]
-                               ): Either[PhysicsError, Entity] =
+      entity: Entity,
+      collisions: List[(Entity, Collision)]
+  ): Either[PhysicsError, Entity] =
     val currentSpeed = entity.speed.get
 
-    collisions.foldLeft(Right(currentSpeed): Either[PhysicsError, Vector2D]) {
-      case (Left(err), _) => Left(err)
-      case (Right(updatedSpeed), (otherEntity, collision)) =>
-        resolveBounce(entity, otherEntity, updatedSpeed, collision)
-    }.flatMap { finalSpeed =>
-      Right(entity.withSpeed(finalSpeed))
-    }
+    collisions
+      .foldLeft(Right(currentSpeed): Either[PhysicsError, Vector2D]) {
+        case (Left(err), _) => Left(err)
+        case (Right(updatedSpeed), (otherEntity, collision)) =>
+          resolveBounce(entity, otherEntity, updatedSpeed, collision)
+      }
+      .flatMap { finalSpeed =>
+        Right(entity.withSpeed(finalSpeed))
+      }
 
   private def resolveBounce(
-                              entity: Entity,
-                              other: Entity,
-                              entitySpeed: Vector2D,
-                              collision: Collision
-                            ): Either[PhysicsError, Vector2D] = {
+      entity: Entity,
+      other: Entity,
+      entitySpeed: Vector2D,
+      collision: Collision
+  ): Either[PhysicsError, Vector2D] =
     if other.isFixed then
       Right(
         PhysicsUtil.reflectOnFixed(
@@ -110,4 +110,3 @@ object CollisionResolver :
         entity.weight,
         other.weight
       )
-  }

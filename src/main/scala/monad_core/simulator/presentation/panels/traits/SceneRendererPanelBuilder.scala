@@ -6,7 +6,8 @@ import monad_core.simulator.application.engine.world.World
 import scalafx.scene.layout.VBox
 
 trait SceneRendererPanelBuilder:
-  def build()(
-    using gameEngineRuntime: GameEngineRuntime,
-    world: World
+
+  def build()(using
+      gameEngineRuntime: GameEngineRuntime,
+      world: World
   ): Either[EngineError, VBox]
