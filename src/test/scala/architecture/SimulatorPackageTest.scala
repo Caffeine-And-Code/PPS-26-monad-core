@@ -12,7 +12,7 @@ class SimulatorPackageTest extends AnyFunSuite with Matchers with ArchitectureCh
   val applicationForbiddenMatcher: String    = "monad_core.simulator.application"
 
   test("engine package in simulator should only be used in infrastructure layer"):
-    val packageExceptions: Set[String] = Set("public_api")
+    val packageExceptions: Set[String] = Set("simulator", "model")
 
     SimulatorPresentation should notContainImportWithExceptions(
       engineForbiddenMatcher,

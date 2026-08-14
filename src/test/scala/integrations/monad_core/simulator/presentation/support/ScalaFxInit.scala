@@ -5,7 +5,7 @@ import javafx.application.Platform
 import javafx.scene.{Node, Parent}
 import javafx.scene.control.ContextMenu as JfxContextMenu
 import javafx.stage.{Stage, Window}
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.EngineError
 import monad_core.simulator.errors.BaseError
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, Suite}

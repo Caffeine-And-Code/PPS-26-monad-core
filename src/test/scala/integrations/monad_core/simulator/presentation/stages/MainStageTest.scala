@@ -2,7 +2,7 @@ package integrations.monad_core.simulator.presentation.stages
 
 import helpers.mocks.MockImage
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.EngineError
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.panels.traits.{

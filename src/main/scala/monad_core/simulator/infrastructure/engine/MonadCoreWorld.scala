@@ -1,6 +1,5 @@
 package monad_core.simulator.infrastructure.engine
 
-import monad_core.engine.core.Scene
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
@@ -8,142 +7,95 @@ import monad_core.simulator.application.engine.world.{
   SaveTeamCommand,
   World
 }
-import monad_core.simulator.domain.engine.{
-  MonadCoreEntity,
-  MonadCoreScene,
-  MonadCoreSurface,
-  MonadCoreTeam
-}
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
-import monad_core.simulator.infrastructure.engine.translators.BaseTranslator.{
-  toSimulationEitherEntity,
-  toSimulationEitherSurface,
-  toSimulationEitherTeam
-}
-import monad_core.simulator.infrastructure.engine.translators.EntityTranslator.{
-  toEngineModel,
-  toSimulationEntity
-}
-import monad_core.simulator.infrastructure.engine.translators.SurfaceTranslator.{
-  toEngineModel,
-  toSimulationSurface
-}
-import monad_core.simulator.infrastructure.engine.translators.TeamTranslator.{
-  toEngineModel,
-  toSimulationTeam
-}
-import monad_core.simulator.infrastructure.engine.translators.SceneTranslator.{
-  toEngineModel,
-  toSimulationScene
-}
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 
 case class MonadCoreWorld(
-    initialScene: MonadCoreScene = MonadCoreScene()
+    initialScene: Scene = Scene()
 ) extends World:
 
-  var currentScene: MonadCoreScene = initialScene
+  var currentScene: Scene = initialScene
 
-  private def getEngineScene: Either[BaseError, Scene] =
-    currentScene.toEngineModel.adaptError()
+  override def getAllEntities: List[Entity] =
+    currentScene.entities.values.toList
 
-  override def getAllEntities: Either[BaseError, List[MonadCoreEntity]] =
-    for scene <- getEngineScene
-    yield scene.entities.values.toList.map(_.toSimulationEntity)
-
-  override def getEntity(entityId: String): Either[BaseError, MonadCoreEntity] =
+  override def getEntity(entityId: String): Either[BaseError, Entity] =
     for
       id     <- LocatableId(entityId).adaptError()
-      scene  <- getEngineScene
-      entity <- scene.getEntity(id).toSimulationEitherEntity.adaptError()
+      entity <- currentScene.getEntity(id).adaptError()
     yield entity
 
   override def createEntity(command: SaveEntityCommand): Either[BaseError, Unit] =
-    for
-      entityToAdd    <- command.entity.toEngineModel.adaptError()
-      convertedScene <- getEngineScene
-      scene          <- convertedScene.addEntity(entityToAdd).adaptError()
-    yield currentScene = scene.toSimulationScene
+    for scene <- currentScene.addEntity(command.entity).adaptError()
+    yield currentScene = scene
 
   override def removeEntity(entityId: String): Either[BaseError, Unit] =
     for
-      simulatorEntity <- getEntity(entityId)
-      engineEntity    <- simulatorEntity.toEngineModel.adaptError()
-      convertedScene  <- getEngineScene
-      scene           <- convertedScene.removeEntity(engineEntity).adaptError()
-    yield currentScene = scene.toSimulationScene
+      entity <- getEntity(entityId)
+      scene  <- currentScene.removeEntity(entity).adaptError()
+    yield currentScene = scene
 
   override def updateEntity(command: SaveEntityCommand): Either[BaseError, Unit] =
     for
-      entityId = command.entity.id
+      entityId = command.entity.id.value
       _ <- removeEntity(entityId)
       _ <- createEntity(command)
     yield currentScene
 
-  override def getAllSurfaces: Either[BaseError, List[MonadCoreSurface]] =
-    for scene <- getEngineScene
-    yield scene.surfaces.values.toList.map(_.toSimulationSurface)
+  override def getAllSurfaces: List[Surface] =
+    currentScene.surfaces.values.toList
 
-  override def getSurface(id: String): Either[BaseError, MonadCoreSurface] =
+  override def getSurface(id: String): Either[BaseError, Surface] =
     for
-      id             <- LocatableId(id).adaptError()
-      convertedScene <- getEngineScene
-      surface        <- convertedScene.getSurface(id).toSimulationEitherSurface.adaptError()
+      id      <- LocatableId(id).adaptError()
+      surface <- currentScene.getSurface(id).adaptError()
     yield surface
 
   override def createSurface(command: SaveSurfaceCommand): Either[BaseError, Unit] =
     for
-      engineModel    <- command.surface.toEngineModel.adaptError()
-      convertedScene <- getEngineScene
-      scene          <- convertedScene.addSurface(engineModel).adaptError()
-    yield currentScene = scene.toSimulationScene
+      surface = command.surface
+      scene <- currentScene.addSurface(surface).adaptError()
+    yield currentScene = scene
 
   override def removeSurface(id: String): Either[BaseError, Unit] =
     for
-      simulatorSurface <- getSurface(id)
-      engineSurface    <- simulatorSurface.toEngineModel.adaptError()
-      convertedScene   <- getEngineScene
-      scene            <- convertedScene.removeSurface(engineSurface).adaptError()
-    yield currentScene = scene.toSimulationScene
+      surface <- getSurface(id)
+      scene   <- currentScene.removeSurface(surface).adaptError()
+    yield currentScene = scene
 
   override def updateSurface(command: SaveSurfaceCommand): Either[BaseError, Unit] =
     for
-      surfaceId = command.surface.id
+      surfaceId = command.surface.id.value
       _ <- removeSurface(surfaceId)
       _ <- createSurface(command)
     yield currentScene
 
-  override def getAllTeams: Either[BaseError, List[MonadCoreTeam]] =
-    for scene <- getEngineScene
-    yield scene.teams.values.toList.map(_.toSimulationTeam)
+  override def getAllTeams: List[Team] =
+    currentScene.teams.values.toList
 
-  override def getTeam(id: String): Either[BaseError, MonadCoreTeam] =
+  override def getTeam(id: String): Either[BaseError, Team] =
     for
-      id             <- TeamId(id).adaptError()
-      convertedScene <- getEngineScene
-      team           <- convertedScene.getTeam(id).toSimulationEitherTeam.adaptError()
+      id   <- TeamId(id).adaptError()
+      team <- currentScene.getTeam(id).adaptError()
     yield team
 
   override def createTeam(command: SaveTeamCommand): Either[BaseError, Unit] =
     for
-      engineTeam     <- command.team.toEngineModel.adaptError()
-      convertedScene <- getEngineScene
-      scene          <- convertedScene.addTeam(engineTeam).adaptError()
-    yield currentScene = scene.toSimulationScene
+      team = command.team
+      scene <- currentScene.addTeam(team).adaptError()
+    yield currentScene = scene
 
   override def removeTeam(id: String): Either[BaseError, Unit] =
     for
-      simulatorTeam  <- getTeam(id)
-      engineTeam     <- simulatorTeam.toEngineModel.adaptError()
-      convertedScene <- getEngineScene
-      scene          <- convertedScene.removeTeam(engineTeam).adaptError()
-    yield currentScene = scene.toSimulationScene
+      team  <- getTeam(id)
+      scene <- currentScene.removeTeam(team).adaptError()
+    yield currentScene = scene
 
   override def updateTeam(command: SaveTeamCommand): Either[BaseError, Unit] =
     for
-      teamId = command.team.id
+      teamId = command.team.id.value
       _ <- removeTeam(teamId)
       _ <- createTeam(command)
     yield currentScene
 
-  override def scene: MonadCoreScene = currentScene
+  override def scene: Scene = currentScene

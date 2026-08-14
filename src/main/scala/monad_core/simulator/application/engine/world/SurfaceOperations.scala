@@ -1,16 +1,16 @@
 package monad_core.simulator.application.engine.world
 
-import monad_core.simulator.domain.engine.MonadCoreSurface
+import monad_core.engine.model.Surface
 import monad_core.simulator.errors.BaseError
 
 case class SaveSurfaceCommand(
-    surface: MonadCoreSurface
+    surface: Surface
 )
 
 private[world] trait SurfaceOperations:
-  def getAllSurfaces: Either[BaseError, List[MonadCoreSurface]]
+  def getAllSurfaces: List[Surface]
 
-  def getSurface(id: String): Either[BaseError, MonadCoreSurface]
+  def getSurface(id: String): Either[BaseError, Surface]
 
   def createSurface(command: SaveSurfaceCommand): Either[BaseError, Unit]
 

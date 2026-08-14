@@ -10,7 +10,7 @@ import monad_core.engine.core.{
   InvalidTickTime,
   LoopMode
 }
-import monad_core.engine.public_api.Painter
+import monad_core.engine.simulator.Painter
 import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
 import monad_core.engine.core.traits.RenderEngine
 import monad_core.engine.core.traits.PhysicsEngine

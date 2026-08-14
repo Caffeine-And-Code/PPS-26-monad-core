@@ -95,7 +95,7 @@
         },
         {
           "type": "TextField",
-          "id": "length",
+          "id": "height",
           "styleClass": ["text-input", "text-field", "form-field-input"],
           "children": [
             {
@@ -133,7 +133,7 @@
         },
         {
           "type": "TextField",
-          "id": "height",
+          "id": "length",
           "styleClass": ["text-input", "text-field", "form-field-input"],
           "children": [
             {

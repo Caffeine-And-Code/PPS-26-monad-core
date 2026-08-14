@@ -2,8 +2,9 @@ package monad_core.engine.core
 
 import monad_core.engine.core.GameLoop.StaticAlpha
 import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
-import monad_core.engine.errors.EngineError
-import monad_core.engine.public_api.Painter
+import monad_core.engine.model.EngineError
+import monad_core.engine.simulator.Painter
+
 import scala.annotation.tailrec
 
 private case class GameLoopImpl(

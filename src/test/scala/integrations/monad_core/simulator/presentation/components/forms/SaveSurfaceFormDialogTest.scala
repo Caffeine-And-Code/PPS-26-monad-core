@@ -2,10 +2,7 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreShape, MonadCoreSurface}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalamock.scalatest.proxy.MockFactory
@@ -22,8 +19,10 @@ class SaveSurfaceFormDialogTest
     with MockFactory
     with DialogTesting
     with FormTesting:
-  val RadiusFieldIndex: Int                  = 2
-  val GenericCircleSurface: MonadCoreSurface = MonadCoreSurface("id", (0, 0), SimulationCircle(6))
+  val RadiusFieldIndex: Int = 2
+
+  val GenericEitherCircleSurface: Either[EngineError, Surface] =
+    Surface.circle("id", Vector2D(0, 0), 6)
 
   private def selectShapeInComboBox(shapeIndex: Int): Unit =
     val ShapeComboBoxIndex = 0
@@ -35,14 +34,14 @@ class SaveSurfaceFormDialogTest
   private def selectRectangleInComboBox(): Unit =
     selectShapeInComboBox(1)
 
-  private def buildCompleteSurface(incompleteSurface: MonadCoreSurface): MonadCoreSurface =
-    MonadCoreSurface(
-      incompleteSurface.id,
-      incompleteSurface.position,
-      incompleteSurface.shape,
-      frictionIndex = Some(10),
-      appliedForce = Some((12, 13))
-    )
+  private def buildCompleteSurface(eitherSurface: Either[EngineError, Surface]): Surface =
+    val either = for
+      surface                  <- eitherSurface
+      surfaceWithFrictionIndex <- surface.withFrictionIndex(10)
+      finalSurface             <- surfaceWithFrictionIndex.withAppliedForce(Vector2D(12, 13))
+    yield finalSurface
+
+    either.value
 
   test("SaveSurfaceFormDialog opens successfully"):
     val props = SaveSurfaceFormDialogProps(
@@ -62,7 +61,7 @@ class SaveSurfaceFormDialogTest
       title = "Edit Surface",
       onSubmit = _ => (),
       onError = _ => (),
-      surfaceToUpdate = Some(GenericCircleSurface)
+      surfaceToUpdate = Some(GenericEitherCircleSurface.value)
     )
 
     onFxThread {
@@ -72,7 +71,7 @@ class SaveSurfaceFormDialogTest
     }
 
   test("SaveSurfaceFormDialog invokes onSubmit with constructed Surface on valid input"):
-    var submittedSurface: Option[MonadCoreSurface] = None
+    var submittedSurface: Option[Surface] = None
 
     val props = SaveSurfaceFormDialogProps(
       title = "Add Surface Test",
@@ -94,11 +93,11 @@ class SaveSurfaceFormDialogTest
   test(
     "SaveSurfaceFormDialog invokes onSubmit with constructed Surface on valid input, with passed surfaceToUpdate"
   ):
-    val surfaceToUpdate                            = buildCompleteSurface(GenericCircleSurface)
-    var submittedSurface: Option[MonadCoreSurface] = None
-    val expectedRadius                             = 10.0
-    val expectedWeight                             = 70.0
-    val expectedHealth                             = 100.0
+    val surfaceToUpdate                   = buildCompleteSurface(GenericEitherCircleSurface)
+    var submittedSurface: Option[Surface] = None
+    val expectedRadius                    = 10.0
+    val expectedWeight                    = 70.0
+    val expectedHealth                    = 100.0
 
     val props = SaveSurfaceFormDialogProps(
       title = "Add Surface Test",
@@ -115,12 +114,12 @@ class SaveSurfaceFormDialogTest
     }
 
     submittedSurface shouldBe defined
-    val providedSurface: MonadCoreSurface = submittedSurface.get
+    val providedSurface: Surface = submittedSurface.get
     providedSurface.id should be(surfaceToUpdate.id)
     providedSurface.position should be(surfaceToUpdate.position)
 
     inside(providedSurface.shape):
-      case SimulationCircle(radius) => radius should be(expectedRadius)
+      case Shape2D.Circle(radius) => radius should be(expectedRadius)
 
   test("SaveSurfaceFormDialog invokes onError when form values are invalid"):
     var capturedError: Option[BaseError] = None
@@ -140,12 +139,12 @@ class SaveSurfaceFormDialogTest
     capturedError shouldBe defined
 
   test("SaveSurfaceFormDialog displays visually the circle Surface values passed"):
-    val circleSurfaceToUpdate: MonadCoreSurface    = buildCompleteSurface(GenericCircleSurface)
-    var submittedSurface: Option[MonadCoreSurface] = Option.empty
+    val circleSurfaceToUpdate: Surface    = buildCompleteSurface(GenericEitherCircleSurface)
+    var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
       title = "Edit Surface Test",
-      onSubmit = surface => submittedSurface = Some(surface),
+      onSubmit = Surface => submittedSurface = Some(Surface),
       onError = err => fail(s"Unexpected error: $err"),
       surfaceToUpdate = Some(circleSurfaceToUpdate)
     )
@@ -164,12 +163,13 @@ class SaveSurfaceFormDialogTest
     }
 
   test("SaveSurfaceFormDialog displays architecturally the circle Surface values passed"):
-    val circleSurfaceToUpdate: MonadCoreSurface    = buildCompleteSurface(GenericCircleSurface)
-    var submittedSurface: Option[MonadCoreSurface] = Option.empty
+    val circleSurfaceToUpdate: Surface =
+      buildCompleteSurface(Surface.circle("id", Vector2D(0, 0), 6))
+    var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
       title = "Edit Surface Test",
-      onSubmit = surface => submittedSurface = Some(surface),
+      onSubmit = Surface => submittedSurface = Some(Surface),
       onError = err => fail(s"Unexpected error: $err"),
       surfaceToUpdate = Some(circleSurfaceToUpdate)
     )
@@ -184,9 +184,9 @@ class SaveSurfaceFormDialogTest
     }
 
   test("SaveSurfaceFormDialog displays visually the rectangle Surface values passed"):
-    val rectangleSurfaceToUpdate: MonadCoreSurface =
-      buildCompleteSurface(MonadCoreSurface("id", (0, 0), SimulationRectangle(6, 10)))
-    var submittedSurface: Option[MonadCoreSurface] = Option.empty
+    val rectangleSurfaceToUpdate: Surface =
+      buildCompleteSurface(Surface.rectangle("id", Vector2D(0, 0), 6, 10))
+    var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
       title = "Edit Surface Test",
@@ -209,9 +209,9 @@ class SaveSurfaceFormDialogTest
     }
 
   test("SaveSurfaceFormDialog displays architecturally the rectangle Surface values passed"):
-    val rectangleSurfaceToUpdate: MonadCoreSurface =
-      buildCompleteSurface(MonadCoreSurface("id", (0, 0), SimulationRectangle(6, 10)))
-    var submittedSurface: Option[MonadCoreSurface] = Option.empty
+    val rectangleSurfaceToUpdate: Surface =
+      buildCompleteSurface(Surface.rectangle("id", Vector2D(0, 0), 6, 10))
+    var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
       title = "Edit Surface Test",

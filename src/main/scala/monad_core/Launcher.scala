@@ -1,9 +1,9 @@
 package monad_core
 
-import monad_core.engine.public_api.Painter
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.ai.AiAgent
-import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect

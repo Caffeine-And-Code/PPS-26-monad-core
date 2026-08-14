@@ -1,8 +1,7 @@
 package integrations.monad_core.simulator.presentation.stages
 
 import helpers.mocks.MockImage
-import monad_core.engine.core.Scene
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.{EngineError, Scene}
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World

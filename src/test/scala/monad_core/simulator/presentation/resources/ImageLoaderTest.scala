@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.resources
 
 import helpers.mocks.{MockImage, MockImageConfig}
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.EngineError
 import monad_core.simulator.ImageResourceNotFound
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}

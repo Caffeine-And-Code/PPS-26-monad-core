@@ -1,11 +1,10 @@
 package monad_core.simulator.presentation.panels
 
 import javafx.scene.input.{MouseButton, MouseEvent}
-import monad_core.engine.public_api.Painter
+import monad_core.engine.model.{Entity, Shape2D, Surface, Vector2D}
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
 import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
 import monad_core.simulator.presentation.components.forms.{
@@ -19,7 +18,6 @@ import monad_core.simulator.presentation.painters.ShapePainter
 import monad_core.simulator.presentation.panels.MouseHitDetector.checkMouseHit
 import monad_core.simulator.presentation.panels.support.FormUtilities.{
   displayError,
-  getTeamsSafely,
   onActionMakeSnapshot
 }
 import monad_core.simulator.presentation.panels.support.PanelStyles
@@ -27,16 +25,16 @@ import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
 import scalafx.scene.control.ContextMenu
 import scalafx.scene.layout.{Priority, VBox}
 
-type Clickable = MonadCoreSurface | MonadCoreEntity
+type Clickable = Surface | Entity
 
 private[panels] object MouseHitDetector:
 
   extension (clickable: Clickable)
 
     private def checkGenericHit(
-        position: (Double, Double),
+        position: Vector2D,
         clickPosition: (Double, Double),
-        shape: MonadCoreShape
+        shape: Shape2D
     ): Boolean =
       val elementPositionX = position._1
       val elementPositionY = position._2
@@ -44,13 +42,13 @@ private[panels] object MouseHitDetector:
       val mouseClickY      = clickPosition._2
 
       shape match
-        case SimulationCircle(radius) =>
+        case Shape2D.Circle(radius) =>
           val distanceX = mouseClickX - elementPositionX
           val distanceY = mouseClickY - elementPositionY
 
           (distanceX * distanceX + distanceY * distanceY) <= (radius * radius)
 
-        case SimulationRectangle(width, height) =>
+        case Shape2D.Rectangle(width, height) =>
           val halfW = width / 2
           val halfH = height / 2
 
@@ -59,9 +57,9 @@ private[panels] object MouseHitDetector:
 
     def checkMouseHit(mouseClick: (Double, Double)): Boolean =
       clickable match
-        case surface: MonadCoreSurface =>
+        case surface: Surface =>
           checkGenericHit(surface.position, mouseClick, surface.shape)
-        case entity: MonadCoreEntity => checkGenericHit(entity.position, mouseClick, entity.shape)
+        case entity: Entity => checkGenericHit(entity.position, mouseClick, entity.shape)
 
 private[panels] object EntityContextMenu:
 
@@ -104,21 +102,17 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     val canvas      = ResizableCanvas()
     val menusAnchor = Some(canvas)
 
+    val findEntitiesAt: (Double, Double) => Option[Clickable] = (x, y) =>
+      val entities: List[Clickable]          = world.getAllEntities
+      val surfaces: List[Clickable]          = world.getAllSurfaces
+      val clickableElements: List[Clickable] = entities ++ surfaces
+      clickableElements.find(_.checkMouseHit((x, y)))
+
     EntityContextMenu.attachTo(
       canvas = canvas,
-      findEntityAt = (x, y) =>
-        (for
-          entities <- world.getAllEntities
-          surfaces <- world.getAllSurfaces
-          clickableElements = List.from(entities).appendedAll(surfaces)
-        yield clickableElements.find(_.checkMouseHit((x, y)))) match
-          case Right(value) => value
-          case Left(error) =>
-            displayError(error)
-            None
-      ,
+      findEntityAt = findEntitiesAt,
       buildMenuItems = {
-        case entity: MonadCoreEntity =>
+        case entity: Entity =>
           Seq(
             MenuButtonItem(
               s"Edit ${entity.id} Entity",
@@ -129,7 +123,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
                     anchorNode = menusAnchor,
                     onSubmit =
                       entity => onActionMakeSnapshot(SaveEntityCommand(entity), world.updateEntity),
-                    teams = getTeamsSafely(world),
+                    teams = world.getAllTeams,
                     onError = displayError,
                     entityToUpdate = Some(entity)
                   )
@@ -137,10 +131,10 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
             ),
             MenuButtonItem(
               s"Remove ${entity.id} Entity",
-              () => onActionMakeSnapshot(entity.id, world.removeEntity)
+              () => onActionMakeSnapshot(entity.id, id => world.removeEntity(id.value))
             )
           )
-        case surface: MonadCoreSurface =>
+        case surface: Surface =>
           Seq(
             MenuButtonItem(
               s"Edit ${surface.id} Surface",
@@ -158,7 +152,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
             ),
             MenuButtonItem(
               s"Remove ${surface.id} Surface",
-              () => onActionMakeSnapshot(surface.id, world.removeSurface)
+              () => onActionMakeSnapshot(surface.id, id => world.removeSurface(id.value))
             )
           )
       }

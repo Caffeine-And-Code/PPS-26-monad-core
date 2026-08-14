@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.engine.painters
 
 import monad_core.engine.model.*
-import monad_core.engine.public_api.Painter
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.{DrawCommand, ShapeArchitect}
 import scalafx.scene.paint.Color
 

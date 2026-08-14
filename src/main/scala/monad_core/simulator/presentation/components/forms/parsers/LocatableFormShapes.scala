@@ -1,7 +1,8 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.simulator.domain.engine.MonadCoreShape
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
+import monad_core.engine.model.Shape2D
+import monad_core.simulator.InvalidShapeFormFieldError
+import monad_core.simulator.errors.BaseError
 
 private[forms] enum LocatableFormShapes:
   private[forms] case Circle
@@ -11,17 +12,25 @@ private[forms] object LocatableFormShapes:
   val CircleLabel    = "Circle"
   val RectangleLabel = "Rectangle"
 
-  extension (shape: MonadCoreShape)
+  extension (value: String)
+
+    def getEnumValue: Either[BaseError, LocatableFormShapes] =
+      value match
+        case CircleLabel    => Right(Circle)
+        case RectangleLabel => Right(Rectangle)
+        case _              => Left(InvalidShapeFormFieldError("shape"))
+
+  extension (shape: Shape2D)
 
     def getEnumValue: LocatableFormShapes =
       shape match
-        case SimulationCircle(_)       => LocatableFormShapes.Circle
-        case SimulationRectangle(_, _) => LocatableFormShapes.Rectangle
+        case Shape2D.Circle(_)       => LocatableFormShapes.Circle
+        case Shape2D.Rectangle(_, _) => LocatableFormShapes.Rectangle
 
     def getDefaultValuesByShape: (Option[String], Option[String], Option[String]) =
       shape match
-        case SimulationCircle(r)       => (Some(r.toString), None, None)
-        case SimulationRectangle(w, h) => (None, Some(w.toString), Some(h.toString))
+        case Shape2D.Circle(r)       => (Some(r.toString), None, None)
+        case Shape2D.Rectangle(h, l) => (None, Some(h.toString), Some(l.toString))
 
   extension (value: LocatableFormShapes)
 

@@ -1,14 +1,13 @@
 package monad_core.simulator.presentation.components.forms
 
-import helpers.arrangers.MonadCoreTeamArranger
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
+import monad_core.engine.model.*
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.{
   BaseFormParser,
   EntityFormParser,
   LocatableFormShapes
 }
+import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -18,31 +17,29 @@ import org.scalatest.prop.Tables.Table
 
 class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val Id: String                     = "id"
-  private val Position: (Double, Double)     = (1, 2)
-  private val Circle: SimulationCircle       = SimulationCircle(5.0)
-  private val Rectangle: SimulationRectangle = SimulationRectangle(7.0, 6.0)
-  private val Speed: (Double, Double)        = (3, 4)
-  private val Weight: Int                    = 10
-  private val Health: Int                    = 20
-  private val TeamId: String                 = "teamIdValue"
+  private val EntityId       = "id"
+  private val EntityPosition = Vector2D(1, 2)
+  private val EntityRadius   = 5.0
+  private val EntityHeight   = 6.0
+  private val EntityLength   = 7.0
+  private val EntitySpeed    = Vector2D(3, 4)
+  private val EntityWeight   = 10
+  private val EntityHealth   = 20
+  private val EntityTeamId   = TeamId("teamIdValue").value
 
-  private def circleEntity: MonadCoreEntity = MonadCoreEntity(Id, Position, Circle)
+  private def circleEntity: Entity = Entity.circle(EntityId, EntityPosition, EntityRadius).value
 
-  private def rectangleEntity: MonadCoreEntity = MonadCoreEntity(Id, Position, Rectangle)
+  private def rectangleEntity: Entity =
+    Entity.rectangle(EntityId, EntityPosition, EntityHeight, EntityLength).value
 
-  private val teams: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
-
-  private def completeEntity(entity: MonadCoreEntity): MonadCoreEntity =
-    MonadCoreEntity(
-      entity.id,
-      entity.position,
-      entity.shape,
-      speed = Some(Speed),
-      health = Some(Health),
-      weight = Some(Weight),
-      teamId = Some(TeamId)
-    )
+  private def completeEntity(entity: Entity): Entity =
+    val either = for
+      withSpeed = entity.withSpeed(EntitySpeed)
+      withHealth <- withSpeed.withHealth(EntityHealth)
+      withWeight <- withHealth.withWeight(EntityWeight)
+      withTeam   <- withWeight.withTeamId(EntityTeamId.value)
+    yield withTeam
+    either.value
 
   test("buildDefaultValues should return empty defaults when no entity is provided"):
     val result = SaveEntityFormDialog.buildDefaultValues(None)
@@ -54,10 +51,10 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     val result = SaveEntityFormDialog.buildDefaultValues(Some(entity))
 
-    result.x should be(Some(Position._1.toString))
-    result.y should be(Some(Position._2.toString))
+    result.x should be(Some(EntityPosition.x.toString))
+    result.y should be(Some(EntityPosition.y.toString))
     result.shape should be(Some(LocatableFormShapes.CircleLabel))
-    result.radius should be(Some(Circle.radius.toString))
+    result.radius should be(Some(EntityRadius.toString))
     result.height should be(None)
     result.length should be(None)
 
@@ -66,12 +63,12 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     val result = SaveEntityFormDialog.buildDefaultValues(Some(entity))
 
-    result.x should be(Some(Position._1.toString))
-    result.y should be(Some(Position._2.toString))
+    result.x should be(Some(EntityPosition.x.toString))
+    result.y should be(Some(EntityPosition.y.toString))
     result.shape should be(Some(LocatableFormShapes.RectangleLabel))
     result.radius should be(None)
-    result.height should be(Some(Rectangle.height.toString))
-    result.length should be(Some(Rectangle.width.toString))
+    result.height should be(Some(EntityHeight.toString))
+    result.length should be(Some(EntityLength.toString))
 
   test("buildDefaultValues should leave optional fields empty when entity doesn't have them set"):
     val entity = circleEntity
@@ -96,11 +93,16 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
       val result = SaveEntityFormDialog.buildDefaultValues(Some(entity))
 
-      result.teamId should be(Some(TeamId))
-      result.weight should be(Some(Weight.toString))
-      result.health should be(Some(Health.toString))
-      result.speedX should be(Some(Speed._1.toString))
-      result.speedY should be(Some(Speed._2.toString))
+      result.teamId should be(Some(EntityTeamId.value))
+      result.weight should be(Some(EntityWeight.toString))
+      result.health should be(Some(EntityHealth.toString))
+      result.speedX should be(Some(EntitySpeed.x.toString))
+      result.speedY should be(Some(EntitySpeed.y.toString))
+
+  private val teams: Seq[Team] = Seq(
+    Team(TeamId("RedTeam").value, Set.empty).value,
+    Team(TeamId("BlueTeam").value, Set.empty).value
+  )
 
   test("buildFields should build all top-level fields with correct ids"):
     val defaultValues = SaveEntityFormDefaultValues()
@@ -163,7 +165,9 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         circleFields.map(_.id) should be(Seq(BaseFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
-        rectangleFields.map(_.id) should be(Seq(BaseFormParser.LengthKey, BaseFormParser.HeightKey))
+        rectangleFields.map(_.id) should be(
+          Seq(BaseFormParser.HeightKey, BaseFormParser.LengthKey)
+        )
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
     val defaultValues = SaveEntityFormDefaultValues(
@@ -205,7 +209,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.find(_.id == EntityFormParser.TeamIdKey).value):
       case select: SelectFieldSpec =>
-        select.options should be(teams.map(_.id).appended(""))
+        select.options should be(teams.map(_.id.value))
         select.defaultValue should be(Some("RedTeam"))
 
   test("buildFields should return an empty team options list when no teams are provided"):
@@ -214,5 +218,4 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
     val fields = SaveEntityFormDialog.buildFields(Seq.empty, defaultValues)
 
     inside(fields.find(_.id == EntityFormParser.TeamIdKey).value):
-      case select: SelectFieldSpec =>
-        select.options should be(Seq(""))
+      case select: SelectFieldSpec => select.options should be(Seq.empty)

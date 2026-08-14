@@ -1,6 +1,7 @@
 package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.agent.tool.{P, Tool}
+import monad_core.engine.model.*
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
@@ -8,10 +9,9 @@ import monad_core.simulator.application.engine.world.{
   SaveTeamCommand,
   World
 }
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.Langchain4jToolResponse.*
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 
 case class IncompleteEntitySpeed()
     extends BaseError("Both speedX and speedY must be provided together")
@@ -23,13 +23,13 @@ case class Langchain4jTools()(using
 
   @Tool(Array("Lists all entities in the world."))
   def getAllEntities: String =
-    getSafeList(world.getAllEntities)(renderList(_, "entities")(renderEntity))
+    renderList(world.getAllEntities, "entities")(renderEntity)
 
   @Tool(Array("Gets an entity by its identifier."))
   def getEntity(
       @P("Entity identifier") id: String
   ): String =
-    render(world.getEntity(id))(renderEntity)
+    render(LocatableId(id).adaptError().flatMap(id => world.getEntity(id.value)))(renderEntity)
 
   @Tool(Array("Creates a circular entity."))
   def createCircleEntity(
@@ -44,30 +44,17 @@ case class Langchain4jTools()(using
       @P(value = "Optional horizontal speed; provide together with speedY", required = false)
       speedX: java.lang.Double = null,
       @P(value = "Optional vertical speed; provide together with speedX", required = false)
-      speedY: java.lang.Double = null,
-      @P(value = "Optional health integer of the entity", required = false)
-      health: java.lang.Integer = null
+      speedY: java.lang.Double = null
   ): String =
     whileEngineStopped {
-      validateSpeed(speedX, speedY) match
-        case Left(errorMsg) => s"Error: $errorMsg"
-        case Right(speedOpt) =>
-          save(
-            world.createEntity(
-              SaveEntityCommand(
-                MonadCoreEntity(
-                  id = id,
-                  position = (x, y),
-                  shape = SimulationCircle(radius),
-                  speed = speedOpt,
-                  health = Option(health).map(_.intValue),
-                  weight = Option(weight).map(_.intValue),
-                  teamId = Option(teamId)
-                )
-              )
-            ),
-            s"Entity '$id' created."
-          )
+      save(
+        Entity
+          .circle(id, Vector2D(x, y), radius)
+          .adaptError()
+          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
+          .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
+        s"Entity '$id' created."
+      )
     }
 
   @Tool(Array("Creates a rectangular entity."))
@@ -84,30 +71,17 @@ case class Langchain4jTools()(using
       @P(value = "Optional horizontal speed; provide together with speedY", required = false)
       speedX: java.lang.Double = null,
       @P(value = "Optional vertical speed; provide together with speedX", required = false)
-      speedY: java.lang.Double = null,
-      @P(value = "Optional health integer of the entity", required = false)
-      health: java.lang.Integer = null
+      speedY: java.lang.Double = null
   ): String =
     whileEngineStopped {
-      validateSpeed(speedX, speedY) match
-        case Left(errorMsg) => s"Error: $errorMsg"
-        case Right(speedOpt) =>
-          save(
-            world.createEntity(
-              SaveEntityCommand(
-                MonadCoreEntity(
-                  id = id,
-                  position = (x, y),
-                  shape = SimulationRectangle(height = height, width = length),
-                  speed = speedOpt,
-                  health = Option(health).map(_.intValue),
-                  weight = Option(weight).map(_.intValue),
-                  teamId = Option(teamId)
-                )
-              )
-            ),
-            s"Entity '$id' created."
-          )
+      save(
+        Entity
+          .rectangle(id, Vector2D(x, y), height, length)
+          .adaptError()
+          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
+          .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
+        s"Entity '$id' created."
+      )
     }
 
   @Tool(Array("Replaces an entity with a circular entity having the same identifier."))
@@ -119,15 +93,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.updateEntity(
-          SaveEntityCommand(
-            MonadCoreEntity(
-              id = id,
-              position = (x, y),
-              shape = SimulationCircle(radius)
-            )
-          )
-        ),
+        Entity
+          .circle(id, Vector2D(x, y), radius)
+          .adaptError()
+          .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
         s"Entity '$id' updated."
       )
     }
@@ -142,15 +111,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.updateEntity(
-          SaveEntityCommand(
-            MonadCoreEntity(
-              id = id,
-              position = (x, y),
-              shape = SimulationRectangle(length, height)
-            )
-          )
-        ),
+        Entity
+          .rectangle(id, Vector2D(x, y), height, length)
+          .adaptError()
+          .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
         s"Entity '$id' updated."
       )
     }
@@ -161,20 +125,20 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.removeEntity(id),
+        LocatableId(id).adaptError().flatMap(id => world.removeEntity(id.value)),
         s"Entity '$id' removed."
       )
     }
 
   @Tool(Array("Lists all surfaces in the world."))
   def getAllSurfaces: String =
-    getSafeList(world.getAllSurfaces)(renderList(_, "surfaces")(renderSurface))
+    renderList(world.getAllSurfaces, "surfaces")(renderSurface)
 
   @Tool(Array("Gets a surface by its identifier."))
   def getSurface(
       @P("Surface identifier") id: String
   ): String =
-    render(world.getSurface(id))(renderSurface)
+    render(LocatableId(id).adaptError().flatMap(id => world.getSurface(id.value)))(renderSurface)
 
   @Tool(Array("Creates a circular surface."))
   def createCircleSurface(
@@ -185,15 +149,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.createSurface(
-          SaveSurfaceCommand(
-            MonadCoreSurface(
-              id = id,
-              position = (x, y),
-              shape = SimulationCircle(radius)
-            )
-          )
-        ),
+        Surface
+          .circle(id, Vector2D(x, y), radius)
+          .adaptError()
+          .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' created."
       )
     }
@@ -208,15 +167,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.createSurface(
-          SaveSurfaceCommand(
-            MonadCoreSurface(
-              id = id,
-              position = (x, y),
-              shape = SimulationRectangle(length, height)
-            )
-          )
-        ),
+        Surface
+          .rectangle(id, Vector2D(x, y), height, length)
+          .adaptError()
+          .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' created."
       )
     }
@@ -230,15 +184,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.updateSurface(
-          SaveSurfaceCommand(
-            MonadCoreSurface(
-              id = id,
-              position = (x, y),
-              shape = SimulationCircle(radius)
-            )
-          )
-        ),
+        Surface
+          .circle(id, Vector2D(x, y), radius)
+          .adaptError()
+          .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' updated."
       )
     }
@@ -253,15 +202,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.updateSurface(
-          SaveSurfaceCommand(
-            MonadCoreSurface(
-              id = id,
-              position = (x, y),
-              shape = SimulationRectangle(length, height)
-            )
-          )
-        ),
+        Surface
+          .rectangle(id, Vector2D(x, y), height, length)
+          .adaptError()
+          .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' updated."
       )
     }
@@ -272,20 +216,20 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.removeSurface(id),
+        LocatableId(id).adaptError().flatMap(id => world.removeSurface(id.value)),
         s"Surface '$id' removed."
       )
     }
 
   @Tool(Array("Lists all teams in the world."))
   def getAllTeams: String =
-    getSafeList(world.getAllTeams)(renderList(_, "teams")(renderTeam))
+    renderList(world.getAllTeams, "teams")(renderTeam)
 
   @Tool(Array("Gets a team by its identifier."))
   def getTeam(
       @P("Team identifier") id: String
   ): String =
-    render(world.getTeam(id))(renderTeam)
+    render(TeamId(id).adaptError().flatMap(id => world.getTeam(id.value)))(renderTeam)
 
   @Tool(Array("Creates a team and optionally assigns enemy teams."))
   def createTeam(
@@ -294,14 +238,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.createTeam(
-          SaveTeamCommand(
-            MonadCoreTeam(
-              id = id,
-              enemies = parseIds(enemies)
-            )
-          )
-        ),
+        Team
+          .create(id, parseIds(enemies))
+          .adaptError()
+          .flatMap(team => world.createTeam(SaveTeamCommand(team))),
         s"Team '$id' created."
       )
     }
@@ -313,14 +253,10 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.updateTeam(
-          SaveTeamCommand(
-            MonadCoreTeam(
-              id = id,
-              enemies = parseIds(enemies)
-            )
-          )
-        ),
+        Team
+          .create(id, parseIds(enemies))
+          .adaptError()
+          .flatMap(team => world.updateTeam(SaveTeamCommand(team))),
         s"Team '$id' updated."
       )
     }
@@ -331,7 +267,7 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        world.removeTeam(id),
+        TeamId(id).adaptError().flatMap(id => world.removeTeam(id.value)),
         s"Team '$id' removed."
       )
     }
@@ -350,15 +286,6 @@ case class Langchain4jTools()(using
     if gameEngineRuntime.isRunning then
       "Error: The world cannot be modified while the game engine is running."
     else operation
-
-  private def validateSpeed(
-      x: java.lang.Double,
-      y: java.lang.Double
-  ): Either[String, Option[(Double, Double)]] =
-    (Option(x), Option(y)) match
-      case (Some(sx), Some(sy)) => Right(Some((sx.doubleValue, sy.doubleValue)))
-      case (None, None)         => Right(None)
-      case _                    => Left("Both speedX and speedY must be provided together")
 
   private def parseIds(csv: String): Set[String] =
     csv.split(",").iterator.map(_.trim).filter(_.nonEmpty).toSet

@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.simulator.domain.engine.MonadCoreSurface
+import monad_core.engine.model.Surface
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
@@ -9,6 +9,7 @@ import monad_core.simulator.presentation.components.forms.parsers.LocatableFormS
   getEnumValue
 }
 import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
   LocatableFormShapes,
   SurfaceFormParser
 }
@@ -17,10 +18,10 @@ import scalafx.scene.Node
 
 final case class SaveSurfaceFormDialogProps(
     title: String,
-    onSubmit: MonadCoreSurface => Unit,
+    onSubmit: Surface => Unit,
     onError: BaseError => Unit,
     anchorNode: Option[Node] = None,
-    surfaceToUpdate: Option[MonadCoreSurface] = None
+    surfaceToUpdate: Option[Surface] = None
 )
 
 private object SurfaceFormDefaults:
@@ -56,7 +57,7 @@ object SaveSurfaceFormDialog:
         onSubmit = values =>
           val result = props.surfaceToUpdate match
             case Some(surface) =>
-              SurfaceFormParser.buildSurface(values, () => surface.id)
+              SurfaceFormParser.buildSurface(values, () => surface.id.value)
             case None =>
               SurfaceFormParser.buildSurface(values)
 
@@ -66,22 +67,22 @@ object SaveSurfaceFormDialog:
   }
 
   private[forms] def buildDefaultValues(
-      surfaceToUpdate: Option[MonadCoreSurface]
+      surfaceToUpdate: Option[Surface]
   ): SaveSurfaceFormDefaultValues =
     surfaceToUpdate match
       case None => SaveSurfaceFormDefaultValues()
       case Some(surface) =>
-        val (radius, width, height) = surface.shape.getDefaultValuesByShape
+        val (radius, height, length) = surface.shape.getDefaultValuesByShape
 
         SaveSurfaceFormDefaultValues(
-          x = Some(surface.position._1.toString),
-          y = Some(surface.position._2.toString),
+          x = Some(surface.position.x.toString),
+          y = Some(surface.position.y.toString),
           shape = Some(surface.shape.getEnumValue.getStringValue),
           radius = radius,
           height = height,
-          length = width,
-          appliedForceX = surface.appliedForce.flatMap(vector => Some(vector._1.toString)),
-          appliedForceY = surface.appliedForce.flatMap(vector => Some(vector._2.toString)),
+          length = length,
+          appliedForceX = surface.appliedForce.flatMap(vector => Some(vector.x.toString)),
+          appliedForceY = surface.appliedForce.flatMap(vector => Some(vector.y.toString)),
           frictionIndex = surface.frictionIndex.map(_.toString)
         )
 
@@ -101,10 +102,26 @@ object SaveSurfaceFormDialog:
         id = SurfaceFormParser.ShapeKey,
         label = "Shape",
         options = Shapes,
-        dependentFields = FormDialog.buildShapeFields(
-          defaultValues.radius,
-          widthDefaultValue = defaultValues.length,
-          heightDefaultValue = defaultValues.height
+        dependentFields = Map(
+          LocatableFormShapes.CircleLabel -> Seq(
+            TextFieldSpec(
+              id = BaseFormParser.RadiusKey,
+              label = "Radius",
+              defaultValue = defaultValues.radius
+            )
+          ),
+          LocatableFormShapes.RectangleLabel -> Seq(
+            TextFieldSpec(
+              id = BaseFormParser.HeightKey,
+              label = "Width",
+              defaultValue = defaultValues.height
+            ),
+            TextFieldSpec(
+              id = BaseFormParser.LengthKey,
+              label = "Height",
+              defaultValue = defaultValues.length
+            )
+          )
         ),
         defaultValue = defaultValues.shape
       ),

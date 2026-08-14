@@ -1,16 +1,16 @@
 package monad_core.simulator.application.engine.world
 
-import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.engine.model.Entity
 import monad_core.simulator.errors.BaseError
 
 case class SaveEntityCommand(
-    entity: MonadCoreEntity
+    entity: Entity
 )
 
 private[world] trait EntityOperations:
-  def getAllEntities: Either[BaseError, List[MonadCoreEntity]]
+  def getAllEntities: List[Entity]
 
-  def getEntity(entityId: String): Either[BaseError, MonadCoreEntity]
+  def getEntity(entityId: String): Either[BaseError, Entity]
 
   def createEntity(command: SaveEntityCommand): Either[BaseError, Unit]
 

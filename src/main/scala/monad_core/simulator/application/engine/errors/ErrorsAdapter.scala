@@ -1,10 +1,9 @@
-package monad_core.simulator.infrastructure.engine.errors
+package monad_core.simulator.application.engine.errors
 
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.EngineError
 import monad_core.simulator.errors.BaseError
 
-private[engine] case class EngineErrorAdapted(engineError: EngineError)
-    extends BaseError(engineError.message)
+case class EngineErrorAdapted(engineError: EngineError) extends BaseError(engineError.message)
 
 object ErrorsAdapter:
 

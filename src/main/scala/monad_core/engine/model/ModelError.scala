@@ -1,7 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
-
 case class CannotApplyDamageToNoneHealthEntity()
     extends EngineError("Cannot apply damage to none health entity")
 

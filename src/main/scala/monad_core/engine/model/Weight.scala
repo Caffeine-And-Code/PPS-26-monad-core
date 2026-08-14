@@ -1,7 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
-
 opaque type Weight = Int
 
 object Weight:

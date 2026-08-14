@@ -1,16 +1,16 @@
 package monad_core.simulator.application.engine.world
 
-import monad_core.simulator.domain.engine.MonadCoreTeam
+import monad_core.engine.model.Team
 import monad_core.simulator.errors.BaseError
 
 case class SaveTeamCommand(
-    team: MonadCoreTeam
+    team: Team
 )
 
 private[world] trait TeamOperations:
-  def getAllTeams: Either[BaseError, List[MonadCoreTeam]]
+  def getAllTeams: List[Team]
 
-  def getTeam(id: String): Either[BaseError, MonadCoreTeam]
+  def getTeam(id: String): Either[BaseError, Team]
 
   def createTeam(command: SaveTeamCommand): Either[BaseError, Unit]
 

@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
+import monad_core.engine.model.{Entity, Team}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
@@ -9,6 +9,7 @@ import monad_core.simulator.presentation.components.forms.parsers.LocatableFormS
   getEnumValue
 }
 import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
   EntityFormParser,
   LocatableFormShapes
 }
@@ -17,11 +18,11 @@ import scalafx.scene.Node
 
 final case class SaveEntityFormDialogProps(
     title: String,
-    onSubmit: MonadCoreEntity => Unit,
+    onSubmit: Entity => Unit,
     onError: BaseError => Unit,
-    teams: Seq[MonadCoreTeam],
+    teams: Seq[Team],
     anchorNode: Option[Node] = None,
-    entityToUpdate: Option[MonadCoreEntity] = None
+    entityToUpdate: Option[Entity] = None
 )
 
 private object EntityFormDefaults:
@@ -59,7 +60,7 @@ object SaveEntityFormDialog:
         onSubmit = values =>
           val result = props.entityToUpdate match
             case Some(entity) =>
-              EntityFormParser.buildEntity(values, () => entity.id)
+              EntityFormParser.buildEntity(values, () => entity.id.value)
             case None =>
               EntityFormParser.buildEntity(values)
 
@@ -69,29 +70,29 @@ object SaveEntityFormDialog:
   }
 
   private[forms] def buildDefaultValues(
-      entityToUpdate: Option[MonadCoreEntity]
+      entityToUpdate: Option[Entity]
   ): SaveEntityFormDefaultValues =
     entityToUpdate match
       case None => SaveEntityFormDefaultValues()
       case Some(entity) =>
-        val (radius, width, height) = entity.shape.getDefaultValuesByShape
+        val (radius, height, length) = entity.shape.getDefaultValuesByShape
 
         SaveEntityFormDefaultValues(
-          x = Some(entity.position._1.toString),
-          y = Some(entity.position._2.toString),
+          x = Some(entity.position.x.toString),
+          y = Some(entity.position.y.toString),
           shape = Some(entity.shape.getEnumValue.getStringValue),
           radius = radius,
           height = height,
-          length = width,
-          teamId = entity.teamId,
+          length = length,
+          teamId = entity.teamId.map(_.value),
           weight = entity.weight.map(_.toString),
           health = entity.health.map(_.toString),
-          speedX = entity.speed.map(_._1.toString),
-          speedY = entity.speed.map(_._2.toString)
+          speedX = entity.speed.map(_.x.toString),
+          speedY = entity.speed.map(_.y.toString)
         )
 
   private[forms] def buildFields(
-      teams: Seq[MonadCoreTeam],
+      teams: Seq[Team],
       defaultValues: SaveEntityFormDefaultValues
   ): Seq[FormFieldSpec] =
     Seq(
@@ -109,10 +110,26 @@ object SaveEntityFormDialog:
         id = EntityFormParser.ShapeKey,
         label = "Shape",
         options = Shapes,
-        dependentFields = FormDialog.buildShapeFields(
-          defaultValues.radius,
-          widthDefaultValue = defaultValues.length,
-          heightDefaultValue = defaultValues.height
+        dependentFields = Map(
+          LocatableFormShapes.CircleLabel -> Seq(
+            TextFieldSpec(
+              id = BaseFormParser.RadiusKey,
+              label = "Radius",
+              defaultValue = defaultValues.radius
+            )
+          ),
+          LocatableFormShapes.RectangleLabel -> Seq(
+            TextFieldSpec(
+              id = BaseFormParser.HeightKey,
+              label = "Width",
+              defaultValue = defaultValues.height
+            ),
+            TextFieldSpec(
+              id = BaseFormParser.LengthKey,
+              label = "Height",
+              defaultValue = defaultValues.length
+            )
+          )
         ),
         defaultValue = defaultValues.shape
       ),
@@ -139,7 +156,7 @@ object SaveEntityFormDialog:
       SelectFieldSpec(
         id = EntityFormParser.TeamIdKey,
         label = "Team",
-        options = teams.map(_.id).appended(""),
+        options = teams.map(_.id.value),
         defaultValue = defaultValues.teamId
       )
     )

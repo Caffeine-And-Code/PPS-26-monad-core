@@ -1,11 +1,8 @@
 package integrations.monad_core.simulator.presentation.components.forms
 
-import helpers.arrangers.MonadCoreTeamArranger
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
-import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -20,9 +17,14 @@ class SaveTeamFormDialogTest
     with Matchers
     with DialogTesting
     with FormTesting:
-  val TeamNameFieldIndex: Int                     = 0
-  val EnemiesMultiSelectIndex: Int                = 0
-  private val PossibleEnemies: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
+  val TeamNameFieldIndex: Int      = 0
+  val EnemiesMultiSelectIndex: Int = 0
+
+  private val possibleEnemies: Seq[Team] = Seq(
+    Team(TeamId("RedTeam").value, Set.empty).value,
+    Team(TeamId("BlueTeam").value, Set.empty).value,
+    Team(TeamId("GreenTeam").value, Set.empty).value
+  )
 
   private def selectEnemyInMultiSelect(enemyIndex: Int): Unit =
     allFormMultiSelects(EnemiesMultiSelectIndex).selectionModel.value.select(enemyIndex)
@@ -32,7 +34,7 @@ class SaveTeamFormDialogTest
       title = "Create Team",
       onSubmit = _ => (),
       onError = _ => (),
-      possibleEnemies = PossibleEnemies
+      possibleEnemies = possibleEnemies
     )
 
     onFxThread {
@@ -42,13 +44,13 @@ class SaveTeamFormDialogTest
     }
 
   test("SaveTeamFormDialog opens successfully by providing a team to edit"):
-    val teamToUpdate = PossibleEnemies.head
+    val teamToUpdate = possibleEnemies.head
 
     val props = SaveTeamFormDialogProps(
       title = "Edit Team",
       onSubmit = _ => (),
       onError = _ => (),
-      possibleEnemies = PossibleEnemies,
+      possibleEnemies = possibleEnemies,
       teamToUpdate = Some(teamToUpdate)
     )
 
@@ -59,13 +61,13 @@ class SaveTeamFormDialogTest
     }
 
   test("SaveTeamFormDialog invokes onSubmit with constructed Team on valid input"):
-    var submittedTeam: Option[MonadCoreTeam] = None
+    var submittedTeam: Option[Team] = None
 
     val props = SaveTeamFormDialogProps(
       title = "Add Team Test",
       onSubmit = team => submittedTeam = Some(team),
       onError = err => fail(s"Unexpected error: $err"),
-      possibleEnemies = PossibleEnemies
+      possibleEnemies = possibleEnemies
     )
 
     onFxThread {
@@ -80,14 +82,14 @@ class SaveTeamFormDialogTest
     submittedTeam shouldBe defined
 
   test("SaveTeamFormDialog invokes onSubmit with correct team name and enemies"):
-    var submittedTeam: Option[MonadCoreTeam] = None
-    val expectedName                         = "NewTeam"
+    var submittedTeam: Option[Team] = None
+    val expectedName                = "NewTeam"
 
     val props = SaveTeamFormDialogProps(
       title = "Add Team Test",
       onSubmit = team => submittedTeam = Some(team),
       onError = err => fail(s"Unexpected error: $err"),
-      possibleEnemies = PossibleEnemies
+      possibleEnemies = possibleEnemies
     )
 
     onFxThread {
@@ -103,7 +105,7 @@ class SaveTeamFormDialogTest
     submittedTeam shouldBe defined
     val providedTeam = submittedTeam.get
     providedTeam.id should be(TeamId(expectedName).value)
-    providedTeam.enemies should be(Set(PossibleEnemies.head.id, PossibleEnemies(1).id))
+    providedTeam.enemies should be(Set(possibleEnemies.head.id, possibleEnemies(1).id))
 
   test("SaveTeamFormDialog invokes onError when form values are invalid"):
     var capturedError: Option[BaseError] = None
@@ -112,7 +114,7 @@ class SaveTeamFormDialogTest
       title = "Invalid Team Test",
       onSubmit = _ => fail("onSubmit should not be called with invalid inputs"),
       onError = err => capturedError = Some(err),
-      possibleEnemies = PossibleEnemies
+      possibleEnemies = possibleEnemies
     )
 
     onFxThread {
@@ -124,13 +126,13 @@ class SaveTeamFormDialogTest
     capturedError shouldBe defined
 
   test("SaveTeamFormDialog displays visually the team values passed for editing"):
-    val teamToUpdate = PossibleEnemies.head
+    val teamToUpdate = possibleEnemies.head
 
     val props = SaveTeamFormDialogProps(
       title = "Edit Team Test",
       onSubmit = _ => (),
       onError = err => fail(s"Unexpected error: $err"),
-      possibleEnemies = PossibleEnemies,
+      possibleEnemies = possibleEnemies,
       teamToUpdate = Some(teamToUpdate)
     )
 
@@ -144,13 +146,13 @@ class SaveTeamFormDialogTest
     }
 
   test("SaveTeamFormDialog displays architecturally the team values passed for editing"):
-    val teamToUpdate = PossibleEnemies.head
+    val teamToUpdate = possibleEnemies.head
 
     val props = SaveTeamFormDialogProps(
       title = "Edit Team Test",
       onSubmit = _ => (),
       onError = err => fail(s"Unexpected error: $err"),
-      possibleEnemies = PossibleEnemies,
+      possibleEnemies = possibleEnemies,
       teamToUpdate = Some(teamToUpdate)
     )
 
@@ -167,7 +169,7 @@ class SaveTeamFormDialogTest
       title = "Visual Save Team Test",
       onSubmit = _ => (),
       onError = _ => (),
-      possibleEnemies = PossibleEnemies
+      possibleEnemies = possibleEnemies
     )
 
     onFxThread {
@@ -188,7 +190,7 @@ class SaveTeamFormDialogTest
       title = "Visual Save Team Test",
       onSubmit = _ => (),
       onError = _ => (),
-      possibleEnemies = PossibleEnemies
+      possibleEnemies = possibleEnemies
     )
 
     onFxThread {

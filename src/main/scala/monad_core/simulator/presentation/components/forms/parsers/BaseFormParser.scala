@@ -1,8 +1,8 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.simulator.domain.engine.MonadCoreShape
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
+import monad_core.engine.model.{Shape2D, Vector2D}
 import monad_core.simulator.errors.BaseError
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
   CircleLabel,
   RectangleLabel
@@ -22,39 +22,42 @@ object BaseFormParser:
       valueStr.toDoubleOption.toRight(InvalidNumericFormFieldError(key))
     }
 
-  private[forms] def getSafeVector(
+  private[forms] def getSafeVector2D(
       values: Map[String, String],
       xKey: String,
       yKey: String
-  ): Either[BaseError, (Double, Double)] =
+  ): Either[BaseError, Vector2D] =
     for
       x <- BaseFormParser.parseDouble(values, xKey)
       y <- BaseFormParser.parseDouble(values, yKey)
-    yield (x, y)
+    yield Vector2D(x, y)
 
   private[forms] def getOptionalVector2D(
       values: Map[String, String],
       xKey: String,
       yKey: String
-  ): Option[(Double, Double)] =
-    getSafeVector(values, xKey, yKey) match
+  ): Option[Vector2D] =
+    getSafeVector2D(values, xKey, yKey) match
       case Right(vector) => Some(vector)
       case Left(_)       => None
 
   private[forms] def getShape(
       formShape: String,
       values: Map[String, String]
-  ): Either[BaseError, MonadCoreShape] =
+  ): Either[BaseError, Shape2D] =
     formShape match
       case CircleLabel =>
-        for radius <- parseDouble(values, RadiusKey)
-        yield SimulationCircle(radius)
+        for
+          radius <- parseDouble(values, RadiusKey)
+          circle <- Shape2D.circle(radius).adaptError()
+        yield circle
 
       case RectangleLabel =>
         for
-          height <- parseDouble(values, HeightKey)
-          length <- parseDouble(values, LengthKey)
-        yield SimulationRectangle(length, height)
+          height    <- parseDouble(values, HeightKey)
+          length    <- parseDouble(values, LengthKey)
+          rectangle <- Shape2D.rectangle(height, length).adaptError()
+        yield rectangle
 
   extension (map: Map[String, String])
 

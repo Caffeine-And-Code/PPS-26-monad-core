@@ -3,7 +3,7 @@ package monad_core.engine.core
 import monad_core.engine.core.traits.{RenderEngine, State}
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.TeamId
-import monad_core.engine.public_api.Painter
+import monad_core.engine.simulator.Painter
 import scalafx.scene.paint.Color
 
 object RendererManager extends RenderEngine:

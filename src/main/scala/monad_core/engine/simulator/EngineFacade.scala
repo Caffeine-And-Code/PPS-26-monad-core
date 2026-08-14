@@ -1,8 +1,8 @@
-package monad_core.engine.public_api
+package monad_core.engine.simulator
 
-import monad_core.engine.core.{GameLoop, RendererManager}
 import monad_core.engine.core.traits.{PhysicsEngine, State}
-import monad_core.engine.errors.EngineError
+import monad_core.engine.core.{GameLoop, RendererManager}
+import monad_core.engine.model.EngineError
 
 object EngineFacade:
 

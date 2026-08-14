@@ -2,10 +2,8 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.TeamNotFoundDuringSelection
-import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -23,10 +21,10 @@ class ChooseTeamFormDialogTest
     with FormTesting:
   val TeamComboBoxIndex: Int = 0
 
-  private val teams: Seq[MonadCoreTeam] = Seq(
-    MonadCoreTeam("RedTeam", Set.empty),
-    MonadCoreTeam("BlueTeam", Set.empty),
-    MonadCoreTeam("GreenTeam", Set.empty)
+  private val teams: Seq[Team] = Seq(
+    Team.create("RedTeam", Set.empty).value,
+    Team.create("BlueTeam", Set.empty).value,
+    Team.create("GreenTeam", Set.empty).value
   )
 
   private def selectTeamInComboBox(teamIndex: Int): Unit =
@@ -48,7 +46,7 @@ class ChooseTeamFormDialogTest
       case Right(_) => ()
 
   test("ChooseTeamFormDialog invokes onSubmit with the first team by default"):
-    var submittedTeam: Option[MonadCoreTeam] = None
+    var submittedTeam: Option[Team] = None
 
     val props = ChooseTeamFormDialogProps(
       teams = teams,
@@ -65,7 +63,7 @@ class ChooseTeamFormDialogTest
     submittedTeam should be(Some(teams.head))
 
   test("ChooseTeamFormDialog invokes onSubmit with the team selected by the user"):
-    var submittedTeam: Option[MonadCoreTeam] = None
+    var submittedTeam: Option[Team] = None
 
     val props = ChooseTeamFormDialogProps(
       teams = teams,

@@ -1,6 +1,6 @@
 package monad_core.engine.core
 
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.EngineError
 
 sealed abstract class GameLoopError(message: String) extends EngineError(message)
 

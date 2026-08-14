@@ -1,8 +1,14 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.simulator.domain.engine.MonadCoreEntity
+import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.simulator.errors.BaseError
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
+import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
+  Circle,
+  Rectangle,
+  getEnumValue
+}
 
 import scala.util.Random
 
@@ -20,24 +26,52 @@ object EntityFormParser:
   def buildEntity(
       values: Map[String, String],
       generateId: () => String = () => Random.alphanumeric.take(10).mkString
-  ): Either[BaseError, MonadCoreEntity] =
+  ): Either[BaseError, Entity] =
     for
-      position        <- BaseFormParser.getSafeVector(values, PositionXKey, PositionYKey)
-      shapeFormChoice <- values.getValueSafe(ShapeKey)
-      shape           <- BaseFormParser.getShape(shapeFormChoice, values)
+      position         <- BaseFormParser.getSafeVector2D(values, PositionXKey, PositionYKey)
+      shapeValueEither <- values.getValueSafe(ShapeKey)
+      shapeValue       <- shapeValueEither.getEnumValue
+      entity           <- buildByShape(shapeValue, generateId(), position, values)
 
-      speed  = BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey)
+      entityWithSpeed = BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey) match
+        case Some(vector) => entity.withSpeed(vector)
+        case _            => entity
+
       health = values.get(HealthKey).flatMap(_.toDoubleOption).map(_.toInt)
-      weight = values.get(WeightKey).flatMap(_.toDoubleOption).map(_.toInt)
-      teamId = values.get(TeamIdKey).filterNot(id => id.isEmpty)
+      entityWithHealth <- health match
+        case Some(h) => entityWithSpeed.withHealth(h).adaptError()
+        case None    => Right(entityWithSpeed)
 
-      entity = MonadCoreEntity(
-        id = generateId(),
-        position = position,
-        shape = shape,
-        speed = speed,
-        weight = weight,
-        health = health,
-        teamId = teamId
-      )
-    yield entity
+      weight = values.get(WeightKey).flatMap(_.toDoubleOption).map(_.toInt)
+      entityWithWeight <- weight match
+        case Some(w) => entityWithHealth.withWeight(w).adaptError()
+        case None    => Right(entityWithHealth)
+
+      teamId = values.get(TeamIdKey)
+      finalEntity <- teamId match
+        case Some(id) =>
+          if id.isEmpty then Right(entityWithWeight)
+          else entityWithWeight.withTeamId(id).adaptError()
+
+        case None => Right(entityWithWeight)
+    yield finalEntity
+
+  private[forms] def buildByShape(
+      shape: LocatableFormShapes,
+      id: String,
+      position: Vector2D,
+      values: Map[String, String]
+  ): Either[BaseError, Entity] =
+    shape match
+      case Circle =>
+        for
+          radius <- BaseFormParser.parseDouble(values, BaseFormParser.RadiusKey)
+          entity <- Entity.circle(id, position, radius).adaptError()
+        yield entity
+
+      case Rectangle =>
+        for
+          height <- BaseFormParser.parseDouble(values, BaseFormParser.HeightKey)
+          length <- BaseFormParser.parseDouble(values, BaseFormParser.LengthKey)
+          entity <- Entity.rectangle(id, position, height, length).adaptError()
+        yield entity

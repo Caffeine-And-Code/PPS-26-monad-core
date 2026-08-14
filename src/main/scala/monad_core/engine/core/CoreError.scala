@@ -1,7 +1,6 @@
 package monad_core.engine.core
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{LocatableId, TeamId}
+import monad_core.engine.model.{EngineError, LocatableId, TeamId}
 
 case class EntityNotFound(entityId: LocatableId) extends EngineError(s"Entity $entityId Not Found")
 

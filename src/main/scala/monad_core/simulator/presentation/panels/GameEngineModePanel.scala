@@ -13,7 +13,6 @@ import monad_core.simulator.presentation.components.*
 import monad_core.simulator.presentation.components.forms.*
 import monad_core.simulator.presentation.panels.support.FormUtilities.{
   displayError,
-  getTeamsSafely,
   onActionMakeSnapshot
 }
 import monad_core.simulator.presentation.panels.support.PanelStyles
@@ -43,7 +42,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
       actionResult match
         case Left(error) => displayError(error)
         case Right(_) =>
-          val teams = getTeamsSafely(world)
+          val teams = world.getAllTeams
 
           editTeamsIsDisabled.value = teams.length <= 1
           deleteTeamsIsDisabled.value = teams.isEmpty
@@ -96,7 +95,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                       anchorNode = contextMenuAnchor,
                       onSubmit = entity =>
                         onActionMakeSnapshot(SaveEntityCommand(entity), world.createEntity),
-                      teams = getTeamsSafely(world),
+                      teams = world.getAllTeams,
                       onError = displayError
                     )
                   )
@@ -114,7 +113,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                           SaveTeamCommand(team),
                           command => onTeamAction(world.createTeam(command))
                         ),
-                      possibleEnemies = getTeamsSafely(world),
+                      possibleEnemies = world.getAllTeams,
                       onError = displayError
                     )
                   )
@@ -149,12 +148,13 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                                 SaveTeamCommand(team),
                                 command => world.updateTeam(command)
                               ),
-                            possibleEnemies = getTeamsSafely(world).filterNot(_.id == team.id),
+                            possibleEnemies =
+                              world.getAllTeams.filterNot(_.id.value == team.id.value),
                             onError = displayError,
                             teamToUpdate = Some(team)
                           )
                         ),
-                      teams = getTeamsSafely(world),
+                      teams = world.getAllTeams,
                       onError = displayError
                     )
                   ),
@@ -167,8 +167,11 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                     props = ChooseTeamFormDialogProps(
                       anchorNode = contextMenuAnchor,
                       onSubmit = team =>
-                        onActionMakeSnapshot(team.id, id => onTeamAction(world.removeTeam(id))),
-                      teams = getTeamsSafely(world),
+                        onActionMakeSnapshot(
+                          team.id,
+                          id => onTeamAction(world.removeTeam(id.value))
+                        ),
+                      teams = world.getAllTeams,
                       onError = displayError
                     )
                   ),

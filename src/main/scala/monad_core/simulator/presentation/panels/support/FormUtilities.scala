@@ -2,7 +2,6 @@ package monad_core.simulator.presentation.panels.support
 
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
 
@@ -16,10 +15,3 @@ object FormUtilities:
   ): Unit =
     action(submitResult)
     gameEngineRuntime.createSnapshot()
-
-  def getTeamsSafely(providedWorld: World): List[MonadCoreTeam] =
-    providedWorld.getAllTeams match
-      case Right(teams) => teams
-      case Left(error) =>
-        displayError(error)
-        List.empty

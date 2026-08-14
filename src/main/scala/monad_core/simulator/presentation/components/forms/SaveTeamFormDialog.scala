@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.simulator.domain.engine.MonadCoreTeam
+import monad_core.engine.model.{Team, TeamId}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
@@ -10,20 +10,20 @@ import scalafx.scene.Node
 
 final case class SaveTeamFormDialogProps(
     title: String,
-    onSubmit: MonadCoreTeam => Unit,
+    onSubmit: Team => Unit,
     onError: BaseError => Unit,
-    possibleEnemies: Seq[MonadCoreTeam],
+    possibleEnemies: Seq[Team],
     anchorNode: Option[Node] = None,
-    teamToUpdate: Option[MonadCoreTeam] = None
+    teamToUpdate: Option[Team] = None
 )
 
 final case class SaveTeamFormDefaultValues(
-    teamName: Option[String] = Option.empty,
-    enemies: Seq[String] = Seq.empty
+    teamName: Option[TeamId] = Option.empty,
+    enemies: Seq[TeamId] = Seq.empty
 )
 
 final private[forms] case class BuildSaveTeamFormFieldsRecord(
-    possibleEnemies: Seq[MonadCoreTeam],
+    possibleEnemies: Seq[Team],
     defaultValues: SaveTeamFormDefaultValues
 )
 
@@ -52,7 +52,7 @@ object SaveTeamFormDialog:
   }
 
   private[forms] def buildDefaultValues(
-      teamToUpdate: Option[MonadCoreTeam]
+      teamToUpdate: Option[Team]
   ): SaveTeamFormDefaultValues =
     teamToUpdate match
       case None => SaveTeamFormDefaultValues()
@@ -69,7 +69,7 @@ object SaveTeamFormDialog:
       TextFieldSpec(
         id = TeamFormParser.TeamIdKey,
         label = "Name",
-        defaultValue = record.defaultValues.teamName
+        defaultValue = record.defaultValues.teamName.map(_.value)
       )
     ).appendedAll(
       buildTeamEditFields(record)
@@ -82,7 +82,7 @@ object SaveTeamFormDialog:
       MultiSelectFieldSpec(
         id = TeamFormParser.EnemiesKey,
         label = "Enemies",
-        options = record.possibleEnemies.map(_.id),
-        defaultValues = record.defaultValues.enemies
+        options = record.possibleEnemies.map(_.id.value),
+        defaultValues = record.defaultValues.enemies.map(_.value)
       )
     )

@@ -1,9 +1,9 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
+import monad_core.engine.model.{Surface, Vector2D}
 import monad_core.simulator.MissingKeyInFormError
-import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.MonadCoreSurface
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.EitherValues.{convertEitherToValuable, convertLeftProjectionToValuable}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -11,16 +11,16 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 
 class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with MockFactory:
-  val SurfaceRadius: Double                 = 5
-  val SurfaceLength: Double                 = 6
-  val SurfaceHeight: Double                 = 7
-  val SurfacePosition: (Double, Double)     = (10, 11)
-  val SurfaceAppliedForce: (Double, Double) = (12, 13)
-  val SurfaceFrictionIndex: Double          = 0.8
+  val SurfaceRadius: Double         = 5
+  val SurfaceLength: Double         = 6
+  val SurfaceHeight: Double         = 7
+  val SurfacePosition: Vector2D     = Vector2D(10, 11)
+  val SurfaceAppliedForce: Vector2D = Vector2D(12, 13)
+  val SurfaceFrictionIndex: Double  = 0.8
 
   val SurfaceFormValues: Map[String, String] = Map(
-    SurfaceFormParser.PositionXKey -> SurfacePosition._1.toString,
-    SurfaceFormParser.PositionYKey -> SurfacePosition._2.toString
+    SurfaceFormParser.PositionXKey -> SurfacePosition.x.toString,
+    SurfaceFormParser.PositionYKey -> SurfacePosition.y.toString
   )
 
   def buildShapeFormValues(shapeLabel: String): Map[String, String] =
@@ -38,11 +38,11 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
   def buildFormValuesWithOptionalParams(formValues: Map[String, String]): Map[String, String] =
     formValues
       + (SurfaceFormParser.FrictionIndexKey -> SurfaceFrictionIndex.toString)
-      + (SurfaceFormParser.AppliedForceXKey -> SurfaceAppliedForce._1.toString)
-      + (SurfaceFormParser.AppliedForceYKey -> SurfaceAppliedForce._2.toString)
+      + (SurfaceFormParser.AppliedForceXKey -> SurfaceAppliedForce.x.toString)
+      + (SurfaceFormParser.AppliedForceYKey -> SurfaceAppliedForce.y.toString)
 
   test("A circle surface can be converted from form values by utilizing the default id generator"):
-    val expectedCircle = MonadCoreSurface("id", SurfacePosition, SimulationCircle(SurfaceRadius))
+    val expectedCircle = Surface.circle("id", SurfacePosition, SurfaceRadius).value
     val formValues     = circleFormValues
 
     val parseResult = SurfaceFormParser.buildSurface(formValues)
@@ -58,7 +58,7 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
     "A rectangle surface can be converted from form values by utilizing the default id generator"
   ):
     val expectedRectangle =
-      MonadCoreSurface("id", SurfacePosition, SimulationRectangle(SurfaceLength, SurfaceHeight))
+      Surface.rectangle("id", SurfacePosition, SurfaceHeight, SurfaceLength).value
     val formValues = rectangleFormValues
 
     val parseResult = SurfaceFormParser.buildSurface(formValues)
@@ -92,7 +92,7 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
 
   test("If form values doesn't have the 'y' value the surface cannot be parsed"):
     val expectedError          = MissingKeyInFormError(SurfaceFormParser.PositionYKey)
-    val formValuesWithMissingY = Map(SurfaceFormParser.PositionXKey -> SurfacePosition._1.toString)
+    val formValuesWithMissingY = Map(SurfaceFormParser.PositionXKey -> SurfacePosition.x.toString)
 
     val parseResult = SurfaceFormParser.buildSurface(formValuesWithMissingY)
 
@@ -135,7 +135,7 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
 
       inside(parseResult):
         case Right(surface) =>
-          surface.id should be(expectedId)
+          surface.id.value should be(expectedId)
 
   test("A complete surface form can be parsed to surface"):
     val cases = Table(
@@ -168,3 +168,43 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
         case Right(surface) =>
           surface.frictionIndex should be(None)
           surface.appliedForce should be(None)
+
+  test("buildByShape should correctly construct surfaces based on shape type"):
+    val testCases = Table(
+      ("shape", "values", "expectedShape"),
+      (
+        LocatableFormShapes.Circle,
+        Map(BaseFormParser.RadiusKey -> SurfaceRadius.toString),
+        Surface.circle("id", SurfacePosition, SurfaceRadius).value.shape
+      ),
+      (
+        LocatableFormShapes.Rectangle,
+        Map(
+          BaseFormParser.HeightKey -> SurfaceHeight.toString,
+          BaseFormParser.LengthKey -> SurfaceLength.toString
+        ),
+        Surface.rectangle("id", SurfacePosition, SurfaceHeight, SurfaceLength).value.shape
+      )
+    )
+
+    forAll(testCases): (shape, values, expectedShape) =>
+      val dummyId = "test-id"
+      val result  = SurfaceFormParser.buildByShape(shape, dummyId, SurfacePosition, values)
+
+      val surface = result.value
+      surface.id.value should be(dummyId)
+      surface.position should be(SurfacePosition)
+      surface.shape should be(expectedShape)
+
+  test("buildByShape should return an error when shape-specific fields are missing or invalid"):
+    val invalidCases = Table(
+      ("shape", "values", "expectedKey"),
+      (LocatableFormShapes.Circle, Map.empty[String, String], "radius"),
+      (LocatableFormShapes.Rectangle, Map("length" -> "5"), "height"),
+      (LocatableFormShapes.Rectangle, Map("height" -> "5"), "length")
+    )
+
+    forAll(invalidCases): (shape, values, expectedKey) =>
+      val result = SurfaceFormParser.buildByShape(shape, "id", SurfacePosition, values)
+
+      result.left.value should be(MissingKeyInFormError(expectedKey))

@@ -1,4 +1,4 @@
-package monad_core.engine.public_api
+package monad_core.engine.simulator
 
 import monad_core.engine.model.{Locatable, TeamId}
 import scalafx.scene.paint.Color
