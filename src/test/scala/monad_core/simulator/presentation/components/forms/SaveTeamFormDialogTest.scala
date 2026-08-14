@@ -52,7 +52,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
     )
 
   test("buildTeamCreationFields should propagate the default team name into the name field"):
-    val defaultValues = SaveTeamFormDefaultValues(teamName = Some("NewTeam"))
+    val defaultValues = SaveTeamFormDefaultValues(teamName = Some(TeamId("NewTeam").value))
     val record        = BuildSaveTeamFormFieldsRecord(possibleEnemies, defaultValues)
 
     val fields = SaveTeamFormDialog.buildTeamCreationFields(record)

@@ -2,9 +2,8 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.errors.EngineError
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.model.{EngineError, Entity, Vector2D}
 import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
 import monad_core.engine.physics.pathfinding.SizeHelper
 import monad_core.engine.physics.utils.*

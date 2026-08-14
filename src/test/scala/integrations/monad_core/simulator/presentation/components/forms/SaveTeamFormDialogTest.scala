@@ -2,8 +2,8 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -108,7 +108,7 @@ class SaveTeamFormDialogTest
     providedTeam.enemies should be(Set(possibleEnemies.head.id, possibleEnemies(1).id))
 
   test("SaveTeamFormDialog invokes onError when form values are invalid"):
-    var capturedError: Option[EngineError] = None
+    var capturedError: Option[BaseError] = None
 
     val props = SaveTeamFormDialogProps(
       title = "Invalid Team Test",

@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildButton
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}
 import scalafx.beans.property.BooleanProperty
 import scalafx.beans.value.ObservableValue
@@ -21,7 +21,7 @@ object IconButton {
   def build(
       image: Image,
       props: IconButtonBaseProps
-  ): Either[EngineError, Button] =
+  ): Either[BaseError, Button] =
     for loadedImage <- ImageLoader
         .getScalaFxImage(image, props.imageConfig)
         .left
@@ -41,7 +41,7 @@ object IconButton {
       activeImage: Image,
       props: IconButtonBaseProps,
       activeProperty: BooleanProperty = BooleanProperty(false)
-  ): Either[EngineError, Button] =
+  ): Either[BaseError, Button] =
     for
       loadedDefault <- ImageLoader
         .getScalaFxImage(defaultImage, props.imageConfig)

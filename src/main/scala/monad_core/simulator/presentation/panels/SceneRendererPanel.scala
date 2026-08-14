@@ -1,12 +1,11 @@
 package monad_core.simulator.presentation.panels
 
 import javafx.scene.input.{MouseButton, MouseEvent}
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.{**, Entity, Locatable, Surface}
-import monad_core.engine.public_api.Painter
-import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.engine.model.{Entity, Shape2D, Surface, Vector2D}
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
+import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
 import monad_core.simulator.presentation.components.forms.{
   SaveEntityFormDialog,
@@ -14,45 +13,60 @@ import monad_core.simulator.presentation.components.forms.{
   SaveSurfaceFormDialog,
   SaveSurfaceFormDialogProps
 }
-import monad_core.simulator.presentation.components.{
-  Error,
-  MenuButtonItem,
-  NotificationManager,
-  ResizableCanvas
-}
-import monad_core.simulator.presentation.painters.Drawer
+import monad_core.simulator.presentation.components.{MenuButtonItem, ResizableCanvas}
+import monad_core.simulator.presentation.painters.ShapePainter
 import monad_core.simulator.presentation.panels.MouseHitDetector.checkMouseHit
+import monad_core.simulator.presentation.panels.support.FormUtilities.{
+  displayError,
+  onActionMakeSnapshot
+}
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
 import scalafx.scene.control.ContextMenu
 import scalafx.scene.layout.{Priority, VBox}
 
+type Clickable = Surface | Entity
+
 private[panels] object MouseHitDetector:
 
-  extension (clickable: Locatable)
+  extension (clickable: Clickable)
 
-    def checkMouseHit(mouseClickX: Double, mouseClickY: Double): Boolean =
-      val elementPositionX = clickable.position.x
-      val elementPositionY = clickable.position.y
+    private def checkGenericHit(
+        position: Vector2D,
+        clickPosition: (Double, Double),
+        shape: Shape2D
+    ): Boolean =
+      val elementPositionX = position._1
+      val elementPositionY = position._2
+      val mouseClickX      = clickPosition._1
+      val mouseClickY      = clickPosition._2
 
-      clickable.shape match
-        case Circle(radius) =>
+      shape match
+        case Shape2D.Circle(radius) =>
           val distanceX = mouseClickX - elementPositionX
           val distanceY = mouseClickY - elementPositionY
-          (distanceX ** 2 + distanceY ** 2) <= (radius ** 2)
 
-        case Rectangle(width, height) =>
+          (distanceX * distanceX + distanceY * distanceY) <= (radius * radius)
+
+        case Shape2D.Rectangle(width, height) =>
           val halfW = width / 2
           val halfH = height / 2
+
           mouseClickX >= (elementPositionX - halfW) && mouseClickX <= (elementPositionX + halfW) &&
           mouseClickY >= (elementPositionY - halfH) && mouseClickY <= (elementPositionY + halfH)
+
+    def checkMouseHit(mouseClick: (Double, Double)): Boolean =
+      clickable match
+        case surface: Surface =>
+          checkGenericHit(surface.position, mouseClick, surface.shape)
+        case entity: Entity => checkGenericHit(entity.position, mouseClick, entity.shape)
 
 private[panels] object EntityContextMenu:
 
   def attachTo(
       canvas: javafx.scene.canvas.Canvas,
-      findEntityAt: (Double, Double) => Option[Locatable],
-      buildMenuItems: Locatable => Seq[MenuButtonItem]
+      findEntityAt: (Double, Double) => Option[Clickable],
+      buildMenuItems: Clickable => Seq[MenuButtonItem]
   ): Unit =
 
     val contextMenu = new ContextMenu:
@@ -80,22 +94,23 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
 
   def build()(using
       gameEngineRuntime: GameEngineRuntime,
-      world: World
-  ): Either[EngineError, VBox] =
-    given Painter = Drawer
+      world: World,
+      architect: ShapeArchitect,
+      painter: Painter
+  ): Either[BaseError, VBox] =
 
-    val canvas                       = ResizableCanvas()
-    val menusAnchor                  = Some(canvas)
-    val onError: EngineError => Unit = error => NotificationManager.show(error.message, Error)
+    val canvas      = ResizableCanvas()
+    val menusAnchor = Some(canvas)
+
+    val findEntitiesAt: (Double, Double) => Option[Clickable] = (x, y) =>
+      val entities: List[Clickable]          = world.getAllEntities
+      val surfaces: List[Clickable]          = world.getAllSurfaces
+      val clickableElements: List[Clickable] = entities ++ surfaces
+      clickableElements.find(_.checkMouseHit((x, y)))
 
     EntityContextMenu.attachTo(
       canvas = canvas,
-      findEntityAt = (x, y) =>
-        val clickableElements: List[Locatable] =
-          List.from(world.getAllEntities).appendedAll(world.getAllSurfaces)
-
-        clickableElements.find(_.checkMouseHit(x, y))
-      ,
+      findEntityAt = findEntitiesAt,
       buildMenuItems = {
         case entity: Entity =>
           Seq(
@@ -106,14 +121,18 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
                   props = SaveEntityFormDialogProps(
                     title = "Entity Settings",
                     anchorNode = menusAnchor,
-                    onSubmit = entity => world.updateEntity(SaveEntityCommand(entity)),
+                    onSubmit =
+                      entity => onActionMakeSnapshot(SaveEntityCommand(entity), world.updateEntity),
                     teams = world.getAllTeams,
-                    onError = onError,
+                    onError = displayError,
                     entityToUpdate = Some(entity)
                   )
                 )
             ),
-            MenuButtonItem(s"Remove ${entity.id} Entity", () => world.removeEntity(entity.id))
+            MenuButtonItem(
+              s"Remove ${entity.id} Entity",
+              () => onActionMakeSnapshot(entity.id, id => world.removeEntity(id.value))
+            )
           )
         case surface: Surface =>
           Seq(
@@ -124,24 +143,29 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
                   props = SaveSurfaceFormDialogProps(
                     title = "Surface Settings",
                     anchorNode = menusAnchor,
-                    onSubmit = surface => world.updateSurface(SaveSurfaceCommand(surface)),
-                    onError = onError,
+                    onSubmit = surface =>
+                      onActionMakeSnapshot(SaveSurfaceCommand(surface), world.updateSurface),
+                    onError = displayError,
                     surfaceToUpdate = Some(surface)
                   )
                 )
             ),
-            MenuButtonItem(s"Remove ${surface.id} Surface", () => world.removeSurface(surface.id))
+            MenuButtonItem(
+              s"Remove ${surface.id} Surface",
+              () => onActionMakeSnapshot(surface.id, id => world.removeSurface(id.value))
+            )
           )
       }
     )
 
-    val onFrame: World => Unit = _ => Drawer.flush(canvas.graphicsContext2D)
+    val onFrame: World => Unit = _ => ShapePainter.paint(canvas.graphicsContext2D)
 
     gameEngineRuntime.attach(onFrame)
     val gameEngineError = gameEngineRuntime.getError
+
     if gameEngineError.isDefined then Left(gameEngineError.get)
     else
-      gameEngineRuntime.reset(world)
+      gameEngineRuntime.resetToSnapshot()
 
       val container = new VBox:
         children = Seq(canvas)

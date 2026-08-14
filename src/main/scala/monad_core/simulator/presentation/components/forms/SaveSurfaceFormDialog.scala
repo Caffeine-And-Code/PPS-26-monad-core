@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Surface
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
@@ -9,6 +9,7 @@ import monad_core.simulator.presentation.components.forms.parsers.LocatableFormS
   getEnumValue
 }
 import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
   LocatableFormShapes,
   SurfaceFormParser
 }
@@ -18,7 +19,7 @@ import scalafx.scene.Node
 final case class SaveSurfaceFormDialogProps(
     title: String,
     onSubmit: Surface => Unit,
-    onError: EngineError => Unit,
+    onError: BaseError => Unit,
     anchorNode: Option[Node] = None,
     surfaceToUpdate: Option[Surface] = None
 )
@@ -45,7 +46,7 @@ object SaveSurfaceFormDialog:
   private[forms] val Shapes =
     Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
-  def show(props: SaveSurfaceFormDialogProps): Either[EngineError, Unit] = {
+  def show(props: SaveSurfaceFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.surfaceToUpdate)
 
     FormDialog.show(
@@ -104,19 +105,19 @@ object SaveSurfaceFormDialog:
         dependentFields = Map(
           LocatableFormShapes.CircleLabel -> Seq(
             TextFieldSpec(
-              id = SurfaceFormParser.RadiusKey,
+              id = BaseFormParser.RadiusKey,
               label = "Radius",
               defaultValue = defaultValues.radius
             )
           ),
           LocatableFormShapes.RectangleLabel -> Seq(
             TextFieldSpec(
-              id = SurfaceFormParser.HeightKey,
+              id = BaseFormParser.HeightKey,
               label = "Width",
               defaultValue = defaultValues.height
             ),
             TextFieldSpec(
-              id = SurfaceFormParser.LengthKey,
+              id = BaseFormParser.LengthKey,
               label = "Height",
               defaultValue = defaultValues.length
             )

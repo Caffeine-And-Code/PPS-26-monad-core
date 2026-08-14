@@ -28,12 +28,12 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
 
   def circleFormValues: Map[String, String] =
     buildShapeFormValues(LocatableFormShapes.CircleLabel)
-      + (SurfaceFormParser.RadiusKey -> SurfaceRadius.toString)
+      + (BaseFormParser.RadiusKey -> SurfaceRadius.toString)
 
   def rectangleFormValues: Map[String, String] =
     buildShapeFormValues(LocatableFormShapes.RectangleLabel)
-      + (SurfaceFormParser.LengthKey -> SurfaceLength.toString)
-      + (SurfaceFormParser.HeightKey -> SurfaceHeight.toString)
+      + (BaseFormParser.LengthKey -> SurfaceLength.toString)
+      + (BaseFormParser.HeightKey -> SurfaceHeight.toString)
 
   def buildFormValuesWithOptionalParams(formValues: Map[String, String]): Map[String, String] =
     formValues
@@ -103,9 +103,9 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
   test("If form values doesn't have a Shape specific key the surface cannot be parsed"):
     val cases = Table(
       ("key", "baseFormValue"),
-      (SurfaceFormParser.RadiusKey, circleFormValues),
-      (SurfaceFormParser.HeightKey, rectangleFormValues),
-      (SurfaceFormParser.LengthKey, rectangleFormValues)
+      (BaseFormParser.RadiusKey, circleFormValues),
+      (BaseFormParser.HeightKey, rectangleFormValues),
+      (BaseFormParser.LengthKey, rectangleFormValues)
     )
 
     forAll(cases): (key, baseFormValue) =>
@@ -174,14 +174,14 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
       ("shape", "values", "expectedShape"),
       (
         LocatableFormShapes.Circle,
-        Map(SurfaceFormParser.RadiusKey -> SurfaceRadius.toString),
+        Map(BaseFormParser.RadiusKey -> SurfaceRadius.toString),
         Surface.circle("id", SurfacePosition, SurfaceRadius).value.shape
       ),
       (
         LocatableFormShapes.Rectangle,
         Map(
-          SurfaceFormParser.HeightKey -> SurfaceHeight.toString,
-          SurfaceFormParser.LengthKey -> SurfaceLength.toString
+          BaseFormParser.HeightKey -> SurfaceHeight.toString,
+          BaseFormParser.LengthKey -> SurfaceLength.toString
         ),
         Surface.rectangle("id", SurfacePosition, SurfaceHeight, SurfaceLength).value.shape
       )

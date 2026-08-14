@@ -1,9 +1,10 @@
 package integrations.monad_core.simulator.presentation.stages
 
-import helpers.MockImage
+import helpers.mocks.MockImage
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.EngineError
 import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.panels.traits.{
   AiModelChatPanelBuilder,
   GameEnginePanelBuilder
@@ -30,14 +31,14 @@ class MainStageTest extends AnyFunSuite with Inside with Matchers with MockFacto
   val stageHeight: DoubleProperty = DoubleProperty(800.0)
 
   def setupCorrectGamePanel(): Unit =
-    (gamePanel.build: () => Either[EngineError, VBox])
+    (gamePanel.build: () => Either[BaseError, VBox])
       .expects()
       .returns(Right(new VBox {
         children = Seq()
       }))
 
   def setupInvalidGamePanel(): Unit =
-    (gamePanel.build: () => Either[EngineError, VBox])
+    (gamePanel.build: () => Either[BaseError, VBox])
       .expects()
       .returns(Left(CannotBuildStage(ImageResourceNotFound(MockImage()), "")))
 
@@ -101,7 +102,7 @@ class MainStageTest extends AnyFunSuite with Inside with Matchers with MockFacto
     val gameBox = new VBox {
       children = Seq()
     }
-    (gamePanel.build: () => Either[EngineError, VBox]).expects().returns(Right(gameBox))
+    (gamePanel.build: () => Either[BaseError, VBox]).expects().returns(Right(gameBox))
     (chatPanel
       .build(_: AiAgent)(using _: ExecutionContext))
       .expects(*, *)

@@ -4,7 +4,7 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest
 import dev.langchain4j.invocation.InvocationContext
 import dev.langchain4j.service.Result
 import dev.langchain4j.service.tool.{ToolExecution, ToolExecutionResult}
-import monad_core.engine.core.Scene
+import monad_core.engine.model.Scene
 import monad_core.simulator.application.engine.EngineControl
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.logging.Logger

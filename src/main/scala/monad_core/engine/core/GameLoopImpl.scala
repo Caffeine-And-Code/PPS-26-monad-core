@@ -2,8 +2,9 @@ package monad_core.engine.core
 
 import monad_core.engine.core.GameLoop.StaticAlpha
 import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
-import monad_core.engine.errors.EngineError
-import monad_core.engine.public_api.Painter
+import monad_core.engine.model.EngineError
+import monad_core.engine.simulator.Painter
+
 import scala.annotation.tailrec
 
 private case class GameLoopImpl(
@@ -28,11 +29,10 @@ private case class GameLoopImpl(
 
   def tick(state: State, currentTime: Long)(using
       physics: PhysicsEngine,
-      render: RenderEngine,
       painter: Painter
   ): Either[EngineError, (State, GameLoop)] =
     if !isRunning || mode == LoopMode.EditMode then
-      render.render(state, StaticAlpha)
+      RendererManager.render(state, StaticAlpha)
       Right((state, this.copy(lastTime = currentTime)))
     else
       val elapsedTime   = currentTime - lastTime
@@ -56,5 +56,5 @@ private case class GameLoopImpl(
         (currentScene, currentAccumulator) = res
         alpha                              = currentAccumulator.toDouble / tickTime.toDouble
       yield
-        render.render(currentScene, alpha)
+        RendererManager.render(currentScene, alpha)
         (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))

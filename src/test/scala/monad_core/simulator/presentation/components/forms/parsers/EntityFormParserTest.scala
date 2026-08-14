@@ -30,12 +30,12 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
 
   def circleFormValues: Map[String, String] =
     buildShapeFormValues(LocatableFormShapes.CircleLabel)
-      + (EntityFormParser.RadiusKey -> EntityRadius.toString)
+      + (BaseFormParser.RadiusKey -> EntityRadius.toString)
 
   def rectangleFormValues: Map[String, String] =
     buildShapeFormValues(LocatableFormShapes.RectangleLabel)
-      + (EntityFormParser.LengthKey -> EntityLength.toString)
-      + (EntityFormParser.HeightKey -> EntityHeight.toString)
+      + (BaseFormParser.LengthKey -> EntityLength.toString)
+      + (BaseFormParser.HeightKey -> EntityHeight.toString)
 
   def buildFormValuesWithOptionalParams(formValues: Map[String, String]): Map[String, String] =
     formValues
@@ -108,9 +108,9 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
   test("If form values doesn't have a Shape specific key the entity cannot be parsed"):
     val cases = Table(
       ("key", "baseFormValue"),
-      (EntityFormParser.RadiusKey, circleFormValues),
-      (EntityFormParser.HeightKey, rectangleFormValues),
-      (EntityFormParser.LengthKey, rectangleFormValues)
+      (BaseFormParser.RadiusKey, circleFormValues),
+      (BaseFormParser.HeightKey, rectangleFormValues),
+      (BaseFormParser.LengthKey, rectangleFormValues)
     )
 
     forAll(cases): (key, baseFormValue) =>
@@ -166,14 +166,14 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       ("shape", "values", "expectedShape"),
       (
         LocatableFormShapes.Circle,
-        Map(EntityFormParser.RadiusKey -> EntityRadius.toString),
+        Map(BaseFormParser.RadiusKey -> EntityRadius.toString),
         Shape2D.circle(EntityRadius).value
       ),
       (
         LocatableFormShapes.Rectangle,
         Map(
-          EntityFormParser.HeightKey -> EntityHeight.toString,
-          EntityFormParser.LengthKey -> EntityLength.toString
+          BaseFormParser.HeightKey -> EntityHeight.toString,
+          BaseFormParser.LengthKey -> EntityLength.toString
         ),
         Shape2D.rectangle(height = EntityHeight, length = EntityLength).value
       )

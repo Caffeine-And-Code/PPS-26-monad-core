@@ -3,7 +3,6 @@ package monad_core.simulator.presentation.chat
 import monad_core.simulator.domain.ai.AgentResponse
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.chat.MessageAuthor.{Assistant, User}
-import monad_core.simulator.presentation.components.{Error, NotificationManager}
 
 object ChatPanelActions:
 
@@ -28,7 +27,6 @@ object ChatPanelActions:
           case Right(answer) =>
             waiting.toReady.addMessage(ChatMessage(answer.response, Assistant))
           case Left(error) =>
-            NotificationManager.show(error.message, Error)
             waiting.toError(error.message)
       case _ => state
 

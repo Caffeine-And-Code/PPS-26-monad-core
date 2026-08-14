@@ -1,7 +1,6 @@
 package monad_core.engine.model
 
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{
   CannotApplyNegativeDamage,
   Entity,

@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Team}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
@@ -9,6 +9,7 @@ import monad_core.simulator.presentation.components.forms.parsers.LocatableFormS
   getEnumValue
 }
 import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
   EntityFormParser,
   LocatableFormShapes
 }
@@ -18,7 +19,7 @@ import scalafx.scene.Node
 final case class SaveEntityFormDialogProps(
     title: String,
     onSubmit: Entity => Unit,
-    onError: EngineError => Unit,
+    onError: BaseError => Unit,
     teams: Seq[Team],
     anchorNode: Option[Node] = None,
     entityToUpdate: Option[Entity] = None
@@ -48,7 +49,7 @@ object SaveEntityFormDialog:
   private[forms] val Shapes =
     Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
-  def show(props: SaveEntityFormDialogProps): Either[EngineError, Unit] = {
+  def show(props: SaveEntityFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.entityToUpdate)
 
     FormDialog.show(
@@ -112,19 +113,19 @@ object SaveEntityFormDialog:
         dependentFields = Map(
           LocatableFormShapes.CircleLabel -> Seq(
             TextFieldSpec(
-              id = EntityFormParser.RadiusKey,
+              id = BaseFormParser.RadiusKey,
               label = "Radius",
               defaultValue = defaultValues.radius
             )
           ),
           LocatableFormShapes.RectangleLabel -> Seq(
             TextFieldSpec(
-              id = EntityFormParser.HeightKey,
+              id = BaseFormParser.HeightKey,
               label = "Width",
               defaultValue = defaultValues.height
             ),
             TextFieldSpec(
-              id = EntityFormParser.LengthKey,
+              id = BaseFormParser.LengthKey,
               label = "Height",
               defaultValue = defaultValues.length
             )

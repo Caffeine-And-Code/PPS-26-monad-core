@@ -1,6 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{Shape2D, Surface, Vector2D}
 import org.scalatest.Inside

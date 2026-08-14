@@ -3,8 +3,10 @@ package integrations.monad_core.simulator.presentation.painters
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
 import monad_core.engine.model.{Entity, Locatable, Surface, Vector2D}
+import monad_core.simulator.application.engine.{DrawCommand, ShapeArchitect}
+import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.presentation.components.ResizableCanvas
-import monad_core.simulator.presentation.painters.Drawer
+import monad_core.simulator.presentation.painters.ShapePainter
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -13,13 +15,15 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.paint.Color
 
-class DrawerTest
+class ShapePainterTest
     extends AnyFunSuite
     with ScalaFxInit
     with MockFactory
     with Matchers
     with SnapshotTesting
     with BeforeAndAfterEach:
+  given ShapeArchitect = PaintArchitect
+
   val BaseCircleEntity: Entity = Entity.circle("EntityCircleId", Vector2D(400, 400), 50).value
 
   val BaseRectangleEntity: Entity =
@@ -35,50 +39,56 @@ class DrawerTest
   canvas.height = 800.0
 
   override def beforeEach(): Unit =
-    Drawer.getBuffer.clear()
+    PaintArchitect.drainBuffer()
+
+  override def afterEach(): Unit =
+    PaintArchitect.drainBuffer()
 
   def enlistCircle(drawable: Locatable): Unit =
-    Drawer.drawCircle(drawable, Color.Red)
+    PaintArchitect.drawCircle(drawable, Color.Red)
 
   def enlistRectangle(drawable: Locatable): Unit =
-    Drawer.drawRectangle(drawable, Color.Red)
+    PaintArchitect.drawRectangle(drawable, Color.Red)
 
-  test("flush effectively clears the buffer"):
+  test("paint effectively drains the buffer from ShapeArchitect"):
     enlistCircle(BaseCircleEntity)
     enlistRectangle(BaseRectangleEntity)
     enlistCircle(BaseCircleSurface)
     enlistRectangle(BaseRectangleSurface)
 
-    Drawer.flush(canvas.graphicsContext2D)
+    ShapePainter.paint(canvas.graphicsContext2D)
 
-    Drawer.getBuffer.toList.length should be(0)
+    PaintArchitect.drainBuffer().length should be(0)
 
-  test("flush draws the Circle Commands that contains a Circle Entity"):
+  test("paint draws the Circle Commands that contains a Circle Entity"):
     enlistCircle(BaseCircleEntity)
 
     onFxThread {
-      Drawer.flush(canvas.graphicsContext2D)
+      ShapePainter.paint(canvas.graphicsContext2D)
     }
 
     assertMatchesVisualSnapshot("circle_entity_flush_result", canvas, maxDiffPercentage = 2.0)
 
-  test("flush draws the Rectangle Commands that contains a Rectangle Entity"):
+  test("paint draws the Rectangle Commands that contains a Rectangle Entity"):
     enlistRectangle(BaseRectangleEntity)
 
     onFxThread {
-      Drawer.flush(canvas.graphicsContext2D)
+      ShapePainter.paint(canvas.graphicsContext2D)
     }
 
     assertMatchesVisualSnapshot("rectangle_entity_flush_result", canvas, maxDiffPercentage = 3.0)
 
   test(
-    "flush draws the Circle Commands that contains a Circle Entity with the corresponding Team Color"
+    "paint draws the Circle Commands that contains a Circle Entity with the corresponding Team Color"
   ):
     val entityWithATeam = BaseCircleEntity.withTeamId("TestTeam").value
-    Drawer.drawCircle(entityWithATeam, Drawer.teamIdColorRelation(entityWithATeam.teamId.get))
+    PaintArchitect.drawCircle(
+      entityWithATeam,
+      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get)
+    )
 
     onFxThread {
-      Drawer.flush(canvas.graphicsContext2D)
+      ShapePainter.paint(canvas.graphicsContext2D)
     }
 
     assertMatchesVisualSnapshot(
@@ -88,13 +98,16 @@ class DrawerTest
     )
 
   test(
-    "flush draws the Rectangle Commands that contains a Rectangle Entity with the corresponding Team Color"
+    "paint draws the Rectangle Commands that contains a Rectangle Entity with the corresponding Team Color"
   ):
     val entityWithATeam = BaseRectangleEntity.withTeamId("TestTeam").value
-    Drawer.drawRectangle(entityWithATeam, Drawer.teamIdColorRelation(entityWithATeam.teamId.get))
+    PaintArchitect.drawRectangle(
+      entityWithATeam,
+      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get)
+    )
 
     onFxThread {
-      Drawer.flush(canvas.graphicsContext2D)
+      ShapePainter.paint(canvas.graphicsContext2D)
     }
 
     assertMatchesVisualSnapshot(
@@ -103,20 +116,45 @@ class DrawerTest
       maxDiffPercentage = 3.0
     )
 
-  test("flush draws the Circle Commands that contains a Circle Surface"):
+  test("paint draws the Circle Commands that contains a Circle Surface"):
     enlistCircle(BaseCircleSurface)
 
     onFxThread {
-      Drawer.flush(canvas.graphicsContext2D)
+      ShapePainter.paint(canvas.graphicsContext2D)
     }
 
     assertMatchesVisualSnapshot("circle_surface_flush_result", canvas, maxDiffPercentage = 2.0)
 
-  test("flush draws the Rectangle Commands that contains a Rectangle Surface"):
+  test("paint draws the Rectangle Commands that contains a Rectangle Surface"):
     enlistRectangle(BaseRectangleSurface)
 
     onFxThread {
-      Drawer.flush(canvas.graphicsContext2D)
+      ShapePainter.paint(canvas.graphicsContext2D)
     }
 
     assertMatchesVisualSnapshot("rectangle_surface_flush_result", canvas, maxDiffPercentage = 3.0)
+
+  test("ShapePainter.paint calls drainBuffer on ShapeArchitect and processes commands"):
+    val canvas = Canvas(800, 800)
+    val gc     = canvas.graphicsContext2D
+
+    given mockArchitect: ShapeArchitect = mock[ShapeArchitect]
+
+    val expectedCommands = List(
+      DrawCommand.Circle(100.0, 100.0, 25.0, Color.Red),
+      DrawCommand.Rectangle(200.0, 200.0, 50.0, 80.0, Color.Blue)
+    )
+
+    (() => mockArchitect.drainBuffer()).expects().returns(expectedCommands).once()
+
+    ShapePainter.paint(gc)
+
+  test("ShapePainter.paint gracefully handles an empty buffer"):
+    val canvas = Canvas(800, 800)
+    val gc     = canvas.graphicsContext2D
+
+    given mockArchitect: ShapeArchitect = mock[ShapeArchitect]
+
+    (() => mockArchitect.drainBuffer()).expects().returns(Nil).once()
+
+    ShapePainter.paint(gc)

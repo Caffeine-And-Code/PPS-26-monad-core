@@ -1,11 +1,13 @@
 package integrations.monad_core.simulator.presentation.panels
 
-import helpers.MockImageConfig
+import helpers.mocks.MockImageConfig
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import javafx.scene.control.Button
 import javafx.scene.layout.HBox
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import org.scalamock.scalatest.MockFactory
@@ -16,6 +18,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import scalafx.Includes.{jfxButton2sfx, jfxHBox2sfx}
 import scalafx.beans.property.BooleanProperty
+import scalafx.scene.layout.VBox
 
 class GameEngineModePanelTest
     extends AnyFunSuite
@@ -23,14 +26,16 @@ class GameEngineModePanelTest
     with Matchers
     with MockFactory
     with ScalaFxInit:
-  given mockWorld: World = mock[World]
+  given mockWorld: World                     = mock[World]
+  given mockEngineRuntime: GameEngineRuntime = mock[GameEngineRuntime]
 
   val ToolsButtonIndex   = 0
   val SpacingRegionIndex = 1
   val ModeButtonIndex    = 2
   val StopButtonIndex    = 3
 
-  def freshSceneCanBeUpdated: BooleanProperty    = BooleanProperty(false)
+  def freshSceneCanBeUpdated: BooleanProperty = BooleanProperty(false)
+
   def freshSceneCannotBeUpdated: BooleanProperty = BooleanProperty(true)
 
   test("A GameEngineModePanel can be created"):
@@ -38,7 +43,7 @@ class GameEngineModePanelTest
     val onModeChange      = mockFunction[Boolean, Unit]
     val onStopClick       = mockFunction[Unit]
 
-    val builderResult = GameEngineModePanel.build(
+    val builderResult: Either[BaseError, VBox] = GameEngineModePanel.build(
       imageConfigRecord,
       onModeChange,
       onStopClick,
@@ -105,10 +110,9 @@ class GameEngineModePanelTest
       )
     )
 
-    inSequence {
+    inSequence:
       onModeChange.expects(true).once()
       onModeChange.expects(false).once()
-    }
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -196,10 +200,10 @@ class GameEngineModePanelTest
       )
     )
 
-    inSequence {
+    inSequence:
       onModeChange.expects(true)
       onModeChange.expects(false)
-    }
+
     onStopClick.expects().never()
 
     inside(builderResult.children.head):
@@ -224,11 +228,11 @@ class GameEngineModePanelTest
       )
     )
 
-    inSequence {
+    inSequence:
       onModeChange.expects(true)
       onModeChange.expects(false)
       onModeChange.expects(true)
-    }
+
     onStopClick.expects()
 
     inside(builderResult.children.head):
