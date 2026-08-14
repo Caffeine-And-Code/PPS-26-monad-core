@@ -39,9 +39,14 @@ build/
 
 ### VS Code ###
 .vscode/
+.metals/
 
 ### Mac OS ###
 .DS_Store
 
 ### Scala ###
 .bsp/
+
+### Quarkdown ### 
+**/output/**
+**/quarkdown-output/**

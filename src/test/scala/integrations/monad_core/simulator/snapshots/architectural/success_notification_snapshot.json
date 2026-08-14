@@ -1,0 +1,11 @@
+{
+  "type": "StackPane",
+  "styleClass": ["root"],
+  "children": [
+    {
+      "type": "Label",
+      "styleClass": ["label"],
+      "text": "Positioned Success message"
+    }
+  ]
+}

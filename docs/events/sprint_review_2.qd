@@ -1,0 +1,44 @@
+### Sprint Review 2
+
+**Data**: 20/07/2026
+
+**Durata**: 1 ora
+
+#### Incremento prodotto
+
+Durante lo sprint sono stati completati o evoluti i seguenti elementi:
+
+* Completamento della collision detection.
+* Progettazione e implementazione del sistema degli eventi.
+* Scelta del framework grafico e avvio dell'integrazione della componente di visualizzazione della scena tramite *ScalaFX*.
+* Configurazione iniziale dell'ambiente di testing per la componente grafica e introduzione dei test unitari e di integrazione.
+* Avvio dello sviluppo del pannello di rendering della scena.
+* Esplorazione e integrazione di un agente LLM tramite *LangChain4j*.
+* Refactoring del Game Loop e revisione dell'architettura per migliorare la gestione degli aggiornamenti della simulazione.
+* Progettazione e implementazione del Physics Engine, con revisione della precedente gestione della fisica.
+
+#### Stato dei task
+
+| Area | Responsabile | Stato |
+|-|-|-|
+| Collision Detection | Senni | Completata |
+| Comunicazione con agente LLM | Senni | In sviluppo (avanzato) |
+| Sistema degli eventi | Fattori | In attesa di Gestione della fisica |
+| Visualizzazione della scena | Fattori | In sviluppo |
+| Gestione della fisica | Tonelli | In sviluppo |
+| Gestione modalità Edit/Simulation | Tonelli | In parte inizializzato da Fattori |
+
+Tutto ciò che non è stato completato durante lo Sprint 2 viene riportato nello Sprint 3.
+
+#### Problemi riscontrati
+
+Durante lo sprint, le principali difficoltà sono state legate all'integrazione di nuove tecnologie all'interno del progetto. L'introduzione di ScalaFX ha richiesto uno studio iniziale del framework e un approfondimento sulle modalità corrette di testing della GUI. I Contemporaneamente, l'integrazione di LangChain4j ha richiesto un approfondimento sulla struttura degli agenti e sulle modalità di comunicazione con un LLM.
+
+Sono inoltre emerse alcune necessità di refactoring dovute alla crescita del progetto e alla necessità di mantenere separati i vari livelli architetturali.
+
+#### Backlog
+
+- Gestione della fisica (completata parzialmente)
+- Gestione modalità Edit/Simulation
+- Creazione entità dalla GUI (valutata ma non assegnata durante lo sprint precedente)
+- Modifica delle entità (valutata ma non assegnata durante lo sprint precedente)

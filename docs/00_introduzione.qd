@@ -1,3 +1,9 @@
 # Intruduzione
 
-Introduzione
+Il presente progetto nasce con l'obiettivo di progettare e sviluppare **MonadCore2D**, un game engine bidimensionale minimale realizzato in Scala. Lo scopo principale è fornire un ambiente modulare e facilmente estendibile per la creazione e la simulazione di semplici scenari fisici e piccoli videogiochi 2D.
+
+L'elemento centrale del progetto è il **game engine**, responsabile della gestione del ciclo di simulazione, delle entità presenti nella scena e delle interazioni fisiche tra esse. Le entità saranno rappresentate da primitive geometriche elementari, quali cerchi e quadrati, suddivise in due categorie principali: **solidi**, soggetti alle forze e alle collisioni, e **superfici**, capaci di applicare effetti e forze agli elementi solidi. Il sistema includerà inoltre meccanismi per la gestione degli eventi, il rilevamento delle collisioni e il rendering della scena.
+
+A supporto del motore verrà sviluppata una GUI composta da due pannelli affiancati. Il primo pannello sarà dedicato all'interazione con un agente basato su Large Language Model (LLM), che potrà operare sul game engine tramite un insieme di *tools* opportunamente esposti. Attraverso il linguaggio naturale, l'utente potrà quindi sfruttare tutte le funzioni disponibili. Il secondo pannello sarà invece dedicato alla visualizzazione della scena e alla modifica diretta degli elementi presenti al suo interno.
+
+Particolare attenzione sarà dedicata alla qualità del software e alle attività di verifica e validazione. Oltre all'implementazione delle funzionalità richieste, il progetto prevede la realizzazione di una strategia di testing articolata su più livelli, comprendente **unit test** e **integration test**, con l'obiettivo di garantire correttezza, affidabilità e manutenibilità del sistema. Tra gli aspetti di maggiore interesse vi è inoltre la sperimentazione di metodologie di test applicate all'integrazione con l'agente LLM, nonché l'eventuale esecuzione di test di carico e robustezza.

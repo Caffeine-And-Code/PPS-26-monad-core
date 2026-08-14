@@ -1,0 +1,33 @@
+### Report Daily Scrum Sprint 1
+
+**Data**: 24/06/2026
+
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|-|-|
+|Fattori|-|-|
+|Tonelli|-|-|
+
+**Data**: 25/06/2026
+
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|Implementazione entity circle e rectangle|Quali campi hanno le entity?|
+|Fattori|Sviluppo di Github Actions, branch policies|Come testare le actions delle release|
+|Tonelli|Inizializzazione del game loop|-|
+
+**Data**: 26/06/2026
+
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|Entità di dominio|Le entità possono avere un angolazione ed una velocità angolare|
+|Fattori|Ingegnerizzazione della scena|-|
+|Tonelli|Completamento game loop|Dimenticanza nel controllo dei tempi del game loop|
+
+**Data**: 27/06/2026
+
+| Membro | Riepilogo giorno precedente | Problemi riscontrati |
+|-|-|-|
+|Senni|Collision detection|-|
+|Fattori|Conclusione della scena|-|
+|Tonelli|Finalizzazione Game loop|-|

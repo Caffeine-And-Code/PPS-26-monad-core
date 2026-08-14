@@ -1,0 +1,46 @@
+### Sprint Review 1
+
+**Data**: 06/07/2026
+
+**Durata**: 1 ora
+
+#### Incremento prodotto
+
+Durante lo sprint sono stati completati i seguenti elementi:
+
+- Configurazione della pipeline CI/CD con GitHub Actions, comprensiva di controlli su *development*, gestione del rilascio su *main*, generazione del fat JAR, pubblicazione della documentazione e creazione della release.
+- Implementazione della gestione della scena, con struttura dati dedicata, creazione della scena, aggiunta e rimozione di entità, lookup per ID e aggancio al tick del game loop.
+- Implementazione della gestione e della progettazione delle entità, supporto a `Circle` e `Square`, proprietà, creazione e modifica.
+- Implementazione del game loop, con ciclo principale della simulazione, gestione del tick, avvio e arresto dell'update e configurazione del tick-time.
+- Prima implementazione della collision detection, limitata al comportamento *is inside*.
+- Prima implementazione della fisica, con introduzione della struttura `Vector2D`.
+- Aggiunta della gestione del team e di alcune utility di supporto.
+- Avvio dell'implementazione della gestione degli eventi
+
+#### Stato dei task
+
+| Area | Responsabile | Stato |
+|-|-|-|
+| Gestione della Scena | Fattori | Completata |
+| CI/CD Pipeline | Fattori | Completata |
+| Gestione delle entità | Senni | Completata |
+| Collision Detection | Senni | Parzialmente completata |
+| Gestione del Game Loop | Tonelli | Completata |
+| Gestione della fisica | Tonelli | Parzialmente completata |
+| Sistema degli eventi | Fattori | Inizializzata |
+
+Tutto ciò che non è stato completato durante lo Sprint 1 viene riportato nello Sprint 2. Visto un anticipo rispetto ai pronostici, Fattori inizia l'implementazione del sistema degli eventi.
+
+#### Problemi riscontrati
+
+Durante lo sprint sono stati sottostimati i tempi necessari a prendere confidenza con Scala e con il paradigma di programmazione funzionale. Inoltre, una parte significativa del tempo è stata investita nel refactoring del codice, necessario per migliorare la qualità della base implementativa e renderla più adatta allo sviluppo delle funzionalità successive. Ulteriori problemi di minore importanza relativi all'implementazione sono stati risolti a seguito dei daily scrum realizzati.
+
+#### Backlog
+
+- Collision Detection:
+  - implementare il comportamento *is colliding with*
+  - completare il sistema di collision detection
+  - implementare collisioni cerchio-cerchio, quadrato-quadrato e miste
+  - implementare le reazioni alle collisioni
+- Gestione della fisica:
+  - applicare forze esterne composte e attriti

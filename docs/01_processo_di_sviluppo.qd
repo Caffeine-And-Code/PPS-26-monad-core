@@ -1,3 +1,104 @@
-# Processo di sviluppo
+# Processo di sviluppo adottato
 
-Processo di sviluppo
+Per il progetto è stato adottato un modello di sviluppo **AGILE**, caratterizzato da un approccio **incrementale e iterativo**.  
+Il processo di sviluppo è organizzato in **Sprint settimanali**, con l'obiettivo di produrre incrementi progressivi del prodotto e consentire un continuo adattamento delle attività sulla base dello stato di avanzamento del progetto.
+
+Per la gestione del codice sorgente è stato adottato il modello di branching **Git Flow**, che consente di strutturare lo sviluppo attraverso rami dedicati alle diverse attività.  
+Ogni nuova funzionalità viene implementata all'interno di un branch separato e, una volta completata, viene integrata nel ramo *development* tramite una procedura di revisione del codice. Al raggiungimento di una versione stabile del progetto, le modifiche presenti nel ramo *development* vengono propagate sul ramo *main*, che rappresenta la versione rilasciata del software.  
+Questo approccio permette di mantenere una gestione ordinata delle modifiche, facilitare la collaborazione tra i membri del team e garantire un maggiore controllo sulle versioni del progetto.
+
+## Meeting e interazioni pianificate
+
+Il team organizza incontri periodici (per quanto possibile, tutti in presenza) finalizzati alla pianificazione, al coordinamento e alla revisione delle attività.
+
+### Sprint Planning
+
+Svolti all'inizio di ogni Sprint, questi incontri sono dedicati alla definizione degli obiettivi dello Sprint stesso e alla pianificazione del lavoro da svolgere.
+
+Durante questa fase vengono svolte le seguenti attività:
+
+- Identificazione degli incrementi di prodotto attesi al termine dello Sprint;
+- Analisi e raffinamento del **Product Backlog**;
+- Definizione dei **Task**, intesi come unità operative necessarie al raggiungimento dei requisiti individuati;
+- Assegnazione dei Task ai membri del team, sulla base delle competenze e del carico di lavoro disponibile.
+
+Lo Sprint Planning ha una durata massima di 2 ore.
+
+### Daily Scrum
+
+Incontri quotidiani svolti prima dell'inizio delle attività di sviluppo giornaliere, con lo scopo di monitorare l'avanzamento del progetto, coordinare il lavoro e garantire l'allineamento all'interno del team.
+
+Ogni membro comunica:
+
+- Le attività completate durante la giornata precedente;
+- Le attività previste per la giornata corrente;
+- Eventuali impedimenti o problematiche riscontrate, individuando possibili soluzioni con il supporto degli altri membri (possibile utilizzo di **Pair Programming**).
+
+La durata massima prevista per queste riunioni è di 30 minuti (indicativamente 10 per componente).
+
+### Sprint Review
+
+Riunioni effettuate al termine di ogni Sprint, finalizzate alla valutazione dell'incremento sviluppato, alla verifica dello stato complessivo del progetto e al confronto sui metodi del processo di sviluppo.
+
+Durante questi incontri vengono analizzati:
+
+- Incremento prodotto durante lo Sprint;
+- Eventuali aggiornamenti necessari al Product Backlog;
+- Possibili ritardi rispetto alla pianificazione iniziale;
+- Attività e obiettivi da considerare per lo Sprint successivo;
+- L'efficacia dei meeting e degli strumenti utilizzati durante lo Sprint;
+- Eventuali problematiche emerse durante il processo di sviluppo;
+- Azioni correttive da introdurre nello Sprint successivo.
+
+La durata massima di una Sprint Review è di 1 ora.
+
+## Modalità di divisione e gestione dei Task
+
+La suddivisione dei Task viene definita inizialmente durante lo Sprint Planning.  
+Tuttavia, seguendo un approccio AGILE, la pianificazione rimane flessibile e può essere modificata durante lo Sprint in base alle necessità emerse.
+
+Durante i Daily Scrum il team può ridefinire le priorità, aggiungere nuovi Task, modificare quelli esistenti o rimuovere attività non più necessarie. Di conseguenza, anche l'assegnazione dei Task ai membri del team può essere aggiornata in itinere.
+
+### Valutazione dei Task
+
+Nel corso del progetto è stato adottato un sistema di **User Story** per descrivere le funzionalità del sistema dal punto di vista dell'utente, seguendo il formato "Come [ruolo], voglio [funzionalità], così da [beneficio]". Questo approccio ha permesso di mantenere il focus sul valore prodotto da ogni incremento di sviluppo.
+
+Ciascuna User Story è stata scomposta in Task, considerate come attività tecniche atomiche e concrete. Ogni Task rappresenta un'unità di lavoro indipendente, assegnabile a un membro del team e verificabile al completamento, permettendo di tracciare il progresso in modo preciso e di parallelizzare il lavoro dove possibile.
+
+La complessità di ogni Task è stata valutata tramite **Story Points**, assegnati seguendo la sequenza di Fibonacci (1, 2, 3, 5, 8, 13, 21, ...). La natura non lineare della sequenza ci ha consentito di distinguere con naturalezza Task più semplici da quelli più complessi, senza ricorrere a false precisioni: a Task di complessità simile corrispondono valori vicini, mentre Task molto più articolati ricevono un salto netto di valore, riflettendo l'incertezza crescente.
+
+## Modalità di revisione dei Task
+
+Ogni Task viene sottoposto a diverse attività di revisione durante il suo ciclo di sviluppo, con l'obiettivo di garantire la qualità del prodotto finale e ridurre la presenza di errori o debito tecnico.
+
+Le principali modalità di revisione adottate sono:
+
+### Code Review
+
+Al termine dello sviluppo di una funzionalità, il codice prodotto viene sottoposto a **code review** prima di essere considerato completato.
+
+Durante questa fase, l'autore delle modifiche invia al resto del team una **Pull request** sulla repository **Github** del progetto. Uno o più degli altri membri analizzano l'implementazione realizzata, individuando possibili miglioramenti, refactoring o problemi che potrebbero compromettere la qualità del codice. Vengono quindi forniti all'autore eventuali commenti e suggerimenti volti alla correzione delle problematiche riscontrate e al miglioramento dell'implementazione.
+
+### Daily Scrum
+
+Durante questi incontri il team può valutare le scelte implementative, discutere eventuali problematiche e ridefinire priorità e modalità di completamento dei Task.
+
+Per attività particolarmente complesse o delicate, come già menzionato, il team può adottare la pratica del Pair Programming, lavorando contemporaneamente in coppia o in piccoli gruppi sulla stessa funzionalità.
+
+Questa modalità permette di ridurre il rischio di errori, condividere conoscenze tra i membri del team e migliorare la qualità delle decisioni progettuali, soprattutto nelle fasi iniziali caratterizzate da maggiore incertezza.
+
+## Strumenti di test, build e continuous integration
+
+A supporto del processo AGILE vengono utilizzati strumenti di automazione con l'obiettivo di migliorare l'efficienza dello sviluppo, garantire maggiore affidabilità del codice e permettere al team di concentrarsi sulle attività di implementazione.
+
+Gli strumenti adottati sono:
+
+- **SBT** come strumento di build automation;
+- **ScalaTest** per la scrittura e l'esecuzione dei test automatizzati;
+- **ScalaMock** per la simulazione delle dipendenze esterne durante i test e il supporto alla realizzazione degli stessi;
+- **Github** come piattaforma per la **continuous integration**;
+    - **Github Actions** come strumento di verifica del progetto ad ogni modifica effettuata del codice;
+
+### Approccio allo sviluppo
+
+Per la realizzazione del progetto viene adottato l'approccio **TDD (Test-Driven Development)**. È quindi prevista la scrittura dei test automatizzati prima dell'effettiva implementazione del codice di produzione.
