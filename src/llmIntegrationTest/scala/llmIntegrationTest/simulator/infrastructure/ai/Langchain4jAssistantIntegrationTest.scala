@@ -15,7 +15,6 @@ import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
 import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
 import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistant, Langchain4jOllamaConfig}
-
 import scala.compiletime.uninitialized
 
 class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with MockFactory with BeforeAndAfterEach:
@@ -33,7 +32,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
 
   val ollamaConfig = Langchain4jOllamaConfig(
     url = "http://localhost:11434",
-    modelName = "qwen3.5:4b"
+    modelName = "gemma4:e4b"
   )
 
   val memoryId:ConversationId = ConversationId.from("chat1").value
@@ -126,8 +125,8 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val secondResult = assistant.chat(memoryId, secondMessage)
 
     firstResult should notExecuteTools
-    secondResult should (beJudgedBy(judge) withCriteria 
-      "should tell that circle is the preferred shape")
+    secondResult judgedBy judge shouldSatisfy
+      "should tell that circle is the preferred shape"
     secondResult should notExecuteTools
 
   test("Asks for clarification when required information is missing"):
@@ -138,8 +137,8 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val result = assistant.chat(memoryId, userMessage)
 
     result should notExecuteTools
-    result should (beJudgedBy(judgeAssistant) withCriteria
-      "The assistant should ask for the missing radius without inventing it.")
+    result judgedBy judgeAssistant shouldSatisfy
+      "The assistant should ask for the missing radius without inventing it."
 
   test("Cannot create entities while engine is running"):
     val userMessage = "Create a circle entity with id e1 with center in 20,20 and a radius of 50, his weight is 70, and a speed of 20,35"
@@ -152,8 +151,8 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val result = assistant.chat(memoryId, userMessage)
 
     val judgeCriteria =
-      "The assistant should say that the entity was not created because the engine is running."
-    result should (beJudgedBy(judgeAssistant) withCriteria judgeCriteria)
+      "The assistant should say that the action can not be done because the engine is running."
+    result judgedBy judgeAssistant shouldSatisfy judgeCriteria
     result should onlyExecuteTool("createCircleEntity")
 
   test("Assistant can talk only about The application tools and geometry, not on any other things"):
@@ -164,7 +163,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val result = assistant.chat(memoryId, userMessage)
 
     val judgeCriteria = "Assistant should refuse to answer user question cause it can talk about his allowed topics"
-    result should (beJudgedBy(judgeAssistant) withCriteria judgeCriteria)
+    result judgedBy judgeAssistant shouldSatisfy judgeCriteria
     result should notExecuteTools
 
   test("Assistant should response with same languages as user question"):
@@ -175,5 +174,5 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val result = assistant.chat(memoryId, userMessage)
 
     val judgeCriteria = "Assistant should response in same language as user question, Italian in this case"
-    result should (beJudgedBy(judgeAssistant) withCriteria judgeCriteria)
+    result judgedBy judgeAssistant shouldSatisfy judgeCriteria
     result should notExecuteTools
