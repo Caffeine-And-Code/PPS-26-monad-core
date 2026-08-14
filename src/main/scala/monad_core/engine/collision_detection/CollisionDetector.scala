@@ -13,9 +13,9 @@ trait CollisionDetector:
 object CollisionDetector:
 
   given fromGeometry(using
-                     collidesInstance: Collides[Shape2D, Shape2D],
-                     containsInstance: Contains[Shape2D]
-                    ): CollisionDetector with
+      collidesInstance: Collides[Shape2D, Shape2D],
+      containsInstance: Contains[Shape2D]
+  ): CollisionDetector with
 
     override def collision(first: Locatable, second: Locatable): Option[Collision] =
       collidesInstance.checkCollision(first.placed, second.placed)

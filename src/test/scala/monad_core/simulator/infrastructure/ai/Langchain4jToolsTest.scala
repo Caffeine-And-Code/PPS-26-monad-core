@@ -4,7 +4,12 @@ import monad_core.engine.core.Scene
 import monad_core.engine.model.{Entity, LocatableId, Surface, Team, TeamId, Vector2D}
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.*
-import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
+import monad_core.simulator.application.engine.world.{
+  SaveEntityCommand,
+  SaveSurfaceCommand,
+  SaveTeamCommand,
+  World
+}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.EitherValues.*
@@ -13,18 +18,22 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.compiletime.uninitialized
 
-class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory with BeforeAndAfterEach:
+class Langchain4jToolsTest
+    extends AnyFunSuite
+    with Matchers
+    with MockFactory
+    with BeforeAndAfterEach:
 
-  private val entityId = "entity"
-  private val surfaceId = "surface"
-  private val posX = 2.0
-  private val posY = 6.0
-  private val radius = 3.0
-  private val height = 4.0
+  private val entityId        = "entity"
+  private val surfaceId       = "surface"
+  private val posX            = 2.0
+  private val posY            = 6.0
+  private val radius          = 3.0
+  private val height          = 4.0
   private val rectangleLength = 5.0
-  private val invalidId = ""
+  private val invalidId       = ""
 
-  private var world: World = uninitialized
+  private var world: World                         = uninitialized
   private var gameEngineRuntime: GameEngineRuntime = uninitialized
 
   override def beforeEach(): Unit =
@@ -44,7 +53,8 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("list all entities in the world returns the list"):
     val circle = Entity.circle("circle", Vector2D(posX, posY), radius).value
-    val rectangle = Entity.rectangle("rectangle", Vector2D(posX, posY), height, rectangleLength).value
+    val rectangle =
+      Entity.rectangle("rectangle", Vector2D(posX, posY), height, rectangleLength).value
     (() => world.getAllEntities).expects().returning(List(circle, rectangle)).once()
 
     val result = tools.getAllEntities
@@ -108,10 +118,11 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     val weight = 12
     val speedX = 1.5
     val speedY = -2.5
-    val entity = Entity.circle(entityId, Vector2D(posX, posY), radius)
+    val entity = Entity
+      .circle(entityId, Vector2D(posX, posY), radius)
       .flatMap(_.withTeamId(teamId))
       .flatMap(_.withWeight(weight))
-      .flatMap(_.withSpeed(Vector2D(speedX, speedY)))
+      .map(_.withSpeed(Vector2D(speedX, speedY)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))

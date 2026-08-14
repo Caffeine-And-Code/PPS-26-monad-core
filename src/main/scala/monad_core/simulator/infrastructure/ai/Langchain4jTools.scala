@@ -9,9 +9,9 @@ import monad_core.simulator.infrastructure.ai.Langchain4jToolResponse.*
 
 case class IncompleteEntitySpeed() extends EngineError("Both speedX and speedY must be provided together")
 
-case class Langchain4jTools()(
-  using world: World,
-  gameEngineRuntime: EngineControl
+case class Langchain4jTools()(using
+    world: World,
+    gameEngineRuntime: GameEngineRuntime
 ):
 
   @Tool(Array("Lists all entities in the world."))

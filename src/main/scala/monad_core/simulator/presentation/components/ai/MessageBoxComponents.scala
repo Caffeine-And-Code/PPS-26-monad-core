@@ -11,5 +11,3 @@ object MessageComponents:
       spacing = 20
       padding = Insets(0, 10, 20, 0)
     }
-
-

@@ -19,9 +19,9 @@ object ShapeContainment:
         container.center.x + container.shape.halfLength
       ).contains(point.x)
         && Interval(
-        container.center.y - container.shape.halfHeight,
-        container.center.y + container.shape.halfHeight
-      ).contains(point.y)
+          container.center.y - container.shape.halfHeight,
+          container.center.y + container.shape.halfHeight
+        ).contains(point.y)
 
   given shapeContainsPoint: Contains[Shape2D] with
 

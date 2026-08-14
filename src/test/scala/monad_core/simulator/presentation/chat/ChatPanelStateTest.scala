@@ -5,13 +5,15 @@ import org.scalatest.matchers.should.Matchers
 
 class ChatPanelStateTest extends AnyFunSuite with Matchers:
 
-  val emptyPrompt = ""
-  val validPrompt = "Hi Jimmy how are you?"
+  val emptyPrompt                     = ""
+  val validPrompt                     = "Hi Jimmy how are you?"
   val emptyMessages: Seq[ChatMessage] = Seq.empty
+
   val validMessages: Seq[ChatMessage] = Seq(
     ChatMessage(validPrompt, MessageAuthor.User),
     ChatMessage("Jimmy's response", MessageAuthor.Assistant)
   )
+
   val validError = "error"
 
   test("initial chat state is ready with no messages and an empty prompt"):
@@ -74,47 +76,47 @@ class ChatPanelStateTest extends AnyFunSuite with Matchers:
     result.prompt shouldBe validPrompt
 
   test("calling toWaiting converts the state in waiting state"):
-    val ready = ChatPanelState.Ready(emptyMessages, emptyPrompt)
+    val ready   = ChatPanelState.Ready(emptyMessages, emptyPrompt)
     val waiting = ChatPanelState.Waiting(emptyMessages)
-    val error = ChatPanelState.Error(emptyMessages, emptyPrompt, validError)
+    val error   = ChatPanelState.Error(emptyMessages, emptyPrompt, validError)
 
-    val readyResult = ready.toWaiting
+    val readyResult   = ready.toWaiting
     val waitingResult = waiting.toWaiting
-    val errorResult = error.toWaiting
+    val errorResult   = error.toWaiting
 
     readyResult shouldBe waiting
     waitingResult shouldBe waiting
     errorResult shouldBe waiting
 
   test("calling toReady converts the state in ready state"):
-    val ready = ChatPanelState.Ready(emptyMessages, validPrompt)
+    val ready   = ChatPanelState.Ready(emptyMessages, validPrompt)
     val waiting = ChatPanelState.Waiting(emptyMessages)
-    val error = ChatPanelState.Error(emptyMessages, validPrompt, validError)
+    val error   = ChatPanelState.Error(emptyMessages, validPrompt, validError)
 
-    val readyResult = ready.toReady
+    val readyResult   = ready.toReady
     val waitingResult = waiting.toReady
-    val errorResult = error.toReady
+    val errorResult   = error.toReady
 
     readyResult shouldBe ready
     waitingResult shouldBe ChatPanelState.Ready(emptyMessages, emptyPrompt)
     errorResult shouldBe ready
 
   test("calling toError converts the state in error state"):
-    val ready = ChatPanelState.Ready(emptyMessages, emptyPrompt)
+    val ready   = ChatPanelState.Ready(emptyMessages, emptyPrompt)
     val waiting = ChatPanelState.Waiting(emptyMessages)
-    val error = ChatPanelState.Error(emptyMessages, emptyPrompt, validError)
+    val error   = ChatPanelState.Error(emptyMessages, emptyPrompt, validError)
 
-    val readyResult = ready.toError(validError)
+    val readyResult   = ready.toError(validError)
     val waitingResult = waiting.toError(validError)
-    val errorResult = error.toError(validError)
+    val errorResult   = error.toError(validError)
 
     readyResult shouldBe error
     waitingResult shouldBe error
     errorResult shouldBe error
 
   test("on ready state, calling addMessage adds a message"):
-    val message = ChatMessage(validPrompt, MessageAuthor.User)
-    val ready = ChatPanelState.Ready(emptyMessages, emptyPrompt)
+    val message  = ChatMessage(validPrompt, MessageAuthor.User)
+    val ready    = ChatPanelState.Ready(emptyMessages, emptyPrompt)
     val expected = ChatPanelState.Ready(Seq(message), emptyPrompt)
 
     val result = ready.addMessage(message)
@@ -122,8 +124,8 @@ class ChatPanelStateTest extends AnyFunSuite with Matchers:
     result shouldBe expected
 
   test("on waiting state, calling addMessage adds a message"):
-    val message = ChatMessage(validPrompt, MessageAuthor.User)
-    val waiting = ChatPanelState.Waiting(emptyMessages)
+    val message  = ChatMessage(validPrompt, MessageAuthor.User)
+    val waiting  = ChatPanelState.Waiting(emptyMessages)
     val expected = ChatPanelState.Waiting(Seq(message))
 
     val result = waiting.addMessage(message)
@@ -131,8 +133,8 @@ class ChatPanelStateTest extends AnyFunSuite with Matchers:
     result shouldBe expected
 
   test("on error state, calling addMessage adds a message"):
-    val message = ChatMessage(validPrompt, MessageAuthor.User)
-    val error = ChatPanelState.Error(emptyMessages, emptyPrompt, validError)
+    val message  = ChatMessage(validPrompt, MessageAuthor.User)
+    val error    = ChatPanelState.Error(emptyMessages, emptyPrompt, validError)
     val expected = ChatPanelState.Error(Seq(message), emptyPrompt, validError)
 
     val result = error.addMessage(message)

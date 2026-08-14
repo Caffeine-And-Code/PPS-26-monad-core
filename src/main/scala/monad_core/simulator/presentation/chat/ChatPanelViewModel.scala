@@ -24,17 +24,16 @@ final class ChatPanelViewModel(
       update(ChatPanelActions.onSubmit)
 
       val askAgentCommand = for {
-        userPrompt <- UserPrompt.from(prompt)
+        userPrompt     <- UserPrompt.from(prompt)
         conversationId <- ConversationId.from(defaultConversationId)
       } yield AskAgentCommand(conversationId, userPrompt)
 
-      askAgentCommand.foreach {
-        command =>
-          aiAgent.ask(command).foreach { response =>
-            runOnUiThread { () =>
-              update(ChatPanelActions.onAgentRespond(_, response))
-            }
+      askAgentCommand.foreach { command =>
+        aiAgent.ask(command).foreach { response =>
+          runOnUiThread { () =>
+            update(ChatPanelActions.onAgentRespond(_, response))
           }
+        }
       }
     }
 

@@ -1,7 +1,12 @@
 package monad_core.engine.model
 
+import monad_core.engine.model.{
+  HeightMustBeGreaterThanZero,
+  LengthMustBeGreaterThanZero,
+  RadiusMustBeGreaterThanZero,
+  Shape2D
+}
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.{HeightMustBeGreaterThanZero, LengthMustBeGreaterThanZero, RadiusMustBeGreaterThanZero, Shape2D}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -35,9 +40,9 @@ class Shape2DTest extends AnyFunSuite with Matchers with Inside:
 
   test("cannot create a rectangle with invalid height and length"):
     val invalidLengths = Seq(0, -1)
-    val validLength = 1
+    val validLength    = 1
     val invalidHeights = Seq(0, -1)
-    val validHeight = 1
+    val validHeight    = 1
 
     invalidHeights.foreach: invalidHeight =>
       Shape2D.rectangle(invalidHeight, validLength) shouldBe Left(HeightMustBeGreaterThanZero())

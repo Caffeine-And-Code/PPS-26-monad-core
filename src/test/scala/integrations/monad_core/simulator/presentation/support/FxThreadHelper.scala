@@ -9,7 +9,7 @@ object FxThreadHelper:
   def onFxThread[A](action: => A): A =
     if Platform.isFxApplicationThread then action
     else
-      val completed = new CountDownLatch(1)
+      val completed                              = new CountDownLatch(1)
       @volatile var result: Either[Throwable, A] = null
       Platform.runLater { () =>
         result =

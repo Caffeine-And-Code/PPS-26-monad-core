@@ -5,6 +5,7 @@ import scalafx.scene.control.{Button, TextField}
 import scalafx.scene.layout.{HBox, Priority}
 
 object PromptComposer:
+
   final case class Props(
       onPromptChanged: String => Unit,
       onSubmit: () => Unit
@@ -17,7 +18,7 @@ object PromptComposer:
   )
 
   def apply(props: Props): Component[Model, HBox] =
-    val field = promptField(props.onSubmit)
+    val field      = promptField(props.onSubmit)
     val sendButton = submitButton(props.onSubmit)
 
     field.text.onChange((_, _, prompt) => props.onPromptChanged(prompt))

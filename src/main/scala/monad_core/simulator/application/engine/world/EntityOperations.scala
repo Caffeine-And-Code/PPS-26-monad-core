@@ -4,8 +4,8 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, LocatableId}
 
 case class SaveEntityCommand(
-                              entity: Entity
-                            )
+    entity: Entity
+)
 
 private[world] trait EntityOperations:
   def getAllEntities: List[Entity]
@@ -17,4 +17,3 @@ private[world] trait EntityOperations:
   def removeEntity(entityId: LocatableId): Either[EngineError, Unit]
 
   def updateEntity(command: SaveEntityCommand): Either[EngineError, Unit]
-

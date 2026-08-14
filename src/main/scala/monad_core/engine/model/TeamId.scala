@@ -9,6 +9,4 @@ object TeamId:
   def apply(teamId: String): Either[EngineError, TeamId] =
     Either.cond(teamId.trim.nonEmpty, teamId.trim, TeamIdCannotBeEmpty())
 
-  extension (teamId: TeamId)
-
-    def value: String = teamId
+  extension (teamId: TeamId) def value: String = teamId

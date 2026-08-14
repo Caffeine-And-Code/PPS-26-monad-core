@@ -24,7 +24,6 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     .withWeight(70)
     .value
     .withSpeed(Vector2D(20, 35))
-    .value
 
   val rectangleEntity: Entity = Entity.rectangle("e2", Vector2D(4, 3), 11, 9)
     .value

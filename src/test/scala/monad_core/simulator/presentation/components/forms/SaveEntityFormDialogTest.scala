@@ -2,7 +2,10 @@ package monad_core.simulator.presentation.components.forms
 
 import monad_core.engine.model.*
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
-import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, LocatableFormShapes}
+import monad_core.simulator.presentation.components.forms.parsers.{
+  EntityFormParser,
+  LocatableFormShapes
+}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -13,28 +16,30 @@ import org.scalatest.prop.Tables.Table
 
 class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val EntityId = "id"
+  private val EntityId       = "id"
   private val EntityPosition = Vector2D(1, 2)
-  private val EntityRadius = 5.0
-  private val EntityHeight = 6.0
-  private val EntityLength = 7.0
-  private val EntitySpeed = Vector2D(3, 4)
-  private val EntityWeight = 10
-  private val EntityHealth = 20
-  private val EntityTeamId = TeamId("teamIdValue").value
+  private val EntityRadius   = 5.0
+  private val EntityHeight   = 6.0
+  private val EntityLength   = 7.0
+  private val EntitySpeed    = Vector2D(3, 4)
+  private val EntityWeight   = 10
+  private val EntityHealth   = 20
+  private val EntityTeamId   = TeamId("teamIdValue").value
 
   private def circleEntity: Entity = Entity.circle(EntityId, EntityPosition, EntityRadius).value
-  private def rectangleEntity: Entity = Entity.rectangle(EntityId, EntityPosition, EntityHeight, EntityLength).value
+
+  private def rectangleEntity: Entity =
+    Entity.rectangle(EntityId, EntityPosition, EntityHeight, EntityLength).value
 
   private def completeEntity(entity: Entity): Entity =
     val either = for
-      withSpeed <- entity.withSpeed(EntitySpeed)
+      withSpeed = entity.withSpeed(EntitySpeed)
       withHealth <- withSpeed.withHealth(EntityHealth)
       withWeight <- withHealth.withWeight(EntityWeight)
-      withTeam <- withWeight.withTeamId(EntityTeamId.value)
+      withTeam   <- withWeight.withTeamId(EntityTeamId.value)
     yield withTeam
     either.value
-  
+
   test("buildDefaultValues should return empty defaults when no entity is provided"):
     val result = SaveEntityFormDialog.buildDefaultValues(None)
 
@@ -92,7 +97,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
       result.health should be(Some(EntityHealth.toString))
       result.speedX should be(Some(EntitySpeed.x.toString))
       result.speedY should be(Some(EntitySpeed.y.toString))
-  
+
   private val teams: Seq[Team] = Seq(
     Team(TeamId("RedTeam").value, Set.empty).value,
     Team(TeamId("BlueTeam").value, Set.empty).value
@@ -159,7 +164,9 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         circleFields.map(_.id) should be(Seq(EntityFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
-        rectangleFields.map(_.id) should be(Seq(EntityFormParser.HeightKey, EntityFormParser.LengthKey))
+        rectangleFields.map(_.id) should be(
+          Seq(EntityFormParser.HeightKey, EntityFormParser.LengthKey)
+        )
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
     val defaultValues = SaveEntityFormDefaultValues(
@@ -178,10 +185,20 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(select.dependentFields(LocatableFormShapes.CircleLabel).head):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("5.0"))
 
-        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == EntityFormParser.HeightKey).value):
+        inside(
+          select
+            .dependentFields(LocatableFormShapes.RectangleLabel)
+            .find(_.id == EntityFormParser.HeightKey)
+            .value
+        ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
 
-        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == EntityFormParser.LengthKey).value):
+        inside(
+          select
+            .dependentFields(LocatableFormShapes.RectangleLabel)
+            .find(_.id == EntityFormParser.LengthKey)
+            .value
+        ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("7.0"))
 
   test("buildFields should build the team select field from provided teams and default team id"):
