@@ -20,7 +20,7 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
   private var currentWorld: Option[World]             = None
   private var timer: Option[AnimationTimer]           = None
   private var currentSnapshot: Option[MonadCoreScene] = None
-  private var error: Option[BaseError]              = None
+  private var error: Option[BaseError]                = None
 
   given physics: PhysicsManager = PhysicsManager.default()
 

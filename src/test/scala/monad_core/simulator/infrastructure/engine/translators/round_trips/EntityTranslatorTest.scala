@@ -37,7 +37,7 @@ class EntityTranslatorTest extends AnyFunSuite with Matchers with Inside:
 
     def completeEntity(entity: Entity): Entity =
       val either = for
-        entityWithSpeed  = entity.withSpeed(Vector2D(10, 10))
+        entityWithSpeed = entity.withSpeed(Vector2D(10, 10))
         entityWithHealth <- entityWithSpeed.withHealth(11)
         entityWithWeight <- entityWithHealth.withWeight(15)
         complete         <- entityWithWeight.withTeamId("teamId")

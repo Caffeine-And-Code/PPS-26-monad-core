@@ -31,7 +31,7 @@ class EntityTranslatorTest extends AnyFunSuite with Matchers with Inside:
         Vector2D(0, 0),
         radius = MonadCoreEntityArranger.DefaultCircleRadius
       )
-      withSpeed  = base.withSpeed(Vector2D(DefaultSpeed._1, DefaultSpeed._2))
+      withSpeed = base.withSpeed(Vector2D(DefaultSpeed._1, DefaultSpeed._2))
       withWeight <- withSpeed.withWeight(DefaultWeight)
       withHealth <- withWeight.withHealth(DefaultHealth)
       withTeam   <- withHealth.withTeamId(DefaultTeamId)

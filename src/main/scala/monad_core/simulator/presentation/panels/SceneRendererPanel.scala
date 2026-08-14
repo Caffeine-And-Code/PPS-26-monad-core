@@ -165,10 +165,10 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     )
 
     val onFrame: World => Unit = _ => ShapePainter.paint(canvas.graphicsContext2D)
-    
+
     gameEngineRuntime.attach(onFrame)
     val gameEngineError = gameEngineRuntime.getError
-    
+
     if gameEngineError.isDefined then Left(gameEngineError.get)
     else
       gameEngineRuntime.resetToSnapshot()

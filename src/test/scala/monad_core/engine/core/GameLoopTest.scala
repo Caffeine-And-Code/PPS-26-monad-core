@@ -30,10 +30,10 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
   given MockPhysics: PhysicsEngine = mock[PhysicsEngine]
   given MockPainter: Painter       = mock[Painter]
 
-  def setupGenericStateCalls() : Unit =
+  def setupGenericStateCalls(): Unit =
     setupStateCalls(MockState)
 
-  def setupStateCalls(state: State) : Unit =
+  def setupStateCalls(state: State): Unit =
     (() => state.allSurfaces).expects().returns(List.empty).anyNumberOfTimes()
     (() => state.allTeams).expects().returns(List.empty).anyNumberOfTimes()
     (() => state.allEntities).expects().returns(List.empty).anyNumberOfTimes()
