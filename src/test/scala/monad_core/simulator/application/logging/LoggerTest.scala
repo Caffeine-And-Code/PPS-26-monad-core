@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 class LoggerTest extends AnyFunSuite with Matchers:
 
   test("can implement a Logger"):
-    val message = "message"
+    val message       = "message"
     var loggedMessage = Option.empty[String]
     val logger = new Logger:
       override def info(message: String): Unit =

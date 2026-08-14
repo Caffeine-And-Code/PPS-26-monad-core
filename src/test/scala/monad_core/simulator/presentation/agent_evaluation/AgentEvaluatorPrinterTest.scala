@@ -8,7 +8,7 @@ class AgentEvaluatorPrinterTest extends AnyFunSuite with Matchers:
 
   test("can implement an AgentEvaluatorPrinter"):
     val evaluationRecup = AgentEvaluationRecup(100, 90, 80, 70, 1)
-    var printedRecup = Option.empty[AgentEvaluationRecup]
+    var printedRecup    = Option.empty[AgentEvaluationRecup]
     val printer = new AgentEvaluatorPrinter:
       override def print(recup: AgentEvaluationRecup): Unit =
         printedRecup = Some(recup)

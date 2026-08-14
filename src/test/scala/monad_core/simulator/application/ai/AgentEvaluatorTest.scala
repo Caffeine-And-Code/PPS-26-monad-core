@@ -10,10 +10,13 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers:
 
   private case class EvaluationError() extends BaseError("evaluation failed")
 
-  private class FakeAgentEvaluator(responses: Seq[Either[BaseError, AgentEvaluationResponse]]) extends AgentEvaluator:
+  private class FakeAgentEvaluator(responses: Seq[Either[BaseError, AgentEvaluationResponse]])
+      extends AgentEvaluator:
     private val responseIterator = responses.iterator
 
-    override def evaluateCase(agentEvaluationTest: AgentEvaluationTest): Either[BaseError, AgentEvaluationResponse] =
+    override def evaluateCase(
+        agentEvaluationTest: AgentEvaluationTest
+    ): Either[BaseError, AgentEvaluationResponse] =
       responseIterator.next()
 
   private def evaluationTest: AgentEvaluationTest =

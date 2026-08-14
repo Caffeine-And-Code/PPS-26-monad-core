@@ -11,7 +11,7 @@ class AgentEvaluatorConsolePrinterTest extends AnyFunSuite with Matchers:
 
   test("can print an AgentEvaluationRecup"):
     val evaluationRecup = AgentEvaluationRecup(100, 90, 80, 70, 1)
-    val output = ByteArrayOutputStream()
+    val output          = ByteArrayOutputStream()
     val expectedOutput =
       s"""Agent evaluation results:
          |Correct language choice: ${evaluationRecup.correctLanguageChoose}%

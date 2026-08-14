@@ -6,13 +6,13 @@ import org.scalatest.matchers.should.Matchers
 class AgentEvaluationArgumentsTest extends AnyFunSuite with Matchers:
 
   private val defaultModelUrl = "http://localhost:11434"
-  private val defaultModel = "gemma4:e4b"
+  private val defaultModel    = "gemma4:e4b"
 
   test("can create AgentEvaluationArguments"):
-    val testModelUrl = "http://test-model"
-    val testModel = "test-model"
+    val testModelUrl  = "http://test-model"
+    val testModel     = "test-model"
     val judgeModelUrl = "http://judge-model"
-    val judgeModel = "judge-model"
+    val judgeModel    = "judge-model"
 
     val result = AgentEvaluationArguments(testModelUrl, testModel, judgeModelUrl, judgeModel)
 
@@ -32,15 +32,19 @@ class AgentEvaluationArgumentsTest extends AnyFunSuite with Matchers:
     )
 
   test("can parse AgentEvaluationArguments from arguments"):
-    val testModelUrl = "http://test-model"
-    val testModel = "test-model"
+    val testModelUrl  = "http://test-model"
+    val testModel     = "test-model"
     val judgeModelUrl = "http://judge-model"
-    val judgeModel = "judge-model"
+    val judgeModel    = "judge-model"
     val args = Array(
-      AgentEvaluationArguments.testModelUrlArgument, testModelUrl,
-      AgentEvaluationArguments.modelUrlArgument, testModel,
-      AgentEvaluationArguments.testJudgeUrlArgument, judgeModelUrl,
-      AgentEvaluationArguments.judgeUrlArgument, judgeModel
+      AgentEvaluationArguments.testModelUrlArgument,
+      testModelUrl,
+      AgentEvaluationArguments.modelUrlArgument,
+      testModel,
+      AgentEvaluationArguments.testJudgeUrlArgument,
+      judgeModelUrl,
+      AgentEvaluationArguments.judgeUrlArgument,
+      judgeModel
     )
 
     val result = AgentEvaluationArguments.parse(args)
@@ -49,7 +53,7 @@ class AgentEvaluationArgumentsTest extends AnyFunSuite with Matchers:
 
   test("unknown arguments are ignored"):
     val unknownArgument = "--unknown"
-    val unknownValue = "unknown"
+    val unknownValue    = "unknown"
 
     val result = AgentEvaluationArguments.parse(Array(unknownArgument, unknownValue))
 

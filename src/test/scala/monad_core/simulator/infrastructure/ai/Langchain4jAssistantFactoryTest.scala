@@ -10,10 +10,10 @@ import org.scalatest.matchers.should.Matchers
 class Langchain4jAssistantFactoryTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("can build a Langchain4jAssistant"):
-    val chatModel = mock[ChatModel]
-    val world = mock[World]
+    val chatModel     = mock[ChatModel]
+    val world         = mock[World]
     val engineControl = mock[EngineControl]
-    val factory = Langchain4jAssistantFactory(chatModel)
+    val factory       = Langchain4jAssistantFactory(chatModel)
 
     val result = factory.build(world, engineControl)
 

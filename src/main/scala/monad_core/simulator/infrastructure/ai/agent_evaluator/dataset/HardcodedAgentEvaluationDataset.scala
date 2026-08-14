@@ -4,39 +4,43 @@ import monad_core.engine.core.Scene
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Surface, Team, Vector2D}
 import monad_core.simulator.application.ai.AgentEvaluationDataset
-import monad_core.simulator.domain.ai.agent_evaluation.{AgentEvaluationLanguage, AgentEvaluationTest, ToolCall}
+import monad_core.simulator.domain.ai.agent_evaluation.{
+  AgentEvaluationLanguage,
+  AgentEvaluationTest,
+  ToolCall
+}
 
 object HardcodedAgentEvaluationDataset extends AgentEvaluationDataset:
 
-  private val redTeamId = "red"
-  private val blueTeamId = "blue"
+  private val redTeamId   = "red"
+  private val blueTeamId  = "blue"
   private val greenTeamId = "green"
-  private val orbId = "orb"
-  private val guardId = "guard"
-  private val zoneId = "zone"
-  private val gateId = "gate"
+  private val orbId       = "orb"
+  private val guardId     = "guard"
+  private val zoneId      = "zone"
+  private val gateId      = "gate"
 
-  private val orbX = 2.0
-  private val orbY = 3.0
-  private val orbRadius = 4.0
-  private val zoneX = 3.0
-  private val zoneY = 4.0
+  private val orbX       = 2.0
+  private val orbY       = 3.0
+  private val orbRadius  = 4.0
+  private val zoneX      = 3.0
+  private val zoneY      = 4.0
   private val zoneRadius = 6.0
 
   private val populatedScene = valid:
     for
-      redTeam <- Team.create(redTeamId)
-      blueTeam <- Team.create(blueTeamId)
-      orb <- Entity.circle(orbId, Vector2D(orbX, orbY), orbRadius)
-      guard <- Entity.rectangle(guardId, Vector2D(8, 1), 2, 5)
-      zone <- Surface.circle(zoneId, Vector2D(zoneX, zoneY), zoneRadius)
-      gate <- Surface.rectangle(gateId, Vector2D(0, 0), 3, 7)
-      sceneWithRedTeam <- Scene().addTeam(redTeam)
-      sceneWithTeams <- sceneWithRedTeam.addTeam(blueTeam)
-      sceneWithOrb <- sceneWithTeams.addEntity(orb)
+      redTeam           <- Team.create(redTeamId)
+      blueTeam          <- Team.create(blueTeamId)
+      orb               <- Entity.circle(orbId, Vector2D(orbX, orbY), orbRadius)
+      guard             <- Entity.rectangle(guardId, Vector2D(8, 1), 2, 5)
+      zone              <- Surface.circle(zoneId, Vector2D(zoneX, zoneY), zoneRadius)
+      gate              <- Surface.rectangle(gateId, Vector2D(0, 0), 3, 7)
+      sceneWithRedTeam  <- Scene().addTeam(redTeam)
+      sceneWithTeams    <- sceneWithRedTeam.addTeam(blueTeam)
+      sceneWithOrb      <- sceneWithTeams.addEntity(orb)
       sceneWithEntities <- sceneWithOrb.addEntity(guard)
-      sceneWithZone <- sceneWithEntities.addSurface(zone)
-      scene <- sceneWithZone.addSurface(gate)
+      sceneWithZone     <- sceneWithEntities.addSurface(zone)
+      scene             <- sceneWithZone.addSurface(gate)
     yield scene
 
   override val tests: Seq[AgentEvaluationTest] = Seq(
@@ -109,7 +113,8 @@ object HardcodedAgentEvaluationDataset extends AgentEvaluationDataset:
     ),
     AgentEvaluationTest(
       initialScene = populatedScene,
-      prompts = Seq(s"What are the current position and radius of entity '$orbId'? Do not rely on memory."),
+      prompts =
+        Seq(s"What are the current position and radius of entity '$orbId'? Do not rely on memory."),
       language = AgentEvaluationLanguage.English,
       toolCalls = Seq(ToolCall.GetEntity(orbId)),
       expectation =

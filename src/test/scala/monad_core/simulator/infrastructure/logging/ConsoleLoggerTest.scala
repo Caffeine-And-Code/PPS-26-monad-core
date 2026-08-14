@@ -10,7 +10,7 @@ class ConsoleLoggerTest extends AnyFunSuite with Matchers:
 
   test("can log an info message to console"):
     val message = "Evaluation test completed"
-    val output = ByteArrayOutputStream()
+    val output  = ByteArrayOutputStream()
 
     Console.withOut(output):
       ConsoleLogger.info(message)

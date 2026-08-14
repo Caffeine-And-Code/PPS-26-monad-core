@@ -1,6 +1,10 @@
 package monad_core.simulator.domain.ai.agent_evaluator
 
-import monad_core.simulator.domain.ai.agent_evaluation.{AgentEvaluationResult, AgentEvaluationScore, InvalidAgentEvaluationValue}
+import monad_core.simulator.domain.ai.agent_evaluation.{
+  AgentEvaluationResult,
+  AgentEvaluationScore,
+  InvalidAgentEvaluationValue
+}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -17,8 +21,8 @@ class AgentEvaluationResultTest extends AnyFunSuite with Matchers:
       100
     )
 
-    forAll(cases):
-      value => AgentEvaluationScore.from(value) shouldBe Right(value)
+    forAll(cases): value =>
+      AgentEvaluationScore.from(value) shouldBe Right(value)
 
   test("creating an AgentEvaluationScore with an invalid value got Error"):
     val cases = Table(
@@ -28,8 +32,8 @@ class AgentEvaluationResultTest extends AnyFunSuite with Matchers:
       200
     )
 
-    forAll(cases):
-      value => AgentEvaluationScore.from(value) shouldBe Left(InvalidAgentEvaluationValue(value))
+    forAll(cases): value =>
+      AgentEvaluationScore.from(value) shouldBe Left(InvalidAgentEvaluationValue(value))
 
   test("can create a Bool AgentEvaluationResult"):
     val expected = true
@@ -49,7 +53,7 @@ class AgentEvaluationResultTest extends AnyFunSuite with Matchers:
 
   test("can create a CorrectChooses AgentEvaluationResult"):
     val correctChooses = 4
-    val on = 5
+    val on             = 5
 
     val result = AgentEvaluationResult.fromCorrectChooses(correctChooses, on)
 

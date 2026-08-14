@@ -9,10 +9,10 @@ import org.scalatest.matchers.should.Matchers
 class AgentEvaluationRuntimeTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("can evaluate dataset tests and print the result"):
-    val evaluator = mock[AgentEvaluator]
-    val dataset = mock[AgentEvaluationDataset]
-    val printer = mock[AgentEvaluatorPrinter]
-    val tests = Seq.empty[AgentEvaluationTest]
+    val evaluator       = mock[AgentEvaluator]
+    val dataset         = mock[AgentEvaluationDataset]
+    val printer         = mock[AgentEvaluatorPrinter]
+    val tests           = Seq.empty[AgentEvaluationTest]
     val evaluationRecup = AgentEvaluationRecup(100, 90, 80, 70, 1)
     (() => dataset.tests).expects().returning(tests).once()
     evaluator.evaluate.expects(tests).returning(evaluationRecup).once()

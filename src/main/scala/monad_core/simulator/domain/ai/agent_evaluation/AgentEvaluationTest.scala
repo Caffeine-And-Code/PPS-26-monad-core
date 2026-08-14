@@ -7,9 +7,9 @@ enum AgentEvaluationLanguage:
   case English
 
 case class AgentEvaluationTest(
-                                initialScene: Scene,
-                                prompts: Seq[String],
-                                language: AgentEvaluationLanguage,
-                                toolCalls: Seq[ToolCall],
-                                expectation: String
-                              )
+    initialScene: Scene,
+    prompts: Seq[String],
+    language: AgentEvaluationLanguage,
+    toolCalls: Seq[ToolCall],
+    expectation: String
+)

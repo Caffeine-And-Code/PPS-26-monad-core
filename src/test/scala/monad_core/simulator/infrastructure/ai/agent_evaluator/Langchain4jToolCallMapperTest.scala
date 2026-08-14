@@ -8,21 +8,21 @@ import org.scalatest.prop.TableDrivenPropertyChecks.*
 
 class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
 
-  private val entityId = "entity-1"
-  private val circleId = "circle-1"
-  private val rectangleId = "rectangle-1"
-  private val surfaceId = "surface-1"
-  private val teamId = "team-1"
-  private val enemies = "team-2,team-3"
-  private val x = 10.0
-  private val y = 20.0
-  private val radius = 5.0
-  private val height = 6.0
+  private val entityId        = "entity-1"
+  private val circleId        = "circle-1"
+  private val rectangleId     = "rectangle-1"
+  private val surfaceId       = "surface-1"
+  private val teamId          = "team-1"
+  private val enemies         = "team-2,team-3"
+  private val x               = 10.0
+  private val y               = 20.0
+  private val radius          = 5.0
+  private val height          = 6.0
   private val rectangleLength = 8.0
-  private val weight = 2
-  private val speedX = 1.5
-  private val speedY = 2.5
-  private val mapper = Langchain4jToolCallMapper()
+  private val weight          = 2
+  private val speedX          = 1.5
+  private val speedY          = 2.5
+  private val mapper          = Langchain4jToolCallMapper()
 
   test("can map Langchain4j tool requests"):
     val cases = Table(
@@ -58,7 +58,11 @@ class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
           Some(speedY)
         )
       ),
-      ("updateCircleEntity", circleArguments(circleId), ToolCall.UpdateCircleEntity(circleId, x, y, radius)),
+      (
+        "updateCircleEntity",
+        circleArguments(circleId),
+        ToolCall.UpdateCircleEntity(circleId, x, y, radius)
+      ),
       (
         "updateRectangleEntity",
         rectangleArguments(rectangleId),
@@ -67,13 +71,21 @@ class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
       ("removeEntity", s"""{"id":"$entityId"}""", ToolCall.RemoveEntity(entityId)),
       ("getAllSurfaces", "{}", ToolCall.GetAllSurfaces),
       ("getSurface", s"""{"id":"$surfaceId"}""", ToolCall.GetSurface(surfaceId)),
-      ("createCircleSurface", circleArguments(circleId), ToolCall.CreateCircleSurface(circleId, x, y, radius)),
+      (
+        "createCircleSurface",
+        circleArguments(circleId),
+        ToolCall.CreateCircleSurface(circleId, x, y, radius)
+      ),
       (
         "createRectangleSurface",
         rectangleArguments(rectangleId),
         ToolCall.CreateRectangleSurface(rectangleId, x, y, height, rectangleLength)
       ),
-      ("updateCircleSurface", circleArguments(circleId), ToolCall.UpdateCircleSurface(circleId, x, y, radius)),
+      (
+        "updateCircleSurface",
+        circleArguments(circleId),
+        ToolCall.UpdateCircleSurface(circleId, x, y, radius)
+      ),
       (
         "updateRectangleSurface",
         rectangleArguments(rectangleId),
@@ -89,9 +101,8 @@ class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
       ("stop", "{}", ToolCall.Stop)
     )
 
-    forAll(cases):
-      (name, arguments, expected) =>
-        mapper.from(request(name, arguments)) shouldBe Right(expected)
+    forAll(cases): (name, arguments, expected) =>
+      mapper.from(request(name, arguments)) shouldBe Right(expected)
 
   test("cannot map an unknown tool request"):
     val toolName = "unknownTool"
@@ -102,7 +113,7 @@ class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
 
   test("can map omitted optional entity arguments"):
     val arguments = s"""{"id":"$circleId","x":$x,"y":$y,"radius":$radius}"""
-    val expected = ToolCall.CreateCircleEntity(circleId, x, y, radius)
+    val expected  = ToolCall.CreateCircleEntity(circleId, x, y, radius)
 
     val result = mapper.from(request("createCircleEntity", arguments))
 
@@ -114,7 +125,8 @@ class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
     result shouldBe a[Left[InvalidToolCall, ?]]
 
   private def request(name: String, arguments: String): ToolExecutionRequest =
-    ToolExecutionRequest.builder()
+    ToolExecutionRequest
+      .builder()
       .name(name)
       .arguments(arguments)
       .build()

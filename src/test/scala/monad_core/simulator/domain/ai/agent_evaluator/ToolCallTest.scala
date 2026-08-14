@@ -7,21 +7,21 @@ import org.scalatest.matchers.should.Matchers
 
 class ToolCallTest extends AnyFunSuite with Matchers:
 
-  private val entityId = "entity-1"
-  private val circleId = "circle-1"
-  private val rectangleId = "rectangle-1"
-  private val surfaceId = "surface-1"
-  private val teamId = "team-1"
-  private val x = 10.0
-  private val y = 20.0
-  private val defaultSize = 5.0
-  private val radius = defaultSize
-  private val height = defaultSize
+  private val entityId        = "entity-1"
+  private val circleId        = "circle-1"
+  private val rectangleId     = "rectangle-1"
+  private val surfaceId       = "surface-1"
+  private val teamId          = "team-1"
+  private val x               = 10.0
+  private val y               = 20.0
+  private val defaultSize     = 5.0
+  private val radius          = defaultSize
+  private val height          = defaultSize
   private val rectangleLength = 8.0
-  private val optionalTeamId = Some(teamId)
-  private val weight = Some(2)
-  private val speedX = Some(1.5)
-  private val speedY = Some(2.5)
+  private val optionalTeamId  = Some(teamId)
+  private val weight          = Some(2)
+  private val speedX          = Some(1.5)
+  private val speedY          = Some(2.5)
 
   test("can create entity query ToolCalls"):
     ToolCall.GetAllEntities shouldBe ToolCall.GetAllEntities
@@ -42,7 +42,16 @@ class ToolCallTest extends AnyFunSuite with Matchers:
     )
 
     inside(result):
-      case ToolCall.CreateCircleEntity(id, resultX, resultY, resultRadius, resultTeamId, resultWeight, resultSpeedX, resultSpeedY) =>
+      case ToolCall.CreateCircleEntity(
+            id,
+            resultX,
+            resultY,
+            resultRadius,
+            resultTeamId,
+            resultWeight,
+            resultSpeedX,
+            resultSpeedY
+          ) =>
         id shouldBe circleId
         resultX shouldBe x
         resultY shouldBe y
@@ -66,7 +75,17 @@ class ToolCallTest extends AnyFunSuite with Matchers:
     )
 
     inside(result):
-      case ToolCall.CreateRectangleEntity(id, resultX, resultY, resultHeight, resultLength, resultTeamId, resultWeight, resultSpeedX, resultSpeedY) =>
+      case ToolCall.CreateRectangleEntity(
+            id,
+            resultX,
+            resultY,
+            resultHeight,
+            resultLength,
+            resultTeamId,
+            resultWeight,
+            resultSpeedX,
+            resultSpeedY
+          ) =>
         id shouldBe rectangleId
         resultX shouldBe x
         resultY shouldBe y
@@ -84,7 +103,13 @@ class ToolCallTest extends AnyFunSuite with Matchers:
 
     inside(ToolCall.UpdateRectangleEntity(rectangleId, x, y, height, rectangleLength)):
       case ToolCall.UpdateRectangleEntity(id, resultX, resultY, resultHeight, resultLength) =>
-        (id, resultX, resultY, resultHeight, resultLength) shouldBe (rectangleId, x, y, height, rectangleLength)
+        (id, resultX, resultY, resultHeight, resultLength) shouldBe (
+          rectangleId,
+          x,
+          y,
+          height,
+          rectangleLength
+        )
 
   test("can create a RemoveEntity ToolCall"):
     inside(ToolCall.RemoveEntity(entityId)):
@@ -103,7 +128,13 @@ class ToolCallTest extends AnyFunSuite with Matchers:
 
     inside(ToolCall.CreateRectangleSurface(rectangleId, x, y, height, rectangleLength)):
       case ToolCall.CreateRectangleSurface(id, resultX, resultY, resultHeight, resultLength) =>
-        (id, resultX, resultY, resultHeight, resultLength) shouldBe (rectangleId, x, y, height, rectangleLength)
+        (id, resultX, resultY, resultHeight, resultLength) shouldBe (
+          rectangleId,
+          x,
+          y,
+          height,
+          rectangleLength
+        )
 
   test("can create surface update ToolCalls"):
     inside(ToolCall.UpdateCircleSurface(circleId, x, y, radius)):
@@ -112,7 +143,13 @@ class ToolCallTest extends AnyFunSuite with Matchers:
 
     inside(ToolCall.UpdateRectangleSurface(rectangleId, x, y, height, rectangleLength)):
       case ToolCall.UpdateRectangleSurface(id, resultX, resultY, resultHeight, resultLength) =>
-        (id, resultX, resultY, resultHeight, resultLength) shouldBe (rectangleId, x, y, height, rectangleLength)
+        (id, resultX, resultY, resultHeight, resultLength) shouldBe (
+          rectangleId,
+          x,
+          y,
+          height,
+          rectangleLength
+        )
 
   test("can create a RemoveSurface ToolCall"):
     inside(ToolCall.RemoveSurface(surfaceId)):

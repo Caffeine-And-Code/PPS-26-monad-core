@@ -7,19 +7,34 @@ import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
 import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
-import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistantFactory, Langchain4jOllamaConfig}
+import monad_core.simulator.infrastructure.ai.{
+  Langchain4jAgentFactory,
+  Langchain4jAssistantFactory,
+  Langchain4jOllamaConfig
+}
 import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.infrastructure.logging.ConsoleLogger
-import monad_core.simulator.presentation.agent_evaluation.{AgentEvaluationArguments, AgentEvaluationRuntime, AgentEvaluatorConsolePrinter, AgentEvaluatorPrinter}
+import monad_core.simulator.presentation.agent_evaluation.{
+  AgentEvaluationArguments,
+  AgentEvaluationRuntime,
+  AgentEvaluatorConsolePrinter,
+  AgentEvaluatorPrinter
+}
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{ArgumentRoutingRoute, RouteResponse, Router}
-import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
+import monad_core.simulator.presentation.panels.{
+  AiModelChatPanel,
+  GameEngineModePanel,
+  GameEnginePanel,
+  SceneRendererPanel
+}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}
 
-object Launcher :
+object Launcher:
+
   private def guiApplication(): Either[EngineError, Unit] =
     given World = MonadCoreWorld()
 
@@ -50,8 +65,9 @@ object Launcher :
 
   def outcomeFor(result: Either[EngineError, Unit]): RouteResponse =
     result match
-      case Left(error) => RouteResponse(success = false, message = s"Startup failed: ${error.message}")
-      case Right(_)     => RouteResponse(success = true, message = s"${GREEN}Build Completed$RESET")
+      case Left(error) =>
+        RouteResponse(success = false, message = s"Startup failed: ${error.message}")
+      case Right(_) => RouteResponse(success = true, message = s"${GREEN}Build Completed$RESET")
 
   private def evaluateModel(args: Array[String]): RouteResponse = {
     Console.println("Started model evaluation")
@@ -59,7 +75,7 @@ object Launcher :
     val arguments = AgentEvaluationArguments.parse(args)
 
     given AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
-    given Logger = ConsoleLogger
+    given Logger                = ConsoleLogger
     given AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
       agentConfig = Langchain4jOllamaConfig(
         url = arguments.testModelUrl,
@@ -75,13 +91,14 @@ object Launcher :
     AgentEvaluationRuntime.handle()
 
     RouteResponse(
-      success = true, message = "Finished model evaluation"
+      success = true,
+      message = "Finished model evaluation"
     )
   }
 
   def main(args: Array[String]): Unit =
     lazy val evaluateModelRoute = evaluateModel(args)
-    lazy val guiRoute = outcomeFor(guiApplication())
+    lazy val guiRoute           = outcomeFor(guiApplication())
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)
@@ -93,8 +110,7 @@ object Launcher :
         Console.err.println(error.message)
         sys.exit(1)
       case Right(response) =>
-        if response.success then
-          Console.println(s"$RESET${response.message}")
+        if response.success then Console.println(s"$RESET${response.message}")
         else
           Console.err.println(response.message)
           sys.exit(1)

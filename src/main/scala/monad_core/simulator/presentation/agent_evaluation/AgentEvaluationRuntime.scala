@@ -4,14 +4,13 @@ import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluat
 
 object AgentEvaluationRuntime:
 
-  def handle()
-            (using agentEvaluator: AgentEvaluator,
-             agentEvaluatorDataset: AgentEvaluationDataset,
-             agentEvaluatorPrinter: AgentEvaluatorPrinter
-            ): Unit = {
+  def handle()(using
+      agentEvaluator: AgentEvaluator,
+      agentEvaluatorDataset: AgentEvaluationDataset,
+      agentEvaluatorPrinter: AgentEvaluatorPrinter
+  ): Unit =
     agentEvaluatorPrinter.print(
       agentEvaluator.evaluate(
         agentEvaluatorDataset.tests
       )
     )
-  }
