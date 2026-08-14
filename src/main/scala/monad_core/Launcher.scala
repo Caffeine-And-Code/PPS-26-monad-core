@@ -8,7 +8,12 @@ import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
-import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
+import monad_core.simulator.presentation.panels.{
+  AiModelChatPanel,
+  GameEngineModePanel,
+  GameEnginePanel,
+  SceneRendererPanel
+}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{RouteResponse, Router}
@@ -17,7 +22,13 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 import scala.Console.{GREEN, RESET}
 
 object Launcher:
-  private def buildLauncher()(using World, GameEngineRuntime, ShapeArchitect, Painter): ScalaFxLauncher =
+
+  private def buildLauncher()(using
+      World,
+      GameEngineRuntime,
+      ShapeArchitect,
+      Painter
+  ): ScalaFxLauncher =
     val imageConfig = BaseImageConfig()
 
     val gamePanel = GameEnginePanel(
@@ -35,12 +46,14 @@ object Launcher:
 
   def outcomeFor(result: Either[BaseError, Unit]): RouteResponse =
     result match
-      case Left(error) => RouteResponse(success = false, message = s"Startup failed: ${error.message}")
+      case Left(error) =>
+        RouteResponse(success = false, message = s"Startup failed: ${error.message}")
       case Right(_) => RouteResponse(success = true, message = s"${GREEN}Build Completed$RESET")
 
   private def evaluateModel(): RouteResponse =
     RouteResponse(
-      success = true, message = "Model evaluated"
+      success = true,
+      message = "Model evaluated"
     )
 
   def main(args: Array[String]): Unit =
@@ -56,11 +69,13 @@ object Launcher:
           modelName = sys.env.getOrElse("MONAD_CORE_MODEL_NAME", "gemma4:e4b")
         )
       )
-    
-    given paintArchitect: Painter & ShapeArchitect = PaintArchitect
+
+    given painter: Painter = PaintArchitect
+
+    given architect: ShapeArchitect = PaintArchitect
 
     lazy val evaluateModelRoute = evaluateModel()
-    lazy val guiRoute = outcomeFor(buildLauncher().run())
+    lazy val guiRoute           = outcomeFor(buildLauncher().run())
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)
@@ -72,8 +87,7 @@ object Launcher:
         Console.err.println(error.message)
         sys.exit(1)
       case Right(response) =>
-        if response.success then
-          Console.println(s"$RESET${response.message}")
+        if response.success then Console.println(s"$RESET${response.message}")
         else
           Console.err.println(response.message)
           sys.exit(1)

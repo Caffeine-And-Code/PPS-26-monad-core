@@ -22,9 +22,9 @@ object PaintArchitect extends Painter with ShapeArchitect:
 
   def teamIdColorRelation(id: TeamId): Color =
     val hash = MurmurHash3.stringHash(id.value)
-    val rng = Random(hash)
+    val rng  = Random(hash)
 
-    val hue = rng.nextDouble() * 360.0
+    val hue        = rng.nextDouble() * 360.0
     val saturation = 0.5 + (rng.nextDouble() * 0.5)
     val brightness = 0.5 + (rng.nextDouble() * 0.5)
 

@@ -6,7 +6,9 @@ import monad_core.simulator.domain.engine.MonadCoreEntity
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 
 private[infrastructure] object EntityTranslator:
+
   extension (entity: EngineEntity)
+
     def toSimulationEntity: MonadCoreEntity =
       MonadCoreEntity(
         id = entity.id.value,
@@ -19,25 +21,25 @@ private[infrastructure] object EntityTranslator:
       )
 
   extension (simulationEntity: MonadCoreEntity)
+
     def toEngineModel: Either[EngineError, EngineEntity] =
       def assignOptionalParamsToEntity(base: EngineEntity): Either[EngineError, EngineEntity] =
         for
           entityWithTeamId <- simulationEntity.teamId match
             case Some(teamId) => base.withTeamId(teamId)
-            case None => Right(base)
+            case None         => Right(base)
 
-          entityWithSpeed <- simulationEntity.speed match
+          entityWithSpeed = simulationEntity.speed match
             case Some(vector) => entityWithTeamId.withSpeed(Vector2D(vector._1, vector._2))
-            case None => Right(entityWithTeamId)
+            case None         => entityWithTeamId
 
           entityWithHealth <- simulationEntity.health match
             case Some(health) => entityWithSpeed.withHealth(health)
-            case None => Right(entityWithSpeed)
+            case None         => Right(entityWithSpeed)
 
           finalEntity <- simulationEntity.weight match
             case Some(weight) => entityWithHealth.withWeight(weight)
-            case None => Right(entityWithHealth)
-
+            case None         => Right(entityWithHealth)
         yield finalEntity
 
       simulationEntity.shape match
@@ -53,7 +55,6 @@ private[infrastructure] object EntityTranslator:
             )
 
             finalEntity <- assignOptionalParamsToEntity(base)
-
           yield finalEntity
 
         case SimulationRectangle(width, height) =>
@@ -69,5 +70,4 @@ private[infrastructure] object EntityTranslator:
             )
 
             finalEntity <- assignOptionalParamsToEntity(base)
-
           yield finalEntity

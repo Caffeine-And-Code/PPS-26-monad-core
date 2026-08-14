@@ -15,13 +15,25 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.paint.Color
 
-class ShapePainterTest extends AnyFunSuite with ScalaFxInit with MockFactory with Matchers with SnapshotTesting with BeforeAndAfterEach:
+class ShapePainterTest
+    extends AnyFunSuite
+    with ScalaFxInit
+    with MockFactory
+    with Matchers
+    with SnapshotTesting
+    with BeforeAndAfterEach:
   given ShapeArchitect = PaintArchitect
 
   val BaseCircleEntity: Entity = Entity.circle("EntityCircleId", Vector2D(400, 400), 50).value
-  val BaseRectangleEntity: Entity = Entity.rectangle("EntityRectangleId", Vector2D(400, 400), 90, 150).value
+
+  val BaseRectangleEntity: Entity =
+    Entity.rectangle("EntityRectangleId", Vector2D(400, 400), 90, 150).value
+
   val BaseCircleSurface: Surface = Surface.circle("SurfaceCircleId", Vector2D(400, 400), 50).value
-  val BaseRectangleSurface: Surface = Surface.rectangle("SurfaceRectangleId", Vector2D(400, 400), 150, 250).value
+
+  val BaseRectangleSurface: Surface =
+    Surface.rectangle("SurfaceRectangleId", Vector2D(400, 400), 150, 250).value
+
   val canvas: Canvas = ResizableCanvas()
   canvas.width = 800.0
   canvas.height = 800.0
@@ -66,25 +78,43 @@ class ShapePainterTest extends AnyFunSuite with ScalaFxInit with MockFactory wit
 
     assertMatchesVisualSnapshot("rectangle_entity_flush_result", canvas, maxDiffPercentage = 3.0)
 
-  test("paint draws the Circle Commands that contains a Circle Entity with the corresponding Team Color"):
+  test(
+    "paint draws the Circle Commands that contains a Circle Entity with the corresponding Team Color"
+  ):
     val entityWithATeam = BaseCircleEntity.withTeamId("TestTeam").value
-    PaintArchitect.drawCircle(entityWithATeam, PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get))
+    PaintArchitect.drawCircle(
+      entityWithATeam,
+      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get)
+    )
 
     onFxThread {
       ShapePainter.paint(canvas.graphicsContext2D)
     }
 
-    assertMatchesVisualSnapshot("circle_entity_with_team_flush_result", canvas, maxDiffPercentage = 2.0)
+    assertMatchesVisualSnapshot(
+      "circle_entity_with_team_flush_result",
+      canvas,
+      maxDiffPercentage = 2.0
+    )
 
-  test("paint draws the Rectangle Commands that contains a Rectangle Entity with the corresponding Team Color"):
+  test(
+    "paint draws the Rectangle Commands that contains a Rectangle Entity with the corresponding Team Color"
+  ):
     val entityWithATeam = BaseRectangleEntity.withTeamId("TestTeam").value
-    PaintArchitect.drawRectangle(entityWithATeam, PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get))
+    PaintArchitect.drawRectangle(
+      entityWithATeam,
+      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get)
+    )
 
     onFxThread {
       ShapePainter.paint(canvas.graphicsContext2D)
     }
 
-    assertMatchesVisualSnapshot("rectangle_entity_with_team_flush_result", canvas, maxDiffPercentage = 3.0)
+    assertMatchesVisualSnapshot(
+      "rectangle_entity_with_team_flush_result",
+      canvas,
+      maxDiffPercentage = 3.0
+    )
 
   test("paint draws the Circle Commands that contains a Circle Surface"):
     enlistCircle(BaseCircleSurface)
@@ -106,7 +136,7 @@ class ShapePainterTest extends AnyFunSuite with ScalaFxInit with MockFactory wit
 
   test("ShapePainter.paint calls drainBuffer on ShapeArchitect and processes commands"):
     val canvas = Canvas(800, 800)
-    val gc = canvas.graphicsContext2D
+    val gc     = canvas.graphicsContext2D
 
     given mockArchitect: ShapeArchitect = mock[ShapeArchitect]
 
@@ -121,7 +151,7 @@ class ShapePainterTest extends AnyFunSuite with ScalaFxInit with MockFactory wit
 
   test("ShapePainter.paint gracefully handles an empty buffer"):
     val canvas = Canvas(800, 800)
-    val gc = canvas.graphicsContext2D
+    val gc     = canvas.graphicsContext2D
 
     given mockArchitect: ShapeArchitect = mock[ShapeArchitect]
 

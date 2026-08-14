@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 
 class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val teams: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams 
+  private val teams: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
 
   test("buildFields should build a single select field with the correct id and label"):
     val fields = ChooseTeamFormDialog.buildSelect(teams)
@@ -35,7 +35,9 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
     inside(fields.head):
       case select: SelectFieldSpec => select.options should be(Seq.empty)
 
-  test("buildFields should not set a default value, letting the underlying control pick the first option"):
+  test(
+    "buildFields should not set a default value, letting the underlying control pick the first option"
+  ):
     val fields = ChooseTeamFormDialog.buildSelect(teams)
 
     inside(fields.head):

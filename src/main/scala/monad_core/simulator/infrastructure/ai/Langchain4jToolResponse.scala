@@ -1,14 +1,20 @@
 package monad_core.simulator.infrastructure.ai
 
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
-import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreShape, MonadCoreSurface, MonadCoreTeam}
+import monad_core.simulator.domain.engine.{
+  MonadCoreEntity,
+  MonadCoreShape,
+  MonadCoreSurface,
+  MonadCoreTeam
+}
 import monad_core.simulator.errors.BaseError
 
 object Langchain4jToolResponse:
+
   def save(
-            result: Either[BaseError, Unit],
-            successMessage: String
-          ): String =
+      result: Either[BaseError, Unit],
+      successMessage: String
+  ): String =
     result match
       case Left(error) =>
         s"Error: ${error.message}"
@@ -16,29 +22,29 @@ object Langchain4jToolResponse:
         s"Success: $successMessage"
 
   def getSafeList[T](
-                      result: Either[BaseError, List[T]]
-                    )(onSuccess: List[T] => String): String =
+      result: Either[BaseError, List[T]]
+  )(onSuccess: List[T] => String): String =
     result match
       case Left(error) =>
         s"Error: ${error.message}"
       case Right(list) => onSuccess(list)
 
   def render[A](
-                 result: Either[BaseError, A]
-               )(
-                 format: A => String
-               ): String =
+      result: Either[BaseError, A]
+  )(
+      format: A => String
+  ): String =
     result.fold(
       error => s"Error: ${error.message}",
       value => s"Result:\n${format(value)}"
     )
 
   def renderList[A](
-                     values: List[A],
-                     elementName: String
-                   )(
-                     format: A => String
-                   ): String =
+      values: List[A],
+      elementName: String
+  )(
+      format: A => String
+  ): String =
     if values.isEmpty then s"Result: no $elementName found."
     else
       val renderedValues = values.zipWithIndex

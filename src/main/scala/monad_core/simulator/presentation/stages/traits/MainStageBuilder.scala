@@ -8,12 +8,11 @@ import scalafx.scene.layout.HBox
 import scala.concurrent.ExecutionContext
 
 trait MainStageBuilder:
+
   def buildRootContent(
-                        stageWidth: ReadOnlyDoubleProperty,
-                        stageHeight: ReadOnlyDoubleProperty
-                      )
-                      (
-                      using             
-                      aiAgent: AiAgent,
-                       executionContext: ExecutionContext
-                      ): Either[BaseError, HBox]
+      stageWidth: ReadOnlyDoubleProperty,
+      stageHeight: ReadOnlyDoubleProperty
+  )(using
+      aiAgent: AiAgent,
+      executionContext: ExecutionContext
+  ): Either[BaseError, HBox]

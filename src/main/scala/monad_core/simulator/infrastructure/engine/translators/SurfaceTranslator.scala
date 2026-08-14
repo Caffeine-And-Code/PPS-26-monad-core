@@ -6,7 +6,9 @@ import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, Simu
 import monad_core.simulator.domain.engine.MonadCoreSurface
 
 object SurfaceTranslator:
+
   extension (entity: EngineSurface)
+
     def toSimulationSurface: MonadCoreSurface =
       MonadCoreSurface(
         id = entity.id.value,
@@ -17,22 +19,23 @@ object SurfaceTranslator:
       )
 
   extension (simulationSurface: MonadCoreSurface)
+
     def toEngineModel: Either[EngineError, EngineSurface] =
       def assignOptionalParamsToEntity(base: EngineSurface): Either[EngineError, EngineSurface] =
         for
           surfaceWithFriction <- simulationSurface.frictionIndex match
             case Some(index) => base.withFrictionIndex(index)
-            case None => Right(base)
+            case None        => Right(base)
 
           finalSurface <- simulationSurface.appliedForce match
-            case Some(force) => surfaceWithFriction.withAppliedForce(
-              Vector2D(
-                force._1,
-                force._2
+            case Some(force) =>
+              surfaceWithFriction.withAppliedForce(
+                Vector2D(
+                  force._1,
+                  force._2
+                )
               )
-            )
             case None => Right(surfaceWithFriction)
-
         yield finalSurface
 
       simulationSurface.shape match
@@ -48,7 +51,6 @@ object SurfaceTranslator:
             )
 
             finalEntity <- assignOptionalParamsToEntity(base)
-
           yield finalEntity
 
         case SimulationRectangle(width, height) =>
@@ -64,5 +66,4 @@ object SurfaceTranslator:
             )
 
             finalEntity <- assignOptionalParamsToEntity(base)
-
           yield finalEntity

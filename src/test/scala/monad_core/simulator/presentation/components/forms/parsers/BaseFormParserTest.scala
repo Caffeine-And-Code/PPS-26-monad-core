@@ -11,16 +11,16 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 
 class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
-  val ValidFormValueKey = "valid_key"
-  val InvalidFormValueKey = "invalid_key"
-  val FormValues: Map[String, String] = Map(ValidFormValueKey -> "10.0")
-  val XKey = "x"
-  val YKey = "y"
+  val ValidFormValueKey                     = "valid_key"
+  val InvalidFormValueKey                   = "invalid_key"
+  val FormValues: Map[String, String]       = Map(ValidFormValueKey -> "10.0")
+  val XKey                                  = "x"
+  val YKey                                  = "y"
   val VectorFormValues: Map[String, String] = Map(XKey -> "10.0", YKey -> "11.0")
-  val Position: (Double,Double) = (10, 11)
-  val Radius: Double = 5
-  val Length: Double = 6
-  val Height: Double = 7
+  val Position: (Double, Double)            = (10, 11)
+  val Radius: Double                        = 5
+  val Length: Double                        = 6
+  val Height: Double                        = 7
 
   test("A value can be get safely"):
     val expectedValue = "10.0"
@@ -59,7 +59,7 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
         error should be(expectedError)
 
   test("Trying to convert an invalid value in map returns a specific error"):
-    val expectedError = InvalidNumericFormFieldError(ValidFormValueKey)
+    val expectedError              = InvalidNumericFormFieldError(ValidFormValueKey)
     val FormValuesWithInvalidValue = Map(ValidFormValueKey -> "NotADouble")
 
     val result = BaseFormParser.parseDouble(FormValuesWithInvalidValue, ValidFormValueKey)
@@ -69,7 +69,7 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
         error should be(expectedError)
 
   test("A Vector2D can be obtained safely from a form Map"):
-    val expectedVector : (Double,Double) = (10.0, 11.0)
+    val expectedVector: (Double, Double) = (10.0, 11.0)
 
     val result = BaseFormParser.getSafeVector(VectorFormValues, XKey, YKey)
 
@@ -78,7 +78,7 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
         vector should be(expectedVector)
 
   test("getSafeVector2D returns a proper EngineError when the x key is missing"):
-    val expectedError = MissingKeyInFormError(XKey)
+    val expectedError          = MissingKeyInFormError(XKey)
     val formValuesWithMissingX = Map(YKey -> "11.0")
 
     val result = BaseFormParser.getSafeVector(formValuesWithMissingX, XKey, YKey)
@@ -88,7 +88,7 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
         error should be(expectedError)
 
   test("getSafeVector2D returns a proper EngineError when the y key is missing"):
-    val expectedError = MissingKeyInFormError(YKey)
+    val expectedError          = MissingKeyInFormError(YKey)
     val formValuesWithMissingY = Map(XKey -> "10.0")
 
     val result = BaseFormParser.getSafeVector(formValuesWithMissingY, XKey, YKey)
@@ -98,7 +98,7 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
         error should be(expectedError)
 
   test("getSafeVector2D returns a proper EngineError when the x value is not a valid number"):
-    val expectedError = InvalidNumericFormFieldError(XKey)
+    val expectedError          = InvalidNumericFormFieldError(XKey)
     val formValuesWithInvalidX = Map(XKey -> "NotADouble", YKey -> "11.0")
 
     val result = BaseFormParser.getSafeVector(formValuesWithInvalidX, XKey, YKey)
@@ -108,7 +108,7 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
         error should be(expectedError)
 
   test("getSafeVector2D returns a proper EngineError when the y value is not a valid number"):
-    val expectedError = InvalidNumericFormFieldError(YKey)
+    val expectedError          = InvalidNumericFormFieldError(YKey)
     val formValuesWithInvalidY = Map(XKey -> "10.0", YKey -> "NotADouble")
 
     val result = BaseFormParser.getSafeVector(formValuesWithInvalidY, XKey, YKey)
@@ -118,7 +118,7 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
         error should be(expectedError)
 
   test("getOptionalVector2D returns a Some when both x and y are present and valid"):
-    val expectedVector : (Double,Double) = (10.0, 11.0)
+    val expectedVector: (Double, Double) = (10.0, 11.0)
 
     val result = BaseFormParser.getOptionalVector2D(VectorFormValues, XKey, YKey)
 
@@ -167,7 +167,10 @@ class BaseFormParserTest extends AnyFunSuite with Inside with Matchers:
       ),
       (
         LocatableFormShapes.Rectangle.getStringValue,
-        Map(BaseFormParser.HeightKey -> Height.toString, BaseFormParser.LengthKey -> Length.toString),
+        Map(
+          BaseFormParser.HeightKey -> Height.toString,
+          BaseFormParser.LengthKey -> Length.toString
+        ),
         SimulationRectangle(height = Height, width = Length)
       )
     )

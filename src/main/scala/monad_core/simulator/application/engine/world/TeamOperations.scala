@@ -4,8 +4,8 @@ import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
 
 case class SaveTeamCommand(
-                            team: MonadCoreTeam
-                          )
+    team: MonadCoreTeam
+)
 
 private[world] trait TeamOperations:
   def getAllTeams: Either[BaseError, List[MonadCoreTeam]]
@@ -17,4 +17,3 @@ private[world] trait TeamOperations:
   def removeTeam(id: String): Either[BaseError, Unit]
 
   def updateTeam(command: SaveTeamCommand): Either[BaseError, Unit]
-

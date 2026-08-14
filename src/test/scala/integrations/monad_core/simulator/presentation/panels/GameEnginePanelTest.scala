@@ -10,7 +10,10 @@ import monad_core.simulator.domain.engine.MonadCoreScene
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.presentation.panels.GameEnginePanel
-import monad_core.simulator.presentation.panels.traits.{GameEngineModePanelBuilder, SceneRendererPanelBuilder}
+import monad_core.simulator.presentation.panels.traits.{
+  GameEngineModePanelBuilder,
+  SceneRendererPanelBuilder
+}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import monad_core.simulator.{CannotBuildPanel, ImageResourceNotFound}
 import org.scalamock.function.{MockFunction0, MockFunction1}
@@ -21,25 +24,35 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
-class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
+class GameEnginePanelTest
+    extends AnyFunSuite
+    with Inside
+    with Matchers
+    with MockFactory
+    with ScalaFxInit:
   given MonadCoreGameEngineRuntime = MonadCoreGameEngineRuntime()
 
-  given ShapeArchitect & Painter = PaintArchitect
-  
+  given painter: Painter          = PaintArchitect
+  given architect: ShapeArchitect = PaintArchitect
+
   given World = MonadCoreWorld()
 
-  val modePanel: GameEngineModePanelBuilder = mock[GameEngineModePanelBuilder]
-  val sceneRenderer: SceneRendererPanelBuilder = mock[SceneRendererPanelBuilder]
-  val imageConfig: ImageConfigRecord = MockImageConfig()
+  val modePanel: GameEngineModePanelBuilder      = mock[GameEngineModePanelBuilder]
+  val sceneRenderer: SceneRendererPanelBuilder   = mock[SceneRendererPanelBuilder]
+  val imageConfig: ImageConfigRecord             = MockImageConfig()
   val onModeChange: MockFunction1[Boolean, Unit] = mockFunction[Boolean, Unit]
-  val onStopClick: MockFunction0[Unit] = mockFunction[Unit]
+  val onStopClick: MockFunction0[Unit]           = mockFunction[Unit]
 
   override def beforeAll(): Unit =
     onModeChange.expects(*).never()
     onStopClick.expects().never()
 
   def setupCorrectModePanel(): Unit =
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+    (modePanel
+      .build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using
+        _: World,
+        _: GameEngineRuntime
+      ))
       .expects(*, *, *, *, *, *)
       .returns(
         Right(
@@ -50,17 +63,26 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
       )
 
   def setupInvalidModePanel(): Unit =
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+    (modePanel
+      .build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using
+        _: World,
+        _: GameEngineRuntime
+      ))
       .expects(*, *, *, *, *, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
   def setupNeverCalledModePanel(): Unit =
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+    (modePanel
+      .build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using
+        _: World,
+        _: GameEngineRuntime
+      ))
       .expects(*, *, *, *, *, *)
       .never()
 
   def setupCorrectSceneRenderer(): Unit =
-    (sceneRenderer.build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
+    (sceneRenderer
+      .build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
       .expects(*, *, *, *)
       .returns(
         Right(
@@ -71,12 +93,14 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
       )
 
   def setupInvalidSceneRenderer(): Unit =
-    (sceneRenderer.build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
+    (sceneRenderer
+      .build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
       .expects(*, *, *, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
   def setupNeverCalledSceneRenderer(): Unit =
-    (sceneRenderer.build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
+    (sceneRenderer
+      .build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
       .expects(*, *, *, *)
       .never()
 
@@ -120,7 +144,11 @@ class GameEnginePanelTest extends AnyFunSuite with Inside with Matchers with Moc
     setupCorrectSceneRenderer()
     val badImageConfig: ImageConfigRecord = mock[ImageConfigRecord]
 
-    (modePanel.build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using _: World, _: GameEngineRuntime))
+    (modePanel
+      .build(_: ImageConfigRecord, _: Boolean => Unit, _: () => Unit, _: BooleanProperty)(using
+        _: World,
+        _: GameEngineRuntime
+      ))
       .expects(badImageConfig, *, *, *, *, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 

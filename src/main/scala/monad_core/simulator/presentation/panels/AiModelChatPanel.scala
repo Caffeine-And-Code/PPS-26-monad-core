@@ -14,14 +14,14 @@ import scala.concurrent.ExecutionContext
 
 object AiModelChatPanel extends AiModelChatPanelBuilder:
 
-  private final case class ViewState(
+  final private case class ViewState(
       header: AiPanelHeader.Model,
       messages: MessageBox.Model,
       prompt: PromptComposer.Model
   )
 
   override def build(aiAgent: AiAgent)(using
-                                       executionContext: ExecutionContext
+      executionContext: ExecutionContext
   ): Either[BaseError, VBox] =
     val viewModel = new ChatPanelViewModel(
       aiAgent,
@@ -29,7 +29,7 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
     )
     val header = AiPanelHeader(
       AiPanelHeader.Props(
-        onClear= () => viewModel.onClearHistory(),
+        onClear = () => viewModel.onClearHistory(),
         modelName = aiAgent.getAgentInfo.modelName
       )
     )
@@ -75,8 +75,8 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
     )
 
   private def visibleMessages: ChatPanelState => Seq[ChatMessage] =
-      case ChatPanelState.Waiting(messages) =>
-        messages :+ ChatMessage("Loading ...", MessageAuthor.Assistant)
-      case ChatPanelState.Error(messages, _, error) =>
-        messages :+ ChatMessage(s"Error: $error", MessageAuthor.Assistant)
-      case ChatPanelState.Ready(messages, _) => messages
+    case ChatPanelState.Waiting(messages) =>
+      messages :+ ChatMessage("Loading ...", MessageAuthor.Assistant)
+    case ChatPanelState.Error(messages, _, error) =>
+      messages :+ ChatMessage(s"Error: $error", MessageAuthor.Assistant)
+    case ChatPanelState.Ready(messages, _) => messages

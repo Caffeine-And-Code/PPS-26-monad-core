@@ -4,7 +4,12 @@ import monad_core.engine.core.Scene
 import monad_core.engine.model.*
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.*
-import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, SaveTeamCommand, World}
+import monad_core.simulator.application.engine.world.{
+  SaveEntityCommand,
+  SaveSurfaceCommand,
+  SaveTeamCommand,
+  World
+}
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreSurface, MonadCoreTeam}
 import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
@@ -16,30 +21,51 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.compiletime.uninitialized
 
-class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory with BeforeAndAfterEach:
+class Langchain4jToolsTest
+    extends AnyFunSuite
+    with Matchers
+    with MockFactory
+    with BeforeAndAfterEach:
 
-  private val entityId = "entity"
-  private val surfaceId = "surface"
-  private val posX = 2.0
-  private val posY = 6.0
-  private val radius = 3.0
-  private val height = 4.0
+  private val entityId        = "entity"
+  private val surfaceId       = "surface"
+  private val posX            = 2.0
+  private val posY            = 6.0
+  private val radius          = 3.0
+  private val height          = 4.0
   private val rectangleLength = 5.0
-  private val invalidId = ""
+  private val invalidId       = ""
 
-  private val baseSimulationCircleEntity = MonadCoreEntity(entityId, (posX, posY), SimulationCircle(radius))
+  private val baseSimulationCircleEntity =
+    MonadCoreEntity(entityId, (posX, posY), SimulationCircle(radius))
+
   private val baseEngineCircleEntity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
 
-  private val baseSimulationRectangleEntity = MonadCoreEntity(entityId, (posX, posY), SimulationRectangle(height = height, width = rectangleLength))
-  private val baseEngineRectangleEntity = Entity.rectangle(entityId, Vector2D(posX, posY), height, rectangleLength).value
+  private val baseSimulationRectangleEntity = MonadCoreEntity(
+    entityId,
+    (posX, posY),
+    SimulationRectangle(height = height, width = rectangleLength)
+  )
 
-  private val baseSimulationCircleSurface = MonadCoreSurface(surfaceId, (posX, posY), SimulationCircle(radius))
-  private val baseEngineCircleSurface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
+  private val baseEngineRectangleEntity =
+    Entity.rectangle(entityId, Vector2D(posX, posY), height, rectangleLength).value
 
-  private val baseSimulationRectangleSurface = MonadCoreSurface(surfaceId, (posX, posY), SimulationRectangle(height = height, width = rectangleLength))
-  private val baseEngineRectangleSurface = Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
+  private val baseSimulationCircleSurface =
+    MonadCoreSurface(surfaceId, (posX, posY), SimulationCircle(radius))
 
-  private var world: World = uninitialized
+  private val baseEngineCircleSurface =
+    Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
+
+  private val baseSimulationRectangleSurface = MonadCoreSurface(
+    surfaceId,
+    (posX, posY),
+    SimulationRectangle(height = height, width = rectangleLength)
+  )
+
+  private val baseEngineRectangleSurface =
+    Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
+
+  private var world: World                         = uninitialized
   private var gameEngineRuntime: GameEngineRuntime = uninitialized
 
   override def beforeEach(): Unit =
@@ -59,7 +85,8 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
 
   test("list all entities in the world returns the list"):
     val circle = MonadCoreEntity("circle", (posX, posY), SimulationCircle(radius))
-    val rectangle = MonadCoreEntity("rectangle", (posX, posY), SimulationRectangle(rectangleLength, height))
+    val rectangle =
+      MonadCoreEntity("rectangle", (posX, posY), SimulationRectangle(rectangleLength, height))
     (() => world.getAllEntities).expects().returning(Right(List(circle, rectangle))).once()
 
     val result = tools.getAllEntities
@@ -136,7 +163,9 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
       (() => gameEngineRuntime.isRunning).expects().returning(false).once()
       world.createEntity
         .expects(SaveEntityCommand(entity))
-        .returning(Right(Scene(entities = Map(baseEngineCircleEntity.id -> baseEngineCircleEntity))))
+        .returning(
+          Right(Scene(entities = Map(baseEngineCircleEntity.id -> baseEngineCircleEntity)))
+        )
         .once()
 
     val result = tools.createCircleEntity(
@@ -172,7 +201,11 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     inSequence:
       (() => gameEngineRuntime.isRunning).expects().returning(false).once()
       world.createEntity
-        .expects(SaveEntityCommand(MonadCoreEntity(entityId, (posX, posY), SimulationCircle(invalidRadius))))
+        .expects(
+          SaveEntityCommand(
+            MonadCoreEntity(entityId, (posX, posY), SimulationCircle(invalidRadius))
+          )
+        )
         .returning(Left(RadiusMustBeGreaterThanZero().adaptError()))
         .once()
 
@@ -208,7 +241,9 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   test("when update rectangle entity is called returns a success message"):
     world.updateEntity
       .expects(SaveEntityCommand(baseSimulationRectangleEntity))
-      .returning(Right(Scene(entities = Map(baseEngineRectangleEntity.id -> baseEngineRectangleEntity))))
+      .returning(
+        Right(Scene(entities = Map(baseEngineRectangleEntity.id -> baseEngineRectangleEntity)))
+      )
       .once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
@@ -234,7 +269,10 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     result shouldBe "Result: no surfaces found."
 
   test("list all surfaces in the world returns the list"):
-    (() => world.getAllSurfaces).expects().returning(Right(List(baseSimulationCircleSurface))).once()
+    (() => world.getAllSurfaces)
+      .expects()
+      .returning(Right(List(baseSimulationCircleSurface)))
+      .once()
 
     val result = tools.getAllSurfaces
 
@@ -263,7 +301,9 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   test("when create circle surface is called returns a success message"):
     world.createSurface
       .expects(SaveSurfaceCommand(baseSimulationCircleSurface))
-      .returning(Right(Scene(surfaces = Map(baseEngineCircleSurface.id -> baseEngineCircleSurface))))
+      .returning(
+        Right(Scene(surfaces = Map(baseEngineCircleSurface.id -> baseEngineCircleSurface)))
+      )
       .once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
@@ -275,7 +315,9 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   test("when create rectangle surface is called returns a success message"):
     world.createSurface
       .expects(SaveSurfaceCommand(baseSimulationRectangleSurface))
-      .returning(Right(Scene(surfaces = Map(baseEngineRectangleSurface.id -> baseEngineRectangleSurface))))
+      .returning(
+        Right(Scene(surfaces = Map(baseEngineRectangleSurface.id -> baseEngineRectangleSurface)))
+      )
       .once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
@@ -287,7 +329,9 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   test("when update circle surface is called returns a success message"):
     world.updateSurface
       .expects(SaveSurfaceCommand(baseSimulationCircleSurface))
-      .returning(Right(Scene(surfaces = Map(baseEngineCircleSurface.id -> baseEngineCircleSurface))))
+      .returning(
+        Right(Scene(surfaces = Map(baseEngineCircleSurface.id -> baseEngineCircleSurface)))
+      )
       .once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
@@ -299,7 +343,9 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
   test("when update rectangle surface is called returns a success message"):
     world.updateSurface
       .expects(SaveSurfaceCommand(baseSimulationRectangleSurface))
-      .returning(Right(Scene(surfaces = Map(baseEngineRectangleSurface.id -> baseEngineRectangleSurface))))
+      .returning(
+        Right(Scene(surfaces = Map(baseEngineRectangleSurface.id -> baseEngineRectangleSurface)))
+      )
       .once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
@@ -348,35 +394,35 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
         |enemies: red""".stripMargin
 
   test("when create team is called returns a success message"):
-    val id = "blue"
-    val enemies = Set("red", "green")
-    val team = MonadCoreTeam(id, enemies)
-    val engineTeam =  Team.create(id, enemies).value
-    
+    val id         = "blue"
+    val enemies    = Set("red", "green")
+    val team       = MonadCoreTeam(id, enemies)
+    val engineTeam = Team.create(id, enemies).value
+
     inSequence:
       (() => gameEngineRuntime.isRunning).expects().returning(false).once()
       world.createTeam
         .expects(SaveTeamCommand(team))
         .returning(Right(Scene(teams = Map(engineTeam.id -> engineTeam))))
         .once()
-    
+
     val result = tools.createTeam("blue", "red, green")
 
     result shouldBe "Success: Team 'blue' created."
 
   test("when update team is called returns a success message"):
-    val id = "blue"
-    val enemies = Set("yellow")
-    val team = MonadCoreTeam(id, enemies)
-    val engineTeam =  Team.create(id, enemies).value
-    
+    val id         = "blue"
+    val enemies    = Set("yellow")
+    val team       = MonadCoreTeam(id, enemies)
+    val engineTeam = Team.create(id, enemies).value
+
     inSequence:
       (() => gameEngineRuntime.isRunning).expects().returning(false).once()
       world.updateTeam
         .expects(SaveTeamCommand(team))
         .returning(Right(Scene(teams = Map(engineTeam.id -> engineTeam))))
         .once()
-  
+
     val result = tools.updateTeam("blue", "yellow")
 
     result shouldBe "Success: Team 'blue' updated."

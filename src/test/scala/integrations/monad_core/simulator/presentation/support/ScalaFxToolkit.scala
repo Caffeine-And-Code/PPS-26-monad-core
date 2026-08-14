@@ -13,7 +13,7 @@ import java.util.logging.{Level, Logger}
 private object ScalaFxToolkit {
   private val initialized = new AtomicBoolean(false)
 
-  def init(): Unit = {
+  def init(): Unit =
     if (initialized.compareAndSet(false, true)) {
       // disable scalaFx warnings for tests
       Logger.getLogger("com.sun.javafx.application.PlatformImpl").setLevel(Level.SEVERE)
@@ -23,5 +23,5 @@ private object ScalaFxToolkit {
       latch.await()
       Platform.setImplicitExit(false)
     }
-  }
+
 }

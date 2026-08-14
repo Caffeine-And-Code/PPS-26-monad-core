@@ -7,9 +7,10 @@ import monad_core.simulator.errors.BaseError
 import scalafx.scene.layout.VBox
 
 trait SceneRendererPanelBuilder:
-  def build()(
-    using gameEngineRuntime: GameEngineRuntime,
-    world: World,
-    architect: ShapeArchitect,
-    painter: Painter
+
+  def build()(using
+      gameEngineRuntime: GameEngineRuntime,
+      world: World,
+      architect: ShapeArchitect,
+      painter: Painter
   ): Either[BaseError, VBox]

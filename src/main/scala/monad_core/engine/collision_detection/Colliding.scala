@@ -7,5 +7,7 @@ object Colliding:
 
   extension (locatable: Locatable)
 
-    infix def hasCollisionWith(other: Locatable)(using detector: CollisionDetector): Option[Collision] =
+    infix def hasCollisionWith(other: Locatable)(using
+        detector: CollisionDetector
+    ): Option[Collision] =
       detector.collision(locatable, other)

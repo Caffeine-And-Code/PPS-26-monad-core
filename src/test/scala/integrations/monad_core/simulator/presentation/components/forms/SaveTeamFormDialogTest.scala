@@ -14,9 +14,14 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.*
 
-class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with DialogTesting with FormTesting:
-  val TeamNameFieldIndex: Int = 0
-  val EnemiesMultiSelectIndex: Int = 0
+class SaveTeamFormDialogTest
+    extends AnyFunSuite
+    with Inside
+    with Matchers
+    with DialogTesting
+    with FormTesting:
+  val TeamNameFieldIndex: Int                     = 0
+  val EnemiesMultiSelectIndex: Int                = 0
   private val PossibleEnemies: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
 
   private def selectEnemyInMultiSelect(enemyIndex: Int): Unit =
@@ -76,7 +81,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
 
   test("SaveTeamFormDialog invokes onSubmit with correct team name and enemies"):
     var submittedTeam: Option[MonadCoreTeam] = None
-    val expectedName = "NewTeam"
+    val expectedName                         = "NewTeam"
 
     val props = SaveTeamFormDialogProps(
       title = "Add Team Test",
@@ -132,7 +137,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
     onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesVisualSnapshot("edit_team_form_dialog", rootNode, maxDiffPercentage = 10.0)
@@ -168,10 +173,14 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
     onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("save_team_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
+      assertMatchesVisualSnapshot(
+        "save_team_form_dialog_initial",
+        rootNode,
+        maxDiffPercentage = 9.2
+      )
     }
 
   test("SaveTeamFormDialog matches architectural snapshot on creation"):

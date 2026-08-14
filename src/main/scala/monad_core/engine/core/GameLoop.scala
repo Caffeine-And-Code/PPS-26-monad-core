@@ -1,71 +1,60 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
+import monad_core.engine.errors.EngineError
 import monad_core.engine.public_api.Painter
 
-import scala.annotation.tailrec
+trait GameLoop:
+  def mode: LoopMode
+  def tickTime: Long
+  def isRunning: Boolean
+  def lastTime: Long
+  def accumulator: Long
+  def maxFrameTime: Long
 
-val DefaultTickTime = 16_000_000L
-val InitialTime = 0L
-val InitialAccumulatorValue = 0L
-val DefaultMaxFrameTime = 250_000_000L
-val StaticAlpha = 1.0
+  def withMode(newMode: LoopMode): GameLoop
+  def withTickTime(newTickTime: Long): Either[EngineError, GameLoop]
+  def start(): GameLoop
+  def stop(): GameLoop
 
-case class GameLoop(
-                     mode: LoopMode = EditMode,
-                     tickTime: Long = DefaultTickTime,
-                     isRunning: Boolean = false,
-                     lastTime: Long = InitialTime,
-                     accumulator: Long = InitialAccumulatorValue,
-                     maxFrameTime: Long = DefaultMaxFrameTime
-                   ):
-  require(tickTime > 0, "tick time cannot be negative or zero")
-  require(lastTime >= 0, "last time cannot be negative")
-  require(accumulator >= 0, "accumulator cannot be negative")
-  require(maxFrameTime > 0, "max frame time cannot be negative or zero")
-  require(maxFrameTime >= tickTime, "max frame time cannot be less than tick time")
+  def tick(scene: State, currentTime: Long)(using
+      physics: PhysicsEngine,
+      painter: Painter
+  ): Either[EngineError, (State, GameLoop)]
 
 object GameLoop:
-  extension (gameLoop: GameLoop)
-    def withMode(newMode: LoopMode): GameLoop =
-      gameLoop.copy(mode = newMode)
+  val DefaultTickTime                 = 16_000_000L
+  val InitialTime                     = 0L
+  private val InitialAccumulatorValue = 0L
+  val DefaultMaxFrameTime             = 250_000_000L
+  val StaticAlpha                     = 1.0
 
-    def withTickTime(newTickTime: Long): GameLoop =
-      gameLoop.copy(tickTime = newTickTime)
+  def apply(
+      mode: LoopMode = LoopMode.EditMode,
+      tickTime: Long = DefaultTickTime,
+      isRunning: Boolean = false,
+      lastTime: Long = InitialTime,
+      accumulator: Long = InitialAccumulatorValue,
+      maxFrameTime: Long = DefaultMaxFrameTime
+  ): Either[EngineError, GameLoop] =
+    for
+      _ <- Either.cond(tickTime > 0, (), InvalidTickTime(tickTime))
+      _ <- Either.cond(lastTime >= 0, (), InvalidLastTime(lastTime))
+      _ <- Either.cond(accumulator >= 0, (), InvalidAccumulator(accumulator))
+      _ <- Either.cond(maxFrameTime > 0, (), InvalidMaxFrameTime(maxFrameTime))
+      _ <- Either.cond(
+        maxFrameTime >= tickTime,
+        (),
+        InvalidMaxFrameTimeTickTimeRatio(maxFrameTime, tickTime)
+      )
+    yield GameLoopImpl(mode, tickTime, isRunning, lastTime, accumulator, maxFrameTime)
 
-    def start(): GameLoop =
-      gameLoop.copy(isRunning = true).withMode(newMode = SimulationMode)
-
-    def stop(): GameLoop =
-      gameLoop.copy(isRunning = false).withMode(newMode = EditMode)
-
-    def tick(
-              state: State,
-              physicsEngine: PhysicsEngine,
-              renderEngine: RenderEngine,
-              currentTime: Long
-            )
-            (using painter: Painter): (State, GameLoop) =
-      if !gameLoop.isRunning || gameLoop.mode == EditMode then
-        renderEngine.render(state, StaticAlpha)
-        (state, gameLoop.copy(lastTime = currentTime))
-      else
-        val elapsedTime = currentTime - gameLoop.lastTime
-        val clampedTime = Math.min(elapsedTime, gameLoop.maxFrameTime)
-        val remainingTime = gameLoop.accumulator + clampedTime
-
-        @tailrec
-        def runFixedUpdate(remainingTime: Long, currentScene: State): (State, Long) =
-          if remainingTime < gameLoop.tickTime then
-            (currentScene, remainingTime)
-          else
-            val updatedScene = physicsEngine.step(currentScene, gameLoop.tickTime)
-            runFixedUpdate(remainingTime - gameLoop.tickTime, updatedScene)
-
-        val (currentScene, currentAccumulator) = runFixedUpdate(remainingTime, state)
-
-        val alpha = currentAccumulator.toDouble / gameLoop.tickTime.toDouble
-        renderEngine.render(currentScene, alpha)
-
-        (currentScene, gameLoop.copy(lastTime = currentTime, accumulator = currentAccumulator))
-
+  def default(): GameLoop =
+    GameLoopImpl(
+      mode = LoopMode.EditMode,
+      tickTime = DefaultTickTime,
+      isRunning = false,
+      lastTime = InitialTime,
+      accumulator = InitialAccumulatorValue,
+      maxFrameTime = DefaultMaxFrameTime
+    )

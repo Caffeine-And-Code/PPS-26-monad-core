@@ -10,23 +10,23 @@ object EntityFormParser:
 
   val PositionXKey = "x"
   val PositionYKey = "y"
-  val ShapeKey = "shape"
-  val SpeedXKey = "speedX"
-  val SpeedYKey = "speedY"
-  val HealthKey = "health"
-  val WeightKey = "weight"
-  val TeamIdKey = "teamId"
+  val ShapeKey     = "shape"
+  val SpeedXKey    = "speedX"
+  val SpeedYKey    = "speedY"
+  val HealthKey    = "health"
+  val WeightKey    = "weight"
+  val TeamIdKey    = "teamId"
 
   def buildEntity(
-                   values: Map[String, String],
-                   generateId: () => String = () => Random.alphanumeric.take(10).mkString
-                 ): Either[BaseError, MonadCoreEntity] =
+      values: Map[String, String],
+      generateId: () => String = () => Random.alphanumeric.take(10).mkString
+  ): Either[BaseError, MonadCoreEntity] =
     for
-      position <- BaseFormParser.getSafeVector(values, PositionXKey, PositionYKey)
+      position        <- BaseFormParser.getSafeVector(values, PositionXKey, PositionYKey)
       shapeFormChoice <- values.getValueSafe(ShapeKey)
-      shape <- BaseFormParser.getShape(shapeFormChoice, values)
+      shape           <- BaseFormParser.getShape(shapeFormChoice, values)
 
-      speed = BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey)
+      speed  = BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey)
       health = values.get(HealthKey).flatMap(_.toDoubleOption).map(_.toInt)
       weight = values.get(WeightKey).flatMap(_.toDoubleOption).map(_.toInt)
       teamId = values.get(TeamIdKey).filterNot(id => id.isEmpty)
@@ -40,5 +40,4 @@ object EntityFormParser:
         health = health,
         teamId = teamId
       )
-
     yield entity

@@ -4,41 +4,49 @@ import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
-import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{getDefaultValuesByShape, getEnumValue}
-import monad_core.simulator.presentation.components.forms.parsers.{EntityFormParser, LocatableFormShapes}
+import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
+  getDefaultValuesByShape,
+  getEnumValue
+}
+import monad_core.simulator.presentation.components.forms.parsers.{
+  EntityFormParser,
+  LocatableFormShapes
+}
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
 final case class SaveEntityFormDialogProps(
-                                            title: String,
-                                            onSubmit: MonadCoreEntity => Unit,
-                                            onError: BaseError => Unit,
-                                            teams: Seq[MonadCoreTeam],
-                                            anchorNode: Option[Node] = None,
-                                            entityToUpdate: Option[MonadCoreEntity] = None
-                                          )
+    title: String,
+    onSubmit: MonadCoreEntity => Unit,
+    onError: BaseError => Unit,
+    teams: Seq[MonadCoreTeam],
+    anchorNode: Option[Node] = None,
+    entityToUpdate: Option[MonadCoreEntity] = None
+)
 
 private object EntityFormDefaults:
-  val InitialX: String = "10.0"
-  val InitialY: String = "10.0"
+  val InitialX: String     = "10.0"
+  val InitialY: String     = "10.0"
   val InitialShape: String = LocatableFormShapes.CircleLabel
 
 private case class SaveEntityFormDefaultValues(
-                                                x: Option[String] = Option.apply(EntityFormDefaults.InitialX),
-                                                y: Option[String] = Option.apply(EntityFormDefaults.InitialY),
-                                                shape: Option[String] = Option.apply(EntityFormDefaults.InitialShape),
-                                                speedX: Option[String] = None,
-                                                speedY: Option[String] = None,
-                                                weight: Option[String] = None,
-                                                health: Option[String] = None,
-                                                teamId: Option[String] = None,
-                                                radius: Option[String] = None,
-                                                height: Option[String] = None,
-                                                length: Option[String] = None,
-                                              )
+    x: Option[String] = Option.apply(EntityFormDefaults.InitialX),
+    y: Option[String] = Option.apply(EntityFormDefaults.InitialY),
+    shape: Option[String] = Option.apply(EntityFormDefaults.InitialShape),
+    speedX: Option[String] = None,
+    speedY: Option[String] = None,
+    weight: Option[String] = None,
+    health: Option[String] = None,
+    teamId: Option[String] = None,
+    radius: Option[String] = None,
+    height: Option[String] = None,
+    length: Option[String] = None
+)
 
 object SaveEntityFormDialog:
-  private[forms] val Shapes = Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
+
+  private[forms] val Shapes =
+    Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
   def show(props: SaveEntityFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.entityToUpdate)
@@ -60,7 +68,9 @@ object SaveEntityFormDialog:
     )
   }
 
-  private[forms] def buildDefaultValues(entityToUpdate: Option[MonadCoreEntity]): SaveEntityFormDefaultValues =
+  private[forms] def buildDefaultValues(
+      entityToUpdate: Option[MonadCoreEntity]
+  ): SaveEntityFormDefaultValues =
     entityToUpdate match
       case None => SaveEntityFormDefaultValues()
       case Some(entity) =>
@@ -80,10 +90,21 @@ object SaveEntityFormDialog:
           speedY = entity.speed.map(_._2.toString)
         )
 
-  private[forms] def buildFields(teams: Seq[MonadCoreTeam], defaultValues: SaveEntityFormDefaultValues): Seq[FormFieldSpec] =
+  private[forms] def buildFields(
+      teams: Seq[MonadCoreTeam],
+      defaultValues: SaveEntityFormDefaultValues
+  ): Seq[FormFieldSpec] =
     Seq(
-      TextFieldSpec(id = EntityFormParser.PositionXKey, label = "Initial X Position", defaultValue = defaultValues.x),
-      TextFieldSpec(id = EntityFormParser.PositionYKey, label = "Initial Y Position", defaultValue = defaultValues.y),
+      TextFieldSpec(
+        id = EntityFormParser.PositionXKey,
+        label = "Initial X Position",
+        defaultValue = defaultValues.x
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.PositionYKey,
+        label = "Initial Y Position",
+        defaultValue = defaultValues.y
+      ),
       SelectFieldSpec(
         id = EntityFormParser.ShapeKey,
         label = "Shape",
@@ -95,10 +116,26 @@ object SaveEntityFormDialog:
         ),
         defaultValue = defaultValues.shape
       ),
-      TextFieldSpec(id = EntityFormParser.SpeedXKey, label = "Initial Speed X", defaultValue = defaultValues.speedX),
-      TextFieldSpec(id = EntityFormParser.SpeedYKey, label = "Initial Speed Y", defaultValue = defaultValues.speedY),
-      TextFieldSpec(id = EntityFormParser.WeightKey, label = "Weight", defaultValue = defaultValues.weight),
-      TextFieldSpec(id = EntityFormParser.HealthKey, label = "Health", defaultValue = defaultValues.health),
+      TextFieldSpec(
+        id = EntityFormParser.SpeedXKey,
+        label = "Initial Speed X",
+        defaultValue = defaultValues.speedX
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.SpeedYKey,
+        label = "Initial Speed Y",
+        defaultValue = defaultValues.speedY
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.WeightKey,
+        label = "Weight",
+        defaultValue = defaultValues.weight
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.HealthKey,
+        label = "Health",
+        defaultValue = defaultValues.health
+      ),
       SelectFieldSpec(
         id = EntityFormParser.TeamIdKey,
         label = "Team",

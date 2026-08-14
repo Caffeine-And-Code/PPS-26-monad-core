@@ -7,6 +7,7 @@ import monad_core.simulator.domain.engine.MonadCoreTeam
 object TeamTranslator:
 
   extension (team: EngineTeam)
+
     def toSimulationTeam: MonadCoreTeam =
       MonadCoreTeam(
         id = team.id.value,
@@ -14,16 +15,16 @@ object TeamTranslator:
       )
 
   extension (simulationTeam: MonadCoreTeam)
+
     def toEngineModel: Either[EngineError, EngineTeam] =
       for
         id <- TeamId(simulationTeam.id)
         enemies <- simulationTeam.enemies
-          .foldLeft[Either[EngineError, Set[TeamId]]](Right(Set.empty)) {
-            (previousSet, enemyId) =>
-              for
-                previousEnemies <- previousSet
-                teamId <- TeamId(enemyId)
-              yield previousEnemies + teamId
+          .foldLeft[Either[EngineError, Set[TeamId]]](Right(Set.empty)) { (previousSet, enemyId) =>
+            for
+              previousEnemies <- previousSet
+              teamId          <- TeamId(enemyId)
+            yield previousEnemies + teamId
           }
 
         team <- EngineTeam(id, enemies)

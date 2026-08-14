@@ -14,7 +14,7 @@ class IntervalTest extends AnyFunSuite with Inside with Matchers with MockFactor
       ("min", "max", "value"),
       (0, 10, 0),
       (0, 10, 10),
-      (0, 10, 5),
+      (0, 10, 5)
     )
 
     forAll(cases): (min, max, value) =>
@@ -29,7 +29,7 @@ class IntervalTest extends AnyFunSuite with Inside with Matchers with MockFactor
       ("min", "max", "value"),
       (0, 10, -1),
       (0, 10, 11),
-      (0, 10, 20),
+      (0, 10, 20)
     )
 
     forAll(cases): (min, max, value) =>

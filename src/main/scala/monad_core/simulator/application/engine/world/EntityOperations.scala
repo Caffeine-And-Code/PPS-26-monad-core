@@ -4,11 +4,11 @@ import monad_core.simulator.domain.engine.MonadCoreEntity
 import monad_core.simulator.errors.BaseError
 
 case class SaveEntityCommand(
-                              entity: MonadCoreEntity
-                            )
+    entity: MonadCoreEntity
+)
 
 private[world] trait EntityOperations:
-  def getAllEntities: Either[BaseError,List[MonadCoreEntity]]
+  def getAllEntities: Either[BaseError, List[MonadCoreEntity]]
 
   def getEntity(entityId: String): Either[BaseError, MonadCoreEntity]
 
@@ -17,4 +17,3 @@ private[world] trait EntityOperations:
   def removeEntity(entityId: String): Either[BaseError, Unit]
 
   def updateEntity(command: SaveEntityCommand): Either[BaseError, Unit]
-

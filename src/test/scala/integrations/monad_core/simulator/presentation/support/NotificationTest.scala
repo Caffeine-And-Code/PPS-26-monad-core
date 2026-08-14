@@ -12,7 +12,7 @@ import scala.compiletime.uninitialized
 trait NotificationTest extends ScalaFxInit with SnapshotTesting with BeforeAndAfterEach:
   this: Suite =>
   protected var root: StackPane = uninitialized
-  protected var stage: Stage = uninitialized
+  protected var stage: Stage    = uninitialized
 
   override protected def beforeEach(): Unit =
     super.beforeEach()

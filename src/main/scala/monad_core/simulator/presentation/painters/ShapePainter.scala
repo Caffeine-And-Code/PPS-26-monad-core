@@ -17,4 +17,3 @@ object ShapePainter:
       case DrawCommand.Rectangle(x, y, w, h, c) =>
         gc.fill = c
         gc.fillRect(x - w / 2, y - h / 2, w, h)
-  

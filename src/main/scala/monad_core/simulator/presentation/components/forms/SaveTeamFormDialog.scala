@@ -9,28 +9,28 @@ import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
 final case class SaveTeamFormDialogProps(
-                                          title: String,
-                                          onSubmit: MonadCoreTeam => Unit,
-                                          onError: BaseError => Unit,
-                                          possibleEnemies: Seq[MonadCoreTeam],
-                                          anchorNode: Option[Node] = None,
-                                          teamToUpdate: Option[MonadCoreTeam] = None
-                                        )
-
+    title: String,
+    onSubmit: MonadCoreTeam => Unit,
+    onError: BaseError => Unit,
+    possibleEnemies: Seq[MonadCoreTeam],
+    anchorNode: Option[Node] = None,
+    teamToUpdate: Option[MonadCoreTeam] = None
+)
 
 final case class SaveTeamFormDefaultValues(
-                                            teamName: Option[String] = Option.empty,
-                                            enemies: Seq[String] = Seq.empty
-                                          )
+    teamName: Option[String] = Option.empty,
+    enemies: Seq[String] = Seq.empty
+)
 
-private[forms] final case class BuildSaveTeamFormFieldsRecord(
-                                                               possibleEnemies: Seq[MonadCoreTeam],
-                                                               defaultValues: SaveTeamFormDefaultValues
-                                                             )
+final private[forms] case class BuildSaveTeamFormFieldsRecord(
+    possibleEnemies: Seq[MonadCoreTeam],
+    defaultValues: SaveTeamFormDefaultValues
+)
 
 object SaveTeamFormDialog:
+
   def show(props: SaveTeamFormDialogProps): Either[BaseError, Unit] = {
-    val defaultValues = buildDefaultValues(props.teamToUpdate)
+    val defaultValues     = buildDefaultValues(props.teamToUpdate)
     val buildFieldsRecord = BuildSaveTeamFormFieldsRecord(props.possibleEnemies, defaultValues)
 
     FormDialog.show(
@@ -38,40 +38,46 @@ object SaveTeamFormDialog:
         title = props.title,
         fields = props.teamToUpdate match
           case Some(team) => buildTeamEditFields(buildFieldsRecord)
-          case None => buildTeamCreationFields(buildFieldsRecord)
+          case None       => buildTeamCreationFields(buildFieldsRecord)
         ,
         owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
         onSubmit = values =>
           val newTeam = props.teamToUpdate match
-            case None => TeamFormParser.buildTeam(values)
+            case None          => TeamFormParser.buildTeam(values)
             case Some(oldTeam) => TeamFormParser.buildUpdatedTeam(values, oldTeam)
-          
+
           newTeam.matchToResult(props.onError)(props.onSubmit)
       )
     )
   }
 
-  private[forms] def buildDefaultValues(teamToUpdate: Option[MonadCoreTeam]): SaveTeamFormDefaultValues =
+  private[forms] def buildDefaultValues(
+      teamToUpdate: Option[MonadCoreTeam]
+  ): SaveTeamFormDefaultValues =
     teamToUpdate match
       case None => SaveTeamFormDefaultValues()
       case Some(team) =>
         SaveTeamFormDefaultValues(
           teamName = Some(team.id),
-          enemies = Seq.from(team.enemies),
+          enemies = Seq.from(team.enemies)
         )
 
   private[forms] def buildTeamCreationFields(
-                                              record: BuildSaveTeamFormFieldsRecord
-                                            ): Seq[FormFieldSpec] =
+      record: BuildSaveTeamFormFieldsRecord
+  ): Seq[FormFieldSpec] =
     Seq(
-      TextFieldSpec(id = TeamFormParser.TeamIdKey, label = "Name", defaultValue = record.defaultValues.teamName),
+      TextFieldSpec(
+        id = TeamFormParser.TeamIdKey,
+        label = "Name",
+        defaultValue = record.defaultValues.teamName
+      )
     ).appendedAll(
       buildTeamEditFields(record)
     )
 
   private[forms] def buildTeamEditFields(
-                                          record: BuildSaveTeamFormFieldsRecord
-                                        ): Seq[FormFieldSpec] =
+      record: BuildSaveTeamFormFieldsRecord
+  ): Seq[FormFieldSpec] =
     Seq(
       MultiSelectFieldSpec(
         id = TeamFormParser.EnemiesKey,

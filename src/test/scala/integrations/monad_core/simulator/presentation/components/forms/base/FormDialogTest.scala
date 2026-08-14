@@ -12,7 +12,13 @@ import org.scalatest.prop.Tables.Table
 import scalafx.Includes.*
 import scalafx.scene.control.{Button, ComboBox}
 
-class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFactory with DialogTesting with FormTesting:
+class FormDialogTest
+    extends AnyFunSuite
+    with Inside
+    with Matchers
+    with MockFactory
+    with DialogTesting
+    with FormTesting:
 
   private val defaultFields: Seq[FormFieldSpec] = Seq(
     TextFieldSpec(id = "name", label = "Name", defaultValue = Some("Entity_1")),
@@ -25,7 +31,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
         radiusDefaultValue = Some("5.0"),
         widthDefaultValue = Some("10.0"),
         heightDefaultValue = Some("20.0")
-      ),
+      )
     )
   )
 
@@ -65,8 +71,8 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
     clickButton(new Button(saveButtonNode))
 
     submittedValues shouldBe Map(
-      "name" -> "Entity_1",
-      "shape" -> "Circle",
+      "name"   -> "Entity_1",
+      "shape"  -> "Circle",
       "radius" -> "5.0"
     )
 
@@ -90,8 +96,8 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
     }
 
     submittedValues shouldBe Map(
-      "name" -> "Entity_1",
-      "shape" -> "Rectangle",
+      "name"   -> "Entity_1",
+      "shape"  -> "Rectangle",
       "length" -> "10.0",
       "height" -> "20.0"
     )
@@ -127,7 +133,7 @@ class FormDialogTest extends AnyFunSuite with Inside with Matchers with MockFact
     onFxThread {
       getOrFail(FormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesVisualSnapshot("generic_form_dialog", rootNode, maxDiffPercentage = 8.0)

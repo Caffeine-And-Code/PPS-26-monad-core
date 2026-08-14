@@ -19,17 +19,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 final class ScalaFxLauncher(mainStage: MainStageBuilder) {
 
-  private val MinStageWidth = 1024.0
-  private val MinStageHeight = 720.0
+  private val MinStageWidth         = 1024.0
+  private val MinStageHeight        = 720.0
   private val StartupTimeoutSeconds = 10L
 
-  def run()
-         (
-           using aiAgent: AiAgent,
-           world: World,
-           gameEngineRuntime: GameEngineRuntime
-         ): Either[BaseError, Unit] =
-    val latch = new CountDownLatch(1)
+  def run()(using
+      aiAgent: AiAgent,
+      world: World,
+      gameEngineRuntime: GameEngineRuntime
+  ): Either[BaseError, Unit] =
+    val latch                                     = new CountDownLatch(1)
     @volatile var result: Either[BaseError, Unit] = Left(StartupTimeout(StartupTimeoutSeconds))
 
     val buildAndShow: Runnable = () =>
@@ -65,11 +64,9 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
       catch
         case throwable: Throwable =>
           result = Left(UnexpectedStartupFailure(throwable.getMessage))
-      finally
-        latch.countDown()
+      finally latch.countDown()
 
-    try
-      Platform.startup(buildAndShow)
+    try Platform.startup(buildAndShow)
     catch
       case _: IllegalStateException =>
         // JavaFx toolkit has already started, schedule the program startup as soon
@@ -78,8 +75,7 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
 
     val completedInTime = latch.await(StartupTimeoutSeconds, TimeUnit.SECONDS)
 
-    if !completedInTime then
-      Left(StartupTimeout(StartupTimeoutSeconds))
-    else
-      result
+    if !completedInTime then Left(StartupTimeout(StartupTimeoutSeconds))
+    else result
+
 }

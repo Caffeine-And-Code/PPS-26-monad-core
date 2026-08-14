@@ -15,7 +15,7 @@ class Langchain4jAgentFactoryTest extends AnyFunSuite with Matchers with MockFac
       modelName = "gemma4:e2b",
       provider = "ollama"
     )
-    val word: World = mock[World]
+    val word: World                          = mock[World]
     val gameEngineRuntime: GameEngineRuntime = mock[GameEngineRuntime]
 
     val result = Langchain4jAgentFactory.buildOllama(ollamaConfig)(using word, gameEngineRuntime)

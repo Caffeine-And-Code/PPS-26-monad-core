@@ -11,22 +11,24 @@ import scalafx.scene.Node
 import scalafx.scene.control.{ContextMenu, MenuItem}
 
 final case class MenuButtonItem(
-                                 label: String,
-                                 onSelect: () => Unit,
-                                 isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
-                               )
+    label: String,
+    onSelect: () => Unit,
+    isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
+)
 
 final case class MenuButtonProps(
-                                  imageConfig: ImageConfigRecord,
-                                  defaultImage: Image,
-                                  items: Seq[MenuButtonItem],
-                                  activeImage: Option[Image] = None,
-                                  side: Side = Side.Bottom,
-                                  isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
-                                )
+    imageConfig: ImageConfigRecord,
+    defaultImage: Image,
+    items: Seq[MenuButtonItem],
+    activeImage: Option[Image] = None,
+    side: Side = Side.Bottom,
+    isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
+)
 
 object MenuButton {
+
   extension (item: MenuButtonItem)
+
     def toMenuItem: MenuItem =
       new MenuItem(item.label):
         disable <== item.isDisabled
@@ -84,6 +86,8 @@ object MenuButton {
           else contextMenu.show(btn, props.side, 0, 0)
         btn
       }
-      .left.map(error => CannotBuildButton(error, MenuButton.toString))
+      .left
+      .map(error => CannotBuildButton(error, MenuButton.toString))
   }
+
 }

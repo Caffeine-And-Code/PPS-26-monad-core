@@ -26,23 +26,25 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     world.getAllEntities.value.map(_.id).toSet - StarterEntityId
 
   private def worldWithOneEntity(id: String): World =
-    val entity = MonadCoreEntity(id, (0,0), SimulationCircle(2))
+    val entity = MonadCoreEntity(id, (0, 0), SimulationCircle(2))
 
-    MonadCoreWorld(MonadCoreScene(
-      entities = List(entity)
-    ))
+    MonadCoreWorld(
+      MonadCoreScene(
+        entities = List(entity)
+      )
+    )
 
   test("init starts the loop and delivers frames through onFrame"):
     val firstFrame = new CountDownLatch(1)
-    val received = new AtomicReference[World]()
+    val received   = new AtomicReference[World]()
 
     val engine = MonadCoreGameEngineRuntime()
 
     engine.initializeWorld(MonadCoreWorld(MonadCoreScene()))
-    engine.attach(world => {
+    engine.attach { world =>
       received.set(world)
       firstFrame.countDown()
-    })
+    }
 
     assert(firstFrame.await(AwaitTimeout, TimeUnit.SECONDS), "onFrame was never called after init")
     inside(received.get().getAllEntities):
@@ -60,16 +62,20 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     engine.stop()
     engine.start()
 
-    assert(frames.await(AwaitTimeout, TimeUnit.SECONDS), "engine stopped delivering frames after play/pause")
+    assert(
+      frames.await(AwaitTimeout, TimeUnit.SECONDS),
+      "engine stopped delivering frames after play/pause"
+    )
 
-
-  test("reset replaces the world; frames observed afterwards reflect the new world, not the old one"):
+  test(
+    "reset replaces the world; frames observed afterwards reflect the new world, not the old one"
+  ):
     val worldBeforeReset = worldWithOneEntity("before")
-    val worldAfterReset = worldWithOneEntity("after")
+    val worldAfterReset  = worldWithOneEntity("after")
 
     val sawPreResetFrame = new CountDownLatch(1)
-    val frameAfterReset = new CountDownLatch(1)
-    val received = new AtomicReference[World]()
+    val frameAfterReset  = new CountDownLatch(1)
+    val received         = new AtomicReference[World]()
 
     val engine = MonadCoreGameEngineRuntime()
 
@@ -77,19 +83,20 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
       if world.getAllEntities == worldAfterReset.getAllEntities then
         received.set(world)
         frameAfterReset.countDown()
-      else
-        sawPreResetFrame.countDown()
+      else sawPreResetFrame.countDown()
     }
 
     engine.initializeWorld(worldBeforeReset)
     engine.start()
 
-    val hasWaitedForAtLeastOneFrameBeforeReset = sawPreResetFrame.await(AwaitTimeout, TimeUnit.SECONDS)
+    val hasWaitedForAtLeastOneFrameBeforeReset =
+      sawPreResetFrame.await(AwaitTimeout, TimeUnit.SECONDS)
     hasWaitedForAtLeastOneFrameBeforeReset should be(true)
 
     engine.initializeWorld(worldAfterReset)
 
-    val hasWaitedForAtLeastOneFrameAfterReset = frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS)
+    val hasWaitedForAtLeastOneFrameAfterReset =
+      frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS)
     hasWaitedForAtLeastOneFrameAfterReset should be(true)
 
     received.get().getAllEntities should be(worldAfterReset.getAllEntities)
@@ -99,7 +106,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val extraEntity = MonadCoreEntity("intruder", (0, 0), SimulationCircle(1))
 
     val frameAfterReset = new CountDownLatch(1)
-    val received = new AtomicReference[World]()
+    val received        = new AtomicReference[World]()
 
     val engine = MonadCoreGameEngineRuntime()
 
@@ -120,7 +127,9 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     hasWaitedForNextFrame should be(true)
     idsExcludingStarter(received.get()) shouldBe Set("keeper")
 
-  test("resetToSnapshot without a prior createSnapshot does not crash and leaves the loop deliverable"):
+  test(
+    "resetToSnapshot without a prior createSnapshot does not crash and leaves the loop deliverable"
+  ):
     val frames = new CountDownLatch(1)
     val engine = MonadCoreGameEngineRuntime()
 
@@ -142,12 +151,12 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     engine.isRunning shouldBe false
 
   test("createSnapshot called twice keeps only the latest snapshot"):
-    val world = worldWithOneEntity("a")
+    val world   = worldWithOneEntity("a")
     val entityB = MonadCoreEntity("b", (0, 0), SimulationCircle(1))
     val entityC = MonadCoreEntity("c", (0, 0), SimulationCircle(1))
 
     val frameAfterReset = new CountDownLatch(1)
-    val received = new AtomicReference[World]()
+    val received        = new AtomicReference[World]()
 
     val engine = MonadCoreGameEngineRuntime()
     engine.initializeWorld(world)
@@ -170,7 +179,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     idsExcludingStarter(received.get()) shouldBe Set("a", "b", "c")
 
   test("stop after resetToSnapshot does not deliver further frames, and start resumes correctly"):
-    val engine = MonadCoreGameEngineRuntime()
+    val engine                  = MonadCoreGameEngineRuntime()
     val framesAfterExplicitStop = new AtomicReference(0)
 
     engine.initializeWorld(worldWithOneEntity("x"))

@@ -12,14 +12,15 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 
 class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with MockFactory:
-  val Radius: Double = 5
-  val Length: Double = 6
-  val Height: Double = 7
+  val Radius: Double             = 5
+  val Length: Double             = 6
+  val Height: Double             = 7
   val Position: (Double, Double) = (10, 11)
-  val Speed : (Double, Double) = (12, 13)
-  val Weight: Double = 14
-  val Health: Int = 15
-  val TeamId: String = "teamIdValue"
+  val Speed: (Double, Double)    = (12, 13)
+  val Weight: Double             = 14
+  val Health: Int                = 15
+  val TeamId: String             = "teamIdValue"
+
   val FormValues: Map[String, String] = Map(
     EntityFormParser.PositionXKey -> Position._1.toString,
     EntityFormParser.PositionYKey -> Position._2.toString
@@ -37,7 +38,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       + (BaseFormParser.LengthKey -> Length.toString)
       + (BaseFormParser.HeightKey -> Height.toString)
 
-  def buildFormValuesWithOptionalParams(formValues: Map[String, String]) : Map[String, String] =
+  def buildFormValuesWithOptionalParams(formValues: Map[String, String]): Map[String, String] =
     formValues
       + (EntityFormParser.TeamIdKey -> TeamId)
       + (EntityFormParser.SpeedXKey -> Speed._1.toString)
@@ -47,7 +48,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
 
   test("A circle entity can be converted from form values by utilizing the default id generator"):
     val expectedCircle = SimulationCircle(Radius)
-    val formValues = circleFormValues
+    val formValues     = circleFormValues
 
     val parseResult = EntityFormParser.buildEntity(formValues)
 
@@ -59,9 +60,11 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         entity.teamId should be(None)
         entity.shape should be(expectedCircle)
 
-  test("A rectangle entity can be converted from form values by utilizing the default id generator"):
+  test(
+    "A rectangle entity can be converted from form values by utilizing the default id generator"
+  ):
     val expectedRectangle = SimulationRectangle(height = Height, width = Length)
-    val formValues = rectangleFormValues
+    val formValues        = rectangleFormValues
 
     val parseResult = EntityFormParser.buildEntity(formValues)
 
@@ -74,7 +77,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         entity.shape should be(expectedRectangle)
 
   test("If form values doesn't have the 'shape' value the entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError("shape")
+    val expectedError              = MissingKeyInFormError("shape")
     val formValuesWithMissingShape = FormValues
 
     val parseResult = EntityFormParser.buildEntity(formValuesWithMissingShape)
@@ -84,7 +87,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         error should be(expectedError)
 
   test("If form values doesn't have the 'x' value the entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError(EntityFormParser.PositionXKey)
+    val expectedError          = MissingKeyInFormError(EntityFormParser.PositionXKey)
     val formValuesWithMissingX = Map.empty[String, String]
 
     val parseResult = EntityFormParser.buildEntity(formValuesWithMissingX)
@@ -94,7 +97,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         error should be(expectedError)
 
   test("If form values doesn't have the 'y' value the entity cannot be parsed"):
-    val expectedError = MissingKeyInFormError(EntityFormParser.PositionYKey)
+    val expectedError          = MissingKeyInFormError(EntityFormParser.PositionYKey)
     val formValuesWithMissingY = Map(EntityFormParser.PositionXKey -> Position._1.toString)
 
     val parseResult = EntityFormParser.buildEntity(formValuesWithMissingY)
@@ -108,12 +111,12 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       ("key", "baseFormValue"),
       (BaseFormParser.RadiusKey, circleFormValues),
       (BaseFormParser.HeightKey, rectangleFormValues),
-      (BaseFormParser.LengthKey, rectangleFormValues),
+      (BaseFormParser.LengthKey, rectangleFormValues)
     )
 
     forAll(cases): (key, baseFormValue) =>
       val expectedError = MissingKeyInFormError(key)
-      val formValues = baseFormValue - key
+      val formValues    = baseFormValue - key
 
       val parseResult = EntityFormParser.buildEntity(formValues)
 
@@ -147,7 +150,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       rectangleFormValues
     )
 
-    forAll(cases) : baseFormValues =>
+    forAll(cases): baseFormValues =>
       val fullCompletedFormValues = buildFormValuesWithOptionalParams(baseFormValues)
 
       val parseResult = EntityFormParser.buildEntity(fullCompletedFormValues)

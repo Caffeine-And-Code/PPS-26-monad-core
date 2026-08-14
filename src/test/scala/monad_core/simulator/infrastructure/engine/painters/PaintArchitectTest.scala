@@ -13,8 +13,13 @@ import scalafx.scene.paint.Color
 
 import scala.util.Random
 
-class PaintArchitectTest extends AnyFunSuite with Matchers with Inside with MockFactory with BeforeAndAfterEach:
-  val CircleEntity: Entity = Entity.circle("CircleId", Vector2D(0, 0), 1).value
+class PaintArchitectTest
+    extends AnyFunSuite
+    with Matchers
+    with Inside
+    with MockFactory
+    with BeforeAndAfterEach:
+  val CircleEntity: Entity    = Entity.circle("CircleId", Vector2D(0, 0), 1).value
   val RectangleEntity: Entity = Entity.rectangle("RectangleId", Vector2D(0, 0), 10, 10).value
 
   override def beforeEach(): Unit =
@@ -90,7 +95,7 @@ class PaintArchitectTest extends AnyFunSuite with Matchers with Inside with Mock
       generateRandomTeamId(),
       generateRandomTeamId(),
       generateRandomTeamId(),
-      generateRandomTeamId(),
+      generateRandomTeamId()
     )
 
     forAll(teamIds): teamId =>
@@ -106,10 +111,10 @@ class PaintArchitectTest extends AnyFunSuite with Matchers with Inside with Mock
     color1 should be(color2)
 
   test("Different TeamIds get different colors"):
-    val firstTeamId = TeamId("TeamA").value
+    val firstTeamId  = TeamId("TeamA").value
     val secondTeamId = TeamId("TeamB").value
 
-    val firstColor = PaintArchitect.teamIdColorRelation(firstTeamId)
+    val firstColor  = PaintArchitect.teamIdColorRelation(firstTeamId)
     val secondColor = PaintArchitect.teamIdColorRelation(secondTeamId)
 
     firstColor should not be secondColor

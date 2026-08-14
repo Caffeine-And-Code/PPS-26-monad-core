@@ -13,12 +13,12 @@ import org.scalatest.matchers.should.Matchers
 
 class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val RedTeamId = MonadCoreTeamArranger.RedTeamId
-  private val BlueTeamId = MonadCoreTeamArranger.BlueTeamId
+  private val RedTeamId   = MonadCoreTeamArranger.RedTeamId
+  private val BlueTeamId  = MonadCoreTeamArranger.BlueTeamId
   private val GreenTeamId = MonadCoreTeamArranger.GreenTeamId
 
   private val possibleEnemies: Seq[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams
-  
+
   test("buildDefaultValues should return empty defaults when no team is provided"):
     val result = SaveTeamFormDialog.buildDefaultValues(None)
 
@@ -39,7 +39,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     result.teamName should be(Some(RedTeamId))
     result.enemies should contain theSameElementsAs Seq(BlueTeamId, GreenTeamId)
-  
+
   test("buildTeamCreationFields should build the name field followed by the enemies field"):
     val record = BuildSaveTeamFormFieldsRecord(possibleEnemies, SaveTeamFormDefaultValues())
 
@@ -51,16 +51,18 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
   test("buildTeamCreationFields should propagate the default team name into the name field"):
     val defaultValues = SaveTeamFormDefaultValues(teamName = Some("NewTeam"))
-    val record = BuildSaveTeamFormFieldsRecord(possibleEnemies, defaultValues)
+    val record        = BuildSaveTeamFormFieldsRecord(possibleEnemies, defaultValues)
 
     val fields = SaveTeamFormDialog.buildTeamCreationFields(record)
 
     inside(fields.find(_.id == TeamFormParser.TeamIdKey).value):
       case tf: TextFieldSpec => tf.defaultValue should be(Some("NewTeam"))
 
-  test("buildTeamCreationFields should build the enemies field from possible enemies and default enemies"):
+  test(
+    "buildTeamCreationFields should build the enemies field from possible enemies and default enemies"
+  ):
     val defaultValues = SaveTeamFormDefaultValues(enemies = Seq(BlueTeamId))
-    val record = BuildSaveTeamFormFieldsRecord(possibleEnemies, defaultValues)
+    val record        = BuildSaveTeamFormFieldsRecord(possibleEnemies, defaultValues)
 
     val fields = SaveTeamFormDialog.buildTeamCreationFields(record)
 
@@ -69,14 +71,16 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
         multi.options should be(possibleEnemies.map(_.id))
         multi.defaultValues should be(Seq(BlueTeamId))
 
-  test("buildTeamCreationFields should return an empty options list when no possible enemies are provided"):
+  test(
+    "buildTeamCreationFields should return an empty options list when no possible enemies are provided"
+  ):
     val record = BuildSaveTeamFormFieldsRecord(Seq.empty, SaveTeamFormDefaultValues())
 
     val fields = SaveTeamFormDialog.buildTeamCreationFields(record)
 
     inside(fields.find(_.id == TeamFormParser.EnemiesKey).value):
       case multi: MultiSelectFieldSpec => multi.options should be(Seq.empty)
-  
+
   test("buildTeamEditFields should only build the enemies field"):
     val record = BuildSaveTeamFormFieldsRecord(possibleEnemies, SaveTeamFormDefaultValues())
 
@@ -84,9 +88,11 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     fields.map(_.id) should be(Seq(TeamFormParser.EnemiesKey))
 
-  test("buildTeamEditFields should build the enemies field from possible enemies and default enemies"):
+  test(
+    "buildTeamEditFields should build the enemies field from possible enemies and default enemies"
+  ):
     val defaultValues = SaveTeamFormDefaultValues(enemies = Seq(GreenTeamId))
-    val record = BuildSaveTeamFormFieldsRecord(possibleEnemies, defaultValues)
+    val record        = BuildSaveTeamFormFieldsRecord(possibleEnemies, defaultValues)
 
     val fields = SaveTeamFormDialog.buildTeamEditFields(record)
 
@@ -95,7 +101,9 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
         multi.options should be(possibleEnemies.map(_.id))
         multi.defaultValues should be(Seq(GreenTeamId))
 
-  test("buildTeamEditFields should return an empty options list when no possible enemies are provided"):
+  test(
+    "buildTeamEditFields should return an empty options list when no possible enemies are provided"
+  ):
     val record = BuildSaveTeamFormFieldsRecord(Seq.empty, SaveTeamFormDefaultValues())
 
     val fields = SaveTeamFormDialog.buildTeamEditFields(record)

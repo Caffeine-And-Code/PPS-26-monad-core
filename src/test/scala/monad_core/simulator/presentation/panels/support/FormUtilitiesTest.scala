@@ -13,12 +13,14 @@ import org.scalatest.matchers.should.Matchers.should
 
 class FormUtilitiesTest extends AnyFunSuite with Matchers with MockFactory:
 
-  test("onActionMakeSnapshot execute the given action and then creates a snapshot of the current world"):
+  test(
+    "onActionMakeSnapshot execute the given action and then creates a snapshot of the current world"
+  ):
 
     given runtime: GameEngineRuntime = mock[GameEngineRuntime]
 
     val expectedActionInput: String = "a"
-    val action = mockFunction[String, Unit]
+    val action                      = mockFunction[String, Unit]
 
     inSequence:
       action.expects(expectedActionInput).once()
@@ -27,11 +29,11 @@ class FormUtilitiesTest extends AnyFunSuite with Matchers with MockFactory:
     FormUtilities.onActionMakeSnapshot(expectedActionInput, action)
 
   test("getTeamsSafely returns the populated team list when the provided world return Right"):
-    val world: World = mock[World]
+    val world: World                       = mock[World]
     val expectedTeams: List[MonadCoreTeam] = MonadCoreTeamArranger.arrangeTeams.toList
 
     (() => world.getAllTeams).expects().returns(Right(expectedTeams))
-    
+
     val result = FormUtilities.getTeamsSafely(world)
-    
+
     result should be(expectedTeams)

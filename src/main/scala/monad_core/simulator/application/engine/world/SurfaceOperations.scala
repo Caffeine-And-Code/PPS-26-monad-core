@@ -4,8 +4,8 @@ import monad_core.simulator.domain.engine.MonadCoreSurface
 import monad_core.simulator.errors.BaseError
 
 case class SaveSurfaceCommand(
-                               surface: MonadCoreSurface
-                             )
+    surface: MonadCoreSurface
+)
 
 private[world] trait SurfaceOperations:
   def getAllSurfaces: Either[BaseError, List[MonadCoreSurface]]

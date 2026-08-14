@@ -16,7 +16,9 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
     response.success shouldBe true
     response.message should include("Build Completed")
 
-  test("outcomeFor returns a failure outcome and includes the error message when the launcher fails"):
+  test(
+    "outcomeFor returns a failure outcome and includes the error message when the launcher fails"
+  ):
     val error = CannotBuildStage(ImageResourceNotFound(MockImage()), "")
 
     val response = Launcher.outcomeFor(Left(error))
@@ -41,4 +43,8 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
 
     mainWindow shouldBe defined
 
-    assertMatchesVisualSnapshot("launcher_scene_snapshot", mainWindow.get.getScene.getRoot, maxDiffPercentage = 3.0)
+    assertMatchesVisualSnapshot(
+      "launcher_scene_snapshot",
+      mainWindow.get.getScene.getRoot,
+      maxDiffPercentage = 3.0
+    )

@@ -6,11 +6,14 @@ import monad_core.simulator.domain.engine.MonadCoreTeam
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
 
-object FormUtilities :
+object FormUtilities:
+
   def displayError(error: BaseError): Unit =
     NotificationManager.show(error.message, Error)
 
-  def onActionMakeSnapshot[T](submitResult: T, action: T => Unit)(using gameEngineRuntime: GameEngineRuntime): Unit =
+  def onActionMakeSnapshot[T](submitResult: T, action: T => Unit)(using
+      gameEngineRuntime: GameEngineRuntime
+  ): Unit =
     action(submitResult)
     gameEngineRuntime.createSnapshot()
 

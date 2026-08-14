@@ -2,20 +2,27 @@ package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.core.GameLoop.*
 import monad_core.engine.core.{GameLoop, Scene}
+import monad_core.engine.errors.EngineError
+import monad_core.engine.physics.core.PhysicsManager
 import monad_core.engine.public_api.{EngineFacade, Painter}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreScene}
 import monad_core.simulator.domain.engine.MonadCoreShape.SimulationCircle
+import monad_core.simulator.errors.BaseError
+import monad_core.simulator.infrastructure.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.infrastructure.engine.translators.SceneTranslator.*
 import scalafx.animation.AnimationTimer
 
 final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
-  private val lock = new Object
-  private var gameLoop = GameLoop()
-  private var currentWorld: Option[World] = None
-  private var timer: Option[AnimationTimer] = None
+  private val lock                                    = new Object
+  private var gameLoop                                = GameLoop.default()
+  private var currentWorld: Option[World]             = None
+  private var timer: Option[AnimationTimer]           = None
   private var currentSnapshot: Option[MonadCoreScene] = None
+  private var error: Option[BaseError]              = None
+
+  given physics: PhysicsManager = PhysicsManager.default()
 
   override def start(): Unit =
     lock.synchronized:
@@ -36,16 +43,19 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
             // of single entity,surface and team
             case _ => Scene()
 
-          val (nextState, nextLoop) =
-            EngineFacade.tick(gameLoop, convertedState, currentTime)
+          EngineFacade.tick(gameLoop, convertedState, currentTime) match
+            case Right((nextState, nextLoop)) =>
+              (world, nextState) match
+                case (monadCoreWorld: MonadCoreWorld, scene: Scene) =>
+                  monadCoreWorld.currentScene = world.scene
+                case _ => ()
 
-          (world, nextState) match
-            case (monadCoreWorld: MonadCoreWorld, scene: Scene) =>
-              monadCoreWorld.currentScene = scene.toSimulationScene
-            case _ => ()
+              gameLoop = nextLoop
+              renderer(world)
 
-          gameLoop = nextLoop
-          renderer(world)
+            case Left(engineError) =>
+              error = Some(engineError.adaptError())
+              stop()
         }
     }
     timer = Some(animationTimer)
@@ -64,7 +74,7 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
         case (Some(monadCoreWorld: MonadCoreWorld), Some(scene)) =>
           monadCoreWorld.currentScene = scene
         case _ => ()
-      gameLoop = GameLoop()
+      gameLoop = GameLoop.default()
 
   override def initializeWorld(world: World): Unit =
     lock.synchronized:
@@ -78,6 +88,8 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
         )
       )
       currentWorld = Some(world)
+
+  override def getError: Option[BaseError] = error
 
 object MonadCoreGameEngineRuntime:
   def apply(): MonadCoreGameEngineRuntime = new MonadCoreGameEngineRuntime

@@ -2,7 +2,10 @@ package integrations.monad_core.simulator.presentation.panels.support
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.SceneGraphSerializer.NodeSnapshot
-import integrations.monad_core.simulator.presentation.support.{NotificationTest, SceneGraphSerializer}
+import integrations.monad_core.simulator.presentation.support.{
+  NotificationTest,
+  SceneGraphSerializer
+}
 import monad_core.simulator.TeamNotFoundDuringSelection
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.domain.engine.MonadCoreTeam
@@ -15,9 +18,11 @@ import scalafx.scene.layout.StackPane
 
 class FormUtilitiesTest extends AnyFunSuite with NotificationTest with Matchers with MockFactory:
 
-  test("displayError display a notification message on the Stage where the NotificationManager is attached"):
+  test(
+    "displayError display a notification message on the Stage where the NotificationManager is attached"
+  ):
     val expectedMessage = "An Error has Occurred!"
-    val error = new BaseError(expectedMessage) {}
+    val error           = new BaseError(expectedMessage) {}
 
     onFxThread {
       FormUtilities.displayError(error)
@@ -29,8 +34,8 @@ class FormUtilitiesTest extends AnyFunSuite with NotificationTest with Matchers 
 
   test("getTeamsSafely displays an error if world.getAllTeams returns Left"):
     val expectedMessage = "An Error has Occurred!"
-    val error = new BaseError(expectedMessage) {}
-    val world: World = mock[World]
+    val error           = new BaseError(expectedMessage) {}
+    val world: World    = mock[World]
 
     (() => world.getAllTeams).expects().returns(Left(error))
 
@@ -43,7 +48,7 @@ class FormUtilitiesTest extends AnyFunSuite with NotificationTest with Matchers 
     sceneSnapshot.children.head.text should be(Some(expectedMessage))
 
   test("getTeamsSafely returns an empty list when the provided world return Left"):
-    val world: World = mock[World]
+    val world: World                       = mock[World]
     val expectedTeams: List[MonadCoreTeam] = List.empty
 
     (() => world.getAllTeams).expects().returns(Left(TeamNotFoundDuringSelection("id")))

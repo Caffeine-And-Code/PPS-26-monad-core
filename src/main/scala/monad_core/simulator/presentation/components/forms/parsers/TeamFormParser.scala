@@ -6,22 +6,24 @@ import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 
 object TeamFormParser:
-  val TeamIdKey = "id"
+  val TeamIdKey  = "id"
   val EnemiesKey = "enemies"
 
   def buildTeam(values: Map[String, String]): Either[BaseError, MonadCoreTeam] =
     for
-      id <- values.getValueSafe(TeamIdKey)
-      _ <- if id.nonEmpty then Right(()) else Left(MissingKeyInFormError("teamId"))
+      id      <- values.getValueSafe(TeamIdKey)
+      _       <- if id.nonEmpty then Right(()) else Left(MissingKeyInFormError("teamId"))
       enemies <- values.getValueSafe(EnemiesKey)
     yield MonadCoreTeam(
       id = id,
       enemies = parseEnemies(enemies)
     )
 
-  def buildUpdatedTeam(values: Map[String, String], teamToUpdate: MonadCoreTeam): Either[BaseError, MonadCoreTeam] =
-    for
-      enemies <- values.getValueSafe(EnemiesKey)
+  def buildUpdatedTeam(
+      values: Map[String, String],
+      teamToUpdate: MonadCoreTeam
+  ): Either[BaseError, MonadCoreTeam] =
+    for enemies <- values.getValueSafe(EnemiesKey)
     yield MonadCoreTeam(
       id = teamToUpdate.id,
       enemies = parseEnemies(enemies)
@@ -32,4 +34,5 @@ object TeamFormParser:
       .split(",")
       .map(_.trim)
       .filter(_.nonEmpty)
-      .toList.toSet
+      .toList
+      .toSet

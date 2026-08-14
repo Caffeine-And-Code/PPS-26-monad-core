@@ -4,7 +4,11 @@ import helpers.arrangers.MonadCoreTeamArranger
 import monad_core.simulator.domain.engine.MonadCoreShape.{SimulationCircle, SimulationRectangle}
 import monad_core.simulator.domain.engine.{MonadCoreEntity, MonadCoreTeam}
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
-import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, EntityFormParser, LocatableFormShapes}
+import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
+  EntityFormParser,
+  LocatableFormShapes
+}
 import org.scalatest.Inside
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -14,14 +18,14 @@ import org.scalatest.prop.Tables.Table
 
 class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val Id: String = "id"
-  private val Position: (Double, Double) = (1, 2)
-  private val Circle: SimulationCircle = SimulationCircle(5.0)
+  private val Id: String                     = "id"
+  private val Position: (Double, Double)     = (1, 2)
+  private val Circle: SimulationCircle       = SimulationCircle(5.0)
   private val Rectangle: SimulationRectangle = SimulationRectangle(7.0, 6.0)
-  private val Speed: (Double, Double) = (3, 4)
-  private val Weight: Int = 10
-  private val Health: Int = 20
-  private val TeamId: String = "teamIdValue"
+  private val Speed: (Double, Double)        = (3, 4)
+  private val Weight: Int                    = 10
+  private val Health: Int                    = 20
+  private val TeamId: String                 = "teamIdValue"
 
   private def circleEntity: MonadCoreEntity = MonadCoreEntity(Id, Position, Circle)
 
@@ -178,10 +182,20 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(select.dependentFields(LocatableFormShapes.CircleLabel).head):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("5.0"))
 
-        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == BaseFormParser.HeightKey).value):
+        inside(
+          select
+            .dependentFields(LocatableFormShapes.RectangleLabel)
+            .find(_.id == BaseFormParser.HeightKey)
+            .value
+        ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
 
-        inside(select.dependentFields(LocatableFormShapes.RectangleLabel).find(_.id == BaseFormParser.LengthKey).value):
+        inside(
+          select
+            .dependentFields(LocatableFormShapes.RectangleLabel)
+            .find(_.id == BaseFormParser.LengthKey)
+            .value
+        ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("7.0"))
 
   test("buildFields should build the team select field from provided teams and default team id"):

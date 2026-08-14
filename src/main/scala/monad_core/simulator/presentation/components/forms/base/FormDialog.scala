@@ -3,7 +3,10 @@ package monad_core.simulator.presentation.components.forms.base
 import monad_core.simulator.CannotBuildDialog
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
-import monad_core.simulator.presentation.components.forms.parsers.{BaseFormParser, LocatableFormShapes}
+import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
+  LocatableFormShapes
+}
 import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
@@ -15,12 +18,12 @@ import scalafx.stage.{Modality, Stage, Window}
 import scala.util.Try
 
 final case class FormDialogProps(
-                                  title: String,
-                                  fields: Seq[FormFieldSpec],
-                                  onSubmit: Map[String, String] => Unit,
-                                  owner: Option[Window] = None,
-                                  minWidth: Double = 500
-                                )
+    title: String,
+    fields: Seq[FormFieldSpec],
+    onSubmit: Map[String, String] => Unit,
+    owner: Option[Window] = None,
+    minWidth: Double = 500
+)
 
 object FormDialog:
 
@@ -34,31 +37,45 @@ object FormDialog:
     }.toEither.left.map(ex => CannotBuildDialog(ex.getMessage, "FormDialog"))
 
   def buildShapeFields(
-                                       radiusDefaultValue: Option[String],
-                                       widthDefaultValue: Option[String],
-                                       heightDefaultValue: Option[String]
-                                     ): Map[String, Seq[FormFieldSpec]] =
+      radiusDefaultValue: Option[String],
+      widthDefaultValue: Option[String],
+      heightDefaultValue: Option[String]
+  ): Map[String, Seq[FormFieldSpec]] =
     Map(
       LocatableFormShapes.CircleLabel -> Seq(
-        TextFieldSpec(id = BaseFormParser.RadiusKey, label = "Radius", defaultValue = radiusDefaultValue)
+        TextFieldSpec(
+          id = BaseFormParser.RadiusKey,
+          label = "Radius",
+          defaultValue = radiusDefaultValue
+        )
       ),
       LocatableFormShapes.RectangleLabel -> Seq(
-        TextFieldSpec(id = BaseFormParser.LengthKey, label = "Width", defaultValue = widthDefaultValue),
-        TextFieldSpec(id = BaseFormParser.HeightKey, label = "Height", defaultValue = heightDefaultValue)
+        TextFieldSpec(
+          id = BaseFormParser.LengthKey,
+          label = "Width",
+          defaultValue = widthDefaultValue
+        ),
+        TextFieldSpec(
+          id = BaseFormParser.HeightKey,
+          label = "Height",
+          defaultValue = heightDefaultValue
+        )
       )
     )
 
   extension [RightType](either: Either[BaseError, RightType])
-    private[forms] def matchToResult(onError: BaseError => Unit)(onRightResult: RightType => Unit): Unit =
+
+    private[forms] def matchToResult(onError: BaseError => Unit)(
+        onRightResult: RightType => Unit
+    ): Unit =
       either match
-        case Left(error) => onError(error)
+        case Left(error)   => onError(error)
         case Right(result) => onRightResult(result)
 
-
-private final class FormDialogBuilder(props: FormDialogProps):
+final private class FormDialogBuilder(props: FormDialogProps):
 
   private var activeInputs: Map[String, () => String] = Map.empty
-  private var dynamicNodes: Seq[Node] = Seq.empty
+  private var dynamicNodes: Seq[Node]                 = Seq.empty
 
   private val grid = new GridPane {
     hgap = 12
@@ -123,8 +140,7 @@ private final class FormDialogBuilder(props: FormDialogProps):
     grid.add(label, 0, row)
     grid.add(controlNode, 1, row)
 
-    if isDynamic then
-      dynamicNodes = dynamicNodes :+ label :+ controlNode
+    if isDynamic then dynamicNodes = dynamicNodes :+ label :+ controlNode
 
   private def createControl(spec: FormFieldSpec): (Node, () => String) =
     spec match
@@ -145,7 +161,8 @@ private final class FormDialogBuilder(props: FormDialogProps):
         }
 
         if select.dependentFields.nonEmpty then
-          combo.onAction = _ => updateDependentFields(select, Option(combo.value.value).getOrElse(""))
+          combo.onAction = _ =>
+            updateDependentFields(select, Option(combo.value.value).getOrElse(""))
           Option(combo.value.value).foreach(v => updateDependentFields(select, v))
 
         (combo, () => Option(combo.value.value).getOrElse(""))
@@ -178,7 +195,7 @@ private final class FormDialogBuilder(props: FormDialogProps):
     dynamicNodes = Seq.empty
 
     val dependentSpecs = spec.dependentFields.getOrElse(selectedValue, Seq.empty)
-    val startRow = props.fields.length
+    val startRow       = props.fields.length
 
     dependentSpecs.zipWithIndex.foreach { (depSpec, idx) =>
       renderField(depSpec, startRow + idx, isDynamic = true)

@@ -8,12 +8,13 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
 trait GameEngineModePanelBuilder:
+
   def build(
-             imageConfig: ImageConfigRecord,
-             onModeChange : Boolean => Unit,
-             onStopClick: () => Unit,
-             isEngineRunning: BooleanProperty,
-           )(
-    using world: World,
-    gameEngineRuntime: GameEngineRuntime
+      imageConfig: ImageConfigRecord,
+      onModeChange: Boolean => Unit,
+      onStopClick: () => Unit,
+      isEngineRunning: BooleanProperty
+  )(using
+      world: World,
+      gameEngineRuntime: GameEngineRuntime
   ): Either[BaseError, VBox]
