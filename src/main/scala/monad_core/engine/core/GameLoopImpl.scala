@@ -1,7 +1,7 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.GameLoop.StaticAlpha
-import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
+import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.model.EngineError
 import monad_core.engine.simulator.Painter
 
@@ -31,9 +31,10 @@ private case class GameLoopImpl(
       physics: PhysicsEngine,
       painter: Painter
   ): Either[EngineError, (State, GameLoop)] =
-    if !isRunning || mode == LoopMode.EditMode then
-      RendererManager.render(state, StaticAlpha)
-      Right((state, this.copy(lastTime = currentTime)))
+    if !isRunning || mode == LoopMode.EditMode then 
+      for 
+        _ <- RendererManager.render(state, StaticAlpha)
+      yield (state, this.copy(lastTime = currentTime))
     else
       val elapsedTime   = currentTime - lastTime
       val clampedTime   = Math.min(elapsedTime, maxFrameTime)
@@ -55,6 +56,6 @@ private case class GameLoopImpl(
         res <- runFixedUpdate(remainingTime, state)
         (currentScene, currentAccumulator) = res
         alpha                              = currentAccumulator.toDouble / tickTime.toDouble
+        _ <- RendererManager.render(currentScene, alpha)
       yield
-        RendererManager.render(currentScene, alpha)
         (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))

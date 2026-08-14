@@ -1,8 +1,9 @@
 package integrations.monad_core.simulator.presentation.painters
 
+import helpers.arrangers.EngineColorArranger
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
-import monad_core.engine.model.{Entity, Locatable, Surface, Vector2D}
+import monad_core.engine.model.*
 import monad_core.simulator.application.engine.{DrawCommand, ShapeArchitect}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.presentation.components.ResizableCanvas
@@ -13,7 +14,6 @@ import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.scene.canvas.Canvas
-import scalafx.scene.paint.Color
 
 class ShapePainterTest
     extends AnyFunSuite
@@ -24,6 +24,8 @@ class ShapePainterTest
     with BeforeAndAfterEach:
   given ShapeArchitect = PaintArchitect
 
+  val BaseEngineColor: EngineColor = EngineColorArranger.arrangeRed()
+  
   val BaseCircleEntity: Entity = Entity.circle("EntityCircleId", Vector2D(400, 400), 50).value
 
   val BaseRectangleEntity: Entity =
@@ -45,10 +47,10 @@ class ShapePainterTest
     PaintArchitect.drainBuffer()
 
   def enlistCircle(drawable: Locatable): Unit =
-    PaintArchitect.drawCircle(drawable, Color.Red)
+    PaintArchitect.drawCircle(drawable, BaseEngineColor)
 
   def enlistRectangle(drawable: Locatable): Unit =
-    PaintArchitect.drawRectangle(drawable, Color.Red)
+    PaintArchitect.drawRectangle(drawable, BaseEngineColor)
 
   test("paint effectively drains the buffer from ShapeArchitect"):
     enlistCircle(BaseCircleEntity)
@@ -84,7 +86,7 @@ class ShapePainterTest
     val entityWithATeam = BaseCircleEntity.withTeamId("TestTeam").value
     PaintArchitect.drawCircle(
       entityWithATeam,
-      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get)
+      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get).value
     )
 
     onFxThread {
@@ -103,7 +105,7 @@ class ShapePainterTest
     val entityWithATeam = BaseRectangleEntity.withTeamId("TestTeam").value
     PaintArchitect.drawRectangle(
       entityWithATeam,
-      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get)
+      PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get).value
     )
 
     onFxThread {
@@ -141,8 +143,8 @@ class ShapePainterTest
     given mockArchitect: ShapeArchitect = mock[ShapeArchitect]
 
     val expectedCommands = List(
-      DrawCommand.Circle(100.0, 100.0, 25.0, Color.Red),
-      DrawCommand.Rectangle(200.0, 200.0, 50.0, 80.0, Color.Blue)
+      DrawCommand.Circle(100.0, 100.0, 25.0, BaseEngineColor),
+      DrawCommand.Rectangle(200.0, 200.0, 50.0, 80.0, BaseEngineColor)
     )
 
     (() => mockArchitect.drainBuffer()).expects().returns(expectedCommands).once()

@@ -4,9 +4,10 @@ import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
+import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import org.scalatest.funsuite.AnyFunSuite
+
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 

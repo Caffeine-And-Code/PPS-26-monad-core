@@ -5,9 +5,9 @@ import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
 import monad_core.engine.simulator.{EngineFacade, Painter}
 import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import scalafx.animation.AnimationTimer
 
 final class MonadCoreGameEngineRuntime extends GameEngineRuntime:

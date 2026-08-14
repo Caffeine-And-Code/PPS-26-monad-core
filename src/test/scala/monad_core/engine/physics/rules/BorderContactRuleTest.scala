@@ -5,12 +5,12 @@ import monad_core.engine.core.traits.State
 import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.physics.core.NegativeDeltaTime
 import monad_core.engine.physics.helper.PhysicsConstantHelper.*
+import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.helper.{
   BorderContactHelper,
   PhysicsDetectorHelper,
   PhysicsSceneHelper
 }
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.utils.BorderWallType
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable

@@ -1,12 +1,6 @@
 package monad_core.simulator.application.ai
 
-import monad_core.simulator.domain.ai.agent_evaluation.{
-  AgentEvaluationRecap,
-  AgentEvaluationResponse,
-  AgentEvaluationResult,
-  AgentEvaluationScore,
-  AgentEvaluationTest
-}
+import monad_core.simulator.domain.ai.agent_evaluation.*
 import monad_core.simulator.errors.BaseError
 
 trait AgentEvaluator:

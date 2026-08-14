@@ -1,8 +1,8 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
 import monad_core.engine.model.{Entity, Vector2D}
-import monad_core.simulator.errors.BaseError
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.parsers.BaseFormParser.getValueSafe
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
   Circle,

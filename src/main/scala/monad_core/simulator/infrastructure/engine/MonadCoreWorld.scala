@@ -1,6 +1,7 @@
 package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.model.*
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
   SaveSurfaceCommand,
@@ -8,7 +9,6 @@ import monad_core.simulator.application.engine.world.{
   World
 }
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 
 case class MonadCoreWorld(
     initialScene: Scene = Scene()
