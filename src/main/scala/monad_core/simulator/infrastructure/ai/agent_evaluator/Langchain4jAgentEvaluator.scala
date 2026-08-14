@@ -45,8 +45,8 @@ case class Langchain4jAgentEvaluator(
 
         for
           actualToolCalls <- mapToolCalls(results.flatMap(_.toolExecutions().asScala))
-          judgement       <- evaluationJudge.evaluate(test, results.map(_.content()), evaluationWorld)
-          toolCallScore   <- correctToolCalls(test.toolCalls, actualToolCalls)
+          judgement     <- evaluationJudge.evaluate(test, results.map(_.content()), evaluationWorld)
+          toolCallScore <- correctToolCalls(test.toolCalls, actualToolCalls)
         yield AgentEvaluationResponse(
           correctLanguageChoose = judgement.correctLanguageChoose,
           languageCorrectness = judgement.languageCorrectness,
