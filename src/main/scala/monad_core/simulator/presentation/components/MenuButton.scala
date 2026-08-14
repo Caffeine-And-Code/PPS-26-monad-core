@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildButton
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord}
 import scalafx.Includes.jfxScene2sfx
 import scalafx.beans.property.BooleanProperty
@@ -37,7 +37,7 @@ object MenuButton {
   private val StylesheetPath: String =
     getClass.getResource("/stylesheets/menu-button.css").toExternalForm
 
-  def build(props: MenuButtonProps): Either[EngineError, Node] = {
+  def build(props: MenuButtonProps): Either[BaseError, Node] = {
     val isOpen = BooleanProperty(false)
 
     val contextMenu = new ContextMenu {
@@ -56,7 +56,7 @@ object MenuButton {
       }
     }
 
-    val buttonEither = props.activeImage match {
+    val buttonEither = props.activeImage match
       case Some(activeImg) =>
         IconButton.buildToggle(
           defaultImage = props.defaultImage,
@@ -75,7 +75,6 @@ object MenuButton {
             isDisabled = props.isDisabled
           )
         )
-    }
 
     buttonEither
       .map { btn =>

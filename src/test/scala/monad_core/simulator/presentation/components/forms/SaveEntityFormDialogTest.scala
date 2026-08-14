@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms
 import monad_core.engine.model.*
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
   EntityFormParser,
   LocatableFormShapes
 }
@@ -161,11 +162,11 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         select.options should be(SaveEntityFormDialog.Shapes)
 
         val circleFields = select.dependentFields(LocatableFormShapes.CircleLabel)
-        circleFields.map(_.id) should be(Seq(EntityFormParser.RadiusKey))
+        circleFields.map(_.id) should be(Seq(BaseFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
         rectangleFields.map(_.id) should be(
-          Seq(EntityFormParser.HeightKey, EntityFormParser.LengthKey)
+          Seq(BaseFormParser.HeightKey, BaseFormParser.LengthKey)
         )
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
@@ -188,7 +189,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(
           select
             .dependentFields(LocatableFormShapes.RectangleLabel)
-            .find(_.id == EntityFormParser.HeightKey)
+            .find(_.id == BaseFormParser.HeightKey)
             .value
         ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
@@ -196,7 +197,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(
           select
             .dependentFields(LocatableFormShapes.RectangleLabel)
-            .find(_.id == EntityFormParser.LengthKey)
+            .find(_.id == BaseFormParser.LengthKey)
             .value
         ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("7.0"))

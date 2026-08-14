@@ -1,6 +1,5 @@
 package monad_core.engine.core.traits
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 
 trait State:

@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.ai
 
-import dev.langchain4j.service.{MemoryId, Result, SystemMessage, UserMessage}
 import dev.langchain4j.service.memory.ChatMemoryAccess
+import dev.langchain4j.service.{MemoryId, Result, SystemMessage, UserMessage}
 import monad_core.simulator.domain.ai.ConversationId
 
 trait Langchain4jAssistant extends ChatMemoryAccess:

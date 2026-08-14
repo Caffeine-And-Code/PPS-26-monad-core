@@ -1,12 +1,13 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Shape2D, Surface, Team, Vector2D}
+import monad_core.engine.model.*
+import monad_core.simulator.errors.BaseError
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 
 object Langchain4jToolResponse:
 
   def save(
-      result: Either[EngineError, Unit],
+      result: Either[BaseError, Unit],
       successMessage: String
   ): String =
     result match
@@ -16,7 +17,7 @@ object Langchain4jToolResponse:
         s"Success: $successMessage"
 
   def render[A](
-      result: Either[EngineError, A]
+      result: Either[BaseError, A]
   )(
       format: A => String
   ): String =
@@ -85,14 +86,16 @@ object Langchain4jToolResponse:
       weight: Integer,
       speedX: java.lang.Double,
       speedY: java.lang.Double
-  ): Either[EngineError, Entity] =
+  ): Either[BaseError, Entity] =
     for
       entityWithTeam <- Option(teamId)
         .fold(Right(entity): Either[EngineError, Entity])(entity.withTeamId)
+        .adaptError()
       entityWithWeight <- Option(weight)
         .fold(Right(entityWithTeam): Either[EngineError, Entity])(value =>
           entityWithTeam.withWeight(value.intValue())
         )
+        .adaptError()
       completeEntity <- (
         (Option(speedX), Option(speedY)) match
           case (None, None) =>
@@ -105,5 +108,5 @@ object Langchain4jToolResponse:
             )
           case _ =>
             Left(IncompleteEntitySpeed())
-      ): Either[EngineError, Entity]
+      ): Either[BaseError, Entity]
     yield completeEntity

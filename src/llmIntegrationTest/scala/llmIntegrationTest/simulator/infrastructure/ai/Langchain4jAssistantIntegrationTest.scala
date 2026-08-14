@@ -106,7 +106,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val assistant = getAssistant
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
-    world.getEntity.expects(LocatableId("my_circle").value).returning(Right(circle)).once()
+    world.getEntity.expects(LocatableId("my_circle").value.value).returning(Right(circle)).once()
     world.updateEntity.expects(SaveEntityCommand(updatedEntity)).returning(Right(())).once()
 
     val firstResponse = assistant.chat(memoryId, firstMessage)

@@ -1,9 +1,9 @@
-package monad_core.engine.core
+package monad_core.engine.model
 
-import monad_core.engine.core.Scene.{entitiesLens, surfacesLens, teamsLens, *}
+import monad_core.engine.core.*
 import monad_core.engine.core.traits.State
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
+import monad_core.engine.model.Scene.{entitiesLens, surfacesLens, teamsLens, *}
 
 type EntityMap  = Map[LocatableId, Entity]
 type SurfaceMap = Map[LocatableId, Surface]

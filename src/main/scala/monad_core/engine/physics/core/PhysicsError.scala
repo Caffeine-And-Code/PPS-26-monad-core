@@ -1,7 +1,6 @@
 package monad_core.engine.physics.core
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.Vector2D
+import monad_core.engine.model.{EngineError, Vector2D}
 
 sealed abstract class PhysicsError(message: String) extends EngineError(message)
 

@@ -1,21 +1,16 @@
 package monad_core.simulator.presentation.stages
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildStage
 import monad_core.simulator.application.ai.AiAgent
-import monad_core.simulator.presentation.components.NotificationManager
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.panels.traits.{
   AiModelChatPanelBuilder,
-  GameEngineModePanelBuilder,
-  GameEnginePanelBuilder,
-  SceneRendererPanelBuilder
+  GameEnginePanelBuilder
 }
-import monad_core.simulator.presentation.resources.ImageConfigRecord
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
-import scalafx.application.Platform
 import scalafx.beans.property.ReadOnlyDoubleProperty
 import scalafx.geometry.Insets
-import scalafx.scene.layout.{HBox, StackPane, VBox}
+import scalafx.scene.layout.{HBox, VBox}
 
 import scala.concurrent.ExecutionContext
 
@@ -36,7 +31,7 @@ final class MainStage(
   )(using
       aiAgent: AiAgent,
       executionContext: ExecutionContext
-  ): Either[EngineError, HBox] =
+  ): Either[BaseError, HBox] =
     for
       builtGameEnginePanel <- gamePanel
         .build()

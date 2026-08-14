@@ -1,6 +1,6 @@
 package monad_core.simulator.domain.ai.agent_evaluation
 
-import monad_core.engine.core.Scene
+import monad_core.engine.model.Scene
 
 enum AgentEvaluationLanguage:
   case Italian

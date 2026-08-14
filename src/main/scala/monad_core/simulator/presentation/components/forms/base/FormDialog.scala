@@ -1,9 +1,12 @@
 package monad_core.simulator.presentation.components.forms.base
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Locatable, Team}
 import monad_core.simulator.CannotBuildDialog
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
+import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
+  LocatableFormShapes
+}
 import scalafx.Includes.*
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.{Insets, Pos}
@@ -27,15 +30,42 @@ object FormDialog:
   private[forms] val StylesheetPath: String =
     getClass.getResource("/stylesheets/form-dialog.css").toExternalForm
 
-  def show(props: FormDialogProps): Either[EngineError, Unit] =
+  def show(props: FormDialogProps): Either[BaseError, Unit] =
     Try {
       val builder = new FormDialogBuilder(props)
       builder.display()
     }.toEither.left.map(ex => CannotBuildDialog(ex.getMessage, "FormDialog"))
 
-  extension [RightType](either: Either[EngineError, RightType])
+  def buildShapeFields(
+      radiusDefaultValue: Option[String],
+      widthDefaultValue: Option[String],
+      heightDefaultValue: Option[String]
+  ): Map[String, Seq[FormFieldSpec]] =
+    Map(
+      LocatableFormShapes.CircleLabel -> Seq(
+        TextFieldSpec(
+          id = BaseFormParser.RadiusKey,
+          label = "Radius",
+          defaultValue = radiusDefaultValue
+        )
+      ),
+      LocatableFormShapes.RectangleLabel -> Seq(
+        TextFieldSpec(
+          id = BaseFormParser.LengthKey,
+          label = "Width",
+          defaultValue = widthDefaultValue
+        ),
+        TextFieldSpec(
+          id = BaseFormParser.HeightKey,
+          label = "Height",
+          defaultValue = heightDefaultValue
+        )
+      )
+    )
 
-    private[forms] def matchToResult(onError: EngineError => Unit)(
+  extension [RightType](either: Either[BaseError, RightType])
+
+    private[forms] def matchToResult(onError: BaseError => Unit)(
         onRightResult: RightType => Unit
     ): Unit =
       either match

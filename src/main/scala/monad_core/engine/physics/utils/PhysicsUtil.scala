@@ -1,6 +1,5 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{
   NegativeDeltaTime,

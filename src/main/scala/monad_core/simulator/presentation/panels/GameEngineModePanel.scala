@@ -1,15 +1,20 @@
 package monad_core.simulator.presentation.panels
 
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.CannotBuildPanel
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
   SaveSurfaceCommand,
   SaveTeamCommand,
   World
 }
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.*
 import monad_core.simulator.presentation.components.forms.*
+import monad_core.simulator.presentation.panels.support.FormUtilities.{
+  displayError,
+  onActionMakeSnapshot
+}
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon, ToolsIcon}
@@ -26,18 +31,21 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
       onStopClick: () => Unit,
       isEngineRunning: BooleanProperty
   )(using
-      world: World
-  ): Either[EngineError, VBox] = {
-    val onFormError: EngineError => Unit = err => NotificationManager.show(err.message, Error)
-    val editTeamsIsDisabled              = BooleanProperty(true)
-    val deleteTeamsIsDisabled            = BooleanProperty(true)
+      world: World,
+      gameEngineRuntime: GameEngineRuntime
+  ): Either[BaseError, VBox] =
 
-    def onTeamAction(actionResult: Either[EngineError, Unit]): Unit =
+    val editTeamsIsDisabled   = BooleanProperty(true)
+    val deleteTeamsIsDisabled = BooleanProperty(true)
+
+    def onTeamAction(actionResult: Either[BaseError, Unit]): Unit =
       actionResult match
-        case Left(error) => onFormError(error)
+        case Left(error) => displayError(error)
         case Right(_) =>
-          editTeamsIsDisabled.value = world.getAllTeams.length <= 1
-          deleteTeamsIsDisabled.value = world.getAllTeams.isEmpty
+          val teams = world.getAllTeams
+
+          editTeamsIsDisabled.value = teams.length <= 1
+          deleteTeamsIsDisabled.value = teams.isEmpty
 
     for
       playPauseBtn <- IconButton
@@ -85,9 +93,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                     props = SaveEntityFormDialogProps(
                       title = "Entity Settings",
                       anchorNode = contextMenuAnchor,
-                      onSubmit = entity => world.createEntity(SaveEntityCommand(entity)),
+                      onSubmit = entity =>
+                        onActionMakeSnapshot(SaveEntityCommand(entity), world.createEntity),
                       teams = world.getAllTeams,
-                      onError = onFormError
+                      onError = displayError
                     )
                   )
               ),
@@ -99,9 +108,13 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                     props = SaveTeamFormDialogProps(
                       title = "Team Settings",
                       anchorNode = contextMenuAnchor,
-                      onSubmit = team => onTeamAction(world.createTeam(SaveTeamCommand(team))),
+                      onSubmit = team =>
+                        onActionMakeSnapshot(
+                          SaveTeamCommand(team),
+                          command => onTeamAction(world.createTeam(command))
+                        ),
                       possibleEnemies = world.getAllTeams,
-                      onError = onFormError
+                      onError = displayError
                     )
                   )
               ),
@@ -113,8 +126,9 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                     props = SaveSurfaceFormDialogProps(
                       title = "Surface Settings",
                       anchorNode = contextMenuAnchor,
-                      onSubmit = surface => world.createSurface(SaveSurfaceCommand(surface)),
-                      onError = onFormError
+                      onSubmit = surface =>
+                        onActionMakeSnapshot(SaveSurfaceCommand(surface), world.createSurface),
+                      onError = displayError
                     )
                   )
               ),
@@ -127,17 +141,21 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                       onSubmit = team =>
                         SaveTeamFormDialog.show(
                           props = SaveTeamFormDialogProps(
-                            title = s"${team.id.value} Settings",
+                            title = s"${team.id} Settings",
                             anchorNode = contextMenuAnchor,
-                            onSubmit = team => world.updateTeam(SaveTeamCommand(team)),
+                            onSubmit = team =>
+                              onActionMakeSnapshot(
+                                SaveTeamCommand(team),
+                                command => world.updateTeam(command)
+                              ),
                             possibleEnemies =
                               world.getAllTeams.filterNot(_.id.value == team.id.value),
-                            onError = onFormError,
+                            onError = displayError,
                             teamToUpdate = Some(team)
                           )
                         ),
                       teams = world.getAllTeams,
-                      onError = onFormError
+                      onError = displayError
                     )
                   ),
                 isDisabled = editTeamsIsDisabled || isEngineRunning
@@ -148,9 +166,13 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
                   ChooseTeamFormDialog.show(
                     props = ChooseTeamFormDialogProps(
                       anchorNode = contextMenuAnchor,
-                      onSubmit = team => onTeamAction(world.removeTeam(team.id)),
+                      onSubmit = team =>
+                        onActionMakeSnapshot(
+                          team.id,
+                          id => onTeamAction(world.removeTeam(id.value))
+                        ),
                       teams = world.getAllTeams,
-                      onError = onFormError
+                      onError = displayError
                     )
                   ),
                 isDisabled = deleteTeamsIsDisabled || isEngineRunning
@@ -182,6 +204,5 @@ object GameEngineModePanel extends GameEngineModePanelBuilder {
         alignment = Pos.BottomRight
         style = PanelStyles.base
       }
-  }
 
 }

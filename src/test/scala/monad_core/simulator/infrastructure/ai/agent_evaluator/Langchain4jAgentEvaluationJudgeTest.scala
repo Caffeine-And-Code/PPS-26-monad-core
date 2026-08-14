@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.ai.agent_evaluator
 
 import dev.langchain4j.model.chat.ChatModel
-import monad_core.engine.core.Scene
+import monad_core.engine.model.Scene
 import monad_core.simulator.domain.ai.agent_evaluation.{
   AgentEvaluationLanguage,
   AgentEvaluationResult,

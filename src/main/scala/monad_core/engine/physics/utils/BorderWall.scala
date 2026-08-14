@@ -1,8 +1,7 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.model.{EngineError, Entity, Vector2D}
 
 enum BorderWallType:
   case Left, Right, Top, Bottom

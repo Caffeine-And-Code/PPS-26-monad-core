@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
@@ -11,14 +11,14 @@ import scalafx.scene.Node
 final case class SaveTeamFormDialogProps(
     title: String,
     onSubmit: Team => Unit,
-    onError: EngineError => Unit,
+    onError: BaseError => Unit,
     possibleEnemies: Seq[Team],
     anchorNode: Option[Node] = None,
     teamToUpdate: Option[Team] = None
 )
 
 final case class SaveTeamFormDefaultValues(
-    teamName: Option[String] = Option.empty,
+    teamName: Option[TeamId] = Option.empty,
     enemies: Seq[TeamId] = Seq.empty
 )
 
@@ -29,7 +29,7 @@ final private[forms] case class BuildSaveTeamFormFieldsRecord(
 
 object SaveTeamFormDialog:
 
-  def show(props: SaveTeamFormDialogProps): Either[EngineError, Unit] = {
+  def show(props: SaveTeamFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues     = buildDefaultValues(props.teamToUpdate)
     val buildFieldsRecord = BuildSaveTeamFormFieldsRecord(props.possibleEnemies, defaultValues)
 
@@ -51,12 +51,14 @@ object SaveTeamFormDialog:
     )
   }
 
-  private[forms] def buildDefaultValues(teamToUpdate: Option[Team]): SaveTeamFormDefaultValues =
+  private[forms] def buildDefaultValues(
+      teamToUpdate: Option[Team]
+  ): SaveTeamFormDefaultValues =
     teamToUpdate match
       case None => SaveTeamFormDefaultValues()
       case Some(team) =>
         SaveTeamFormDefaultValues(
-          teamName = Some(team.id.value),
+          teamName = Some(team.id),
           enemies = Seq.from(team.enemies)
         )
 
@@ -67,7 +69,7 @@ object SaveTeamFormDialog:
       TextFieldSpec(
         id = TeamFormParser.TeamIdKey,
         label = "Name",
-        defaultValue = record.defaultValues.teamName
+        defaultValue = record.defaultValues.teamName.map(_.value)
       )
     ).appendedAll(
       buildTeamEditFields(record)

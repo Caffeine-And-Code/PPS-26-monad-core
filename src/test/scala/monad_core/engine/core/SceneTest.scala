@@ -10,11 +10,9 @@ import monad_core.engine.core.{
   CannotRemoveSurface,
   CannotRemoveTeam,
   EntityNotFound,
-  Scene,
   SurfaceNotFound,
   TeamNotFound
 }
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

@@ -1,8 +1,8 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Team, TeamId}
+import monad_core.engine.model.Team
 import monad_core.simulator.TeamNotFoundDuringSelection
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.{
   FormDialog,
   FormDialogProps,
@@ -15,14 +15,14 @@ import scalafx.scene.Node
 final case class ChooseTeamFormDialogProps(
     teams: Seq[Team],
     onSubmit: Team => Unit,
-    onError: EngineError => Unit,
+    onError: BaseError => Unit,
     anchorNode: Option[Node] = None
 )
 
 object ChooseTeamFormDialog:
   private[forms] val TeamKey: String = "chosenTeam"
 
-  def show(props: ChooseTeamFormDialogProps): Either[EngineError, Unit] =
+  def show(props: ChooseTeamFormDialogProps): Either[BaseError, Unit] =
     FormDialog.show(
       FormDialogProps(
         title = "Please choose a Team",
