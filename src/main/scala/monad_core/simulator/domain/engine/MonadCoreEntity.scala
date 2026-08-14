@@ -7,5 +7,6 @@ case class MonadCoreEntity(
     speed: Option[(Double, Double)] = Option.empty,
     weight: Option[Int] = Option.empty,
     health: Option[Int] = Option.empty,
-    teamId: Option[String] = Option.empty
+    teamId: Option[String] = Option.empty,
+
 )
