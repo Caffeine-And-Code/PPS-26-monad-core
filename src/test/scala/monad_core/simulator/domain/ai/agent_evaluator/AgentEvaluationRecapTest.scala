@@ -1,13 +1,13 @@
 package monad_core.simulator.domain.ai.agent_evaluator
 
-import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationRecup
+import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationRecap
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class AgentEvaluationRecupTest extends AnyFunSuite with Matchers:
+class AgentEvaluationRecapTest extends AnyFunSuite with Matchers:
 
   test("can create an AgentEvaluationRecup"):
-    val result = AgentEvaluationRecup(
+    val result = AgentEvaluationRecap(
       correctLanguageChoose = 100,
       languageCorrectness = 80,
       correctToolCalls = 75,

@@ -1,6 +1,6 @@
 package monad_core.simulator.domain.ai.agent_evaluation
 
-case class AgentEvaluationRecup(
+case class AgentEvaluationRecap(
     correctLanguageChoose: Int,
     languageCorrectness: Int,
     correctToolCalls: Int,

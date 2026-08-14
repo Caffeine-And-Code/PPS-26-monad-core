@@ -35,33 +35,34 @@ case class Langchain4jAgentEvaluator(
   override def evaluateCase(
       test: AgentEvaluationTest
   ): Either[BaseError, AgentEvaluationResponse] = {
-    val result = Try {
-      val evaluationWorld = MonadCoreWorld(test.initialScene)
-      val engineControl   = HeadlessEngineControl()
-      val assistant       = assistantBuilder.build(evaluationWorld, engineControl)
-      val results = test.prompts.map: prompt =>
-        assistant.chat(evaluationConversationId, prompt)
+    val result = evaluationConversationId.flatMap: conversationId =>
+      Try {
+        val evaluationWorld = MonadCoreWorld(test.initialScene)
+        val engineControl   = HeadlessEngineControl()
+        val assistant       = assistantBuilder.build(evaluationWorld, engineControl)
+        val results = test.prompts.map: prompt =>
+          assistant.chat(conversationId, prompt)
 
-      for
-        actualToolCalls <- mapToolCalls(results.flatMap(_.toolExecutions().asScala))
-        judgement       <- evaluationJudge.evaluate(test, results.map(_.content()), evaluationWorld)
-        toolCallScore   <- correctToolCalls(test.toolCalls, actualToolCalls)
-      yield AgentEvaluationResponse(
-        correctLanguageChoose = judgement.correctLanguageChoose,
-        languageCorrectness = judgement.languageCorrectness,
-        correctToolCalls = toolCallScore,
-        expectationMaintained = judgement.expectationMaintained
-      )
-    }.toEither.left
-      .map(error => AgentEvaluationExecutionError(error.getMessage))
-      .flatMap(result => result)
+        for
+          actualToolCalls <- mapToolCalls(results.flatMap(_.toolExecutions().asScala))
+          judgement       <- evaluationJudge.evaluate(test, results.map(_.content()), evaluationWorld)
+          toolCallScore   <- correctToolCalls(test.toolCalls, actualToolCalls)
+        yield AgentEvaluationResponse(
+          correctLanguageChoose = judgement.correctLanguageChoose,
+          languageCorrectness = judgement.languageCorrectness,
+          correctToolCalls = toolCallScore,
+          expectationMaintained = judgement.expectationMaintained
+        )
+      }.toEither.left
+        .map(error => AgentEvaluationExecutionError(error.getMessage))
+        .flatMap(result => result)
 
     logger.info(evaluationCompletedLog(test, result))
     result
   }
 
-  private val evaluationConversationId: ConversationId =
-    ConversationId.from("agent-evaluation").toOption.get
+  private val evaluationConversationId: Either[BaseError, ConversationId] =
+    ConversationId.from("agent-evaluation")
 
   private def mapToolCalls(executions: Seq[ToolExecution]): Either[BaseError, Seq[ToolCall]] =
     executions.foldLeft(Right(Seq.empty): Either[BaseError, Seq[ToolCall]]): (result, execution) =>

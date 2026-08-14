@@ -68,9 +68,15 @@ case class Langchain4jToolCallMapper():
           classOf[java.util.Map[?, ?]]
         )
         .asScala
-        .toMap
-        .asInstanceOf[Arguments]
-    }.toEither.left.map(error => InvalidToolCall(request.name(), error.getMessage))
+        .iterator
+        .foldLeft(Right(Map.empty): Either[BaseError, Arguments]):
+          case (arguments, (key: String, value)) =>
+            arguments.map(_ + (key -> value))
+          case (_, (key, _)) =>
+            Left(InvalidToolCall(request.name(), s"invalid argument name '$key'"))
+    }.toEither.left
+      .map(error => InvalidToolCall(request.name(), error.getMessage))
+      .flatMap(result => result)
 
   private def getEntity(arguments: Arguments): Either[BaseError, ToolCall] =
     string(arguments, "id").map(ToolCall.GetEntity.apply)

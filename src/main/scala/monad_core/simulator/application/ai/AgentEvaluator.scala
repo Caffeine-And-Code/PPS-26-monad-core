@@ -1,7 +1,7 @@
 package monad_core.simulator.application.ai
 
 import monad_core.simulator.domain.ai.agent_evaluation.{
-  AgentEvaluationRecup,
+  AgentEvaluationRecap,
   AgentEvaluationResponse,
   AgentEvaluationResult,
   AgentEvaluationScore,
@@ -15,11 +15,11 @@ trait AgentEvaluator:
       agentEvaluationTest: AgentEvaluationTest
   ): Either[BaseError, AgentEvaluationResponse]
 
-  def evaluate(tests: Seq[AgentEvaluationTest]): AgentEvaluationRecup =
+  def evaluate(tests: Seq[AgentEvaluationTest]): AgentEvaluationRecap =
     val responses        = tests.map(evaluateCase)
     val validResponses   = responses.flatMap(_.toOption)
     val invalidResponses = responses.filter(_.isLeft)
-    AgentEvaluationRecup(
+    AgentEvaluationRecap(
       correctLanguageChoose = getPercentualScore(validResponses.map(_.correctLanguageChoose)),
       languageCorrectness = getPercentualScore(validResponses.map(_.languageCorrectness)),
       correctToolCalls = getPercentualScore(validResponses.map(_.correctToolCalls)),

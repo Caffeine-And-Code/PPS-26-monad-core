@@ -65,7 +65,7 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers:
 
     val result = evaluator.evaluate(Seq.empty)
 
-    result shouldBe AgentEvaluationRecup(0, 0, 0, 0, 0)
+    result shouldBe AgentEvaluationRecap(0, 0, 0, 0, 0)
 
   test("an evaluation without expected tool calls has full tool scores"):
     val response = AgentEvaluationResponse(

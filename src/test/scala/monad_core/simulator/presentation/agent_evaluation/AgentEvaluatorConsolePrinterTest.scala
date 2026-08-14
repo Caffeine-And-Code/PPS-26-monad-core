@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.agent_evaluation
 
-import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationRecup
+import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationRecap
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets
 class AgentEvaluatorConsolePrinterTest extends AnyFunSuite with Matchers:
 
   test("can print an AgentEvaluationRecup"):
-    val evaluationRecup = AgentEvaluationRecup(100, 90, 80, 70, 1)
+    val evaluationRecup = AgentEvaluationRecap(100, 90, 80, 70, 1)
     val output          = ByteArrayOutputStream()
     val expectedOutput =
       s"""Agent evaluation results:

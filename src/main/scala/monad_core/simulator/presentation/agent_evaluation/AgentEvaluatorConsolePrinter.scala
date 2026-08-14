@@ -1,11 +1,11 @@
 package monad_core.simulator.presentation.agent_evaluation
 
-import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationRecup
+import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationRecap
 import monad_core.simulator.errors.BaseError
 
 object AgentEvaluatorConsolePrinter extends AgentEvaluatorPrinter:
 
-  override def print(recup: AgentEvaluationRecup): Unit =
+  override def print(recup: AgentEvaluationRecap): Unit =
     Console.println(
       s"""Agent evaluation results:
          |Correct language choice: ${recup.correctLanguageChoose}%
