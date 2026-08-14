@@ -2,7 +2,7 @@ package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.agent.tool.{P, Tool}
 import monad_core.engine.model.*
-import monad_core.simulator.application.engine.*
+import monad_core.simulator.application.engine.EngineControl
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
   SaveSurfaceCommand,
@@ -18,7 +18,7 @@ case class IncompleteEntitySpeed()
 
 case class Langchain4jTools()(using
     world: World,
-    gameEngineRuntime: GameEngineRuntime
+    gameEngineRuntime: EngineControl
 ):
 
   @Tool(Array("Lists all entities in the world."))

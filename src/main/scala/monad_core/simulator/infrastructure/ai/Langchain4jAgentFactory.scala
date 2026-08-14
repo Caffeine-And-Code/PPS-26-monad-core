@@ -1,8 +1,6 @@
 package monad_core.simulator.infrastructure.ai
 
-import dev.langchain4j.memory.chat.MessageWindowChatMemory
 import dev.langchain4j.model.ollama.OllamaChatModel
-import dev.langchain4j.service.AiServices
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.domain.ai.AgentInfo
@@ -22,18 +20,9 @@ object Langchain4jAgentFactory:
       word: World,
       gameEngineRuntime: GameEngineRuntime
   ): Langchain4jAiAgent =
-    val model = OllamaChatModel
-      .builder()
-      .baseUrl(config.url)
-      .modelName(config.modelName)
-      .build()
+    val model = buildOllamaModel(config)
 
-    val assistant = AiServices
-      .builder(classOf[Langchain4jAssistant])
-      .chatModel(model)
-      .chatMemoryProvider(_ => MessageWindowChatMemory.withMaxMessages(10))
-      .tools(Langchain4jTools())
-      .build()
+    val assistant = Langchain4jAssistantFactory(model).build(word, gameEngineRuntime)
 
     val agentInfo = AgentInfo(
       provider = config.provider,
@@ -44,3 +33,10 @@ object Langchain4jAgentFactory:
       assistant = assistant,
       agentInfo = agentInfo
     )
+
+  private[ai] def buildOllamaModel(config: Langchain4jOllamaConfig): OllamaChatModel =
+    OllamaChatModel
+      .builder()
+      .baseUrl(config.url)
+      .modelName(config.modelName)
+      .build()
