@@ -12,8 +12,8 @@ import org.scalatest.matchers.should.Matchers
 class ContainingTest extends AnyFunSuite with Inside with Matchers with MockFactory:
 
   test("isInside returns true if the results produced by Contains is true"):
-    val entity = Entity.circle("en1", Vector2D(10, 20), 1).value
-    val surface = Surface.rectangle("sur1", Vector2D(3, 4), 7, 9).value
+    val entity   = Entity.circle("en1", Vector2D(10, 20), 1).value
+    val surface  = Surface.rectangle("sur1", Vector2D(3, 4), 7, 9).value
     val detector = mock[CollisionDetector]
 
     detector.isInside
@@ -26,8 +26,8 @@ class ContainingTest extends AnyFunSuite with Inside with Matchers with MockFact
     result shouldBe true
 
   test("isInside returns false if the results produced by Contains is false"):
-    val entity = Entity.circle("en1", Vector2D(10, 20), 1).value
-    val surface = Surface.circle("sur1", Vector2D(3, 4), 5).value
+    val entity   = Entity.circle("en1", Vector2D(10, 20), 1).value
+    val surface  = Surface.circle("sur1", Vector2D(3, 4), 5).value
     val detector = mock[CollisionDetector]
 
     detector.isInside

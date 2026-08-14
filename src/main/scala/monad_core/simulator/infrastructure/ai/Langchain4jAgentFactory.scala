@@ -7,27 +7,29 @@ import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.domain.ai.AgentInfo
 
-case class Langchain4jOllamaConfig (
-                                   url: String,
-                                   modelName: String,
-                                   provider: String = "Ollama"
-                                   )
+case class Langchain4jOllamaConfig(
+    url: String,
+    modelName: String,
+    provider: String = "Ollama"
+)
 
 trait Langchain4jAgentFactory:
-  def buildOllama(config: Langchain4jOllamaConfig):Langchain4jAiAgent
+  def buildOllama(config: Langchain4jOllamaConfig): Langchain4jAiAgent
 
-object Langchain4jAgentFactory :
+object Langchain4jAgentFactory:
 
-  def buildOllama(config: Langchain4jOllamaConfig)(
-    using word: World,
-    gameEngineRuntime: GameEngineRuntime
+  def buildOllama(config: Langchain4jOllamaConfig)(using
+      word: World,
+      gameEngineRuntime: GameEngineRuntime
   ): Langchain4jAiAgent =
-    val model = OllamaChatModel.builder()
+    val model = OllamaChatModel
+      .builder()
       .baseUrl(config.url)
       .modelName(config.modelName)
       .build()
 
-    val assistant = AiServices.builder(classOf[Langchain4jAssistant])
+    val assistant = AiServices
+      .builder(classOf[Langchain4jAssistant])
       .chatModel(model)
       .chatMemoryProvider(_ => MessageWindowChatMemory.withMaxMessages(10))
       .tools(Langchain4jTools())

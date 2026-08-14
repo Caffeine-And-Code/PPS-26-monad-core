@@ -5,7 +5,11 @@ import monad_core.engine.core.traits.State
 import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.physics.core.NegativeDeltaTime
 import monad_core.engine.physics.helper.PhysicsConstantHelper.*
-import monad_core.engine.physics.helper.{BorderContactHelper, PhysicsDetectorHelper, PhysicsSceneHelper}
+import monad_core.engine.physics.helper.{
+  BorderContactHelper,
+  PhysicsDetectorHelper,
+  PhysicsSceneHelper
+}
 import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.utils.BorderWallType
 import org.scalamock.scalatest.MockFactory
@@ -13,22 +17,24 @@ import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class BorderContactRuleTest extends AnyFunSuite
-  with Matchers
-  with MockFactory
-  with PhysicsSceneHelper
-  with PhysicsDetectorHelper:
+class BorderContactRuleTest
+    extends AnyFunSuite
+    with Matchers
+    with MockFactory
+    with PhysicsSceneHelper
+    with PhysicsDetectorHelper:
 
   private val Rule = BorderContactRule.borderContactRule
 
-  private val MockScene = mock[State]
+  private val MockScene   = mock[State]
   given CollisionDetector = mock[CollisionDetector]
 
   private def testSingleWall(borderType: BorderWallType) =
     val defaultValues = BorderContactHelper.generateSingleWallEntities(
       borderType,
       MockScene.UpperLeftCorner,
-      MockScene.LowerRightCorner)
+      MockScene.LowerRightCorner
+    )
 
     val (entity, wall, collision, expectedPosition, expectedSpeed) = defaultValues
 
@@ -53,20 +59,26 @@ class BorderContactRuleTest extends AnyFunSuite
       MockScene.LowerRightCorner
     )
 
-    val entity = data._1
-    val leftWall = data._2
-    val leftCollision = data._3
-    val bottomWall = data._4
-    val bottomCollision = data._5
+    val entity           = data._1
+    val leftWall         = data._2
+    val leftCollision    = data._3
+    val bottomWall       = data._4
+    val bottomCollision  = data._5
     val expectedPosition = data._6
-    val expectedSpeed = data._7
+    val expectedSpeed    = data._7
 
     val scene = sceneWithEntities(List(entity))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
-        (entity.id.value, leftWall.id.value) -> (leftCollision.normalVector, leftCollision.penetrationDepth),
-        (entity.id.value, bottomWall.id.value) -> (bottomCollision.normalVector, bottomCollision.penetrationDepth)
+        (entity.id.value, leftWall.id.value) -> (
+          leftCollision.normalVector,
+          leftCollision.penetrationDepth
+        ),
+        (entity.id.value, bottomWall.id.value) -> (
+          bottomCollision.normalVector,
+          bottomCollision.penetrationDepth
+        )
       )
     )
 
@@ -111,7 +123,7 @@ class BorderContactRuleTest extends AnyFunSuite
       speed = Vector2D(1, 1)
     )
 
-    val scene = sceneWithEntities(List(entity))
+    val scene               = sceneWithEntities(List(entity))
     given CollisionDetector = detectorWithoutCollision()
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
@@ -119,16 +131,24 @@ class BorderContactRuleTest extends AnyFunSuite
     resultEntity.position shouldBe entity.position
     resultEntity.speed shouldBe entity.speed
 
-  test("the rule should push and bounce a moving entity back inside the scene borders when it is outside on left"):
+  test(
+    "the rule should push and bounce a moving entity back inside the scene borders when it is outside on left"
+  ):
     testSingleWall(BorderWallType.Left)
 
-  test("the rule should push and bounce a moving entity back inside the scene borders when it is outside on right"):
+  test(
+    "the rule should push and bounce a moving entity back inside the scene borders when it is outside on right"
+  ):
     testSingleWall(BorderWallType.Right)
 
-  test("the rule should push and bounce a moving entity back inside the scene borders when it is outside on top"):
+  test(
+    "the rule should push and bounce a moving entity back inside the scene borders when it is outside on top"
+  ):
     testSingleWall(BorderWallType.Top)
 
-  test("the rule should push and bounce a moving entity back inside the scene borders when it is outside on bottom"):
+  test(
+    "the rule should push and bounce a moving entity back inside the scene borders when it is outside on bottom"
+  ):
     testSingleWall(BorderWallType.Bottom)
 
   test("the rule should push and bounce a moving entity when it is outside on left and top sides"):
@@ -137,10 +157,14 @@ class BorderContactRuleTest extends AnyFunSuite
   test("the rule should push and bounce a moving entity when it is outside on right and top sides"):
     testCornerWall(BorderWallType.Right, BorderWallType.Top)
 
-  test("the rule should push and bounce a moving entity when it is outside on right and bottom sides"):
+  test(
+    "the rule should push and bounce a moving entity when it is outside on right and bottom sides"
+  ):
     testCornerWall(BorderWallType.Right, BorderWallType.Bottom)
 
-  test("the rule should push and bounce a moving entity when it is outside on left and bottom sides"):
+  test(
+    "the rule should push and bounce a moving entity when it is outside on left and bottom sides"
+  ):
     testCornerWall(BorderWallType.Left, BorderWallType.Bottom)
 
   test("the rule should update multiple entities when they are outside the scene borders"):
@@ -159,24 +183,27 @@ class BorderContactRuleTest extends AnyFunSuite
       entityId = "entity2"
     )
 
-    val entity1 = data1._1
-    val wall1 = data1._2
+    val entity1    = data1._1
+    val wall1      = data1._2
     val collision1 = data1._3
 
-    val entity2 = data2._1
-    val wall2 = data2._2
+    val entity2    = data2._1
+    val wall2      = data2._2
     val collision2 = data2._3
 
     val expectedPosition1 = data1._4
-    val expectedSpeed1 = data1._5
+    val expectedSpeed1    = data1._5
     val expectedPosition2 = data2._4
-    val expectedSpeed2 = data2._5
+    val expectedSpeed2    = data2._5
 
     val scene = sceneWithEntities(List(entity1, entity2))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
-        (entity1.id.value, wall1.id.value) -> (collision1.normalVector, collision1.penetrationDepth),
+        (entity1.id.value, wall1.id.value) -> (
+          collision1.normalVector,
+          collision1.penetrationDepth
+        ),
         (entity2.id.value, wall2.id.value) -> (collision2.normalVector, collision2.penetrationDepth)
       )
     )

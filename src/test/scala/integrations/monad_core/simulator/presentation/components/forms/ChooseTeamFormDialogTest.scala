@@ -13,7 +13,12 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.*
 import scalafx.stage.Stage
 
-class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with DialogTesting with FormTesting:
+class ChooseTeamFormDialogTest
+    extends AnyFunSuite
+    with Inside
+    with Matchers
+    with DialogTesting
+    with FormTesting:
   val TeamComboBoxIndex: Int = 0
 
   private val teams: Seq[Team] = Seq(
@@ -110,8 +115,11 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
 
     val rootNode: scalafx.scene.Node = activeStage.get.getScene.getRoot
 
-    assertMatchesVisualSnapshot("choose_team_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
-
+    assertMatchesVisualSnapshot(
+      "choose_team_form_dialog_initial",
+      rootNode,
+      maxDiffPercentage = 9.2
+    )
 
   test("ChooseTeamFormDialog matches architectural snapshot"):
     val props = ChooseTeamFormDialogProps(

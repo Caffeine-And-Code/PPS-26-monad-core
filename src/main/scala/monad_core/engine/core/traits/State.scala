@@ -4,14 +4,14 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 
 trait State:
-  
-  val UpperLeftCorner = Vector2D(0.0, 0.0)
+
+  val UpperLeftCorner  = Vector2D(0.0, 0.0)
   val LowerRightCorner = Vector2D(100.0, 100.0)
-  
-  def allEntities : List[Entity]
-  
+
+  def allEntities: List[Entity]
+
   def allTeams: List[Team]
-  
+
   def allSurfaces: List[Surface]
 
   def getEntity(id: LocatableId): Either[EngineError, Entity]

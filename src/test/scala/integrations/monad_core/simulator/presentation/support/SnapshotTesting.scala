@@ -25,9 +25,11 @@ trait SnapshotTesting extends Matchers:
     if !snapshotFile.exists() then
       snapshotFile.getParentFile.mkdirs()
       Files.writeString(snapshotPath, normalizedActual)
-      fail(s"Snapshot Baseline created at: ${snapshotPath.toAbsolutePath}. Run again the tests to confirm.")
+      fail(
+        s"Snapshot Baseline created at: ${snapshotPath.toAbsolutePath}. Run again the tests to confirm."
+      )
     else
-      val expectedContent = Files.readString(snapshotPath)
+      val expectedContent    = Files.readString(snapshotPath)
       val normalizedExpected = expectedContent.replace("\r\n", "\n").trim
 
       normalizedActual shouldBe normalizedExpected
@@ -55,20 +57,20 @@ trait SnapshotTesting extends Matchers:
     val b2 = color2 & 0xff
 
     Math.abs(a1 - a2) <= tolerance &&
-      Math.abs(r1 - r2) <= tolerance &&
-      Math.abs(g1 - g2) <= tolerance &&
-      Math.abs(b1 - b2) <= tolerance
+    Math.abs(r1 - r2) <= tolerance &&
+    Math.abs(g1 - g2) <= tolerance &&
+    Math.abs(b1 - b2) <= tolerance
 
   def assertMatchesVisualSnapshot(
-                                   snapshotName: String,
-                                   node: scalafx.scene.Node,
-                                   maxDiffPercentage: Double = 0.1
-                                 ): Unit =
+      snapshotName: String,
+      node: scalafx.scene.Node,
+      maxDiffPercentage: Double = 0.1
+  ): Unit =
     val snapshot = onFxThread {
       node.snapshot(null, null)
     }
     val actualImageRaw = SwingFXUtils.fromFXImage(snapshot.delegate, null)
-    val file = snapshotsDir.resolve(s"visuals/$snapshotName.png").toFile
+    val file           = snapshotsDir.resolve(s"visuals/$snapshotName.png").toFile
 
     if !file.exists() then
       file.getParentFile.mkdirs()
@@ -79,7 +81,7 @@ trait SnapshotTesting extends Matchers:
 
       // normalize the size of the image, this is done cause
       // ScalaFx creates a System (OS) dependant panel
-      val maxWidth = Math.max(actualImageRaw.getWidth, expectedImageRaw.getWidth)
+      val maxWidth  = Math.max(actualImageRaw.getWidth, expectedImageRaw.getWidth)
       val maxHeight = Math.max(actualImageRaw.getHeight, expectedImageRaw.getHeight)
 
       def normalize(img: java.awt.image.BufferedImage): java.awt.image.BufferedImage =
@@ -90,7 +92,7 @@ trait SnapshotTesting extends Matchers:
             maxHeight,
             java.awt.image.BufferedImage.TYPE_INT_ARGB
           )
-          val g = canvas.createGraphics()
+          val g     = canvas.createGraphics()
           val bgRgb = img.getRGB(0, img.getHeight - 1)
           g.setColor(new java.awt.Color(bgRgb, true))
           g.fillRect(0, 0, maxWidth, maxHeight)
@@ -102,8 +104,8 @@ trait SnapshotTesting extends Matchers:
       val bufferedImage = normalize(actualImageRaw)
       val expectedImage = normalize(expectedImageRaw)
 
-      val width = maxWidth
-      val height = maxHeight
+      val width       = maxWidth
+      val height      = maxHeight
       val totalPixels = width * height
 
       val diffs = for

@@ -16,44 +16,45 @@ private[physics] object BorderContactRule:
 
     override val RuleId: String = BorderContactRule.Id
 
-    override def apply(scene: State, dt: Long)(using detector: CollisionDetector): Either[PhysicsError, State] =
+    override def apply(scene: State, dt: Long)(using
+        detector: CollisionDetector
+    ): Either[PhysicsError, State] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
 
-        activeCollisions <- findCollisions(entities, scene.UpperLeftCorner, scene.LowerRightCorner)
-          .left.map(PhysicsDomainError.apply)
+        activeCollisions <- findCollisions(
+          entities,
+          scene.UpperLeftCorner,
+          scene.LowerRightCorner
+        ).left.map(PhysicsDomainError.apply)
 
         updatedEntities <- CollisionResolver(activeCollisions)
 
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
-      
-    private def findCollisions(
-      entities: List[Entity], 
-      upperLeft: Vector2D, 
-      lowerRight: Vector2D
-    ) (using detector: CollisionDetector) : Either[EngineError, CollisionMap] = {
 
-      entities.foldLeft(Right(Map.empty): Either[EngineError, CollisionMap]) {
-        case (acc, entity) =>
-          for
-            collisions <- collisionWithBorder(entity, upperLeft, lowerRight)
-            result <- acc.map(_.updated(entity, collisions))
-          yield result
+    private def findCollisions(
+        entities: List[Entity],
+        upperLeft: Vector2D,
+        lowerRight: Vector2D
+    )(using detector: CollisionDetector): Either[EngineError, CollisionMap] =
+      entities.foldLeft(Right(Map.empty): Either[EngineError, CollisionMap]) { case (acc, entity) =>
+        for
+          collisions <- collisionWithBorder(entity, upperLeft, lowerRight)
+          result     <- acc.map(_.updated(entity, collisions))
+        yield result
       }
-    }
 
     private def collisionWithBorder(
-         entity: Entity, 
-         upperLeft: Vector2D, 
-         lowerRight: Vector2D
-       ) (using detector: CollisionDetector)
-        : Either[EngineError, List[(Entity, Collision)]] =
+        entity: Entity,
+        upperLeft: Vector2D,
+        lowerRight: Vector2D
+    )(using detector: CollisionDetector): Either[EngineError, List[(Entity, Collision)]] =
 
-      val position = entity.position
+      val position   = entity.position
       val horizontal = SizeHelper.horizontalShapeSize(entity) / 2
-      val vertical = SizeHelper.verticalShapeSize(entity) / 2
+      val vertical   = SizeHelper.verticalShapeSize(entity) / 2
 
       val borderTypes =
         List(
@@ -64,18 +65,18 @@ private[physics] object BorderContactRule:
         ).flatten
 
       borderTypes.foldLeft(
-          Right(List.empty[(Entity, Collision)]): Either[EngineError, List[(Entity, Collision)]]
-        ) {
-          case (Left(error), _) =>
-            Left(error)
+        Right(List.empty[(Entity, Collision)]): Either[EngineError, List[(Entity, Collision)]]
+      ) {
+        case (Left(error), _) =>
+          Left(error)
 
-          case (Right(walls), borderType) =>
-            BorderWall(
-              entity,
-              horizontal,
-              vertical,
-              upperLeft,
-              lowerRight,
-              borderType
-            ).map(wall => walls :+ wall)
-        }
+        case (Right(walls), borderType) =>
+          BorderWall(
+            entity,
+            horizontal,
+            vertical,
+            upperLeft,
+            lowerRight,
+            borderType
+          ).map(wall => walls :+ wall)
+      }

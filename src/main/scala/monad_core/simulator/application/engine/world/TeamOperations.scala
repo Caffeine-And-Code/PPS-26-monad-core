@@ -4,8 +4,8 @@ import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
 
 case class SaveTeamCommand(
-                            team: Team
-                          )
+    team: Team
+)
 
 private[world] trait TeamOperations:
   def getAllTeams: List[Team]
@@ -17,4 +17,3 @@ private[world] trait TeamOperations:
   def removeTeam(id: TeamId): Either[EngineError, Unit]
 
   def updateTeam(command: SaveTeamCommand): Either[EngineError, Unit]
-

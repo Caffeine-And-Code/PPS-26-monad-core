@@ -13,7 +13,7 @@ import scalafx.scene.image.Image as ScalaFxImage
 class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFactory:
   test("An invalid Image load should respond with an error"):
     val imageConfig: ImageConfigRecord = mock[ImageConfigRecord]
-    val image = mock[Image]
+    val image                          = mock[Image]
 
     val result = ImageLoader.getScalaFxImage(image, imageConfig)
 
@@ -23,7 +23,7 @@ class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFac
 
   test("A valid Image can be loaded"):
     val imageConfig: ImageConfigRecord = MockImageConfig()
-    val image: Image = MockImage()
+    val image: Image                   = MockImage()
 
     val result: Either[EngineError, ScalaFxImage] = ImageLoader.getScalaFxImage(image, imageConfig)
 

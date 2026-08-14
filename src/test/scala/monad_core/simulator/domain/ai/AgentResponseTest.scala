@@ -3,7 +3,7 @@ package monad_core.simulator.domain.ai
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class AgentResponseTest extends AnyFunSuite with Matchers :
+class AgentResponseTest extends AnyFunSuite with Matchers:
 
   test("can create an agent response"):
     val response = "I am Jimmy your assistant"
@@ -18,4 +18,3 @@ class AgentResponseTest extends AnyFunSuite with Matchers :
     val result = AgentResponseError(error)
 
     result.message shouldBe error
-

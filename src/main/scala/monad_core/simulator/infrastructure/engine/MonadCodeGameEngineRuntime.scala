@@ -10,12 +10,12 @@ import monad_core.simulator.application.engine.world.World
 import scalafx.animation.AnimationTimer
 
 final class MonadCodeGameEngineRuntime extends GameEngineRuntime:
-  private var gameLoop = GameLoop.default()
-  private var currentWorld: Option[World] = None
+  private var gameLoop                      = GameLoop.default()
+  private var currentWorld: Option[World]   = None
   private var timer: Option[AnimationTimer] = None
-  private var error: Option[EngineError] = None
+  private var error: Option[EngineError]    = None
 
-  given physics: PhysicsManager = PhysicsManager.default()
+  given physics: PhysicsManager        = PhysicsManager.default()
   given renderer: RendererManager.type = RendererManager
 
   override def start(): Unit =
@@ -23,7 +23,7 @@ final class MonadCodeGameEngineRuntime extends GameEngineRuntime:
 
   override def stop(): Unit =
     gameLoop = gameLoop.stop()
-    
+
   override def reset(world: World): Unit =
     gameLoop = GameLoop.default()
     currentWorld = Some(world)

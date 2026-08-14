@@ -7,7 +7,6 @@ import scalafx.util.Duration
 
 import scala.collection.immutable.Queue
 
-
 sealed trait NotificationType
 
 case object Info extends NotificationType
@@ -17,17 +16,17 @@ case object Success extends NotificationType
 case object Error extends NotificationType
 
 case class Notification(
-                         message: String,
-                         severity: NotificationType
-                       )
+    message: String,
+    severity: NotificationType
+)
 
 object NotificationManager {
-  private val NotificationHeight = 40
+  private val NotificationHeight             = 40
   private val PaddingTopBetweenNotifications = 10
 
   private var notifications: Queue[Notification] = Queue.empty
-  private var overlay: Option[StackPane] = None
-  var animationsEnabled: Boolean = true
+  private var overlay: Option[StackPane]         = None
+  var animationsEnabled: Boolean                 = true
 
   def attach(rootOverlay: StackPane): Unit =
     overlay = Some(rootOverlay)
@@ -39,19 +38,19 @@ object NotificationManager {
 
   private[components] def getNotificationColor(severity: NotificationType = Info): String =
     severity match
-      case Info => "#333333"
+      case Info    => "#333333"
       case Success => "#2e7d32"
-      case Error => "#c62828"
+      case Error   => "#c62828"
 
   def show(message: String, severity: NotificationType = Info): Unit =
     overlay.foreach { root =>
-      val bgColor = getNotificationColor(severity)
+      val bgColor            = getNotificationColor(severity)
       val notificationNumber = notifications.length
-      val notificationPosition = NotificationHeight * notificationNumber + PaddingTopBetweenNotifications * notificationNumber
+      val notificationPosition =
+        NotificationHeight * notificationNumber + PaddingTopBetweenNotifications * notificationNumber
 
       val snackbar = new Label(message) {
-        style =
-          s"""
+        style = s"""
           -fx-background-color: $bgColor;
           -fx-text-fill: white;
           -fx-padding: 12 20 12 20;
@@ -104,4 +103,5 @@ object NotificationManager {
             notifications = notifications.dequeue._2
       }
     }
+
 }

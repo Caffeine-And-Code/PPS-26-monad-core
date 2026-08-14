@@ -37,7 +37,7 @@ private[simulator] trait ScalaFxInit extends BeforeAndAfterAll with Matchers:
 
     val clicked = latch.await(5 * times, TimeUnit.SECONDS)
     clicked should be(true)
-    
+
   def tryGetMainWindow: Option[Stage] =
     Window.getWindows.asScala.collectFirst {
       case stage: javafx.stage.Stage if stage.getTitle == "MonadCore2D" => stage
@@ -57,7 +57,7 @@ private[simulator] trait ScalaFxInit extends BeforeAndAfterAll with Matchers:
   def getOrFail[T](either: Either[EngineError, T]): T =
     either match
       case Right(value) => value
-      case Left(err) => fail(s"Got error: $err")
+      case Left(err)    => fail(s"Got error: $err")
 
   protected def drainFxQueue(): Unit = onFxThread(())
 
@@ -65,4 +65,5 @@ private[simulator] trait ScalaFxInit extends BeforeAndAfterAll with Matchers:
     node +: (node match
       case scrollPane: javafx.scene.control.ScrollPane => descendants(scrollPane.getContent)
       case parent: Parent => parent.getChildrenUnmodifiable.asScala.toSeq.flatMap(descendants)
-      case _ => Seq.empty)
+      case _              => Seq.empty
+    )

@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 class TeamTest extends AnyFunSuite with Inside with Matchers:
 
   val ValidTeamId = "team1"
-  val ValidEnemy = "team2"
+  val ValidEnemy  = "team2"
 
   test("can create a team"):
     val enemyTwo = "team3"
@@ -19,7 +19,7 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
       case Right(team) =>
         team.id.value shouldBe ValidTeamId
         team.enemies.size shouldBe 2
-        team.enemies.map(_.value) should contain allOf(ValidEnemy, enemyTwo)
+        team.enemies.map(_.value) should contain allOf (ValidEnemy, enemyTwo)
 
   test("cannot create a team with invalid team id"):
     val invalidTeamId = "   "
@@ -102,7 +102,6 @@ class TeamTest extends AnyFunSuite with Inside with Matchers:
 
     inside(isEnemy):
       case Right(value) => value shouldBe false
-
 
   test("can check that an invalid team id is not an enemy"):
     val invalidTeamId = " "

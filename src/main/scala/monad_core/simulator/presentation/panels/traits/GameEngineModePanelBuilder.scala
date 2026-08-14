@@ -7,9 +7,10 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
 trait GameEngineModePanelBuilder:
+
   def build(
-             imageConfig: ImageConfigRecord,
-             onModeChange : Boolean => Unit,
-             onStopClick: () => Unit,
-             isEngineRunning: BooleanProperty,
-           )(using world: World): Either[EngineError, VBox]
+      imageConfig: ImageConfigRecord,
+      onModeChange: Boolean => Unit,
+      onStopClick: () => Unit,
+      isEngineRunning: BooleanProperty
+  )(using world: World): Either[EngineError, VBox]

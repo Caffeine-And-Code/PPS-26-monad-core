@@ -4,7 +4,10 @@ import helpers.MockImage
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
-import monad_core.simulator.presentation.panels.traits.{AiModelChatPanelBuilder, GameEnginePanelBuilder}
+import monad_core.simulator.presentation.panels.traits.{
+  AiModelChatPanelBuilder,
+  GameEnginePanelBuilder
+}
 import monad_core.simulator.presentation.stages.MainStage
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound}
 import org.scalamock.scalatest.MockFactory
@@ -20,29 +23,36 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class MainStageTest extends AnyFunSuite with Inside with Matchers with MockFactory with ScalaFxInit:
   given aiAgent: AiAgent = mock[AiAgent]
 
-  val gamePanel: GameEnginePanelBuilder = mock[GameEnginePanelBuilder]
+  val gamePanel: GameEnginePanelBuilder  = mock[GameEnginePanelBuilder]
   val chatPanel: AiModelChatPanelBuilder = mock[AiModelChatPanelBuilder]
 
-  val stageWidth: DoubleProperty = DoubleProperty(1000.0)
+  val stageWidth: DoubleProperty  = DoubleProperty(1000.0)
   val stageHeight: DoubleProperty = DoubleProperty(800.0)
 
   def setupCorrectGamePanel(): Unit =
-    (gamePanel.build: () => Either[EngineError, VBox]).expects().returns(Right(new VBox {
-      children = Seq()
-    }))
+    (gamePanel.build: () => Either[EngineError, VBox])
+      .expects()
+      .returns(Right(new VBox {
+        children = Seq()
+      }))
 
   def setupInvalidGamePanel(): Unit =
-    (gamePanel.build: () => Either[EngineError, VBox]).expects()
+    (gamePanel.build: () => Either[EngineError, VBox])
+      .expects()
       .returns(Left(CannotBuildStage(ImageResourceNotFound(MockImage()), "")))
 
   def setupCorrectChatPanel(): Unit =
-    (chatPanel.build(_: AiAgent)(using _: ExecutionContext)).expects(*, *)
+    (chatPanel
+      .build(_: AiAgent)(using _: ExecutionContext))
+      .expects(*, *)
       .returns(Right(new VBox {
         children = Seq()
       }))
 
   def setupInvalidChatPanel(): Unit =
-    (chatPanel.build(_: AiAgent)(using _: ExecutionContext)).expects(*, *)
+    (chatPanel
+      .build(_: AiAgent)(using _: ExecutionContext))
+      .expects(*, *)
       .returns(Left(CannotBuildStage(ImageResourceNotFound(MockImage()), "")))
 
   def setupNeverCalledChatPanel(): Unit =
@@ -52,7 +62,7 @@ class MainStageTest extends AnyFunSuite with Inside with Matchers with MockFacto
     setupCorrectGamePanel()
     setupCorrectChatPanel()
 
-    val mainStage = MainStage(gamePanel, chatPanel)
+    val mainStage   = MainStage(gamePanel, chatPanel)
     val buildResult = mainStage.buildRootContent(stageWidth, stageHeight)
 
     inside(buildResult):
@@ -60,11 +70,13 @@ class MainStageTest extends AnyFunSuite with Inside with Matchers with MockFacto
         root shouldBe a[HBox]
         root.children should have size 2
 
-  test("building with an invalid GameEnginePanelBuilder returns an error and never calls the chat panel"):
+  test(
+    "building with an invalid GameEnginePanelBuilder returns an error and never calls the chat panel"
+  ):
     setupInvalidGamePanel()
     setupNeverCalledChatPanel()
 
-    val mainStage = MainStage(gamePanel, chatPanel)
+    val mainStage   = MainStage(gamePanel, chatPanel)
     val buildResult = mainStage.buildRootContent(stageWidth, stageHeight)
 
     inside(buildResult):
@@ -75,7 +87,7 @@ class MainStageTest extends AnyFunSuite with Inside with Matchers with MockFacto
     setupCorrectGamePanel()
     setupInvalidChatPanel()
 
-    val mainStage = MainStage(gamePanel, chatPanel)
+    val mainStage   = MainStage(gamePanel, chatPanel)
     val buildResult = mainStage.buildRootContent(stageWidth, stageHeight)
 
     inside(buildResult):
@@ -90,10 +102,12 @@ class MainStageTest extends AnyFunSuite with Inside with Matchers with MockFacto
       children = Seq()
     }
     (gamePanel.build: () => Either[EngineError, VBox]).expects().returns(Right(gameBox))
-    (chatPanel.build(_: AiAgent)(using _: ExecutionContext)).expects(*, *)
+    (chatPanel
+      .build(_: AiAgent)(using _: ExecutionContext))
+      .expects(*, *)
       .returns(Right(chatBox))
 
-    val mainStage = MainStage(gamePanel, chatPanel)
+    val mainStage   = MainStage(gamePanel, chatPanel)
     val buildResult = mainStage.buildRootContent(stageWidth, stageHeight)
 
     inside(buildResult):

@@ -5,6 +5,10 @@ import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.errors.EngineError
 
 object EngineFacade:
-  def tick(loop: GameLoop, state: State, currentTime: Long)
-          (using painter: Painter, physics: PhysicsEngine, renderer: RendererManager.type): Either[EngineError, (State, GameLoop)] =
+
+  def tick(loop: GameLoop, state: State, currentTime: Long)(using
+      painter: Painter,
+      physics: PhysicsEngine,
+      renderer: RendererManager.type
+  ): Either[EngineError, (State, GameLoop)] =
     loop.tick(state, currentTime)

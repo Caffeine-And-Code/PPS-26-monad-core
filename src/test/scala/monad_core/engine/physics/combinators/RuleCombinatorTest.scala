@@ -12,7 +12,6 @@ import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-
 class RuleCombinatorTest extends AnyFunSuite with Matchers with MockFactory:
 
   given CollisionDetector = mock[CollisionDetector]
@@ -48,12 +47,12 @@ class RuleCombinatorTest extends AnyFunSuite with Matchers with MockFactory:
     val rule3 = mock[PhysicsRule]
 
     val compositeRule = RuleCombinator.sequence(Seq(rule1, rule2, rule3))
-    val result = compositeRule(Scene0, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result        = compositeRule(Scene0, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
     result shouldBe Left(expectedError)
-  
+
   test("+ operator for rules should correctly compose two rules"):
-    
+
     val rule1 = makeDummyRule(action = (scene, deltaTime) => Right(Scene1))
     val rule2 = makeDummyRule(action = (scene, deltaTime) => Right(Scene2))
 

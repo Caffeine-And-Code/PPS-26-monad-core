@@ -6,10 +6,12 @@ import scalafx.scene.control.{Button, Label}
 import scalafx.scene.layout.{HBox, Priority, VBox}
 
 object AiPanelHeader:
+
   final case class Props(
-                          onClear: () => Unit,
-                          modelName: String
-                        )
+      onClear: () => Unit,
+      modelName: String
+  )
+
   final case class Model(clearDisabled: Boolean)
 
   def apply(props: Props): Component[Model, HBox] =

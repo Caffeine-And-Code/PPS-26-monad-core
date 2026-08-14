@@ -7,35 +7,34 @@ import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, Physics
 private[physics] object SceneEntitiesUpdate:
 
   def apply(
-                      scene: State,
-                      updatedEntities: List[Entity]
-                    ): Either[PhysicsError, State] = 
-    if updatedEntities.isEmpty then
-      Right(scene)
-    else
-      updateSceneWithEntities(scene, updatedEntities)
-  
+      scene: State,
+      updatedEntities: List[Entity]
+  ): Either[PhysicsError, State] =
+    if updatedEntities.isEmpty then Right(scene)
+    else updateSceneWithEntities(scene, updatedEntities)
+
   private def updateSceneWithEntities(
-                            scene: State,
-                            updatedEntities: List[Entity]
-                          ): Either[PhysicsError, State] =
-    updatedEntities.foldLeft(Right(scene): Either[PhysicsError, State]) {
-      (currentScene, entity) =>
-        currentScene.flatMap { s =>
-          updateEntity(s, entity)
-        }
+      scene: State,
+      updatedEntities: List[Entity]
+  ): Either[PhysicsError, State] =
+    updatedEntities.foldLeft(Right(scene): Either[PhysicsError, State]) { (currentScene, entity) =>
+      currentScene.flatMap { s =>
+        updateEntity(s, entity)
+      }
     }
 
   private def updateEntity(
-                            scene: State,
-                            updatedEntity: Entity
-                          ): Either[PhysicsError, State] =
+      scene: State,
+      updatedEntity: Entity
+  ): Either[PhysicsError, State] =
     for
       sceneWithoutEntity <- scene
         .removeEntity(updatedEntity)
-        .left.map(err => PhysicsDomainError(err))
+        .left
+        .map(err => PhysicsDomainError(err))
 
       updatedScene <- sceneWithoutEntity
         .addEntity(updatedEntity)
-        .left.map(err => PhysicsDomainError(err))
+        .left
+        .map(err => PhysicsDomainError(err))
     yield updatedScene

@@ -5,17 +5,18 @@ import monad_core.engine.core.traits.State
 import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 
-type EntityMap = Map[LocatableId, Entity]
+type EntityMap  = Map[LocatableId, Entity]
 type SurfaceMap = Map[LocatableId, Surface]
-type TeamMap = Map[TeamId, Team]
+type TeamMap    = Map[TeamId, Team]
 
 case class Lens[S, A](get: S => A, set: (S, A) => S)
 
 case class Scene(
-                  entities: EntityMap = Map.empty,
-                  surfaces: SurfaceMap = Map.empty,
-                  teams: TeamMap = Map.empty
-                ) extends State:
+    entities: EntityMap = Map.empty,
+    surfaces: SurfaceMap = Map.empty,
+    teams: TeamMap = Map.empty
+) extends State:
+
   // Gets
   def getEntity(id: LocatableId): Either[EngineError, Entity] =
     getFromMap(entitiesLens, this, id, EntityNotFound(id))
@@ -64,30 +65,30 @@ object Scene:
     Lens(_.surfaces, (s, m) => s.copy(surfaces = m))
 
   private def getFromMap[K, V](
-                                lens: Lens[Scene, Map[K, V]],
-                                scene: Scene,
-                                key: K,
-                                error: => EngineError
-                              ): Either[EngineError, V] =
+      lens: Lens[Scene, Map[K, V]],
+      scene: Scene,
+      key: K,
+      error: => EngineError
+  ): Either[EngineError, V] =
     lens.get(scene).get(key).toRight(error)
 
   private def addToMap[K, V](
-                              lens: Lens[Scene, Map[K, V]],
-                              scene: Scene,
-                              key: K,
-                              value: V,
-                              error: CannotAddAlreadyPresentElementInMap[K] => EngineError
-                            ): Either[EngineError, Scene] =
+      lens: Lens[Scene, Map[K, V]],
+      scene: Scene,
+      key: K,
+      value: V,
+      error: CannotAddAlreadyPresentElementInMap[K] => EngineError
+  ): Either[EngineError, Scene] =
     val m = lens.get(scene)
     if m.contains(key) then Left(error(CannotAddAlreadyPresentElementInMap(key)))
     else Right(lens.set(scene, m + (key -> value)))
 
   private def removeFromMap[K, V](
-                                   lens: Lens[Scene, Map[K, V]],
-                                   scene: Scene,
-                                   key: K,
-                                   error: CannotRemoveNonPresentElementFromMap[K] => EngineError
-                                 ): Either[EngineError, Scene] =
+      lens: Lens[Scene, Map[K, V]],
+      scene: Scene,
+      key: K,
+      error: CannotRemoveNonPresentElementFromMap[K] => EngineError
+  ): Either[EngineError, Scene] =
     val m = lens.get(scene)
     if m.contains(key) then Right(lens.set(scene, m - key))
     else Left(error(CannotRemoveNonPresentElementFromMap(key)))

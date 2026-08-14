@@ -1,13 +1,16 @@
 package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.{LocatableId, Vector2D}
-import monad_core.engine.physics.helper.PhysicsEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
+import monad_core.engine.physics.helper.PhysicsEntityHelper.{
+  makeFixedEntityCircle,
+  makeFixedEntityRectangle
+}
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class RayIntersectionTest extends AnyFunSuite with Matchers:
-  private val RayStart = Vector2D(1.0, 1.0)
+  private val RayStart     = Vector2D(1.0, 1.0)
   private val RayDirection = Vector2D(1.0, 0.0)
 
   private val IntersectedCircleEntity = makeFixedEntityCircle(
@@ -23,14 +26,14 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
     width = 1.0
   )
 
-  test("RayIntersection should return None if vertexes are empty") :
+  test("RayIntersection should return None if vertexes are empty"):
     val vertexMap = Map.empty[LocatableId, List[Vector2D]]
 
     val result = RayIntersection(RayStart, RayDirection, vertexMap)
 
     result shouldBe None
 
-  test("RayIntersection should return None if ray does not intersect any vertexes") :
+  test("RayIntersection should return None if ray does not intersect any vertexes"):
 
     val vertexMap = VertexFinder(
       List(
@@ -46,7 +49,7 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
 
     result shouldBe None
 
-  test("RayIntersection should return the id of an intersected rectangle") :
+  test("RayIntersection should return the id of an intersected rectangle"):
 
     val vertexMap = VertexFinder(
       List(
@@ -70,7 +73,7 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
 
     result shouldBe IntersectedCircleEntity.id
 
-  test("RayIntersection should return the id of the closest intersected entity") :
+  test("RayIntersection should return the id of the closest intersected entity"):
 
     val vertexMap = VertexFinder(
       List(
@@ -83,7 +86,7 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
 
     result shouldBe IntersectedRectangleEntity.id
 
-  test("RayIntersection should return none if the ray is parallel to the edges of the entity") :
+  test("RayIntersection should return none if the ray is parallel to the edges of the entity"):
 
     val vertexMap = VertexFinder(
       List(
@@ -99,7 +102,7 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
 
     result shouldBe None
 
-  test("RayIntersection should return none if the ray is pointing away from the entity") :
+  test("RayIntersection should return none if the ray is pointing away from the entity"):
 
     val vertexMap = VertexFinder(
       List(
