@@ -3,6 +3,7 @@ package monad_core.simulator.application.ai
 import monad_core.engine.core.Scene
 import monad_core.simulator.domain.ai.agent_evaluation.*
 import monad_core.simulator.errors.BaseError
+import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -31,8 +32,8 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers:
   test("can evaluate agent responses"):
     val response = AgentEvaluationResponse(
       correctLanguageChoose = AgentEvaluationResult.Bool(true),
-      languageCorrectness = AgentEvaluationResult.Score(80),
-      correctToolCalls = AgentEvaluationResult.CorrectChooses(4, 5),
+      languageCorrectness = AgentEvaluationResult.fromScore(80).value,
+      correctToolCalls = AgentEvaluationResult.fromCorrectChooses(4, 5).value,
       expectationMaintained = AgentEvaluationResult.Bool(false)
     )
     val evaluator = FakeAgentEvaluator(Seq(Right(response)))
@@ -48,8 +49,8 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers:
   test("can count failed evaluations"):
     val response = AgentEvaluationResponse(
       correctLanguageChoose = AgentEvaluationResult.Bool(true),
-      languageCorrectness = AgentEvaluationResult.Score(80),
-      correctToolCalls = AgentEvaluationResult.CorrectChooses(1, 1),
+      languageCorrectness = AgentEvaluationResult.fromScore(80).value,
+      correctToolCalls = AgentEvaluationResult.fromCorrectChooses(1, 1).value,
       expectationMaintained = AgentEvaluationResult.Bool(true)
     )
     val evaluator = FakeAgentEvaluator(Seq(Right(response), Left(EvaluationError())))
@@ -69,8 +70,8 @@ class AgentEvaluatorTest extends AnyFunSuite with Matchers:
   test("an evaluation without expected tool calls has full tool scores"):
     val response = AgentEvaluationResponse(
       correctLanguageChoose = AgentEvaluationResult.Bool(true),
-      languageCorrectness = AgentEvaluationResult.Score(80),
-      correctToolCalls = AgentEvaluationResult.CorrectChooses(0, 0),
+      languageCorrectness = AgentEvaluationResult.fromScore(80).value,
+      correctToolCalls = AgentEvaluationResult.fromCorrectChooses(0, 0).value,
       expectationMaintained = AgentEvaluationResult.Bool(true)
     )
     val evaluator = FakeAgentEvaluator(Seq(Right(response)))

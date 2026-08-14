@@ -4,6 +4,7 @@ import monad_core.simulator.domain.ai.agent_evaluation.{
   AgentEvaluationRecup,
   AgentEvaluationResponse,
   AgentEvaluationResult,
+  AgentEvaluationScore,
   AgentEvaluationTest
 }
 import monad_core.simulator.errors.BaseError
@@ -35,6 +36,6 @@ trait AgentEvaluator:
 
   private def toScore(value: AgentEvaluationResult): Int = value match
     case AgentEvaluationResult.Bool(result)  => if (result) 100 else 0
-    case AgentEvaluationResult.Score(result) => result
+    case AgentEvaluationResult.Score(result) => result.value
     case AgentEvaluationResult.CorrectChooses(correctChooses, on) =>
       if (on == 0) 100 else Math.round((correctChooses.toDouble / on) * 100).toInt

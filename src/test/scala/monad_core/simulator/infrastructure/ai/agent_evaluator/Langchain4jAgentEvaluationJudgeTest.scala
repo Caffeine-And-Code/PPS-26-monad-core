@@ -48,7 +48,7 @@ class Langchain4jAgentEvaluationJudgeTest extends AnyFunSuite with Matchers with
     val result = judge.evaluate(test, Seq(agentResponse, secondAgentResponse), world).value
 
     result.correctLanguageChoose shouldBe AgentEvaluationResult.Bool(true)
-    result.languageCorrectness shouldBe AgentEvaluationResult.Score(80)
+    result.languageCorrectness shouldBe AgentEvaluationResult.fromScore(80).value
     result.expectationMaintained shouldBe AgentEvaluationResult.Bool(true)
 
   test("cannot evaluate an invalid judge response"):

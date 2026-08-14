@@ -3,13 +3,17 @@ package monad_core.simulator.domain.ai.agent_evaluator
 import monad_core.simulator.domain.ai.agent_evaluation.{
   AgentEvaluationResult,
   AgentEvaluationScore,
-  InvalidAgentEvaluationValue
+  InvalidAgentEvaluationValue,
+  InvalidCorrectChooses
 }
+import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationScore.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.*
+
+import scala.compiletime.testing.typeCheckErrors
 
 class AgentEvaluationResultTest extends AnyFunSuite with Matchers:
 
@@ -22,7 +26,7 @@ class AgentEvaluationResultTest extends AnyFunSuite with Matchers:
     )
 
     forAll(cases): value =>
-      AgentEvaluationScore.from(value) shouldBe Right(value)
+      AgentEvaluationScore.from(value).value.value shouldBe value
 
   test("creating an AgentEvaluationScore with an invalid value got Error"):
     val cases = Table(
@@ -44,12 +48,12 @@ class AgentEvaluationResultTest extends AnyFunSuite with Matchers:
       case AgentEvaluationResult.Bool(res) => res shouldBe expected
 
   test("can create a Score AgentEvaluationResult"):
-    val expected = AgentEvaluationScore.from(70).value
+    val expected = 70
 
     val result = AgentEvaluationResult.fromScore(expected)
 
     inside(result.value):
-      case AgentEvaluationResult.Score(res) => res shouldBe expected
+      case AgentEvaluationResult.Score(res) => res.value shouldBe expected
 
   test("can create a CorrectChooses AgentEvaluationResult"):
     val correctChooses = 4
@@ -61,3 +65,19 @@ class AgentEvaluationResultTest extends AnyFunSuite with Matchers:
       case AgentEvaluationResult.CorrectChooses(resCorrectChooses, resOn) =>
         resCorrectChooses shouldBe correctChooses
         resOn shouldBe on
+
+  test("cannot create CorrectChooses with invalid values"):
+    val cases = Table(
+      ("correct chooses", "on"),
+      (-1, 0),
+      (-1, 5),
+      (1, 0),
+      (0, -1)
+    )
+
+    forAll(cases): (correctChooses, on) =>
+      val result = AgentEvaluationResult.fromCorrectChooses(correctChooses, on)
+
+      result shouldBe Left(
+        InvalidCorrectChooses(correctChooses, on)
+      )

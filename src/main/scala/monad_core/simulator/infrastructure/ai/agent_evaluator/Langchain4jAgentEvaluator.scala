@@ -45,10 +45,11 @@ case class Langchain4jAgentEvaluator(
       for
         actualToolCalls <- mapToolCalls(results.flatMap(_.toolExecutions().asScala))
         judgement       <- evaluationJudge.evaluate(test, results.map(_.content()), evaluationWorld)
+        toolCallScore   <- correctToolCalls(test.toolCalls, actualToolCalls)
       yield AgentEvaluationResponse(
         correctLanguageChoose = judgement.correctLanguageChoose,
         languageCorrectness = judgement.languageCorrectness,
-        correctToolCalls = correctToolCalls(test.toolCalls, actualToolCalls),
+        correctToolCalls = toolCallScore,
         expectationMaintained = judgement.expectationMaintained
       )
     }.toEither.left
@@ -72,13 +73,13 @@ case class Langchain4jAgentEvaluator(
   private def correctToolCalls(
       expected: Seq[ToolCall],
       actual: Seq[ToolCall]
-  ): AgentEvaluationResult.CorrectChooses =
+  ): Either[BaseError, AgentEvaluationResult.CorrectChooses] =
     val correct = expected
       .zip(actual)
       .count: (expectedCall, actualCall) =>
-        expectedCall.productPrefix == actualCall.productPrefix
+        expectedCall == actualCall
 
-    AgentEvaluationResult.CorrectChooses(correct, Math.max(expected.length, actual.length))
+    AgentEvaluationResult.fromCorrectChooses(correct, Math.max(expected.length, actual.length))
 
   private def evaluationCompletedLog(
       test: AgentEvaluationTest,

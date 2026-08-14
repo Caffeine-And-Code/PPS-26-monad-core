@@ -37,13 +37,13 @@ class AgentEvaluationArgumentsTest extends AnyFunSuite with Matchers:
     val judgeModelUrl = "http://judge-model"
     val judgeModel    = "judge-model"
     val args = Array(
-      AgentEvaluationArguments.testModelUrlArgument,
+      AgentEvaluationArguments.agentModelUrlArgument,
       testModelUrl,
-      AgentEvaluationArguments.modelUrlArgument,
+      AgentEvaluationArguments.agentModelArgument,
       testModel,
-      AgentEvaluationArguments.testJudgeUrlArgument,
+      AgentEvaluationArguments.judgeModelUrlArgument,
       judgeModelUrl,
-      AgentEvaluationArguments.judgeUrlArgument,
+      AgentEvaluationArguments.judgeModelArgument,
       judgeModel
     )
 

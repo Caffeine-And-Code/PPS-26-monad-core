@@ -64,7 +64,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
 
     result.correctLanguageChoose shouldBe judgement.correctLanguageChoose
     result.languageCorrectness shouldBe judgement.languageCorrectness
-    result.correctToolCalls shouldBe AgentEvaluationResult.CorrectChooses(1, 1)
+    result.correctToolCalls shouldBe AgentEvaluationResult.fromCorrectChooses(1, 1).value
     result.expectationMaintained shouldBe judgement.expectationMaintained
     evaluationWorld.value.scene shouldBe initialScene
 
@@ -86,7 +86,33 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
 
     val result = evaluator.evaluateCase(test).value
 
-    result.correctToolCalls shouldBe AgentEvaluationResult.CorrectChooses(0, 0)
+    result.correctToolCalls shouldBe AgentEvaluationResult.fromCorrectChooses(0, 0).value
+
+  test("a tool call with incorrect arguments is not correct"):
+    val assistantBuilder = mock[Langchain4jAssistantBuilder]
+    val assistant        = mock[Langchain4jAssistant]
+    val judge            = mock[Langchain4jAgentEvaluationJudge]
+    val logger           = mock[Logger]
+    val expectedToolCall: ToolCall.CreateCircleEntity =
+      ToolCall.CreateCircleEntity(circleId, x, y, expectedRadius)
+    val actualToolCall: ToolCall.CreateCircleEntity =
+      ToolCall.CreateCircleEntity("wrong-circle", x, y, radius = 100)
+    val test      = evaluationTest(Scene(), Seq(expectedToolCall))
+    val judgement = successfulJudgement
+    given Logger  = logger
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+
+    assistantBuilder.build.expects(*, *).returns(assistant).once()
+    assistant.chat
+      .expects(conversationId, prompt)
+      .returns(assistantResult(Seq(toolExecution(actualToolCall))))
+      .once()
+    judge.evaluate.expects(test, Seq(agentResponse), *).returns(Right(judgement)).once()
+    logger.info.expects(completedLog("success", prompts = 1, expectedToolCalls = 1)).once()
+
+    val result = evaluator.evaluateCase(test).value
+
+    result.correctToolCalls shouldBe AgentEvaluationResult.fromCorrectChooses(0, 1).value
 
   test("can evaluate a conversation and sum all tool calls"):
     val assistantBuilder = mock[Langchain4jAssistantBuilder]
@@ -120,7 +146,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
 
     val result = evaluator.evaluateCase(test).value
 
-    result.correctToolCalls shouldBe AgentEvaluationResult.CorrectChooses(2, 2)
+    result.correctToolCalls shouldBe AgentEvaluationResult.fromCorrectChooses(2, 2).value
 
   test("returns an error when the assistant execution fails"):
     val assistantBuilder = mock[Langchain4jAssistantBuilder]
@@ -172,7 +198,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
   private def successfulJudgement: Langchain4jAgentEvaluationJudgement =
     Langchain4jAgentEvaluationJudgement(
       correctLanguageChoose = AgentEvaluationResult.Bool(true),
-      languageCorrectness = AgentEvaluationResult.Score(80),
+      languageCorrectness = AgentEvaluationResult.fromScore(80).value,
       expectationMaintained = AgentEvaluationResult.Bool(true)
     )
 

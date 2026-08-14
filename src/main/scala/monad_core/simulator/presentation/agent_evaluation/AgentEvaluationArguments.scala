@@ -9,10 +9,10 @@ case class AgentEvaluationArguments(
 
 object AgentEvaluationArguments:
 
-  val testModelUrlArgument = "--test-model-url"
-  val modelUrlArgument     = "--model-url"
-  val testJudgeUrlArgument = "--test-judge-url"
-  val judgeUrlArgument     = "--judge-url"
+  val agentModelUrlArgument = "--agent-model-url"
+  val agentModelArgument    = "--agent-model"
+  val judgeModelUrlArgument = "--judge-model-url"
+  val judgeModelArgument    = "--judge-model"
 
   def parse(args: Array[String]): AgentEvaluationArguments =
     args
@@ -29,11 +29,11 @@ object AgentEvaluationArguments:
       value: String
   ): AgentEvaluationArguments =
     argument match
-      case `testModelUrlArgument` => actual.copy(testModelUrl = value)
-      case `modelUrlArgument`     => actual.copy(testModel = value)
-      case `testJudgeUrlArgument` => actual.copy(judgeModelUrl = value)
-      case `judgeUrlArgument`     => actual.copy(judgeModel = value)
-      case _                      => actual
+      case `agentModelUrlArgument` => actual.copy(testModelUrl = value)
+      case `agentModelArgument`    => actual.copy(testModel = value)
+      case `judgeModelUrlArgument` => actual.copy(judgeModelUrl = value)
+      case `judgeModelArgument`    => actual.copy(judgeModel = value)
+      case _                       => actual
 
   private def defaultValue: AgentEvaluationArguments =
     AgentEvaluationArguments(
