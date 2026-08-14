@@ -4,8 +4,11 @@ on:
     branches:
       - main
       - bf/release-action-fix
-jobs:
 
+permissions:
+  contents: write
+
+jobs:
   check-version:
     runs-on: ubuntu-latest
     outputs:
