@@ -1,27 +1,28 @@
 package integrations.monad_core.simulator.presentation.support
 
-import javafx.scene.{Node, Parent}
 import javafx.scene.control.Labeled
+import javafx.scene.{Node, Parent}
+
 import scala.jdk.CollectionConverters.*
 
 object SceneGraphSerializer:
 
   case class NodeSnapshot(
-                           nodeType: String,
-                           id: Option[String],
-                           styleClass: List[String],
-                           text: Option[String],
-                           children: List[NodeSnapshot]
-                         )
-  
+      nodeType: String,
+      id: Option[String],
+      styleClass: List[String],
+      text: Option[String],
+      children: List[NodeSnapshot]
+  )
+
   def snapshotOf(node: Node): NodeSnapshot =
     val childrenList = node match
       case parent: Parent => parent.getChildrenUnmodifiable.asScala.map(snapshotOf).toList
-      case _ => Nil
+      case _              => Nil
 
     val textVal = node match
       case labeled: Labeled => Option(labeled.getText).filter(_.nonEmpty)
-      case _ => None
+      case _                => None
 
     NodeSnapshot(
       nodeType = node.getClass.getSimpleName,
@@ -32,11 +33,12 @@ object SceneGraphSerializer:
     )
 
   def toJson(snapshot: NodeSnapshot, indentLevel: Int = 0): String =
-    val pad = "  " * indentLevel
+    val pad      = "  " * indentLevel
     val childPad = "  " * (indentLevel + 1)
 
     val idStr = snapshot.id.map(id => s""""id": "$id"""")
-    val textStr = snapshot.text.map(t => s""""text": "${t.replace("\n", "\\n").replace("\"", "\\\"")}"""")
+    val textStr =
+      snapshot.text.map(t => s""""text": "${t.replace("\n", "\\n").replace("\"", "\\\"")}"""")
     val stylesStr =
       if snapshot.styleClass.nonEmpty then
         Some(s""""styleClass": [${snapshot.styleClass.map(s => s"\"$s\"").mkString(", ")}]""")
@@ -44,7 +46,8 @@ object SceneGraphSerializer:
 
     val childrenStr =
       if snapshot.children.nonEmpty then
-        val serializedChildren = snapshot.children.map(c => toJson(c, indentLevel + 2)).mkString(",\n")
+        val serializedChildren =
+          snapshot.children.map(c => toJson(c, indentLevel + 2)).mkString(",\n")
         Some(s""""children": [\n$serializedChildren\n$childPad]""")
       else None
 

@@ -3,8 +3,7 @@ package monad_core.simulator.domain.ai
 import monad_core.simulator.errors.BaseError
 
 case class AgentResponse(
-                        response: String,
-                        tokenUsed: Int
-                        )
+    response: String
+)
 
-case class AgentResponseError(error:String) extends BaseError(error)
+case class AgentResponseError(error: String) extends BaseError(error)

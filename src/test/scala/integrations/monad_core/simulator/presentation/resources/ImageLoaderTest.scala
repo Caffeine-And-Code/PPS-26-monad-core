@@ -13,8 +13,8 @@ import scalafx.scene.image.Image as ScalaFxImage
 class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFactory:
 
   test("each Image can be loaded by the loader"):
-    val imageConfig : BaseImageConfig = BaseImageConfig()
-    
+    val imageConfig: BaseImageConfig = BaseImageConfig()
+
     val cases = Table(
       "image",
       PlayIcon(),

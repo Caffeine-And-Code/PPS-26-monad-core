@@ -40,17 +40,35 @@ lazy val javaFXModulePath = Def.task {
 lazy val javaFXJavaOptions = Def.task {
   Seq(
     "--module-path", javaFXModulePath.value,
-    "--add-modules", javaFXModules.map(m => s"javafx.$m").mkString(",")
+    "--add-modules", javaFXModules.map(m => s"javafx.$m").mkString(","),
+    "-Dglass.win.uiScale=100%",
+    "-Dprism.allowhidpi=false",
+    "-Dprism.order=sw",
+    "-Dprism.lcdtext=false",
+    "-Dprism.text=t2k",
+    "-Dprism.subpixeltext=false"
   )
 }
 
+lazy val LlmIntegrationTest =
+  config("llmIntegrationTest").extend(Test)
+
 lazy val root = rootProject
+  .configs(LlmIntegrationTest)
   .settings(
     name := "MonadCore2D",
+    inConfig(LlmIntegrationTest)(Defaults.testSettings),
+    LlmIntegrationTest / scalaSource :=
+      baseDirectory.value / "src" / "llmIntegrationTest" / "scala",
+    LlmIntegrationTest / resourceDirectory :=
+      baseDirectory.value / "src" / "llmIntegrationTest" / "resources",
+    LlmIntegrationTest / parallelExecution := false,
+    LlmIntegrationTest / fork := true,
     libraryDependencies ++= Seq(
       "org.scalactic" %% "scalactic" % "3.2.20",
-      "org.scalatest" %% "scalatest" % "3.2.20" % Test,
-      "org.scalamock" %% "scalamock" % "7.5.5" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.20" % "test,llmIntegrationTest",
+      "org.scalamock" %% "scalamock" % "7.5.5" % "test,llmIntegrationTest",
+      "org.testfx" % "testfx-core" % "4.0.18" % Test,
       "dev.langchain4j" % "langchain4j-ollama" % "1.17.2",
       "dev.langchain4j" % "langchain4j" % "1.17.2",
       "org.scalafx" %% "scalafx" % "23.0.1-R34"
@@ -76,15 +94,23 @@ lazy val root = rootProject
       }
     }
   ).settings(
-    assembly / mainClass := Some("Launcher"),
+    assembly / mainClass := Some("monad_core.Launcher"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
-      case PathList("META-INF", _*)             => MergeStrategy.discard
-      case "module-info.class"                  => MergeStrategy.discard
-      case _                                    => MergeStrategy.first
+      case PathList("META-INF", _*) => MergeStrategy.discard
+      case "module-info.class" => MergeStrategy.discard
+      case _ => MergeStrategy.first
     }
   )
 
 ThisBuild / scalacOptions ++= Seq(
   "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
+)
+
+strykerMutate := Seq(
+  "src/main/scala/monad_core/engine/**/*.scala"
+)
+
+strykerTestFilter := Seq(
+  "monad_core.engine.*"
 )

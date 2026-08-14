@@ -6,7 +6,6 @@ import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 
 import scala.collection.mutable.ListBuffer
-import scala.math.{max, min}
 import scala.util.Random
 import scala.util.hashing.MurmurHash3
 
@@ -24,9 +23,9 @@ object Drawer extends Painter:
 
   def teamIdColorRelation(id: TeamId): Color =
     val hash = MurmurHash3.stringHash(id.value)
-    val rng = Random(hash)
+    val rng  = Random(hash)
 
-    val hue = rng.nextDouble() * 360.0
+    val hue        = rng.nextDouble() * 360.0
     val saturation = 0.5 + (rng.nextDouble() * 0.5)
     val brightness = 0.5 + (rng.nextDouble() * 0.5)
 

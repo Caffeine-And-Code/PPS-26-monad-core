@@ -1,5 +1,5 @@
 package monad_core.simulator.presentation.resources
 
-trait ImageConfigRecord(val imageBasePath : String)
+trait ImageConfigRecord(val imageBasePath: String)
 
-case class BaseImageConfig() extends ImageConfigRecord(imageBasePath = "/")
+case class BaseImageConfig() extends ImageConfigRecord(imageBasePath = "/images/")

@@ -2,10 +2,14 @@ package monad_core.simulator.presentation.stages
 
 import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.presentation.components.NotificationManager
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
 import monad_core.simulator.{StartupTimeout, UnexpectedStartupFailure}
 import scalafx.application.Platform
 import scalafx.scene.Scene
+import scalafx.scene.layout.StackPane
 import scalafx.scene.paint.Color
 import scalafx.stage.Stage
 
@@ -15,15 +19,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 final class ScalaFxLauncher(mainStage: MainStageBuilder) {
 
-  private val MinStageWidth = 1024.0
-  private val MinStageHeight = 720.0
+  private val MinStageWidth         = 1024.0
+  private val MinStageHeight        = 720.0
   private val StartupTimeoutSeconds = 10L
 
-  def run()
-         (
-           using aiAgent: AiAgent
-         ): Either[EngineError, Unit] =
-    val latch = new CountDownLatch(1)
+  def run()(using
+      aiAgent: AiAgent,
+      world: World,
+      gameEngineRuntime: GameEngineRuntime
+  ): Either[EngineError, Unit] =
+    val latch                                       = new CountDownLatch(1)
     @volatile var result: Either[EngineError, Unit] = Left(StartupTimeout(StartupTimeoutSeconds))
 
     val buildAndShow: Runnable = () =>
@@ -35,13 +40,21 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
           minHeight = MinStageHeight
         }
 
+        val notificationLayer = new StackPane {
+          pickOnBounds = false
+        }
+
         val scene = new Scene(900, 600) {
           fill = Color.rgb(25, 26, 28)
         }
 
         result = mainStage.buildRootContent(scene.width, scene.height) match
           case Right(rootContent) =>
-            scene.content = rootContent
+            scene.content = new StackPane {
+              children = Seq(rootContent, notificationLayer)
+            }
+
+            NotificationManager.attach(notificationLayer)
             stage.scene = scene
             stage.show()
             Right(())
@@ -51,11 +64,9 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
       catch
         case throwable: Throwable =>
           result = Left(UnexpectedStartupFailure(throwable.getMessage))
-      finally
-        latch.countDown()
+      finally latch.countDown()
 
-    try
-      Platform.startup(buildAndShow)
+    try Platform.startup(buildAndShow)
     catch
       case _: IllegalStateException =>
         // JavaFx toolkit has already started, schedule the program startup as soon
@@ -64,8 +75,7 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
 
     val completedInTime = latch.await(StartupTimeoutSeconds, TimeUnit.SECONDS)
 
-    if !completedInTime then
-      Left(StartupTimeout(StartupTimeoutSeconds))
-    else
-      result
+    if !completedInTime then Left(StartupTimeout(StartupTimeoutSeconds))
+    else result
+
 }

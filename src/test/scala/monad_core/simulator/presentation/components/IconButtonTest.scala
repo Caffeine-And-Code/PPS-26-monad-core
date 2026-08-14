@@ -11,14 +11,15 @@ import org.scalatest.prop.TableFor1
 import org.scalatest.prop.Tables.Table
 
 class IconButtonTest extends AnyFunSuite with Inside with Matchers with MockFactory:
+
   val iterations: TableFor1[Boolean] = Table(
     "currentIsActive",
     true,
     false
   )
-  
+
   def arrangeBaseInputs(currentIsActive: Boolean): (MockFunction1[Boolean, Unit], Boolean) =
-    val mockedOnClick = mockFunction[Boolean, Unit]
+    val mockedOnClick       = mockFunction[Boolean, Unit]
     val expectedNewIsActive = !currentIsActive
 
     mockedOnClick.expects(expectedNewIsActive).once()
@@ -36,7 +37,7 @@ class IconButtonTest extends AnyFunSuite with Inside with Matchers with MockFact
   test("toggleIsActive correctly calls an internal on click function"):
     forAll(iterations): currentIsActive =>
       val (mockedOnClick, expectedNewIsActive) = arrangeBaseInputs(currentIsActive)
-      val internalMockedOnClick = mockFunction[Boolean, Unit]
+      val internalMockedOnClick                = mockFunction[Boolean, Unit]
 
       internalMockedOnClick.expects(expectedNewIsActive).once()
 

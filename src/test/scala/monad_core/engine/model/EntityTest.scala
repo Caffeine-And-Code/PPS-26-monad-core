@@ -1,20 +1,30 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.{CannotApplyDamageToNoneHealthEntity, CannotApplyNegativeDamage, Entity, HealthCannotBeNegativeOrZero, LocatableIdCannotBeEmpty, PositionIsValid, Shape2D, Vector2D, WeightCannotBeNegative}
+import monad_core.engine.errors.EngineError
+import monad_core.engine.model.{
+  CannotApplyNegativeDamage,
+  Entity,
+  HealthCannotBeNegativeOrZero,
+  LocatableIdCannotBeEmpty,
+  PositionIsValid,
+  Vector2D,
+  WeightCannotBeNegativeOrZero
+}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class EntityTest extends AnyFunSuite with Inside with Matchers:
 
-  val ValidEntityId = "entity1"
-  val ValidPosition = Vector2D(1, 3)
-  val ValidRadius = 2
-  val ValidHeight = 2
-  val ValidLength = 2
-  val ValidEntity: Either[EngineError, Entity] = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
+  val ValidEntityId           = "entity1"
+  val ValidPosition: Vector2D = Vector2D(1, 3)
+  val ValidRadius             = 2
+  val ValidHeight             = 2
+  val ValidLength             = 2
+
+  val ValidEntity: Either[EngineError, Entity] =
+    Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
 
   test("can create an entity with ID, position and the shape of a circle"):
     val entity = Entity.circle(ValidEntityId, ValidPosition, ValidRadius)
@@ -44,7 +54,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
   test("can create an entity in position 0,0"):
     val position00 = Vector2D(0, 0)
-    val entity = Entity.rectangle(ValidEntityId, position00, ValidHeight, ValidLength)
+    val entity     = Entity.rectangle(ValidEntityId, position00, ValidHeight, ValidLength)
 
     inside(entity):
       case Right(entity) =>
@@ -58,12 +68,12 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     invalidEntity shouldBe Left(LocatableIdCannotBeEmpty())
 
   test("cannot create an entity with an invalid position"):
-    val invalidPositionX = Vector2D(-1, 1)
-    val invalidPositionY = Vector2D(1, -1)
+    val invalidPositionX  = Vector2D(-1, 1)
+    val invalidPositionY  = Vector2D(1, -1)
     val invalidPositionXY = Vector2D(-1, -1)
 
-    val invalidForXPosition = Entity.circle(ValidEntityId, invalidPositionX, ValidRadius)
-    val invalidForYPosition = Entity.circle(ValidEntityId, invalidPositionY, ValidRadius)
+    val invalidForXPosition  = Entity.circle(ValidEntityId, invalidPositionX, ValidRadius)
+    val invalidForYPosition  = Entity.circle(ValidEntityId, invalidPositionY, ValidRadius)
     val invalidForXYPosition = Entity.circle(ValidEntityId, invalidPositionXY, ValidRadius)
 
     invalidForXPosition shouldBe Left(PositionIsValid(invalidPositionX))
@@ -73,36 +83,34 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("can move entity in a given position"):
     val newPosition = Vector2D(4, 5)
 
-    val entityInNewPosition = ValidEntity.flatMap(_.moveTo(newPosition))
+    val entityInNewPosition = ValidEntity.map(_.moveTo(newPosition))
 
     inside(entityInNewPosition):
       case Right(entity) => entity.position shouldBe newPosition
 
-
-  test("cannot move entity in an invalid position"):
+  test("can move entity in an invalid position (necessary for bound collision resolution)"):
     val invalidPosition = Vector2D(-1, -1)
 
-    val entityInNewPosition = ValidEntity.flatMap(_.moveTo(invalidPosition))
+    val entityInNewPosition = ValidEntity.map(_.moveTo(invalidPosition))
 
-    entityInNewPosition shouldBe Left(PositionIsValid(invalidPosition))
+    inside(entityInNewPosition):
+      case Right(entity) => entity.position shouldBe invalidPosition
 
   test("can move an entity within a space"):
     val spaceVector = Vector2D(1, 3)
 
-    val entityInNewPosition = ValidEntity.flatMap(_.moveBy(spaceVector))
+    val entityInNewPosition = ValidEntity.map(_.moveBy(spaceVector))
 
     inside(entityInNewPosition):
       case Right(entity) => entity.position shouldBe spaceVector + ValidPosition
 
-
   test("can create an entity and give it a speed"):
     val speed = Vector2D(3, 4)
 
-    val entityWithSpeed = ValidEntity.flatMap(_.withSpeed(speed))
+    val entityWithSpeed = ValidEntity.map(_.withSpeed(speed))
 
     inside(entityWithSpeed):
       case Right(entity) => entity.speed shouldBe Some(speed)
-
 
   test("can create an entity and give it a weight"):
     val weight = 5
@@ -117,7 +125,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entityWithWeight = ValidEntity.flatMap(_.withWeight(invalidWeight))
 
-    entityWithWeight shouldBe Left(WeightCannotBeNegative())
+    entityWithWeight shouldBe Left(WeightCannotBeNegativeOrZero())
 
   test("can create an entity and give it a health"):
     val health = 5
@@ -177,7 +185,6 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     entity shouldBe Left(HealthCannotBeNegativeOrZero(0))
 
-
   test("cannot inflict a negative damage"):
     val health = 50
     val damage = -10
@@ -207,8 +214,8 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val speed = Vector2D(3, 4)
 
     val withoutSpeedEntity = for {
-      entity <- ValidEntity
-      entity <- entity.withSpeed(speed)
+      validEntity <- ValidEntity
+      entity = validEntity.withSpeed(speed)
     } yield entity.withoutSpeed
 
     inside(withoutSpeedEntity):
