@@ -111,7 +111,7 @@ class Langchain4jToolsTest extends AnyFunSuite with Matchers with MockFactory wi
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius)
       .flatMap(_.withTeamId(teamId))
       .flatMap(_.withWeight(weight))
-      .flatMap(_.withSpeed(Vector2D(speedX, speedY)))
+      .map(_.withSpeed(Vector2D(speedX, speedY)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))

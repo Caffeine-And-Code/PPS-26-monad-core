@@ -1,7 +1,7 @@
 package monad_core.engine.model
 
-import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{HeightMustBeGreaterThanZero, LengthMustBeGreaterThanZero, RadiusMustBeGreaterThanZero, Shape2D}
+import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

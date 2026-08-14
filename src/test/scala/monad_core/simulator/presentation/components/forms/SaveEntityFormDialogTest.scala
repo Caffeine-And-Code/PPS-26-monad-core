@@ -28,7 +28,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
   private def completeEntity(entity: Entity): Entity =
     val either = for
-      withSpeed <- entity.withSpeed(EntitySpeed)
+      withSpeed = entity.withSpeed(EntitySpeed)
       withHealth <- withSpeed.withHealth(EntityHealth)
       withWeight <- withHealth.withWeight(EntityWeight)
       withTeam <- withWeight.withTeamId(EntityTeamId.value)

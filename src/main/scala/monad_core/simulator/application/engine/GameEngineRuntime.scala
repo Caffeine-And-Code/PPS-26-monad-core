@@ -1,5 +1,6 @@
 package monad_core.simulator.application.engine
 
+import monad_core.engine.errors.EngineError
 import monad_core.engine.public_api.Painter
 import monad_core.simulator.application.engine.world.World
 
@@ -9,3 +10,4 @@ trait GameEngineRuntime:
   def reset(word: World): Unit
   def attach(renderer: World => Unit)(using Painter): Unit
   def isRunning: Boolean
+  def getError: Option[EngineError]
