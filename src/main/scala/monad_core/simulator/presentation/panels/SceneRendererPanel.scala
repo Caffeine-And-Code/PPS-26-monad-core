@@ -116,12 +116,16 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     val onFrame: World => Unit = _ => Drawer.flush(canvas.graphicsContext2D)
 
     gameEngineRuntime.attach(onFrame)
-    gameEngineRuntime.reset(world)
+    val gameEngineError = gameEngineRuntime.getError
+    if gameEngineError.isDefined then
+      Left(gameEngineError.get)
+    else
+      gameEngineRuntime.reset(world)
 
-    val container = new VBox:
-      children = Seq(canvas)
-      style = PanelStyles.base
+      val container = new VBox:
+        children = Seq(canvas)
+        style = PanelStyles.base
 
-    VBox.setVgrow(canvas, Priority.Always)
+      VBox.setVgrow(canvas, Priority.Always)
 
-    Right(container)
+      Right(container)

@@ -39,7 +39,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       entityWithHealth <- entity.withHealth(10)
       entityWithWeight <- entityWithHealth.withWeight(11)
       entityWithTeam <- entityWithWeight.withTeamId(testTeams.head.id.value)
-      finalEntity <- entityWithTeam.withSpeed(Vector2D(12, 13))
+      finalEntity = entityWithTeam.withSpeed(Vector2D(12, 13))
     yield finalEntity
 
     either.value

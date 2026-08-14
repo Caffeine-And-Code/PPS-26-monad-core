@@ -97,8 +97,10 @@ object Langchain4jToolResponse:
           case (None, None) =>
             Right(entityWithWeight)
           case (Some(horizontal), Some(vertical)) =>
-            entityWithWeight.withSpeed(
-              Vector2D(horizontal.doubleValue(), vertical.doubleValue())
+            Right(
+              entityWithWeight.withSpeed(
+                Vector2D(horizontal.doubleValue(), vertical.doubleValue())
+              )
             )
           case _ =>
             Left(IncompleteEntitySpeed())

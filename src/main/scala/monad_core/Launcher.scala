@@ -44,7 +44,7 @@ object Launcher :
   def main(args: Array[String]): Unit =
 
     given world: World = MonadCoreWorld()
-
+    
     given gameEngine: GameEngineRuntime = MonadCodeGameEngineRuntime()
 
     given aiAgent: AiAgent = Langchain4jAgentFactory
