@@ -15,7 +15,7 @@ jobs:
       version: ${{ steps.version_check.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check and Validate Version
@@ -71,9 +71,9 @@ jobs:
       VERSION: ${{ needs.check-version.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -102,13 +102,13 @@ jobs:
       VERSION: ${{ needs.check-version.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Quarkdown
         run: curl -fsSL https://raw.githubusercontent.com/quarkdown-labs/get-quarkdown/refs/heads/main/install.sh | sudo env "PATH=$PATH" bash
       - name: Generate PDF Documentation
         run: quarkdown c docs/main.qd --pdf --out-name="documentation"
       - name: Download all JAR artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: jar-*
           path: release-assets
