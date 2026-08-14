@@ -21,11 +21,11 @@ import scala.Console.{GREEN, RESET}
 
 object Launcher :
   private def guiApplication(): Either[EngineError, Unit] =
-    given world: World = MonadCoreWorld()
+    given World = MonadCoreWorld()
 
-    given gameEngine: GameEngineRuntime = MonadCodeGameEngineRuntime()
+    given GameEngineRuntime = MonadCodeGameEngineRuntime()
 
-    given aiAgent: AiAgent = Langchain4jAgentFactory
+    given AiAgent = Langchain4jAgentFactory
       .buildOllama(
         Langchain4jOllamaConfig(
           url = sys.env.getOrElse("MONAD_CORE_OLLAMA_URL", "http://localhost:11434"),
@@ -58,10 +58,9 @@ object Launcher :
 
     val arguments = AgentEvaluationArguments.parse(args)
 
-    given agentEvaluationPrinter: AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
+    given AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
     given Logger = ConsoleLogger
-
-    given agentEvaluator: AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
+    given AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
       agentConfig = Langchain4jOllamaConfig(
         url = arguments.testModelUrl,
         modelName = arguments.testModel
@@ -71,7 +70,7 @@ object Launcher :
         modelName = arguments.judgeModel
       )
     )
-    given agentEvaluatorDataset: AgentEvaluationDataset = HardcodedAgentEvaluationDataset
+    given AgentEvaluationDataset = HardcodedAgentEvaluationDataset
 
     AgentEvaluationRuntime.handle()
 
