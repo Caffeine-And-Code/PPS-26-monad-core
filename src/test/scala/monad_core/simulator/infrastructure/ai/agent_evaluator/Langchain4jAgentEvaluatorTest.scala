@@ -10,7 +10,11 @@ import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.domain.ai.ConversationId
 import monad_core.simulator.domain.ai.agent_evaluation.*
-import monad_core.simulator.infrastructure.ai.{Langchain4jAssistant, Langchain4jAssistantBuilder, Langchain4jOllamaConfig}
+import monad_core.simulator.infrastructure.ai.{
+  Langchain4jAssistant,
+  Langchain4jAssistantBuilder,
+  Langchain4jOllamaConfig
+}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.*
 import org.scalatest.OptionValues.*

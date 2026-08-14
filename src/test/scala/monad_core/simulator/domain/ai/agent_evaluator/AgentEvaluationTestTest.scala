@@ -1,7 +1,11 @@
 package monad_core.simulator.domain.ai.agent_evaluator
 
 import monad_core.engine.model.Scene
-import monad_core.simulator.domain.ai.agent_evaluation.{AgentEvaluationLanguage, AgentEvaluationTest, ToolCall}
+import monad_core.simulator.domain.ai.agent_evaluation.{
+  AgentEvaluationLanguage,
+  AgentEvaluationTest,
+  ToolCall
+}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

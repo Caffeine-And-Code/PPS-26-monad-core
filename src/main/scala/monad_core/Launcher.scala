@@ -28,7 +28,12 @@ import monad_core.simulator.presentation.agent_evaluation.{
 }
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{ArgumentRoutingRoute, RouteResponse, Router}
-import monad_core.simulator.presentation.panels.{AiModelChatPanel, GameEngineModePanel, GameEnginePanel, SceneRendererPanel}
+import monad_core.simulator.presentation.panels.{
+  AiModelChatPanel,
+  GameEngineModePanel,
+  GameEnginePanel,
+  SceneRendererPanel
+}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{RouteResponse, Router}
