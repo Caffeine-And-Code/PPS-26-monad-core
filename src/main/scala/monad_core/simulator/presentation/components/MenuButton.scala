@@ -37,24 +37,32 @@ object MenuButton {
   private val StylesheetPath: String =
     getClass.getResource("/stylesheets/menu-button.css").toExternalForm
 
+  private case class MenuButtonViewModel(side: Side):
+    val isOpen: BooleanProperty = BooleanProperty(false)
+
+  extension (viewModel: MenuButtonViewModel)
+
+    private def onMenuShown(): Unit = viewModel.isOpen.value = true
+
+    private def onMenuHidden(): Unit = viewModel.isOpen.value = false
+
+    private def toggle(contextMenu: ContextMenu, anchor: Node): Unit =
+      if contextMenu.showing.value then contextMenu.hide()
+      else contextMenu.show(anchor, viewModel.side, 0, 0)
+
   def build(props: MenuButtonProps): Either[BaseError, Node] = {
-    val isOpen = BooleanProperty(false)
+    val viewModel = MenuButtonViewModel(props.side)
 
     val contextMenu = new ContextMenu {
       styleClass += "app-context-menu"
       onShowing = _ =>
         if !scene.value.stylesheets.contains(StylesheetPath) then
           scene.value.stylesheets.add(StylesheetPath)
-      onHidden = _ => isOpen.value = false
-      onShown = _ => isOpen.value = true
+      onShown = _ => viewModel.onMenuShown()
+      onHidden = _ => viewModel.onMenuHidden()
     }
 
-    contextMenu.items ++= props.items.map { item =>
-      new MenuItem(item.label) {
-        disable <== item.isDisabled
-        onAction = _ => item.onSelect()
-      }
-    }
+    contextMenu.items ++= props.items.map(_.toMenuItem)
 
     val buttonEither = props.activeImage match
       case Some(activeImg) =>
@@ -65,7 +73,7 @@ object MenuButton {
             props.imageConfig,
             isDisabled = props.isDisabled
           ),
-          activeProperty = isOpen
+          activeProperty = viewModel.isOpen
         )
       case None =>
         IconButton.build(
@@ -80,10 +88,7 @@ object MenuButton {
       .map { btn =>
         btn.styleClass += "menu-icon-button"
         btn.stylesheets += StylesheetPath
-
-        btn.onMouseClicked = _ =>
-          if contextMenu.showing.value then contextMenu.hide()
-          else contextMenu.show(btn, props.side, 0, 0)
+        btn.onMouseClicked = _ => viewModel.toggle(contextMenu, btn)
         btn
       }
       .left
