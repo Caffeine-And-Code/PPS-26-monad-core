@@ -7,20 +7,23 @@ import monad_core.engine.simulator.Painter
 
 object RendererManager extends RenderEngine:
 
-  override def render(state: State, alpha: Double)(using painter: Painter): Either[EngineError, Unit] = 
+  override def render(state: State, alpha: Double)(using
+      painter: Painter
+  ): Either[EngineError, Unit] =
     for
       baseColor <- painter.baseColor
-      teamsMap <- state.allTeams.foldLeft[Either[EngineError, Map[TeamId, EngineColor]]](Right(Map.empty)) {
-        (acc, team) =>
-          for
-            map <- acc
-            color <- painter.teamIdColorRelation(team.id)
-          yield map + (team.id -> color)
+      teamsMap <- state.allTeams.foldLeft[Either[EngineError, Map[TeamId, EngineColor]]](
+        Right(Map.empty)
+      ) { (acc, team) =>
+        for
+          map   <- acc
+          color <- painter.teamIdColorRelation(team.id)
+        yield map + (team.id -> color)
       }
     yield
       for (surface <- state.allSurfaces)
         surface.shape match
-          case _: Circle => painter.drawCircle(surface, baseColor)
+          case _: Circle    => painter.drawCircle(surface, baseColor)
           case _: Rectangle => painter.drawRectangle(surface, baseColor)
 
       def getTeamColorOrDefault(optionalTeamId: Option[TeamId]): EngineColor =
@@ -28,5 +31,5 @@ object RendererManager extends RenderEngine:
 
       for (entity <- state.allEntities)
         entity.shape match
-          case _: Circle => painter.drawCircle(entity, getTeamColorOrDefault(entity.teamId))
+          case _: Circle    => painter.drawCircle(entity, getTeamColorOrDefault(entity.teamId))
           case _: Rectangle => painter.drawRectangle(entity, getTeamColorOrDefault(entity.teamId))

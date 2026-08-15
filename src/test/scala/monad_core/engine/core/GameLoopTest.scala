@@ -29,7 +29,10 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
   given MockPainter: Painter       = mock[Painter]
 
   def setupPainterInteractions(painter: Painter): Unit =
-    (() => painter.baseColor).expects().returns(Right(EngineColorArranger.arrangeRed())).anyNumberOfTimes()
+    (() => painter.baseColor)
+      .expects()
+      .returns(Right(EngineColorArranger.arrangeRed()))
+      .anyNumberOfTimes()
 
   def setupGenericStateCalls(): Unit =
     setupStateCalls(MockState)
@@ -104,7 +107,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("if the game loop is in edit mode, it should not update the physics"):
 
-    given painter:Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val initialLoop = StandardLoop.start()
     val currentTime = 1_000_000L
@@ -137,7 +140,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     "in simulation mode, passing less than one tick period should not invoke the physics engine"
   ):
 
-    given painter:Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val timeDifference = 1L
     val currentTime    = DefaultTickTime - timeDifference
@@ -173,7 +176,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("in simulation mode, passing two tick periods should invoke the physics engine twice"):
 
-    given painter:Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val sceneStep1  = mock[State]
     val sceneStep2  = mock[State]
@@ -212,7 +215,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("massive lag spikes must be clamped to prevent overload"):
 
-    given painter:Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val currentTime            = 1_000_000_000L
     val correctAccumulator     = 10_000_000L
@@ -237,7 +240,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("stopping or switching mode must freeze the simulation, which can then be resumed"):
 
-    given painter:Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val updatedScene = mock[State]
     val partialTime1 = 16_000_000L

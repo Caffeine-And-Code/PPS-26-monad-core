@@ -31,9 +31,8 @@ private case class GameLoopImpl(
       physics: PhysicsEngine,
       painter: Painter
   ): Either[EngineError, (State, GameLoop)] =
-    if !isRunning || mode == LoopMode.EditMode then 
-      for 
-        _ <- RendererManager.render(state, StaticAlpha)
+    if !isRunning || mode == LoopMode.EditMode then
+      for _ <- RendererManager.render(state, StaticAlpha)
       yield (state, this.copy(lastTime = currentTime))
     else
       val elapsedTime   = currentTime - lastTime
@@ -57,5 +56,4 @@ private case class GameLoopImpl(
         (currentScene, currentAccumulator) = res
         alpha                              = currentAccumulator.toDouble / tickTime.toDouble
         _ <- RendererManager.render(currentScene, alpha)
-      yield
-        (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+      yield (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))

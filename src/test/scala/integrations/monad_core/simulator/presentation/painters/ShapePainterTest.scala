@@ -25,7 +25,7 @@ class ShapePainterTest
   given ShapeArchitect = PaintArchitect
 
   val BaseEngineColor: EngineColor = EngineColorArranger.arrangeRed()
-  
+
   val BaseCircleEntity: Entity = Entity.circle("EntityCircleId", Vector2D(400, 400), 50).value
 
   val BaseRectangleEntity: Entity =
