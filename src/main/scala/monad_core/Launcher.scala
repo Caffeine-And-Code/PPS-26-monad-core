@@ -8,11 +8,7 @@ import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
 import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
-import monad_core.simulator.infrastructure.ai.{
-  Langchain4jAgentFactory,
-  Langchain4jAssistantFactory,
-  Langchain4jOllamaConfig
-}
+import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.infrastructure.logging.ConsoleLogger
@@ -30,7 +26,7 @@ import monad_core.simulator.presentation.panels.{
 }
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
-import monad_core.simulator.presentation.routes.{ArgumentRoutingRoute, RouteResponse, Router}
+import monad_core.simulator.presentation.routes.{RouteResponse, Router}
 import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}

@@ -7,6 +7,7 @@ import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import org.scalatest.funsuite.AnyFunSuite
+import scalafx.animation.AnimationTimer
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{CountDownLatch, TimeUnit}
@@ -34,11 +35,13 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     getOrFail(engine.initializeWorld(MonadCoreWorld(Scene())))
     engine.createSnapshot()
-    engine.resetToSnapshot()
-    engine.attach { world =>
-      received.set(world)
-      firstFrame.countDown()
+    val animationTimer = AnimationTimer { currentTime =>
+      engine.tick(currentTime) { world =>
+        received.set(world)
+        firstFrame.countDown()
+      }
     }
+    animationTimer.start()
 
     assert(firstFrame.await(AwaitTimeout, TimeUnit.SECONDS), "onFrame was never called after init")
     received.get().getAllEntities.length should be(1)
@@ -50,8 +53,10 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     getOrFail(engine.initializeWorld(MonadCoreWorld(Scene())))
     engine.createSnapshot()
-    engine.resetToSnapshot()
-    engine.attach(_ => frames.countDown())
+    val animationTimer = AnimationTimer { currentTime =>
+      engine.tick(currentTime)(_ => frames.countDown())
+    }
+    animationTimer.start()
     engine.start()
     engine.stop()
     engine.start()
@@ -76,12 +81,15 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     getOrFail(engine.initializeWorld(worldBeforeReset, false))
     engine.createSnapshot()
 
-    engine.attach { world =>
-      if world.getAllEntities == worldAfterReset.getAllEntities then
-        received.set(world)
-        frameAfterReset.countDown()
-      else sawPreResetFrame.countDown()
+    val animationTimer = AnimationTimer { currentTime =>
+      engine.tick(currentTime) { world =>
+        if world.getAllEntities == worldAfterReset.getAllEntities then
+          received.set(world)
+          frameAfterReset.countDown()
+        else sawPreResetFrame.countDown()
+      }
     }
+    animationTimer.start()
 
     engine.resetToSnapshot()
     engine.start()

@@ -8,13 +8,11 @@ import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.errors.BaseError
-import scalafx.animation.AnimationTimer
 
 final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
   private val lock                           = new Object
   private var gameLoop                       = GameLoop.default()
   private var currentWorld: Option[World]    = None
-  private var timer: Option[AnimationTimer]  = None
   private var currentSnapshot: Option[Scene] = None
   private var error: Option[BaseError]       = None
 
@@ -28,30 +26,23 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
     lock.synchronized:
       gameLoop = gameLoop.stop()
 
-  override def attach(renderer: World => Unit)(using painter: Painter): Unit =
-    timer.foreach(_.stop())
-    val animationTimer = AnimationTimer { currentTime =>
-      lock.synchronized:
-        currentWorld.foreach { world =>
-          val convertedState = world.scene
+  override def tick(currentTime: Long)(renderer: World => Unit)(using painter: Painter): Unit =
+    lock.synchronized:
+      currentWorld.foreach { world =>
+        EngineFacade.tick(gameLoop, world.scene, currentTime) match
+          case Right((nextState, nextLoop)) =>
+            (world, nextState) match
+              case (monadCoreWorld: MonadCoreWorld, scene: Scene) =>
+                monadCoreWorld.currentScene = world.scene
+              case _ => ()
 
-          EngineFacade.tick(gameLoop, convertedState, currentTime) match
-            case Right((nextState, nextLoop)) =>
-              (world, nextState) match
-                case (monadCoreWorld: MonadCoreWorld, scene: Scene) =>
-                  monadCoreWorld.currentScene = world.scene
-                case _ => ()
+            gameLoop = nextLoop
+            renderer(world)
 
-              gameLoop = nextLoop
-              renderer(world)
-
-            case Left(engineError) =>
-              error = Some(engineError.adaptError())
-              stop()
-        }
-    }
-    timer = Some(animationTimer)
-    animationTimer.start()
+          case Left(engineError) =>
+            error = Some(engineError.adaptError())
+            stop()
+      }
 
   override def isRunning: Boolean =
     lock.synchronized(gameLoop.isRunning)
