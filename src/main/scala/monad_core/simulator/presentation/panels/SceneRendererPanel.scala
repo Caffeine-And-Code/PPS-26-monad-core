@@ -102,6 +102,23 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     val canvas      = ResizableCanvas()
     val menusAnchor = Some(canvas)
 
+    def resizeWorld(): Unit =
+      val width  = canvas.width.value
+      val height = canvas.height.value
+
+      if width > 0 && height > 0 then
+        gameEngineRuntime.resize(width, height)
+
+    canvas.width.onChange {
+      resizeWorld()
+    }
+
+    canvas.height.onChange {
+      resizeWorld()
+    }
+
+    resizeWorld()
+
     val findEntitiesAt: (Double, Double) => Option[Clickable] = (x, y) =>
       val entities: List[Clickable]          = world.getAllEntities
       val surfaces: List[Clickable]          = world.getAllSurfaces

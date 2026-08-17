@@ -340,3 +340,16 @@ class SceneTest extends AnyFunSuite with Inside with Matchers with EitherValues:
     allFetchResult.length should be(2)
     allFetchResult should contain(GenericSurface)
     allFetchResult should contain(secondGenericSurface)
+
+  test("Scene bounds are correctly set on default upon creation"):
+    val scene = Scene()
+
+    scene.bounds.upperLeft should be(Vector2D(0, 0))
+    scene.bounds.lowerRight should be(Vector2D(100, 100))
+
+  test("Scene bounds can be correctly set upon creation"):
+    val customBounds = WorldBounds(50, 100).value
+    val scene        = Scene(bounds = customBounds)
+
+    scene.bounds.upperLeft should be(Vector2D(0, 0))
+    scene.bounds.lowerRight should be(Vector2D(50, 100))

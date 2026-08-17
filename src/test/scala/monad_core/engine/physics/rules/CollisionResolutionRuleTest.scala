@@ -62,11 +62,12 @@ class CollisionResolutionRuleTest
 
     val mobileEntity    = makeMovingEntityCircle(id = "mobile", position = Vector2D(0, 0))
     val fixedEntity     = makeFixedEntityCircle(id = "fixed", position = Vector2D(1, 0))
-    val collisionNormal = Vector2D(1, 0)
+    val collisionNormal       = Vector2D(1, 0)
+    val mobileCollisionNormal    = collisionNormal.flip
     val collisionDepth  = 1.0
 
     val expectedPosition =
-      PhysicsUtil.pushMobileOverlappingFixed(mobileEntity.position, collisionNormal, collisionDepth)
+      PhysicsUtil.pushMobileOverlappingFixed(mobileEntity.position, mobileCollisionNormal, collisionDepth)
     val scene = sceneWithEntities(List(mobileEntity, fixedEntity))
 
     given CollisionDetector = detectorWithCollisions(
@@ -82,6 +83,7 @@ class CollisionResolutionRuleTest
   ):
 
     val collisionNormal = Vector2D(-1, 0)
+    val mobileCollisionNormal    = collisionNormal.flip
     val collisionDepth  = 1.0
 
     val movingEntity = makeMovingEntityCircle(
@@ -96,10 +98,10 @@ class CollisionResolutionRuleTest
 
     val expectedMovingPosition = PhysicsUtil.pushMobileOverlappingFixed(
       movingEntity.position,
-      collisionNormal,
+      mobileCollisionNormal,
       collisionDepth
     )
-    val expectedMovingSpeed = PhysicsUtil.reflectOnFixed(movingEntity.speed.value, collisionNormal)
+    val expectedMovingSpeed = PhysicsUtil.reflectOnFixed(movingEntity.speed.value, mobileCollisionNormal)
 
     val scene = sceneWithEntities(List(movingEntity, fixedEntity))
 
@@ -132,12 +134,13 @@ class CollisionResolutionRuleTest
     ).withWeight(2).value
 
     val collisionNormal = Vector2D(1, 0)
+    val firstEntityNormal    = collisionNormal.flip
     val collisionDepth  = 1.0
 
     val expectedPosition1 = PhysicsUtil
       .pushMobileOverlappingMobile(
         entity1.position,
-        collisionNormal,
+        firstEntityNormal,
         collisionDepth,
         entity1.weight,
         entity2.weight
@@ -147,7 +150,7 @@ class CollisionResolutionRuleTest
     val expectedPosition2 = PhysicsUtil
       .pushMobileOverlappingMobile(
         entity2.position,
-        collisionNormal * -1,
+        collisionNormal,
         collisionDepth,
         entity2.weight,
         entity1.weight
@@ -158,7 +161,7 @@ class CollisionResolutionRuleTest
       .reflectOnMobile(
         entity1.speed.value,
         entity2.speed.value,
-        collisionNormal,
+        firstEntityNormal,
         entity1.weight,
         entity2.weight
       )
@@ -168,7 +171,7 @@ class CollisionResolutionRuleTest
       .reflectOnMobile(
         entity2.speed.value,
         entity1.speed.value,
-        collisionNormal * -1,
+        collisionNormal,
         entity2.weight,
         entity1.weight
       )
@@ -225,6 +228,7 @@ class CollisionResolutionRuleTest
     val initialPosition = Vector2D(2, 2)
     val initialSpeed    = Vector2D(1, 0)
     val collisionNormal = Vector2D(-1, 0)
+    val mobileCollisionNormal    = collisionNormal.flip
     val collisionDepth  = 1.0
 
     val circularEntity = makeMovingEntityCircle(
@@ -246,11 +250,11 @@ class CollisionResolutionRuleTest
 
     val expectedPosition = PhysicsUtil.pushMobileOverlappingFixed(
       initialPosition,
-      collisionNormal,
+      mobileCollisionNormal,
       collisionDepth
     )
 
-    val expectedSpeed = PhysicsUtil.reflectOnFixed(initialSpeed, collisionNormal)
+    val expectedSpeed = PhysicsUtil.reflectOnFixed(initialSpeed, mobileCollisionNormal)
 
     val scene = sceneWithEntities(List(circularEntity, rectangularEntity, fixedEntity))
 
@@ -322,12 +326,14 @@ class CollisionResolutionRuleTest
 
     val collision1 = Collision(Vector2D(-1, 0), 1.0)
     val collision2 = Collision(Vector2D(0, -1), 5.0)
+    val mobileCollision1 = collision1.copy(normalVector = collision1.normalVector.flip)
+    val mobileCollision2 = collision2.copy(normalVector = collision2.normalVector.flip)
 
     val expectedEntity = CollisionResolver(
       Map(
         entity -> List(
-          (wall1, collision1),
-          (wall2, collision2)
+          (wall1, mobileCollision1),
+          (wall2, mobileCollision2)
         )
       )
     ).value.find(_.id == entity.id).value

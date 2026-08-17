@@ -29,7 +29,9 @@ class EnemyAttractionRuleTest
 
   private val Epsilon = 1e-12
 
-  private val MockScene   = mock[State]
+  private val UpperLeftBound  = Vector2D(0.0, 0.0)
+  private val LowerRightBound = Vector2D(100.0, 100.0)
+
   given CollisionDetector = mock[CollisionDetector]
 
   private def calculateRayCastSpeed(
@@ -43,8 +45,8 @@ class EnemyAttractionRuleTest
       from = entity,
       entitiesVertexes = VertexFinder.apply(allEntities),
       entities = allEntities,
-      upperLeftSceneCorner = MockScene.UpperLeftCorner,
-      lowerRightSceneCorner = MockScene.LowerRightCorner
+      upperLeftSceneCorner = UpperLeftBound,
+      lowerRightSceneCorner = LowerRightBound
     )
 
     val direction = (targetPos.value.value - entity.position).normalized
@@ -52,7 +54,9 @@ class EnemyAttractionRuleTest
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
-    val result = Rule.apply(MockScene, NegativeDt)(using summon[CollisionDetector])
+    val scene = sceneWithEntities(List.empty)
+
+    val result = Rule.apply(scene, NegativeDt)(using summon[CollisionDetector])
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 

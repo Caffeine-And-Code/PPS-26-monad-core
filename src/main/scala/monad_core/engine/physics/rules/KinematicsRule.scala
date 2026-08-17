@@ -41,8 +41,8 @@ private[physics] object KinematicsRule:
         entity.position,
         entity.speed.get,
         dt,
-        scene.UpperLeftCorner,
-        scene.LowerRightCorner
+        scene.bounds.upperLeft,
+        scene.bounds.lowerRight
       ) match {
         case Right(pos) => Right(entity.moveTo(pos))
         case Left(err)  => Left(err)

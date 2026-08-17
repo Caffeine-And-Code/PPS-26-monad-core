@@ -24,8 +24,8 @@ private[physics] object BorderContactRule:
 
         activeCollisions <- findCollisions(
           entities,
-          scene.UpperLeftCorner,
-          scene.LowerRightCorner
+          scene.bounds.upperLeft,
+          scene.bounds.lowerRight
         ).left.map(PhysicsDomainError.apply)
 
         updatedEntities <- CollisionResolver(activeCollisions)

@@ -16,6 +16,11 @@ case class MonadCoreWorld(
 
   var currentScene: Scene = initialScene
 
+  override def resize(width: Double, height: Double): Either[BaseError, Unit] =
+    currentScene.resize(width, height).adaptError().map { scene =>
+      currentScene = scene
+    }
+
   override def getAllEntities: List[Entity] =
     currentScene.entities.values.toList
 

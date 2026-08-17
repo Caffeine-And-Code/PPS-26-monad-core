@@ -64,8 +64,8 @@ class KinematicsRuleTest
         movingEntity.position,
         movingEntity.speed.value,
         DeltaTimeOneSecond,
-        scene.UpperLeftCorner,
-        scene.LowerRightCorner
+        scene.bounds.upperLeft,
+        scene.bounds.lowerRight
       )
       .value
 
@@ -91,8 +91,8 @@ class KinematicsRuleTest
       invalidMoving.position,
       invalidMoving.speed.value,
       DeltaTimeOneSecond,
-      scene.UpperLeftCorner,
-      scene.LowerRightCorner
+      scene.bounds.upperLeft,
+      scene.bounds.lowerRight
     )
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
@@ -120,8 +120,8 @@ class KinematicsRuleTest
         entity1.position,
         entity1.speed.value,
         DeltaTimeOneSecond,
-        scene.UpperLeftCorner,
-        scene.LowerRightCorner
+        scene.bounds.upperLeft,
+        scene.bounds.lowerRight
       )
       .value
 
@@ -130,8 +130,8 @@ class KinematicsRuleTest
         entity2.position,
         entity2.speed.value,
         DeltaTimeOneSecond,
-        scene.UpperLeftCorner,
-        scene.LowerRightCorner
+        scene.bounds.upperLeft,
+        scene.bounds.lowerRight
       )
       .value
 

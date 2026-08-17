@@ -5,6 +5,7 @@ import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
 
 trait GameEngineRuntime extends EngineControl:
+  def resize(width: Double, height: Double): Either[BaseError, Unit]
   def attach(renderer: World => Unit)(using Painter): Unit
   def createSnapshot(): Unit
   def resetToSnapshot(): Unit

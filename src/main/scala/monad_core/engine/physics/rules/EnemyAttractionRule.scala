@@ -29,8 +29,8 @@ private[physics] object EnemyAttractionRule:
           entities,
           teams,
           vertexes,
-          scene.UpperLeftCorner,
-          scene.LowerRightCorner
+          scene.bounds.upperLeft,
+          scene.bounds.lowerRight
         )
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene

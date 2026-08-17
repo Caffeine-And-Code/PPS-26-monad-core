@@ -17,7 +17,7 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
-final class ScalaFxLauncher(mainStage: MainStageBuilder) {
+final class ScalaFxLauncher(mainStage: MainStageBuilder) :
 
   private val MinStageWidth         = 1024.0
   private val MinStageHeight        = 720.0
@@ -48,8 +48,9 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
           fill = Color.rgb(25, 26, 28)
         }
 
-        result = mainStage.buildRootContent(scene.width, scene.height) match
-          case Right(rootContent) =>
+        result = mainStage
+          .buildRootContent(scene.width, scene.height)
+          .map { rootContent =>
             scene.content = new StackPane {
               children = Seq(rootContent, notificationLayer)
             }
@@ -57,10 +58,7 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
             NotificationManager.attach(notificationLayer)
             stage.scene = scene
             stage.show()
-            Right(())
-
-          case Left(error) =>
-            Left(error)
+          }
       catch
         case throwable: Throwable =>
           result = Left(UnexpectedStartupFailure(throwable.getMessage))
@@ -77,5 +75,3 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder) {
 
     if !completedInTime then Left(StartupTimeout(StartupTimeoutSeconds))
     else result
-
-}

@@ -246,3 +246,22 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     inside(result):
       case Left(error) =>
         error should be(EngineErrorAdapted(expectedError))
+
+  test("resize actually changes the world size"):
+    val worldTest = MonadCoreWorld(Scene())
+
+    val result = worldTest.resize(800.0, 600.0)
+
+    result shouldBe Right(())
+    worldTest.scene.bounds.upperLeft shouldBe Vector2D(0.0, 0.0)
+    worldTest.scene.bounds.lowerRight shouldBe Vector2D(800.0, 600.0)
+
+  test("resize propagates the state error"):
+    val worldTest = MonadCoreWorld(Scene())
+
+    val result = worldTest.resize(0.0, 600.0)
+
+    result shouldBe Left(
+      EngineErrorAdapted(WorldBoundsCannotBeNegativeOrZero())
+    )
+

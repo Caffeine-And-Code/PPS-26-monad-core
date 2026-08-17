@@ -2,7 +2,7 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.NegativeDeltaTime
 import monad_core.engine.physics.helper.PhysicsConstantHelper.*
 import monad_core.engine.physics.helper.{
@@ -26,14 +26,16 @@ class BorderContactRuleTest
 
   private val Rule = BorderContactRule.borderContactRule
 
-  private val MockScene   = mock[State]
+  private val UpperLeftBound = Vector2D(0.0, 0.0)
+  private val LowerRightBound = Vector2D(100.0, 100.0)
+
   given CollisionDetector = mock[CollisionDetector]
 
   private def testSingleWall(borderType: BorderWallType) =
     val defaultValues = BorderContactHelper.generateSingleWallEntities(
       borderType,
-      MockScene.UpperLeftCorner,
-      MockScene.LowerRightCorner
+      UpperLeftBound,
+      LowerRightBound
     )
 
     val (entity, wall, collision, expectedPosition, expectedSpeed) = defaultValues
@@ -55,8 +57,8 @@ class BorderContactRuleTest
     val data = BorderContactHelper.generateCornerEntities(
       borderTypeV,
       borderTypeH,
-      MockScene.UpperLeftCorner,
-      MockScene.LowerRightCorner
+      UpperLeftBound,
+      LowerRightBound
     )
 
     val entity           = data._1
@@ -91,7 +93,9 @@ class BorderContactRuleTest
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
-    val result = Rule.apply(MockScene, NegativeDt)(using summon[CollisionDetector])
+    val mockScene = sceneWithEntities(List.empty)
+
+    val result = Rule.apply(mockScene, NegativeDt)(using summon[CollisionDetector])
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
@@ -171,15 +175,15 @@ class BorderContactRuleTest
 
     val data1 = BorderContactHelper.generateSingleWallEntities(
       BorderWallType.Left,
-      MockScene.UpperLeftCorner,
-      MockScene.LowerRightCorner,
+      UpperLeftBound,
+      LowerRightBound,
       entityId = "entity1"
     )
 
     val data2 = BorderContactHelper.generateSingleWallEntities(
       BorderWallType.Top,
-      MockScene.UpperLeftCorner,
-      MockScene.LowerRightCorner,
+      UpperLeftBound,
+      LowerRightBound,
       entityId = "entity2"
     )
 

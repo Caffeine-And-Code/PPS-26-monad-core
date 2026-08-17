@@ -27,3 +27,5 @@ case class TeamIdCannotBeEmpty() extends EngineError("TeamId cannot be empty")
 case class WeightCannotBeNegativeOrZero() extends EngineError("Weight cannot be negative")
 
 case class ATeamCannotBeItsOwnEnemy() extends EngineError("A team cannot be its own enemy")
+
+case class WorldBoundsCannotBeNegativeOrZero() extends EngineError("World bounds cannot be negative or zero")
