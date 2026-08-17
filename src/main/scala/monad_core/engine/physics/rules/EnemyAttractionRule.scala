@@ -3,7 +3,7 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleError}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
@@ -86,10 +86,15 @@ private[physics] object EnemyAttractionRule:
           targetPosition match
             case Left(err) => Left(err)
             case Right(Some(targetPos)) =>
-              val direction = (targetPos - entity.position).normalized
-              val speed     = direction * AttractionAcceleration
-
-              Right(entity.withSpeed(entity.speed.get + speed))
+              for
+                direction = (targetPos - entity.position).normalized
+                speed     = direction * AttractionAcceleration
+                currentSpeed <- entity.speed match
+                  case Some(s) => Right(s)
+                  case None    => Left(PhysicsRuleError(s"Entity ${entity.id} has no speed to apply enemy attraction"))
+                  
+                result = entity.withSpeed(currentSpeed + speed)
+              yield result
             case Right(None) =>
               Right(entity)
 

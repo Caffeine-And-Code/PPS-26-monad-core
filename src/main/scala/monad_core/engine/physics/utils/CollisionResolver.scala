@@ -1,8 +1,8 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.{+, EngineError, Entity, Vector2D}
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError}
+import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRuleError}
 import monad_core.engine.physics.utils.CollisionMap
 
 object CollisionResolver:
@@ -76,17 +76,21 @@ object CollisionResolver:
       entity: Entity,
       collisions: List[(Entity, Collision)]
   ): Either[PhysicsError, Entity] =
-    val currentSpeed = entity.speed.get
+    for
+      currentSpeed <- entity.speed match
+        case Some(s) => Right(s)
+        case None    => Left(PhysicsRuleError("Entity has no speed to resolve bounce"))
 
-    collisions
-      .foldLeft(Right(currentSpeed): Either[PhysicsError, Vector2D]) {
-        case (Left(err), _) => Left(err)
-        case (Right(updatedSpeed), (otherEntity, collision)) =>
-          resolveBounce(entity, otherEntity, updatedSpeed, collision)
-      }
-      .flatMap { finalSpeed =>
-        Right(entity.withSpeed(finalSpeed))
-      }
+      updatedEntity <- collisions
+        .foldLeft(Right(currentSpeed): Either[PhysicsError, Vector2D]) {
+          case (Left(err), _) => Left(err)
+          case (Right(updatedSpeed), (otherEntity, collision)) =>
+            resolveBounce(entity, otherEntity, updatedSpeed, collision)
+        }
+        .flatMap { finalSpeed =>
+          Right(entity.withSpeed(finalSpeed))
+        }
+    yield updatedEntity
 
   private def resolveBounce(
       entity: Entity,
@@ -94,17 +98,17 @@ object CollisionResolver:
       entitySpeed: Vector2D,
       collision: Collision
   ): Either[PhysicsError, Vector2D] =
-    if other.isFixed then
-      Right(
+
+    other.speed match
+      case None => Right(
         PhysicsUtil.reflectOnFixed(
           entitySpeed,
           collision.normalVector
         )
       )
-    else
-      PhysicsUtil.reflectOnMobile(
+      case Some(s) => PhysicsUtil.reflectOnMobile(
         entitySpeed,
-        other.speed.get,
+        s,
         collision.normalVector,
         entity.weight,
         other.weight

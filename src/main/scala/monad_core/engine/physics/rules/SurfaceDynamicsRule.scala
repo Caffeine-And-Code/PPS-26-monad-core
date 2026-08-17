@@ -3,7 +3,7 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.{+, Entity, Surface}
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule, PhysicsRuleError}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object SurfaceDynamicsRule:
@@ -56,7 +56,9 @@ private[physics] object SurfaceDynamicsRule:
       dt: Long
   ): Either[PhysicsError, Entity] =
     for
-      speed = entity.speed.get
+      speed <- entity.speed match
+        case Some(s) => Right(s)
+        case None    => Left(PhysicsRuleError(s"Entity ${entity.id} is fixed, it cannot be applied surface dynamics"))
 
       speedAfterForce <-
         surface.appliedForce match
