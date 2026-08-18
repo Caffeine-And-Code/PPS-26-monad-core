@@ -25,7 +25,7 @@ final case class MenuButtonProps(
     isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
 )
 
-object MenuButton {
+object MenuButton:
 
   extension (item: MenuButtonItem)
 
@@ -50,7 +50,7 @@ object MenuButton {
       if contextMenu.showing.value then contextMenu.hide()
       else contextMenu.show(anchor, viewModel.side, 0, 0)
 
-  def build(props: MenuButtonProps): Either[BaseError, Node] = {
+  def build(props: MenuButtonProps): Either[BaseError, Node] =
     val viewModel = MenuButtonViewModel(props.side)
 
     val contextMenu = new ContextMenu {
@@ -93,6 +93,3 @@ object MenuButton {
       }
       .left
       .map(error => CannotBuildButton(error, MenuButton.toString))
-  }
-
-}
