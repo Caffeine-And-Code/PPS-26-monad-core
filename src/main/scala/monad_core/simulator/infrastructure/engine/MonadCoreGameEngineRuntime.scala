@@ -6,12 +6,11 @@ import monad_core.engine.physics.core.PhysicsManager
 import monad_core.engine.simulator.{EngineFacade, Painter}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
-import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import scalafx.animation.AnimationTimer
 
-final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
+final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ()) extends GameEngineRuntime:
   private val lock                           = new Object
   private var gameLoop                       = GameLoop.default()
   private var currentWorld: Option[World]    = None
@@ -50,7 +49,7 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
             case Left(engineError) =>
               val adaptedError = engineError.adaptError()
               error = Some(adaptedError)
-              NotificationManager.show(adaptedError.message, Error)
+              onError(adaptedError)
               stop()
         }
     }
@@ -113,4 +112,5 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
       resizeResult
 
 object MonadCoreGameEngineRuntime:
-  def apply(): MonadCoreGameEngineRuntime = new MonadCoreGameEngineRuntime
+  def apply(onError: BaseError => Unit = _ => ()): MonadCoreGameEngineRuntime =
+    new MonadCoreGameEngineRuntime(onError)

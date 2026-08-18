@@ -34,6 +34,7 @@ import monad_core.simulator.presentation.panels.{
   GameEnginePanel,
   SceneRendererPanel
 }
+import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{RouteResponse, Router}
@@ -46,7 +47,9 @@ object Launcher:
   private def guiApplication(): Either[BaseError, Unit] =
     given World = MonadCoreWorld()
 
-    given GameEngineRuntime = MonadCoreGameEngineRuntime()
+    given GameEngineRuntime = MonadCoreGameEngineRuntime { error =>
+      NotificationManager.show(error.message, Error)
+    }
 
     given painter: Painter = PaintArchitect
 
