@@ -6,6 +6,7 @@ import monad_core.engine.physics.core.PhysicsManager
 import monad_core.engine.simulator.{EngineFacade, Painter}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
+import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import scalafx.animation.AnimationTimer
@@ -47,7 +48,9 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
               renderer(world)
 
             case Left(engineError) =>
-              error = Some(engineError.adaptError())
+              val adaptedError = engineError.adaptError()
+              error = Some(adaptedError)
+              NotificationManager.show(adaptedError.message, Error)
               stop()
         }
     }

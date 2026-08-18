@@ -121,12 +121,12 @@ object SaveEntityFormDialog:
           LocatableFormShapes.RectangleLabel -> Seq(
             TextFieldSpec(
               id = BaseFormParser.HeightKey,
-              label = "Width",
+              label = "Height",
               defaultValue = defaultValues.height
             ),
             TextFieldSpec(
               id = BaseFormParser.LengthKey,
-              label = "Height",
+              label = "Width",
               defaultValue = defaultValues.length
             )
           )

@@ -39,5 +39,5 @@ object PaintArchitect extends Painter with ShapeArchitect:
   def drawRectangle(locatable: Locatable, color: Color): Unit =
     locatable.shape match
       case Shape2D.Rectangle(w, h) =>
-        buffer += DrawCommand.Rectangle(locatable.position.x, locatable.position.y, w, h, color)
+        buffer += DrawCommand.Rectangle(locatable.position.x, locatable.position.y, h, w, color)
       case _ => ()

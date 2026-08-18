@@ -47,10 +47,10 @@ object PhysicsManager:
   def default(): PhysicsManager =
     apply(
       Vector(
-        EnemyAttractionRule.enemyAttractionRule,
         SurfaceDynamicsRule.surfaceDynamicsRule,
         CollisionResolutionRule.collisionResolutionRule,
         BorderContactRule.borderContactRule,
+        EnemyAttractionRule.enemyAttractionRule,
         KinematicsRule.kinematicsRule
       )
     )

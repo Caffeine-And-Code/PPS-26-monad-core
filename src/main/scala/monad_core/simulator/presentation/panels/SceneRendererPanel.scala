@@ -48,7 +48,7 @@ private[panels] object MouseHitDetector:
 
           (distanceX * distanceX + distanceY * distanceY) <= (radius * radius)
 
-        case Shape2D.Rectangle(width, height) =>
+        case Shape2D.Rectangle(height, width) =>
           val halfW = width / 2
           val halfH = height / 2
 

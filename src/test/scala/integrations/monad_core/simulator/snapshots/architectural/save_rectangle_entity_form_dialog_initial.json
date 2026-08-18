@@ -557,7 +557,7 @@
         {
           "type": "Label",
           "styleClass": ["label", "form-field-label"],
-          "text": "Width",
+          "text": "Height",
           "children": [
             {
               "type": "LabeledText",
@@ -595,7 +595,7 @@
         {
           "type": "Label",
           "styleClass": ["label", "form-field-label"],
-          "text": "Height",
+          "text": "Width",
           "children": [
             {
               "type": "LabeledText",
