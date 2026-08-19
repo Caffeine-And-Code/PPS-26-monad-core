@@ -60,7 +60,7 @@ Glossario:
    2. poter impostare una scena iniziale
 
 ### Requisiti dell'utente della GUI
-1. poter visualizzare la scena in una schermata
+1. poter disegnare e visualizzare la scena in una schermata
 2. poter interagire con il game engine e con la relativa scena tramite la GUI
    1. poter creare entità specificandone ogni parametro
    2. poter modificare ogni parametro di ciascuna entità

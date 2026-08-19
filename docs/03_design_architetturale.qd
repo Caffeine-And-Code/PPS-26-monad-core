@@ -1,3 +1,93 @@
 # Design architetturale
 
-Design architetturale
+## Obiettivi architetturali
+
+L'architettura di MonadCore2D è stata progettata con i seguenti obiettivi:
+
+- separare il motore di simulazione dalle modalità con cui viene utilizzato;
+- mantenere la logica fisica e il modello indipendenti dalla GUI e dai servizi di intelligenza artificiale;
+- isolare le dipendenze esterne, in particolare ScalaFX, LangChain4j e Ollama;
+- permettere l'esecuzione sia interattiva, tramite GUI, sia headless, per la valutazione degli agenti;
+- rendere sostituibili le implementazioni del motore, dell'agente AI, del logging e del dataset di valutazione;
+- rappresentare gli errori attesi mediante tipi espliciti, principalmente `Either`, evitando di affidare il normale flusso applicativo alle eccezioni.
+
+Il sistema è organizzato in due macrocomponenti: il **game engine**, utilizzabile come libreria autonoma, e il **simulatore**, che integra il motore con interfaccia grafica e agenti AI.
+
+## Ambiente di esecuzione
+
+L'ambiente di esecuzione dell'applicazione è descritto dal seguente deployment diagram.
+
+![deployment-diagram-pps.png](assets/deployment-diagram-pps.png)
+
+- **Personal computer**: esegue la JVM contenente il simulatore. Nella modalità interattiva ospita anche la GUI ScalaFX; nella modalità di valutazione esegue invece il processo headless da linea di comando.
+- **Server Ollama**: espone via rete i modelli utilizzati da LangChain4j. Può essere eseguito sullo stesso computer del simulatore oppure su una macchina distinta.
+
+La GUI utilizza un agente configurato tramite URL del server e nome del modello.
+
+Il collegamento a Ollama è necessario per le funzionalità AI, ma il game engine non dipende da Ollama e può essere utilizzato autonomamente.
+
+## Vista dei componenti
+
+Il seguente component diagram mostra i principali componenti del sistema e le loro dipendenze logiche.
+
+![component-diagram-pps.png](assets/component-diagram-pps.png)
+
+Le dipendenze esterne sono confinate, per quanto possibile, ai bordi del sistema:
+
+- ScalaFX è utilizzato dalla Presentation.
+- LangChain4j è utilizzato dagli adattatori AI nel livello Infrastructure;
+- Ollama rimane un servizio esterno e viene raggiunto esclusivamente attraverso LangChain4j.
+
+L'oggetto `Launcher` costituisce il **composition root** dell'applicazione: seleziona la modalità di esecuzione, costruisce le implementazioni concrete delle entità di livello Infrastructure e le collega alle rispettive interfacce definite nel livello Application.
+
+## Architettura del simulatore
+
+L'architettura del simulatore è ispirata alla **Clean Architecture** e applica anche il principio **Ports and Adapters**. L'applicazione è suddivisione nei seguenti package `presentation`, `application`, `domain` e `infrastructure`.
+
+### Domain
+
+Il livello Domain contiene i tipi che descrivono i concetti propri delle funzionalità AI e della loro valutazione.
+Si intende parte del livello di dominio anche i modelli descritti nel package `model` dell'engine, in quanto sono semplici rappresentazioni di forme geometriche e sono coerenti con il modo di rappresentare e di intendere le forme geometriche del simulatore.
+Il livello Domain non ha dipendenze esterne ad eccezione di quella sopra citata
+
+### Application
+
+Il livello Application definisce i casi d'uso e le porte necessarie per realizzarli.
+Il livello Application dipende dai tipi del livello Domain e nient'altro.
+
+### Infrastructure
+
+Il livello Infrastructure contiene gli adattatori concreti delle porte applicative.
+Questo livello dipende sia dalle porte definite in Application sia dalle librerie esterne. Le implementazioni possono quindi essere sostituite senza modificare i contratti applicativi: ad esempio è possibile introdurre un altro provider AI, un dataset caricato da file o una diversa implementazione del game engine.
+Il livello di Infrastructure dipende dai livelli di Application, Domain e dalle librerie esterne necessarie per le implementazioni delle porte di Application.
+
+### Presentation
+
+Il livello Presentation contiene le due interfacce di ingresso dell'applicazione:
+
+- la GUI ScalaFX, composta da stage, pannelli, componenti, form e painter;
+- il comando `evaluate-model`, che esegue la valutazione e presenta il risultato su console.
+
+La Presentation invoca le porte di Application e usa i tipi di dominio necessari per mostrare o raccogliere dati. Non può usare in maniera diretta le dipendenze esterne come LangChain4j.
+Per interagire con le dipendenze esterne dovrà riferire alla loro implementazione fornitagli tramite dependency injection dal composition root, tramite le port definite nel livello Application.
+Il livello di Presentation dipende dal livello di Application, di Domain e dalla libreria `ScalaFX` per la GUI.
+
+## Interazione con la GUI: MVVM
+
+Per l’interazione con la GUI è stato scelto di utilizzare il pattern MVVM.
+- Componente GUI: definisce i componenti `ScalaFx` del componente, attacca gli handler dei suoi componenti con gli handler del ViewModel, inoltre ha un listener sullo stato per cui ogni volta che si aggiorna lo stato, aggiorna la GUI 
+- ViewModel: inizializza lo stato iniziale, mette gli handler a disposizione del Componente GUI, associa a ogni handler l’Action corrispondente e aggiorna lo stato. 
+- Action: presenta una serie di metodi che ritornano lo stato aggiornato 
+- State: rappresenta lo stato del componente
+
+![mvvm-gui.png](assets/mvvm-gui.png)
+
+## Architettura del game engine
+
+Il game engine è progettato come libreria indipendente dal simulatore e non dipende da LangChain4j o Ollama o ScalaFX. Al suo interno i file sono raggrupati in base al dominio di appartenenza:
+
+- `model` contiene gli oggetti del dominio fisico;
+- `geometry` e `collision_detection` contengono le operazioni geometriche e il rilevamento delle collisioni;
+- `physics` contiene regole, combinatori, risoluzione delle collisioni e pathfinding;
+- `core` contiene `GameLoop`, lo stato e i contratti di rendering e fisica;
+- `public_api` raccoglie `EngineFacade` e il contratto `Painter`, cioè il principale punto di integrazione con i client del motore.
