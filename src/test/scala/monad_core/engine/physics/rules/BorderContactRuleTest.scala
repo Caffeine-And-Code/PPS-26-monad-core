@@ -2,15 +2,11 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
+import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
+import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockSceneHelper}
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.NegativeDeltaTime
-import monad_core.engine.physics.helper.PhysicsConstantHelper.*
-import monad_core.engine.physics.helper.{
-  BorderContactHelper,
-  PhysicsDetectorHelper,
-  PhysicsSceneHelper
-}
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.utils.BorderWallType
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -21,8 +17,8 @@ class BorderContactRuleTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with PhysicsSceneHelper
-    with PhysicsDetectorHelper:
+    with MockSceneHelper
+    with MockDetectorHelper:
 
   private val Rule = BorderContactRule.borderContactRule
 

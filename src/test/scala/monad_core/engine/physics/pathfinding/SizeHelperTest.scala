@@ -2,10 +2,10 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{Entity, Vector2D}
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import PathCircle.*
 import PathRectangle.*
 import SizeHelper.*
+import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

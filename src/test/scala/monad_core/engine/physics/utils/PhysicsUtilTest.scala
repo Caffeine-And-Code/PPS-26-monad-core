@@ -1,10 +1,10 @@
 package monad_core.engine.physics.utils
 
+import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
+import monad_core.engine.helper.DummyTeamHelper.{addTeam, makeTeam}
+import monad_core.engine.helper.PhysicsConstantHelper.NegativeDt
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{NegativeDeltaTime, OutOfBoundEntity, ZeroMassError}
-import monad_core.engine.physics.helper.PhysicsConstantHelper.*
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
-import monad_core.engine.physics.helper.PhysicsTeamHelper.*
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable

@@ -1,10 +1,10 @@
 package monad_core.engine.physics.utils
 
+import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.model.Vector2D
-import monad_core.engine.physics.helper.PhysicsConstantHelper.DefaultRadius
+import monad_core.engine.helper.PhysicsConstantHelper.DefaultRadius
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.pathfinding.VertexFinder
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable

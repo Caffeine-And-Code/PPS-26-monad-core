@@ -1,7 +1,6 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.GameLoop.StaticAlpha
-import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
+import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.model.EngineError
 import monad_core.engine.simulator.Painter
 
@@ -32,29 +31,39 @@ private case class GameLoopImpl(
       painter: Painter
   ): Either[EngineError, (State, GameLoop)] =
     if !isRunning || mode == LoopMode.EditMode then
-      RendererManager.render(state, StaticAlpha)
+      RendererManager.render(state)
       Right((state, this.copy(lastTime = currentTime)))
     else
       val elapsedTime   = currentTime - lastTime
       val clampedTime   = Math.min(elapsedTime, maxFrameTime)
       val remainingTime = accumulator + clampedTime
 
-      @tailrec
-      def runFixedUpdate(
-          remainingTime: Long,
-          currentScene: State
-      ): Either[EngineError, (State, Long)] =
-        if remainingTime < tickTime then Right((currentScene, remainingTime))
-        else
-          val updatedScene = physics.step(currentScene, tickTime)
-          updatedScene match
-            case Left(err)           => Left(err)
-            case Right(updatedScene) => runFixedUpdate(remainingTime - tickTime, updatedScene)
-
       for
-        res <- runFixedUpdate(remainingTime, state)
-        (currentScene, currentAccumulator) = res
+        res <- runFixedUpdate(remainingTime, state, state)
+        (previousScene, currentScene, currentAccumulator) = res
         alpha                              = currentAccumulator.toDouble / tickTime.toDouble
+        interpolatedScene <- SceneInterpolator(
+          previousScene = previousScene,
+          nextScene = currentScene,
+          interpolationAlpha = alpha
+        )
       yield
-        RendererManager.render(currentScene, alpha)
+        RendererManager.render(interpolatedScene)
         (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+
+  @tailrec
+  private def runFixedUpdate(
+                              remainingTime: Long,
+                              previousScene: State,
+                              currentScene: State
+                            )
+                            (using physics: PhysicsEngine)
+  : Either[EngineError, (State, State, Long)] =
+    if remainingTime < tickTime then Right((previousScene, currentScene, remainingTime))
+    else
+      val updatedScene = physics.step(currentScene, tickTime)
+      updatedScene match
+        case Left(err)           => Left(err)
+        case Right(updatedScene) =>
+          runFixedUpdate(remainingTime - tickTime, currentScene, updatedScene)
+

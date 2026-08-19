@@ -2,13 +2,13 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
+import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.helper.DummySurfaceHelper.makeSurfaceCircle
+import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.model.Entity.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.physics.helper.PhysicsConstantHelper.*
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
-import monad_core.engine.physics.helper.PhysicsSurfaceHelper.*
-import monad_core.engine.physics.helper.{PhysicsDetectorHelper, PhysicsSceneHelper}
+import monad_core.engine.helper.{MockDetectorHelper, MockSceneHelper}
 import monad_core.engine.physics.rules.SurfaceDynamicsRule
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalamock.scalatest.MockFactory
@@ -21,8 +21,8 @@ class SurfaceDynamicsRuleTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with PhysicsDetectorHelper
-    with PhysicsSceneHelper:
+    with MockDetectorHelper
+    with MockSceneHelper:
 
   private val Rule = SurfaceDynamicsRule.surfaceDynamicsRule
 

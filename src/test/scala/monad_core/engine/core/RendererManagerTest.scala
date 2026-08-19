@@ -30,7 +30,7 @@ class RendererManagerTest extends AnyFunSuite with Matchers with MockFactory:
     painter.drawCircle.expects(circleSurface, baseColor).once()
     painter.drawRectangle.expects(rectSurface, baseColor).once()
 
-    RendererManager.render(mockState, alpha = 1.0)
+    RendererManager.render(mockState)
 
   test("renderer manager should draw entities using their team color when teamId is present"):
     given painter: Painter = mock[Painter]
@@ -52,7 +52,7 @@ class RendererManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
     painter.drawCircle.expects(entity, redColor).once()
 
-    RendererManager.render(mockState, alpha = 1.0)
+    RendererManager.render(mockState)
 
   test("renderer manager should draw entities using base color when teamId is None"):
     given painter: Painter = mock[Painter]
@@ -69,4 +69,4 @@ class RendererManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
     painter.drawRectangle.expects(entityWithoutTeam, baseColor).once()
 
-    RendererManager.render(mockState, alpha = 1.0)
+    RendererManager.render(mockState)

@@ -2,11 +2,11 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
+import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
 import monad_core.engine.physics.core.*
-import monad_core.engine.physics.helper.PhysicsConstantHelper.*
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
-import monad_core.engine.physics.helper.{PhysicsDetectorHelper, PhysicsSceneHelper}
+import monad_core.engine.helper.{MockDetectorHelper, MockSceneHelper}
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues
@@ -19,8 +19,8 @@ class KinematicsRuleTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with PhysicsDetectorHelper
-    with PhysicsSceneHelper:
+    with MockDetectorHelper
+    with MockSceneHelper:
 
   private val Rule = KinematicsRule.kinematicsRule
 

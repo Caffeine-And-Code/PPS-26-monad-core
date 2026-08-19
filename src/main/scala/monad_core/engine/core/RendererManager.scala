@@ -8,7 +8,7 @@ import scalafx.scene.paint.Color
 
 object RendererManager extends RenderEngine:
 
-  override def render(state: State, alpha: Double)(using painter: Painter): Unit =
+  override def render(state: State)(using painter: Painter): Unit =
     for (surface <- state.allSurfaces)
       surface.shape match
         case _: Circle    => painter.drawCircle(surface, painter.baseColor)

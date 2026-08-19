@@ -186,7 +186,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
 
       val container = new VBox:
         children = Seq(canvas)
-        style = PanelStyles.base
+        style = PanelStyles.sceneRenderer
 
       VBox.setVgrow(canvas, Priority.Always)
 

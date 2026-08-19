@@ -1,4 +1,4 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotRemoveEntity, CannotRemoveNonPresentElementFromMap}
 import monad_core.engine.core.traits.State
@@ -6,7 +6,7 @@ import monad_core.engine.model.{Entity, Surface, Team, WorldBounds}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 
-private[physics] trait PhysicsSceneHelper:
+private[engine] trait MockSceneHelper:
 
   self: MockFactory =>
 
@@ -21,8 +21,6 @@ private[physics] trait PhysicsSceneHelper:
       teams: List[Team] = List.empty,
       surfaces: List[Surface] = List.empty,
       removeEntities: Boolean = true,
-      exposeTeams: Boolean = false,
-      exposeSurfaces: Boolean = false
   ): State =
     val scene = mock[State]
 
@@ -31,17 +29,15 @@ private[physics] trait PhysicsSceneHelper:
       .returning(entities)
       .anyNumberOfTimes()
 
-    if exposeTeams then
-      (() => scene.allTeams)
-        .expects()
-        .returning(teams)
-        .anyNumberOfTimes()
+    (() => scene.allTeams)
+      .expects()
+      .returning(teams)
+      .anyNumberOfTimes()
 
-    if exposeSurfaces then
-      (() => scene.allSurfaces)
-        .expects()
-        .returning(surfaces)
-        .anyNumberOfTimes()
+    (() => scene.allSurfaces)
+      .expects()
+      .returning(surfaces)
+      .anyNumberOfTimes()
 
     scene.removeEntity
       .expects(*)
@@ -52,9 +48,7 @@ private[physics] trait PhysicsSceneHelper:
               entities = entities,
               teams = teams,
               surfaces = surfaces,
-              removeEntities = false,
-              exposeTeams = exposeTeams,
-              exposeSurfaces = exposeSurfaces
+              removeEntities = false
             )
           )
         else if entities.exists(_.id == entity.id) then
@@ -65,8 +59,7 @@ private[physics] trait PhysicsSceneHelper:
               entities = updatedEntities,
               teams = teams,
               surfaces = surfaces,
-              exposeTeams = exposeTeams,
-              exposeSurfaces = exposeSurfaces
+              removeEntities = removeEntities
             )
           )
         else
@@ -85,9 +78,7 @@ private[physics] trait PhysicsSceneHelper:
               entities = entities :+ entity,
               teams = teams,
               surfaces = surfaces,
-              removeEntities = removeEntities,
-              exposeTeams = exposeTeams,
-              exposeSurfaces = exposeSurfaces
+              removeEntities = removeEntities
             )
           )
       }
@@ -111,8 +102,7 @@ private[physics] trait PhysicsSceneHelper:
   ): State =
     sceneWith(
       entities = entities,
-      teams = teams,
-      exposeTeams = true
+      teams = teams
     )
 
   def sceneWithSurfaces(
@@ -121,6 +111,5 @@ private[physics] trait PhysicsSceneHelper:
   ): State =
     sceneWith(
       entities = entities,
-      surfaces = surfaces,
-      exposeSurfaces = true
+      surfaces = surfaces
     )

@@ -49,8 +49,8 @@ object PhysicsManager:
       Vector(
         SurfaceDynamicsRule.surfaceDynamicsRule,
         EnemyAttractionRule.enemyAttractionRule,
-        KinematicsRule.kinematicsRule,
         CollisionResolutionRule.collisionResolutionRule,
-        BorderContactRule.borderContactRule
+        BorderContactRule.borderContactRule,
+        KinematicsRule.kinematicsRule
       )
     )
