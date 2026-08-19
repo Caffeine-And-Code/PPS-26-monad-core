@@ -75,30 +75,6 @@ class KinematicsRuleTest
 
     resultEntity.position shouldBe expectedPosition
 
-  test(
-    "the rule should propagate domain error when entity movement results in an invalid position"
-  ):
-
-    val invalidMoving = makeMovingEntityCircle(
-      id = "invalidMoving",
-      position = Vector2D(0, 0),
-      speed = Vector2D(-1, 0)
-    )
-
-    val scene = sceneWithEntities(List(invalidMoving))
-
-    val invalidPositionError = PhysicsUtil.nextPosition(
-      invalidMoving.position,
-      invalidMoving.speed.value,
-      DeltaTimeOneSecond,
-      scene.bounds.upperLeft,
-      scene.bounds.lowerRight
-    )
-
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
-
-    result shouldBe invalidPositionError
-
   test("the rule should move multiple entities with speed successfully and update the scene"):
 
     val entity1 = makeMovingEntityCircle(

@@ -3,7 +3,6 @@ package monad_core.engine.physics.utils
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{
   NegativeDeltaTime,
-  OutOfBoundEntity,
   PhysicsError,
   ZeroMassError
 }
@@ -31,13 +30,7 @@ private[physics] object PhysicsUtil:
   ): Either[PhysicsError, Vector2D] =
     for
       disp <- displacement(speed, deltaTime)
-      calcPos = position + disp
-      nextPos <-
-        if calcPos.x < upperLeftCorner.x || calcPos.y < upperLeftCorner.y ||
-          calcPos.x > lowerRightCorner.x || calcPos.y > lowerRightCorner.y
-        then Left(OutOfBoundEntity(calcPos))
-        else Right(calcPos)
-    yield nextPos
+    yield position + disp
 
   def acceleration(
       force: Vector2D,

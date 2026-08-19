@@ -4,7 +4,7 @@ import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.helper.DummyTeamHelper.{addTeam, makeTeam}
 import monad_core.engine.helper.PhysicsConstantHelper.NegativeDt
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{NegativeDeltaTime, OutOfBoundEntity, ZeroMassError}
+import monad_core.engine.physics.core.{NegativeDeltaTime, ZeroMassError}
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -80,7 +80,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
-  test("nextPosition should return an error for out-of-bounds position"):
+  test("nextPosition should not return an error for out-of-bounds position"):
     val position = Vector2D(0.0, 0.0)
     val speed    = Vector2D(-1.0, -1.0)
     val dt       = 500_000_000L
@@ -93,7 +93,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       lowerRightCorner = LowerRightCorner
     )
 
-    result shouldBe Left(OutOfBoundEntity(Vector2D(-0.5, -0.5)))
+    result.isRight shouldBe true
 
   test("acceleration should be force divided by a (positive) mass"):
     val force                = Vector2D(10.0, 20.0)
