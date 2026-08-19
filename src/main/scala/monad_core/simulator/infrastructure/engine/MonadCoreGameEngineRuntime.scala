@@ -11,11 +11,11 @@ import monad_core.simulator.errors.BaseError
 
 final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
     extends GameEngineRuntime:
-  private val lock                           = new Object
-  private var gameLoop                       = GameLoop.default()
-  private var currentWorld: Option[World]    = None
-  private var currentSnapshot: Option[Scene] = None
-  private var error: Option[BaseError]       = None
+  private val lock                                        = new Object
+  private var gameLoop                                    = GameLoop.default()
+  private var currentWorld: Option[World]                 = None
+  private var currentSnapshot: Option[Scene]              = None
+  private var error: Option[BaseError]                    = None
   private var currentDimensions: Option[(Double, Double)] = None
 
   given physics: PhysicsManager = PhysicsManager.default()
@@ -106,5 +106,6 @@ final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
       resizeResult
 
 object MonadCoreGameEngineRuntime:
+
   def apply(onError: BaseError => Unit = _ => ()): MonadCoreGameEngineRuntime =
     new MonadCoreGameEngineRuntime(onError)

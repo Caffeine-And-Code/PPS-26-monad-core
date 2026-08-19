@@ -48,7 +48,7 @@ private case class GameLoopImpl(
           interpolationAlpha = alpha
         )
         _ <- RendererManager.render(interpolatedScene)
-      yield(currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+      yield (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
 
   @tailrec
   private def runFixedUpdate(
