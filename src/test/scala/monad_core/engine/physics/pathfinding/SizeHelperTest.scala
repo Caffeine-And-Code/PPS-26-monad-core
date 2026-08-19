@@ -6,7 +6,6 @@ import PathCircle.*
 import PathRectangle.*
 import SizeHelper.*
 import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.pathfinding.PathCircle.*
 import monad_core.engine.physics.pathfinding.PathRectangle.*
 import monad_core.engine.physics.pathfinding.SizeHelper.*

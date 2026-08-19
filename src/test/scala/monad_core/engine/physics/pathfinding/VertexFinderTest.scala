@@ -5,7 +5,6 @@ import monad_core.engine.model.{Entity, Shape2D, Vector2D}
 import PathCircle.vertexes
 import PathRectangle.vertexes
 import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
 import monad_core.engine.physics.pathfinding.PathCircle.vertexes
 import monad_core.engine.physics.pathfinding.PathRectangle.vertexes
 import org.scalatest.funsuite.AnyFunSuite
