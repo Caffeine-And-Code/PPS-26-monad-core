@@ -1,7 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
-
 opaque type LocatableId = String
 
 object LocatableId:
@@ -9,6 +7,4 @@ object LocatableId:
   def apply(locatableId: String): Either[EngineError, LocatableId] =
     Either.cond(locatableId.trim.nonEmpty, locatableId.trim, LocatableIdCannotBeEmpty())
 
-  extension (locatableId: LocatableId)
-
-    def value: String = locatableId
+  extension (locatableId: LocatableId) def value: String = locatableId

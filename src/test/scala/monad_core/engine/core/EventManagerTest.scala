@@ -1,8 +1,8 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.{EventManager, Scene, dispatchEvents, registerEvent}
+import monad_core.engine.core.{EventManager, dispatchEvents, registerEvent}
 import monad_core.engine.core.events.Event
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.{EngineError, Scene}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -11,9 +11,9 @@ import org.scalatest.matchers.should.Matchers
 import scala.collection.immutable.Queue
 
 class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
-  
-  val mockedEvent: Event = mock[Event]
-  val mockedScene: Scene = Scene()
+
+  val mockedEvent: Event       = mock[Event]
+  val mockedScene: Scene       = Scene()
   val mockedError: EngineError = mock[EngineError]
 
   def errorReturningHandleFunction(event: Event, scene: Scene): Either[EngineError, Scene] =
@@ -42,20 +42,21 @@ class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val populatedQueueManager = defaultManager.registerEvent(mockedEvent)
 
     populatedQueueManager.queue should be(expectedQueue)
-    
+
   test("processing an empty queue doesn't change the given state"):
-    val (dispatchResult, updatedManager) = defaultManager.dispatchEvents(mockedScene)(correctHandleFunction)
+    val (dispatchResult, updatedManager) =
+      defaultManager.dispatchEvents(mockedScene)(correctHandleFunction)
 
     inside(dispatchResult):
       case Right(processedScene) =>
         updatedManager.queue.length should be(0)
         processedScene should be(mockedScene)
 
-
   test("an enqueued event is processed correctly"):
     val populatedManager = defaultManager.registerEvent(mockedEvent)
 
-    val (dispatchResult, updatedManager) = populatedManager.dispatchEvents(mockedScene)(correctHandleFunction)
+    val (dispatchResult, updatedManager) =
+      populatedManager.dispatchEvents(mockedScene)(correctHandleFunction)
 
     inside(dispatchResult):
       case Right(_) =>
@@ -64,7 +65,8 @@ class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
   test("when a error occurs during dispatch, it is curried and the manager is updated correctly"):
     val populatedManager = defaultManager.registerEvent(mockedEvent)
 
-    val (dispatchResult, updatedManager) = populatedManager.dispatchEvents(mockedScene)(errorReturningHandleFunction)
+    val (dispatchResult, updatedManager) =
+      populatedManager.dispatchEvents(mockedScene)(errorReturningHandleFunction)
 
     inside(dispatchResult):
       case Left(curriedError) =>

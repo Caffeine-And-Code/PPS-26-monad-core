@@ -1,45 +1,22 @@
 package integrations.monad_core.simulator.presentation.components
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
-import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
-import monad_core.simulator.presentation.components.{Error, Info, NotificationManager, NotificationType, Success}
-import org.scalatest.BeforeAndAfterEach
+import integrations.monad_core.simulator.presentation.support.NotificationTest
+import monad_core.simulator.presentation.components.{
+  Error,
+  Info,
+  NotificationManager,
+  NotificationType,
+  Success
+}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import scalafx.scene.control.Label
 import scalafx.scene.layout.StackPane
-import scalafx.stage.Stage
 
-import scala.compiletime.uninitialized
-
-class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit with SnapshotTesting with BeforeAndAfterEach:
-
-  private var root: StackPane = uninitialized
-  private var stage: Stage = uninitialized
-
-  override def beforeEach(): Unit =
-    onFxThread {
-      root = new StackPane() {
-        prefWidth = 300
-        prefHeight = 300
-      }
-
-      stage = new Stage() {
-        scene = new scalafx.scene.Scene(root)
-      }
-
-      NotificationManager.attach(root)
-      NotificationManager.animationsEnabled = true
-    }
-    super.beforeEach()
-
-  override def afterEach(): Unit =
-    onFxThread {
-      NotificationManager.detach()
-    }
-    super.afterEach()
+class NotificationManagerTest extends AnyFunSuite with Matchers with NotificationTest:
 
   private def resetManagerAndScene(): Unit =
     NotificationManager.detach()
@@ -98,9 +75,9 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
     }
 
   test("show should start the label with a wrapped max width of 400 and initial opacity of 0"):
-    val expectedMaxWidth: Double = 400.0
+    val expectedMaxWidth: Double  = 400.0
     val expectedWrapText: Boolean = true
-    val expectedOpacity: Double = 0.0
+    val expectedOpacity: Double   = 0.0
 
     var label: Option[Label] = None
     onFxThread {
@@ -173,7 +150,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
 
     assertMatchesArchitecturalSnapshotOfStage("success_notification_snapshot", stage)
 
-  //TODO: this will probably make a good usage of Prolog
+  // TODO: this will probably make a good usage of Prolog
   test("Notification Stacks matches the architectural snapshot"):
     val cases = Table(
       ("firstMessageType", "secondMessageType"),
@@ -185,7 +162,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
       (Error, Success),
       (Success, Info),
       (Success, Error),
-      (Success, Success),
+      (Success, Success)
     )
 
     forAll(cases): (firstMessageType, secondMessageType) =>
@@ -197,9 +174,12 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
         NotificationManager.show(s"Positioned $secondMessageType message", secondMessageType)
       }
 
-      assertMatchesArchitecturalSnapshotOfStage(s"${firstMessageType}_${secondMessageType}_notification_snapshot", stage)
+      assertMatchesArchitecturalSnapshotOfStage(
+        s"${firstMessageType}_${secondMessageType}_notification_snapshot",
+        stage
+      )
 
-  //TODO: this will probably make a good usage of Prolog
+  // TODO: this will probably make a good usage of Prolog
   test("Notification Stacks matches the visual snapshot"):
     val cases = Table(
       ("firstMessageType", "secondMessageType"),
@@ -211,7 +191,7 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
       (Error, Success),
       (Success, Info),
       (Success, Error),
-      (Success, Success),
+      (Success, Success)
     )
 
     forAll(cases): (firstMessageType, secondMessageType) =>
@@ -221,8 +201,14 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with ScalaFxInit
         resetManagerAndScene()
 
         NotificationManager.animationsEnabled = false
-        NotificationManager.show(s"Positioned ${getDisplayValue(firstMessageType)} message", firstMessageType)
-        NotificationManager.show(s"Positioned ${getDisplayValue(secondMessageType)} message", secondMessageType)
+        NotificationManager.show(
+          s"Positioned ${getDisplayValue(firstMessageType)} message",
+          firstMessageType
+        )
+        NotificationManager.show(
+          s"Positioned ${getDisplayValue(secondMessageType)} message",
+          secondMessageType
+        )
       }
 
       assertMatchesVisualSnapshot(

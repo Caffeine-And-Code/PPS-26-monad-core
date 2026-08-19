@@ -10,5 +10,3 @@ object ConversationId:
 
   def from(conversationId: String): Either[InvalidConversationId, ConversationId] =
     Either.cond(conversationId.trim.nonEmpty, conversationId, InvalidConversationId())
-
-  

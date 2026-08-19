@@ -1,12 +1,11 @@
 package integrations.monad_core.simulator.presentation.stages
 
-import helpers.MockImage
-import monad_core.engine.core.Scene
-import monad_core.engine.errors.EngineError
+import helpers.mocks.MockImage
+import monad_core.engine.model.{EngineError, Scene}
 import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
+import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.stages.ScalaFxLauncher
 import monad_core.simulator.presentation.stages.traits.MainStageBuilder
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound, UnexpectedStartupFailure}
@@ -21,14 +20,18 @@ import scala.concurrent.ExecutionContext
 class ScalaFxLauncherTest extends AnyFunSuite with Matchers with MockFactory:
   given mockedAgent: AiAgent = mock[AiAgent]
 
-  given runtime: MonadCodeGameEngineRuntime = MonadCodeGameEngineRuntime()
+  given runtime: MonadCoreGameEngineRuntime = MonadCoreGameEngineRuntime()
 
-  given world: World = MonadCoreWorld(Scene())
+  given world: World = MonadCoreWorld()
 
   test("ScalaFxLauncher starts up, shows the stage, and shuts down cleanly"):
     val mainStage: MainStageBuilder = mock[MainStageBuilder]
 
-    (mainStage.buildRootContent(_: ReadOnlyDoubleProperty, _: ReadOnlyDoubleProperty)(using _: AiAgent, _: ExecutionContext))
+    (mainStage
+      .buildRootContent(_: ReadOnlyDoubleProperty, _: ReadOnlyDoubleProperty)(using
+        _: AiAgent,
+        _: ExecutionContext
+      ))
       .expects(*, *, *, *)
       .returns(Right(new HBox {
         children = Seq()
@@ -41,9 +44,13 @@ class ScalaFxLauncherTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("run returns Left when buildRootContent fails, without showing anything"):
     val mainStage: MainStageBuilder = mock[MainStageBuilder]
-    val expectedError = CannotBuildStage(ImageResourceNotFound(MockImage()), "")
+    val expectedError               = CannotBuildStage(ImageResourceNotFound(MockImage()), "")
 
-    (mainStage.buildRootContent(_: ReadOnlyDoubleProperty, _: ReadOnlyDoubleProperty)(using _: AiAgent, _: ExecutionContext))
+    (mainStage
+      .buildRootContent(_: ReadOnlyDoubleProperty, _: ReadOnlyDoubleProperty)(using
+        _: AiAgent,
+        _: ExecutionContext
+      ))
       .expects(*, *, *, *)
       .returns(Left(expectedError))
 
@@ -52,9 +59,13 @@ class ScalaFxLauncherTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("run returns Left(UnexpectedStartupFailure) when buildRootContent throws"):
     val mainStage: MainStageBuilder = mock[MainStageBuilder]
-    val boom = new RuntimeException("boom")
+    val boom                        = new RuntimeException("boom")
 
-    (mainStage.buildRootContent(_: ReadOnlyDoubleProperty, _: ReadOnlyDoubleProperty)(using _: AiAgent, _: ExecutionContext))
+    (mainStage
+      .buildRootContent(_: ReadOnlyDoubleProperty, _: ReadOnlyDoubleProperty)(using
+        _: AiAgent,
+        _: ExecutionContext
+      ))
       .expects(*, *, *, *)
       .throws(boom)
 

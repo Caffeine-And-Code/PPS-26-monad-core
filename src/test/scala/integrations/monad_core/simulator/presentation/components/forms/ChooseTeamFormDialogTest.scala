@@ -2,9 +2,9 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.TeamNotFoundDuringSelection
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -13,13 +13,18 @@ import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.*
 import scalafx.stage.Stage
 
-class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with DialogTesting with FormTesting:
+class ChooseTeamFormDialogTest
+    extends AnyFunSuite
+    with Inside
+    with Matchers
+    with DialogTesting
+    with FormTesting:
   val TeamComboBoxIndex: Int = 0
 
   private val teams: Seq[Team] = Seq(
-    Team(TeamId("RedTeam").value, Set.empty).value,
-    Team(TeamId("BlueTeam").value, Set.empty).value,
-    Team(TeamId("GreenTeam").value, Set.empty).value
+    Team.create("RedTeam", Set.empty).value,
+    Team.create("BlueTeam", Set.empty).value,
+    Team.create("GreenTeam", Set.empty).value
   )
 
   private def selectTeamInComboBox(teamIndex: Int): Unit =
@@ -32,7 +37,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
       onError = _ => ()
     )
 
-    var result: Option[Either[EngineError, Unit]] = Option.empty
+    var result: Option[Either[BaseError, Unit]] = Option.empty
     onFxThread {
       result = Some(ChooseTeamFormDialog.show(props))
     }
@@ -77,7 +82,7 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
     submittedTeam should be(Some(teams(2)))
 
   test("ChooseTeamFormDialog invokes onError when the teams list is empty"):
-    var capturedError: Option[EngineError] = None
+    var capturedError: Option[BaseError] = None
 
     val props = ChooseTeamFormDialogProps(
       teams = Seq.empty,
@@ -110,8 +115,11 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers wit
 
     val rootNode: scalafx.scene.Node = activeStage.get.getScene.getRoot
 
-    assertMatchesVisualSnapshot("choose_team_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
-
+    assertMatchesVisualSnapshot(
+      "choose_team_form_dialog_initial",
+      rootNode,
+      maxDiffPercentage = 9.2
+    )
 
   test("ChooseTeamFormDialog matches architectural snapshot"):
     val props = ChooseTeamFormDialogProps(

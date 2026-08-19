@@ -56,10 +56,10 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     result shouldBe 5
 
   test("can normalize a vector"):
-    val x: Double = 3
-    val y: Double = 4
+    val x: Double         = 3
+    val y: Double         = 4
     val magnitude: Double = 5
-    val vector = Vector2D(x, y)
+    val vector            = Vector2D(x, y)
 
     val result = vector.normalized
 

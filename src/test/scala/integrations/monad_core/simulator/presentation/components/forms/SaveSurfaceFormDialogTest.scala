@@ -2,8 +2,8 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalamock.scalatest.proxy.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -12,9 +12,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.*
 
-class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers with MockFactory with DialogTesting with FormTesting:
+class SaveSurfaceFormDialogTest
+    extends AnyFunSuite
+    with Inside
+    with Matchers
+    with MockFactory
+    with DialogTesting
+    with FormTesting:
   val RadiusFieldIndex: Int = 2
-  val GenericEitherCircleSurface: Either[EngineError, Surface] = Surface.circle("id", Vector2D(0, 0), 6)
+
+  val GenericEitherCircleSurface: Either[EngineError, Surface] =
+    Surface.circle("id", Vector2D(0, 0), 6)
 
   private def selectShapeInComboBox(shapeIndex: Int): Unit =
     val ShapeComboBoxIndex = 0
@@ -28,9 +36,9 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
 
   private def buildCompleteSurface(eitherSurface: Either[EngineError, Surface]): Surface =
     val either = for
-      surface <- eitherSurface
+      surface                  <- eitherSurface
       surfaceWithFrictionIndex <- surface.withFrictionIndex(10)
-      finalSurface <- surfaceWithFrictionIndex.withAppliedForce(Vector2D(12, 13))
+      finalSurface             <- surfaceWithFrictionIndex.withAppliedForce(Vector2D(12, 13))
     yield finalSurface
 
     either.value
@@ -39,7 +47,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     val props = SaveSurfaceFormDialogProps(
       title = "Create Surface",
       onSubmit = _ => (),
-      onError = _ => (),
+      onError = _ => ()
     )
 
     onFxThread {
@@ -68,7 +76,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     val props = SaveSurfaceFormDialogProps(
       title = "Add Surface Test",
       onSubmit = Surface => submittedSurface = Some(Surface),
-      onError = err => fail(s"Unexpected error: $err"),
+      onError = err => fail(s"Unexpected error: $err")
     )
 
     onFxThread {
@@ -82,12 +90,14 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
 
     submittedSurface shouldBe defined
 
-  test("SaveSurfaceFormDialog invokes onSubmit with constructed Surface on valid input, with passed surfaceToUpdate"):
-    val surfaceToUpdate = buildCompleteSurface(GenericEitherCircleSurface)
+  test(
+    "SaveSurfaceFormDialog invokes onSubmit with constructed Surface on valid input, with passed surfaceToUpdate"
+  ):
+    val surfaceToUpdate                   = buildCompleteSurface(GenericEitherCircleSurface)
     var submittedSurface: Option[Surface] = None
-    val expectedRadius = 10.0
-    val expectedWeight = 70.0
-    val expectedHealth = 100.0
+    val expectedRadius                    = 10.0
+    val expectedWeight                    = 70.0
+    val expectedHealth                    = 100.0
 
     val props = SaveSurfaceFormDialogProps(
       title = "Add Surface Test",
@@ -112,12 +122,12 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
       case Shape2D.Circle(radius) => radius should be(expectedRadius)
 
   test("SaveSurfaceFormDialog invokes onError when form values are invalid"):
-    var capturedError: Option[EngineError] = None
+    var capturedError: Option[BaseError] = None
 
     val props = SaveSurfaceFormDialogProps(
       title = "Invalid Surface Test",
       onSubmit = _ => fail("onSubmit should not be called with invalid inputs"),
-      onError = err => capturedError = Some(err),
+      onError = err => capturedError = Some(err)
     )
 
     onFxThread {
@@ -129,7 +139,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     capturedError shouldBe defined
 
   test("SaveSurfaceFormDialog displays visually the circle Surface values passed"):
-    val circleSurfaceToUpdate: Surface = buildCompleteSurface(GenericEitherCircleSurface)
+    val circleSurfaceToUpdate: Surface    = buildCompleteSurface(GenericEitherCircleSurface)
     var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
@@ -142,14 +152,19 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("edit_circle_surface_form_dialog", rootNode, maxDiffPercentage = 10.0)
+      assertMatchesVisualSnapshot(
+        "edit_circle_surface_form_dialog",
+        rootNode,
+        maxDiffPercentage = 10.0
+      )
     }
 
   test("SaveSurfaceFormDialog displays architecturally the circle Surface values passed"):
-    val circleSurfaceToUpdate: Surface = buildCompleteSurface(Surface.circle("id", Vector2D(0, 0), 6))
+    val circleSurfaceToUpdate: Surface =
+      buildCompleteSurface(Surface.circle("id", Vector2D(0, 0), 6))
     var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
@@ -162,14 +177,15 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesArchitecturalSnapshotOfStage("edit_circle_surface_form_dialog", activeStage)
     }
 
   test("SaveSurfaceFormDialog displays visually the rectangle Surface values passed"):
-    val rectangleSurfaceToUpdate: Surface = buildCompleteSurface(Surface.rectangle("id", Vector2D(0, 0), 6, 10))
+    val rectangleSurfaceToUpdate: Surface =
+      buildCompleteSurface(Surface.rectangle("id", Vector2D(0, 0), 6, 10))
     var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
@@ -182,14 +198,19 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("edit_rectangle_surface_form_dialog", rootNode, maxDiffPercentage = 10.0)
+      assertMatchesVisualSnapshot(
+        "edit_rectangle_surface_form_dialog",
+        rootNode,
+        maxDiffPercentage = 10.0
+      )
     }
 
   test("SaveSurfaceFormDialog displays architecturally the rectangle Surface values passed"):
-    val rectangleSurfaceToUpdate: Surface = buildCompleteSurface(Surface.rectangle("id", Vector2D(0, 0), 6, 10))
+    val rectangleSurfaceToUpdate: Surface =
+      buildCompleteSurface(Surface.rectangle("id", Vector2D(0, 0), 6, 10))
     var submittedSurface: Option[Surface] = Option.empty
 
     val props = SaveSurfaceFormDialogProps(
@@ -202,7 +223,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     onFxThread {
       getOrFail(SaveSurfaceFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesArchitecturalSnapshotOfStage("edit_rectangle_surface_form_dialog", activeStage)
@@ -212,7 +233,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
     val props = SaveSurfaceFormDialogProps(
       title = "Visual Save Surface Test",
       onSubmit = _ => (),
-      onError = _ => (),
+      onError = _ => ()
     )
 
     onFxThread {
@@ -220,18 +241,21 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
 
       selectCircleInComboBox()
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("save_circle_surface_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
+      assertMatchesVisualSnapshot(
+        "save_circle_surface_form_dialog_initial",
+        rootNode,
+        maxDiffPercentage = 9.2
+      )
     }
-
 
   test("SaveSurfaceFormDialog Circle matches architectural snapshot"):
     val props = SaveSurfaceFormDialogProps(
       title = "Visual Save Surface Test",
       onSubmit = _ => (),
-      onError = _ => (),
+      onError = _ => ()
     )
 
     onFxThread {
@@ -239,17 +263,20 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
 
       selectCircleInComboBox()
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesArchitecturalSnapshotOfStage("save_circle_surface_form_dialog_initial", activeStage)
+      assertMatchesArchitecturalSnapshotOfStage(
+        "save_circle_surface_form_dialog_initial",
+        activeStage
+      )
     }
 
   test("SaveSurfaceFormDialog Rectangle matches visual snapshot"):
     val props = SaveSurfaceFormDialogProps(
       title = "Visual Save Surface Test",
       onSubmit = _ => (),
-      onError = _ => (),
+      onError = _ => ()
     )
 
     onFxThread {
@@ -257,17 +284,21 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
 
       selectRectangleInComboBox()
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("save_rectangle_surface_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
+      assertMatchesVisualSnapshot(
+        "save_rectangle_surface_form_dialog_initial",
+        rootNode,
+        maxDiffPercentage = 9.2
+      )
     }
 
   test("SaveSurfaceFormDialog Rectangle matches architectural snapshot"):
     val props = SaveSurfaceFormDialogProps(
       title = "Visual Save Surface Test",
       onSubmit = _ => (),
-      onError = _ => (),
+      onError = _ => ()
     )
 
     onFxThread {
@@ -275,8 +306,11 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers wi
 
       selectRectangleInComboBox()
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesArchitecturalSnapshotOfStage("save_rectangle_surface_form_dialog_initial", activeStage)
+      assertMatchesArchitecturalSnapshotOfStage(
+        "save_rectangle_surface_form_dialog_initial",
+        activeStage
+      )
     }

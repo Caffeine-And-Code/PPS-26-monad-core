@@ -6,7 +6,11 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 
-trait DialogTesting extends AnyFunSuite with BeforeAndAfterEach with ScalaFxInit with SnapshotTesting:
+trait DialogTesting
+    extends AnyFunSuite
+    with BeforeAndAfterEach
+    with ScalaFxInit
+    with SnapshotTesting:
 
   override def beforeEach(): Unit =
     if getActiveStage.isDefined then

@@ -1,8 +1,7 @@
 package monad_core.engine.core.events.handlers
 
 import monad_core.engine.core.events.Event.EntityCreatedEvent
-import monad_core.engine.core.Scene
-import monad_core.engine.errors.EngineError
+import monad_core.engine.model.{EngineError, Scene}
 
 object EntityCreatedEventHandler:
 

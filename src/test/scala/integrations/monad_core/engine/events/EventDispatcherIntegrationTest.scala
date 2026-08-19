@@ -3,8 +3,7 @@ package integrations.monad_core.engine.events
 import monad_core.engine.core.events.Event.{EntityCreatedEvent, EntityRemovedEvent, EntityUpdatedEvent}
 import monad_core.engine.core.events.EventDispatcher
 import monad_core.engine.core.*
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.model.{EngineError, Entity, Scene, Vector2D}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 
 class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
 
-  val scene: Scene = Scene()
+  val scene: Scene   = Scene()
   val entity: Entity = Entity.circle("genericEntity", Vector2D(0, 0), 2).value
 
   test("EntityCreatedEvent is dispatched correctly"):
@@ -21,7 +20,7 @@ class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
     val result: Either[EngineError, (Scene, Entity)] =
       for
         updatedScene <- EventDispatcher.handle(creationEvent, scene)
-        fetched <- updatedScene.getEntity(entity.id)
+        fetched      <- updatedScene.getEntity(entity.id)
       yield (updatedScene, fetched)
 
     inside(result):
@@ -35,7 +34,7 @@ class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
 
     val dispatchResult = for {
       populatedScene <- scene.addEntity(entity)
-      result <- EventDispatcher.handle(creationEvent, populatedScene)
+      result         <- EventDispatcher.handle(creationEvent, populatedScene)
     } yield result
 
     inside(dispatchResult):
@@ -47,7 +46,7 @@ class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
 
     val dispatchResult = for {
       populatedScene <- scene.addEntity(entity)
-      result <- EventDispatcher.handle(removeEvent, populatedScene)
+      result         <- EventDispatcher.handle(removeEvent, populatedScene)
     } yield result
 
     inside(dispatchResult):
@@ -55,7 +54,7 @@ class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
         updatedScene.entities.size should be(0)
 
   test("EntityRemovedEvent errors are curried throughout the handle function"):
-    val removeEvent = EntityRemovedEvent(entity)
+    val removeEvent   = EntityRemovedEvent(entity)
     val expectedError = CannotRemoveEntity(CannotRemoveNonPresentElementFromMap(entity.id))
 
     val result = EventDispatcher.handle(removeEvent, scene)
@@ -67,9 +66,9 @@ class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
   test("EntityUpdatedEvent is dispatched correctly"):
     val updatedEvent = EntityUpdatedEvent(entity)
 
-    val dispatchResult = for 
+    val dispatchResult = for
       populatedScene <- scene.addEntity(entity)
-      result <- EventDispatcher.handle(updatedEvent, populatedScene)
+      result         <- EventDispatcher.handle(updatedEvent, populatedScene)
     yield result
 
     inside(dispatchResult):
@@ -78,7 +77,7 @@ class EventDispatcherIntegrationTest extends AnyFunSuite with Matchers:
         updatedScene.entities should contain value entity
 
   test("EntityUpdatedEvent errors are curried throughout the handle function"):
-    val updatedEvent = EntityUpdatedEvent(entity)
+    val updatedEvent  = EntityUpdatedEvent(entity)
     val expectedError = CannotRemoveEntity(CannotRemoveNonPresentElementFromMap(entity.id))
 
     val result = EventDispatcher.handle(updatedEvent, scene)

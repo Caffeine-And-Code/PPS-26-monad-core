@@ -37,7 +37,9 @@ class ChooseTeamFormDialogTest extends AnyFunSuite with Inside with Matchers:
     inside(fields.head):
       case select: SelectFieldSpec => select.options should be(Seq.empty)
 
-  test("buildFields should not set a default value, letting the underlying control pick the first option"):
+  test(
+    "buildFields should not set a default value, letting the underlying control pick the first option"
+  ):
     val fields = ChooseTeamFormDialog.buildSelect(teams)
 
     inside(fields.head):

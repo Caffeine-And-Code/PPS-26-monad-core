@@ -21,4 +21,3 @@ class ConversationIdTest extends AnyFunSuite with Matchers with Inside:
 
     inside(result):
       case Left(error) => error shouldBe InvalidConversationId()
-
