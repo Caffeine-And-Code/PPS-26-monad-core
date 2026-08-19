@@ -7,9 +7,14 @@ trait Painter:
   /**
    * @see drawCircle and drawRectangle
    * @return the default color if the entity is not in a team
-   *         (this is also the color provided when the locatable is a surface)
    */
-  def baseColor: Either[EngineError, EngineColor]
+  def baseEntityColor: Either[EngineError, EngineColor]
+
+  /**
+   * @see drawCircle and drawRectangle
+   * @return the color utilized for the surfaces
+   */
+  def baseSurfaceColor: Either[EngineError, EngineColor]
 
   /**
    * specifies how circles are drawn by the engine

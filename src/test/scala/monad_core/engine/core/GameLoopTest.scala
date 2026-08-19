@@ -29,7 +29,11 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
   given MockPainter: Painter       = mock[Painter]
 
   def setupPainterInteractions(painter: Painter): Unit =
-    (() => painter.baseColor)
+    (() => painter.baseEntityColor)
+      .expects()
+      .returns(Right(EngineColorArranger.arrangeRed()))
+      .anyNumberOfTimes()
+    (() => painter.baseSurfaceColor)
       .expects()
       .returns(Right(EngineColorArranger.arrangeRed()))
       .anyNumberOfTimes()

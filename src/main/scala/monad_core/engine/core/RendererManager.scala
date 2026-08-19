@@ -11,7 +11,8 @@ object RendererManager extends RenderEngine:
       painter: Painter
   ): Either[EngineError, Unit] =
     for
-      baseColor <- painter.baseColor
+      entityBaseColor <- painter.baseEntityColor
+      surfacesColor   <- painter.baseSurfaceColor
       teamsMap <- state.allTeams.foldLeft[Either[EngineError, Map[TeamId, EngineColor]]](
         Right(Map.empty)
       ) { (acc, team) =>
@@ -23,11 +24,11 @@ object RendererManager extends RenderEngine:
     yield
       for (surface <- state.allSurfaces)
         surface.shape match
-          case _: Circle    => painter.drawCircle(surface, baseColor)
-          case _: Rectangle => painter.drawRectangle(surface, baseColor)
+          case _: Circle    => painter.drawCircle(surface, surfacesColor)
+          case _: Rectangle => painter.drawRectangle(surface, surfacesColor)
 
       def getTeamColorOrDefault(optionalTeamId: Option[TeamId]): EngineColor =
-        optionalTeamId.flatMap(teamsMap.get).getOrElse(baseColor)
+        optionalTeamId.flatMap(teamsMap.get).getOrElse(entityBaseColor)
 
       for (entity <- state.allEntities)
         entity.shape match

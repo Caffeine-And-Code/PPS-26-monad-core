@@ -1,7 +1,17 @@
 package monad_core.engine.core.events
 
-import monad_core.engine.core.events.Event.{EntityCollisionDetectedEvent, EntityCreatedEvent, EntityRemovedEvent, EntityUpdatedEvent}
-import monad_core.engine.core.events.handlers.{EntityCollisionDetectedEventHandler, EntityCreatedEventHandler, EntityRemovedEventHandler, EntityUpdatedEventHandler}
+import monad_core.engine.core.events.Event.{
+  EntityCollisionDetectedEvent,
+  EntityCreatedEvent,
+  EntityRemovedEvent,
+  EntityUpdatedEvent
+}
+import monad_core.engine.core.events.handlers.{
+  EntityCollisionDetectedEventHandler,
+  EntityCreatedEventHandler,
+  EntityRemovedEventHandler,
+  EntityUpdatedEventHandler
+}
 import monad_core.engine.model.{EngineError, Scene}
 
 object EventDispatcher:

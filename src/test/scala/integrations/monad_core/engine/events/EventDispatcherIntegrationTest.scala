@@ -1,6 +1,10 @@
 package integrations.monad_core.engine.events
 
-import monad_core.engine.core.events.Event.{EntityCreatedEvent, EntityRemovedEvent, EntityUpdatedEvent}
+import monad_core.engine.core.events.Event.{
+  EntityCreatedEvent,
+  EntityRemovedEvent,
+  EntityUpdatedEvent
+}
 import monad_core.engine.core.events.EventDispatcher
 import monad_core.engine.core.*
 import monad_core.engine.model.{EngineError, Entity, Scene, Vector2D}
