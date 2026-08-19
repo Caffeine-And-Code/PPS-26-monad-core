@@ -5,9 +5,9 @@ import monad_core.engine.core.events.Event.{
   EntityRemovedEvent,
   EntityUpdatedEvent
 }
-import monad_core.engine.core.events.EventDispatcher
 import monad_core.engine.core.*
 import monad_core.engine.model.{EngineError, Entity, Scene, Vector2D}
+import monad_core.engine.simulator.EventDispatcher
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite

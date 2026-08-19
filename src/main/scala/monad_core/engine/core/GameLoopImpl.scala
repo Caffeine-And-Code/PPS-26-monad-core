@@ -1,9 +1,9 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.GameLoop.StaticAlpha
+import monad_core.engine.core.events.Event
 import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.model.EngineError
-import monad_core.engine.simulator.Painter
 
 import scala.annotation.tailrec
 
@@ -28,12 +28,17 @@ private case class GameLoopImpl(
   def stop(): GameLoop  = this.copy(isRunning = false, mode = LoopMode.EditMode)
 
   def tick(state: State, currentTime: Long)(using
-      physics: PhysicsEngine,
-      painter: Painter
-  ): Either[EngineError, (State, GameLoop)] =
+      physics: PhysicsEngine
+  ): Either[EngineError, GameLoopTickResult] =
     if !isRunning || mode == LoopMode.EditMode then
-      for _ <- RendererManager.render(state, StaticAlpha)
-      yield (state, this.copy(lastTime = currentTime))
+      Right(
+        GameLoopTickResult(
+          state = state,
+          loop = this.copy(lastTime = currentTime),
+          events = Vector.empty,
+          alpha = StaticAlpha
+        )
+      )
     else
       val elapsedTime   = currentTime - lastTime
       val clampedTime   = Math.min(elapsedTime, maxFrameTime)
@@ -42,18 +47,27 @@ private case class GameLoopImpl(
       @tailrec
       def runFixedUpdate(
           remainingTime: Long,
-          currentScene: State
-      ): Either[EngineError, (State, Long)] =
-        if remainingTime < tickTime then Right((currentScene, remainingTime))
+          currentScene: State,
+          accumulatedEvents: Vector[Event]
+      ): Either[EngineError, (State, Long, Vector[Event])] =
+        if remainingTime < tickTime then Right((currentScene, remainingTime, accumulatedEvents))
         else
-          val updatedScene = physics.step(currentScene, tickTime)
-          updatedScene match
-            case Left(err)           => Left(err)
-            case Right(updatedScene) => runFixedUpdate(remainingTime - tickTime, updatedScene)
+          physics.step(currentScene, tickTime) match
+            case Left(err) => Left(err)
+            case Right(step) =>
+              runFixedUpdate(
+                remainingTime - tickTime,
+                step.state,
+                accumulatedEvents ++ step.events
+              )
 
       for
-        res <- runFixedUpdate(remainingTime, state)
-        (currentScene, currentAccumulator) = res
-        alpha                              = currentAccumulator.toDouble / tickTime.toDouble
-        _ <- RendererManager.render(currentScene, alpha)
-      yield (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+        res <- runFixedUpdate(remainingTime, state, Vector.empty)
+        (currentScene, currentAccumulator, events) = res
+        alpha                                      = currentAccumulator.toDouble / tickTime.toDouble
+      yield GameLoopTickResult(
+        state = currentScene,
+        loop = this.copy(lastTime = currentTime, accumulator = currentAccumulator),
+        events = events,
+        alpha = alpha
+      )

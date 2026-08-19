@@ -1,5 +1,6 @@
-package monad_core.engine.core.events
+package monad_core.engine.simulator
 
+import monad_core.engine.core.events.Event
 import monad_core.engine.core.events.Event.{
   EntityCollisionDetectedEvent,
   EntityCreatedEvent,

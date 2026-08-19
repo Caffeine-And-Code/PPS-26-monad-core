@@ -1,8 +1,8 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.{EventManager, dispatchEvents, registerEvent}
 import monad_core.engine.core.events.Event
 import monad_core.engine.model.{EngineError, Scene}
+import monad_core.engine.simulator.{EventManager, dispatchEvents, registerEvent, registerEvents}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -40,6 +40,14 @@ class EventManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val expectedQueue = Queue(mockedEvent)
 
     val populatedQueueManager = defaultManager.registerEvent(mockedEvent)
+
+    populatedQueueManager.queue should be(expectedQueue)
+
+  test("multiple events are registered in their original order"):
+    val secondEvent   = mock[Event]
+    val expectedQueue = Queue(mockedEvent, secondEvent)
+
+    val populatedQueueManager = defaultManager.registerEvents(Vector(mockedEvent, secondEvent))
 
     populatedQueueManager.queue should be(expectedQueue)
 

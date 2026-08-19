@@ -1,9 +1,9 @@
 package monad_core.simulator.infrastructure.engine
 
-import monad_core.engine.core.GameLoop
+import monad_core.engine.core.{GameLoop, RendererManager}
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.{EngineFacade, Painter}
+import monad_core.engine.simulator.{EngineFacade, EventDispatcher, EventManager, Painter, dispatchEvents, registerEvents}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
@@ -30,19 +30,40 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
     lock.synchronized:
       currentWorld.foreach { world =>
         EngineFacade.tick(gameLoop, world.scene, currentTime) match
-          case Right((nextState, nextLoop)) =>
-            (world, nextState) match
-              case (monadCoreWorld: MonadCoreWorld, scene: Scene) =>
-                monadCoreWorld.currentScene = world.scene
+          case Right(tickResult) =>
+            tickResult.state match
+              case _: Scene =>
+                val eventManager = EventManager().registerEvents(tickResult.events)
+                val (dispatchedScene, _) =
+                  eventManager.dispatchEvents(world.scene)(EventDispatcher.handle)
+
+                val processedScene = for
+                  scene <- dispatchedScene
+                  _     <- RendererManager.render(scene, tickResult.alpha)
+                yield scene
+
+                processedScene match
+                  case Right(scene) =>
+                    world match
+                      case monadCoreWorld: MonadCoreWorld =>
+                        monadCoreWorld.currentScene = scene
+                      case _ => ()
+
+                    gameLoop = tickResult.loop
+                    renderer(world)
+
+                  case Left(engineError) =>
+                    handleError(engineError)
+
               case _ => ()
 
-            gameLoop = nextLoop
-            renderer(world)
-
           case Left(engineError) =>
-            error = Some(engineError.adaptError())
-            stop()
+            handleError(engineError)
       }
+
+  private def handleError(engineError: monad_core.engine.model.EngineError): Unit =
+    error = Some(engineError.adaptError())
+    gameLoop = gameLoop.stop()
 
   override def isRunning: Boolean =
     lock.synchronized(gameLoop.isRunning)
@@ -67,22 +88,23 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
       lock.synchronized:
         currentWorld = Some(world)
 
-    if withDefaultEntity then
-      Entity.circle(id = "starter", position = Vector2D(15, 15), radius = 15) match
-        case Right(entity) =>
-          world.createEntity(
-            SaveEntityCommand(entity)
-          )
+    val initializedWorld =
+      if withDefaultEntity then
+        for
+          entity <- Entity
+            .circle(id = "starter", position = Vector2D(15, 15), radius = 15)
+            .adaptError()
+          _ <- world.createEntity(SaveEntityCommand(entity))
+        yield ()
+      else Right(())
 
-          setCurrentWorld()
-
-          Right(())
-        case Left(error) => Left(error.adaptError())
-    else
+    initializedWorld.map { _ =>
       setCurrentWorld()
-      Right(())
+      ()
+    }
 
-  override def getError: Option[BaseError] = error
+  override def getError: Option[BaseError] =
+    lock.synchronized(error)
 
 object MonadCoreGameEngineRuntime:
   def apply(): MonadCoreGameEngineRuntime = new MonadCoreGameEngineRuntime
