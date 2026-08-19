@@ -50,7 +50,7 @@ private[physics] object SurfaceDynamicsRule:
         }
     }
 
-  private def applySurfaceDynamics(
+  private[physics] def applySurfaceDynamics(
       entity: Entity,
       surface: Surface,
       dt: Long

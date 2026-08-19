@@ -25,32 +25,35 @@ private[physics] object KinematicsRule:
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
 
-    private def applyKinematics(
-        scene: State,
-        entities: List[Entity],
-        dt: Long
-    ): Either[PhysicsError, List[Entity]] =
-      entities.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
-        case (Left(err), _) => Left(err)
-        case (Right(updatedEntities), entity) =>
-          moveEntity(scene, entity, dt).map(updatedEntities :+ _)
-      }
+  private def applyKinematics(
+      scene: State,
+      entities: List[Entity],
+      dt: Long
+  ): Either[PhysicsError, List[Entity]] =
+    entities.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
+      case (Left(err), _) => Left(err)
+      case (Right(updatedEntities), entity) =>
+        moveEntity(scene, entity, dt).map(updatedEntities :+ _)
+    }
 
-    private def moveEntity(scene: State, entity: Entity, dt: Long): Either[PhysicsError, Entity] =
+  private[physics] def moveEntity(
+      scene: State,
+      entity: Entity,
+      dt: Long
+  ): Either[PhysicsError, Entity] =
+    for
+      speed <- entity.speed match
+        case Some(s) => Right(s)
+        case None =>
+          Left(PhysicsRuleError(s"Entity ${entity.id} has no speed to apply kinematics"))
 
-      for
-        speed <- entity.speed match
-          case Some(s) => Right(s)
-          case None    => Left(PhysicsRuleError(s"Entity ${entity.id} has no speed to apply kinematics"))
-
-        newPosition <- PhysicsUtil.nextPosition(
-          entity.position,
-          speed,
-          dt,
-          scene.bounds.upperLeft,
-          scene.bounds.lowerRight
-          ) match 
-            case Right(pos) => Right(entity.moveTo(pos))
-            case Left(err)  => Left(err)
-        
-      yield newPosition
+      newPosition <- PhysicsUtil.nextPosition(
+        entity.position,
+        speed,
+        dt,
+        scene.bounds.upperLeft,
+        scene.bounds.lowerRight
+      ) match
+        case Right(pos) => Right(entity.moveTo(pos))
+        case Left(err)  => Left(err)
+    yield newPosition

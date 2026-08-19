@@ -24,15 +24,12 @@ private[physics] object RayCast:
 
     val rayDirection = (to.position - from.position).normalized
     val perpendicularDirection = Vector2D(-rayDirection.y, rayDirection.x)
-    val hunterClearance = (math.max(
-      SizeHelper.horizontalShapeSize(from),
-      SizeHelper.verticalShapeSize(from)
-    ) / 2) - CornerDisplacement
+    val clearance = hunterClearance(from)
 
     val rayOrigins = List(
       from.position,
-      from.position + perpendicularDirection * hunterClearance,
-      from.position - perpendicularDirection * hunterClearance
+      from.position + perpendicularDirection * clearance,
+      from.position - perpendicularDirection * clearance
     )
 
     val firstObjects = rayOrigins.flatMap { origin =>
@@ -91,7 +88,13 @@ private[physics] object RayCast:
         Right(bestWaypoint)
       case None => Left(RayIntersectedAMissingEntity(firstEncounteredEntity.value))
 
-  private def actualWaypoint(
+  private[pathfinding] def hunterClearance(from: Entity): Double =
+    (math.max(
+      SizeHelper.horizontalShapeSize(from),
+      SizeHelper.verticalShapeSize(from)
+    ) / 2) - CornerDisplacement
+
+  private[pathfinding] def actualWaypoint(
       to: Entity,
       from: Entity,
       waypoint: Vector2D
@@ -99,21 +102,15 @@ private[physics] object RayCast:
 
     val direction = (waypoint - to.position).normalized
 
-    val module = (waypoint - to.position).magnitude
-
     val horizontal = SizeHelper.horizontalShapeSize(from) / 2 + WayPointDisplacement
     val vertical   = SizeHelper.verticalShapeSize(from) / 2 + WayPointDisplacement
 
-    val entityDisplacement = Vector2D(
-      if direction.x > 0 then horizontal else -horizontal,
-      if direction.y > 0 then vertical else -vertical
-    )
-
-    val totalDisplacement = direction * entityDisplacement.magnitude
+    val displacementMagnitude = Vector2D(horizontal, vertical).magnitude
+    val totalDisplacement = direction * displacementMagnitude
 
     waypoint + totalDisplacement
 
-  private def isValidWayPoint(
+  private[pathfinding] def isValidWayPoint(
       to: Entity,
       from: Entity,
       waypoint: Vector2D,

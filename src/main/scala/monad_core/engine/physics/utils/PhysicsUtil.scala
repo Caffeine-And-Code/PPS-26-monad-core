@@ -71,9 +71,9 @@ private[physics] object PhysicsUtil:
       normal: Vector2D
   ): Vector2D =
     val speedAlongNormal = speed dot normal
+    val incomingSpeedAlongNormal = math.min(speedAlongNormal, 0.0)
 
-    if speedAlongNormal >= 0.0 then speed
-    else speed - (normal * (2.0 * speedAlongNormal))
+    speed - (normal * (2.0 * incomingSpeedAlongNormal))
 
   def pushMobileOverlappingFixed(
       position: Vector2D,

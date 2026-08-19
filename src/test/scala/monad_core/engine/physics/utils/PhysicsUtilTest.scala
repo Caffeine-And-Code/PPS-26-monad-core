@@ -207,6 +207,12 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result shouldBe expectedSpeed
 
+  test("reflectOnFixed should preserve a velocity tangent to the collision surface"):
+    val speed  = Vector2D(0.0, 3.0)
+    val normal = Vector2D(1.0, 0.0)
+
+    PhysicsUtil.reflectOnFixed(speed, normal) shouldBe speed
+
   test("reflectOnFixed should return a new speed after collision with a fixed object"):
     val speed         = Vector2D(-3.0, 4.0)
     val normal        = Vector2D(1.0, 0.0)
@@ -498,3 +504,35 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       PhysicsUtil.nearestEnemy(entity, List(entity, farEnemy, closeEnemy), List(teamA, teamB))
 
     result.value shouldBe closeEnemy
+
+  test("timeLongToSeconds should accept zero delta time"):
+    PhysicsUtil.timeLongToSeconds(0L) shouldBe Right(0.0)
+
+  test("nextPosition should allow an entity to reach the lower-right boundary"):
+    val position = Vector2D(9.0, 9.0)
+    val speed    = Vector2D(1.0, 1.0)
+
+    PhysicsUtil.nextPosition(
+      position,
+      speed,
+      1_000_000_000L,
+      UpperLeftCorner,
+      LowerRightCorner
+    ) shouldBe Right(LowerRightCorner)
+
+  test("nearestEnemy should ignore candidates without a team"):
+    val entity = addTeam(
+      makeMovingEntityCircle(id = "entity1", position = Vector2D(0.0, 0.0)),
+      "teamA"
+    )
+    val unassignedCandidate = makeMovingEntityCircle(
+      id = "unassigned",
+      position = Vector2D(1.0, 0.0)
+    )
+    val team = makeTeam(entity.teamId.value.value, Set("teamB"))
+
+    PhysicsUtil.nearestEnemy(
+      entity,
+      List(entity, unassignedCandidate),
+      List(team)
+    ) shouldBe None

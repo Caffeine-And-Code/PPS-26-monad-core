@@ -72,7 +72,7 @@ object CollisionResolver:
       case Left(err) => Left(err)
       case Right(p)  => Right(entity.moveTo(p))
 
-  private def resolveMultipleBounces(
+  private[physics] def resolveMultipleBounces(
       entity: Entity,
       collisions: List[(Entity, Collision)]
   ): Either[PhysicsError, Entity] =

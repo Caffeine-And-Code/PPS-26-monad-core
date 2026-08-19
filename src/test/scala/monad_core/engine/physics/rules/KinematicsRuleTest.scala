@@ -142,3 +142,13 @@ class KinematicsRuleTest
 
     resultEntity1.position shouldBe expectedPosition1
     resultEntity2.position shouldBe expectedPosition2
+
+  test("moveEntity should report the entity id when speed is missing"):
+    val entity = makeFixedEntityCircle(id = "fixed-without-speed")
+    val scene  = sceneWithEntities(List(entity))
+
+    KinematicsRule.moveEntity(scene, entity, DeltaTimeOneSecond) shouldBe Left(
+      PhysicsRuleError(
+        s"Entity ${entity.id} has no speed to apply kinematics"
+      )
+    )

@@ -245,6 +245,16 @@ class GameLoopTest extends AnyFunSuite
     val invalidLastTime = -1L
     GameLoop(lastTime = invalidLastTime) shouldBe Left(InvalidLastTime(invalidLastTime))
 
+  test("a game loop should allow last time value to be zero"):
+    val validLastTime = 0L
+    val loop = GameLoop(lastTime = validLastTime)
+    loop.isRight shouldBe true
+
+  test("a game loop should allow last time value to be positive"):
+    val validLastTime = 1L
+    val loop = GameLoop(lastTime = validLastTime)
+    loop.isRight shouldBe true
+
   test("a game loop should be InvalidAccumulator when accumulator is negative"):
     val invalidAccumulator = -1L
     GameLoop(accumulator = invalidAccumulator) shouldBe Left(InvalidAccumulator(invalidAccumulator))
@@ -262,10 +272,12 @@ class GameLoopTest extends AnyFunSuite
     )
 
   test("GameLoop should allow max frame time to equal tick time"):
-    noException should be thrownBy GameLoop(
+    val loop = GameLoop(
       tickTime = DefaultTickTime,
       maxFrameTime = DefaultTickTime
     )
+
+    loop.isRight shouldBe true
 
   test("if a running game loop is in edit mode, it should not update the physics"):
 
@@ -292,3 +304,12 @@ class GameLoopTest extends AnyFunSuite
     defaultLoop.lastTime shouldBe InitialTime
     defaultLoop.accumulator shouldBe 0L
     defaultLoop.maxFrameTime shouldBe DefaultMaxFrameTime
+
+  test("withTickTime should reject a negative tick time"):
+    StandardLoop.withTickTime(-1L) shouldBe Left(InvalidTickTime(-1L))
+
+  test("withTickTime should allow a tick time equal to max frame time"):
+    StandardLoop.withTickTime(DefaultMaxFrameTime).value.tickTime shouldBe DefaultMaxFrameTime
+
+  test("GameLoop should allow a positive initial accumulator"):
+    GameLoop(accumulator = 1L).value.accumulator shouldBe 1L

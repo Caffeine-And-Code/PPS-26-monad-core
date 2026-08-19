@@ -316,3 +316,17 @@ class SurfaceDynamicsRuleTest
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
     result shouldBe Left(ZeroMassError())
+
+  test("applySurfaceDynamics should report the entity id when speed is missing"):
+    val entity  = makeFixedEntityCircle(id = "fixed-without-speed")
+    val surface = makeSurfaceCircle(position = Vector2D(0.0, 0.0), radius = 5.0)
+
+    SurfaceDynamicsRule.applySurfaceDynamics(
+      entity,
+      surface,
+      DeltaTimeOneSecond
+    ) shouldBe Left(
+      PhysicsRuleError(
+        s"Entity ${entity.id} is fixed, it cannot be applied surface dynamics"
+      )
+    )

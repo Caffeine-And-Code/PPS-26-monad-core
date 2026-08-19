@@ -1,24 +1,16 @@
 package monad_core
 
 import monad_core.engine.simulator.Painter
-import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
-import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.errors.BaseError
+import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
+import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
-import monad_core.simulator.application.logging.Logger
-import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
-import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
-import monad_core.simulator.infrastructure.ai.{
-  Langchain4jAgentFactory,
-  Langchain4jAssistantFactory,
-  Langchain4jOllamaConfig
-}
-import monad_core.simulator.infrastructure.engine.MonadCoreWorld
 import monad_core.simulator.infrastructure.logging.ConsoleLogger
 import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluationArguments,
@@ -26,15 +18,13 @@ import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluatorConsolePrinter,
   AgentEvaluatorPrinter
 }
-import monad_core.simulator.presentation.routes.RouteType.{All, Route}
-import monad_core.simulator.presentation.routes.{ArgumentRoutingRoute, RouteResponse, Router}
+import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.panels.{
   AiModelChatPanel,
   GameEngineModePanel,
   GameEnginePanel,
   SceneRendererPanel
 }
-import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{RouteResponse, Router}

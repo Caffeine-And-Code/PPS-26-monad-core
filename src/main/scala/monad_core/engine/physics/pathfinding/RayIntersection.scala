@@ -4,7 +4,7 @@ import monad_core.engine.model.{-, LocatableId, Vector2D, dot, magnitude}
 
 private[pathfinding] object RayIntersection:
 
-  private val Epsilon: Double = 1e-8
+  private[pathfinding] val Epsilon: Double = 1e-8
 
   def apply(
       rayStart: Vector2D,
@@ -39,7 +39,7 @@ private[pathfinding] object RayIntersection:
       }
       .minByOption(_._2)
 
-  private def raySegmentIntersection(
+  private[pathfinding] def raySegmentIntersection(
       rayStart: Vector2D,
       rayDirection: Vector2D,
       vertex1: Vector2D,
@@ -67,21 +67,18 @@ private[pathfinding] object RayIntersection:
         None
   }
 
-  private def rayVertexIntersection(
+  private[pathfinding] def rayVertexIntersection(
       rayStart: Vector2D,
       rayDirection: Vector2D,
       vertex: Vector2D
   ): Option[Double] =
     val directionMagnitude = rayDirection.magnitude
+    val difference = vertex - rayStart
+    val distanceOnRay = (difference dot rayDirection) / directionMagnitude
+    val distanceFromRay = math.abs(
+      difference.x * rayDirection.y - difference.y * rayDirection.x
+    ) / directionMagnitude
 
-    if directionMagnitude == 0 then None
-    else
-      val difference = vertex - rayStart
-      val distanceOnRay = (difference dot rayDirection) / directionMagnitude
-      val distanceFromRay = math.abs(
-        difference.x * rayDirection.y - difference.y * rayDirection.x
-      ) / directionMagnitude
-
-      if distanceOnRay > Epsilon && distanceFromRay <= Epsilon then
-        Some(distanceOnRay)
-      else None
+    if distanceOnRay > Epsilon && distanceFromRay <= Epsilon then
+      Some(distanceOnRay)
+    else None

@@ -201,3 +201,48 @@ class RayCastTest extends AnyFunSuite with Matchers:
 
     sameWaypoint(result, expectedWaypoints.head)
     || sameWaypoint(result, expectedWaypoints(1)) shouldBe true
+
+  test("hunter clearance should use the largest shape dimension"):
+    val hunter = makeMovingEntityRectangle(
+      id = "clearance-hunter",
+      width = 10.0,
+      height = 2.0
+    )
+
+    RayCast.hunterClearance(hunter) shouldBe 4.0
+
+  test("a waypoint touching the left scene boundary should be valid"):
+    RayCast.isValidWayPoint(
+      To,
+      From,
+      Vector2D(10.0, 10.0),
+      Vector2D(9.0, 0.0),
+      Vector2D(20.0, 20.0)
+    ) shouldBe true
+
+  test("a waypoint touching the top scene boundary should be valid"):
+    RayCast.isValidWayPoint(
+      To,
+      From,
+      Vector2D(10.0, 10.0),
+      Vector2D(0.0, 9.0),
+      Vector2D(20.0, 20.0)
+    ) shouldBe true
+
+  test("a waypoint touching the right scene boundary should be valid"):
+    RayCast.isValidWayPoint(
+      To,
+      From,
+      Vector2D(10.0, 10.0),
+      Vector2D(0.0, 0.0),
+      Vector2D(11.0, 20.0)
+    ) shouldBe true
+
+  test("a waypoint touching the bottom scene boundary should be valid"):
+    RayCast.isValidWayPoint(
+      To,
+      From,
+      Vector2D(10.0, 10.0),
+      Vector2D(0.0, 0.0),
+      Vector2D(20.0, 11.0)
+    ) shouldBe true

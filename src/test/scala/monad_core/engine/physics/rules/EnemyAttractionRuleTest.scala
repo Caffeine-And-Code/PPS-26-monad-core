@@ -192,3 +192,88 @@ class EnemyAttractionRuleTest
     resultEntity2.speed.value.y shouldBe expectedSpeed2.y +- Epsilon
     resultEntity1.speed.value.magnitude shouldBe entity1.speed.value.magnitude +- Epsilon
     resultEntity2.speed.value.magnitude shouldBe entity2.speed.value.magnitude +- Epsilon
+
+  test("orientSpeed should leave an entity unchanged when speed magnitude is zero"):
+    val entity = makeMovingEntityCircle(
+      id = "zero-speed",
+      position = Vector2D(5.0, 5.0),
+      speed = Vector2D(0.0, 0.0)
+    )
+
+    EnemyAttractionRule.orientSpeed(
+      entity,
+      entity.speed.value,
+      Vector2D(10.0, 5.0),
+      math.Pi
+    ) shouldBe entity
+
+  test("orientSpeed should leave an entity unchanged when target direction is zero"):
+    val entity = makeMovingEntityCircle(
+      id = "zero-target-direction",
+      position = Vector2D(5.0, 5.0),
+      speed = Vector2D(0.0, 2.0)
+    )
+
+    EnemyAttractionRule.orientSpeed(
+      entity,
+      entity.speed.value,
+      entity.position,
+      math.Pi
+    ) shouldBe entity
+
+  test("applyAttractionToEntity should report the entity id when speed is missing"):
+    val entity = addTeam(
+      makeFixedEntityCircle(
+        id = "fixed-without-speed",
+        position = Vector2D(5.0, 5.0)
+      ),
+      "teamA"
+    )
+    val enemy = addTeam(
+      makeFixedEntityCircle(
+        id = "enemy",
+        position = Vector2D(10.0, 10.0)
+      ),
+      "teamB"
+    )
+    val entityTeam = makeTeam(entity.teamId.value.value, Set(enemy.teamId.value.value))
+    val enemyTeam  = makeTeam(enemy.teamId.value.value)
+    val entities   = List(entity, enemy)
+
+    EnemyAttractionRule.applyAttractionToEntity(
+      entity,
+      entities,
+      List(entityTeam, enemyTeam),
+      VertexFinder(entities),
+      UpperLeftBound,
+      LowerRightBound,
+      DeltaTimeOneSecond
+    ) shouldBe Left(
+      PhysicsRuleError(
+        s"Entity ${entity.id} has no speed to apply enemy attraction"
+      )
+    )
+
+  test("the rule should not orient an entity whose speed magnitude is zero"):
+    val entity = addTeam(
+      makeMovingEntityCircle(
+        id = "zero-speed",
+        position = Vector2D(0.0, 0.0),
+        speed = Vector2D(0.0, 0.0)
+      ),
+      "teamA"
+    )
+    val enemy = addTeam(
+      makeFixedEntityCircle(
+        id = "enemy-zero-speed",
+        position = Vector2D(10.0, 10.0)
+      ),
+      "teamB"
+    )
+    val entityTeam = makeTeam(entity.teamId.value.value, Set(enemy.teamId.value.value))
+    val enemyTeam  = makeTeam(enemy.teamId.value.value)
+    val scene = sceneWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
+
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+
+    result.allEntities.find(_.id == entity.id).value.speed shouldBe entity.speed

@@ -2,7 +2,7 @@ package monad_core.engine.physics.utils
 
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, ZeroMassError}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRuleError, ZeroMassError}
 import monad_core.engine.helper.DummyEntityHelper.{
   makeFixedEntityCircle,
   makeMovingEntityCircle
@@ -198,3 +198,10 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     resultEntity1.speed.value shouldBe expectedSpeed1
     resultEntity2.position shouldBe expectedPosition2
     resultEntity2.speed.value shouldBe expectedSpeed2
+
+  test("resolveMultipleBounces should report missing entity speed"):
+    val entity = makeFixedEntityCircle(id = "fixed-without-speed")
+
+    CollisionResolver.resolveMultipleBounces(entity, List.empty) shouldBe Left(
+      PhysicsRuleError("Entity has no speed to resolve bounce")
+    )
