@@ -1,6 +1,6 @@
 package monad_core.simulator.infrastructure.ai.agent_evaluator.dataset
 
-import monad_core.engine.model.{EngineError, Entity, Scene, Surface, Team, Vector2D}
+import monad_core.engine.model.*
 import monad_core.simulator.application.ai.AgentEvaluationDataset
 import monad_core.simulator.domain.ai.agent_evaluation.{
   AgentEvaluationLanguage,

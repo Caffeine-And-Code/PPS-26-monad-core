@@ -1,8 +1,8 @@
 package monad_core.simulator.domain.ai
 
+import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.EitherValues.*
 
 class ConversationNotFoundErrorTest extends AnyFunSuite with Matchers {
 

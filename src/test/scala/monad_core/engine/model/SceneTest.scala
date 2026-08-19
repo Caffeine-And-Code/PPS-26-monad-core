@@ -1,18 +1,6 @@
-package monad_core.engine.core
+package monad_core.engine.model
 
-import monad_core.engine.core.{
-  CannotAddAlreadyPresentElementInMap,
-  CannotAddEntity,
-  CannotAddSurface,
-  CannotAddTeam,
-  CannotRemoveEntity,
-  CannotRemoveNonPresentElementFromMap,
-  CannotRemoveSurface,
-  CannotRemoveTeam,
-  EntityNotFound,
-  SurfaceNotFound,
-  TeamNotFound
-}
+import monad_core.engine.core.*
 import monad_core.engine.model.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

@@ -2,7 +2,7 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.Shape2D.Circle
 import monad_core.engine.model.{Shape2D, Vector2D}
-import PathCircle.*
+import monad_core.engine.physics.pathfinding.PathCircle.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

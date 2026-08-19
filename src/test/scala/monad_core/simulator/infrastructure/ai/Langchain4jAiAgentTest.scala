@@ -4,14 +4,7 @@ import dev.langchain4j.memory.ChatMemory
 import dev.langchain4j.model.output.TokenUsage
 import dev.langchain4j.service.Result
 import monad_core.simulator.application.ai.{AskAgentCommand, CleanHistoryCommand}
-import monad_core.simulator.domain.ai.{
-  AgentInfo,
-  AgentResponse,
-  ConversationId,
-  ConversationNotFoundError,
-  ConversationNotFoundErrorTest,
-  UserPrompt
-}
+import monad_core.simulator.domain.ai.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.*
 import org.scalatest.Inside

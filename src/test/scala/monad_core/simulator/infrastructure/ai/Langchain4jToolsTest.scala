@@ -1,6 +1,6 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.engine.model.{Entity, LocatableId, Scene, Surface, Team, TeamId, Vector2D}
+import monad_core.engine.model.*
 import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{
