@@ -1,19 +1,19 @@
 package monad_core.simulator.application.engine.world
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{LocatableId, Surface}
+import monad_core.engine.model.Surface
+import monad_core.simulator.errors.BaseError
 
 case class SaveSurfaceCommand(
-                               surface: Surface
-                             )
+    surface: Surface
+)
 
 private[world] trait SurfaceOperations:
   def getAllSurfaces: List[Surface]
 
-  def getSurface(id: LocatableId): Either[EngineError, Surface]
+  def getSurface(id: String): Either[BaseError, Surface]
 
-  def createSurface(command: SaveSurfaceCommand): Either[EngineError, World]
+  def createSurface(command: SaveSurfaceCommand): Either[BaseError, Unit]
 
-  def removeSurface(id: LocatableId): Either[EngineError, World]
+  def removeSurface(id: String): Either[BaseError, Unit]
 
-  def updateSurface(command: SaveSurfaceCommand): Either[EngineError, World]
+  def updateSurface(command: SaveSurfaceCommand): Either[BaseError, Unit]

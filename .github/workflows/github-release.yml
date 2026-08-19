@@ -3,75 +3,115 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  contents: write
+
 jobs:
-  generate-github-release:
+  check-version:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
+    outputs:
+      version: ${{ steps.version_check.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
       - name: Check and Validate Version
         id: version_check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            LOCAL_VERSION=$(grep "release_version" project/build.properties | cut -d'=' -f2 | xargs)
-            echo "File's local version: $LOCAL_VERSION"
+          LOCAL_VERSION=$(grep "release_version" project/build.properties | cut -d'=' -f2 | xargs)
+          echo "File's local version: $LOCAL_VERSION"
           
-            # Recupera l'ultimo tag. Se l'API fallisce (es. 404), la variabile conterrà una stringa vuota o l'errore
-            LATEST_RELEASE_JSON=$(gh api repos/${{ github.repository }}/releases/latest 2>/dev/null || echo '{"message": "Not Found"}')
-            
-            # Controlla se la release esiste davvero o se restituisce un errore/Not Found
-            if echo "$LATEST_RELEASE_JSON" | grep -q "Not Found"; then
-              echo "No previous release found on github. setting the last version tos 0.0.0"
-              LATEST_TAG="0.0.0"
-            else
-              LATEST_TAG=$(echo "$LATEST_RELEASE_JSON" | jq -r '.tag_name' | sed 's/^v//')
-            fi
+          LATEST_RELEASE_JSON=$(gh api repos/${{ github.repository }}/releases/latest 2>/dev/null || echo '{"message": "Not Found"}')
           
-            echo "Last release version on GitHub: $LATEST_TAG"
-            
-            if [ "$LOCAL_VERSION" = "$LATEST_TAG" ]; then
-              echo "✗ ERROR: The file's version ($LOCAL_VERSION) is equal to the last release version ($LATEST_TAG)!"
-              echo "Edit the build.properties to update the versione before merging in main"
-              exit 1
-            fi
-            
-            HIGHEST_VERSION=$(printf '%s\n%s' "$LOCAL_VERSION" "$LATEST_TAG" | sort -V | tail -n1)
-            
-            if [ "$HIGHEST_VERSION" != "$LOCAL_VERSION" ]; then
-              echo "✗ ERROR: The version in build.properties ($LOCAL_VERSION) is LOWER than the one of the latest release ($LATEST_TAG)!"
-              echo "Insert a valid and higher version than the current one."
-              exit 1
-            fi
-            
-            echo "✔ Executing release of v$LOCAL_VERSION"
-            echo "VERSION=$LOCAL_VERSION" >> $GITHUB_ENV
+          if echo "$LATEST_RELEASE_JSON" | grep -q "Not Found"; then
+            echo "ℹ️ No previous release found on github. setting the last version to 0.0.0"
+            LATEST_TAG="0.0.0"
+          else
+            LATEST_TAG=$(echo "$LATEST_RELEASE_JSON" | jq -r '.tag_name' | sed 's/^v//')
+          fi
+          
+          echo "Last release version on GitHub: $LATEST_TAG"
+          
+          if [ "$LOCAL_VERSION" = "$LATEST_TAG" ]; then
+            echo "❌ ERROR: The file's version ($LOCAL_VERSION) is equal to the last release version ($LATEST_TAG)!"
+            echo "Edit the build.properties to update the versione before merging in main"
+            exit 1
+          fi
+          
+          HIGHEST_VERSION=$(printf '%s\n%s' "$LOCAL_VERSION" "$LATEST_TAG" | sort -V | tail -n1)
+          
+          if [ "$HIGHEST_VERSION" != "$LOCAL_VERSION" ]; then
+            echo "❌ ERROR: The version in build.properties ($LOCAL_VERSION) is LOWER than the one of the latest release ($LATEST_TAG)!"
+            echo "Insert a valid and higher version than the current one."
+            exit 1
+          fi
+          
+          echo "✅ Executing release of v$LOCAL_VERSION"
+          echo "version=$LOCAL_VERSION" >> "$GITHUB_OUTPUT"
 
+  build:
+    needs: check-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            suffix: linux
+          - os: windows-latest
+            suffix: win
+          - os: macos-latest
+            suffix: mac
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ needs.check-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
-
       - name: Setup SBT
         uses: sbt/setup-sbt@v1
-
       - name: Build Fat JAR
         run: sbt assembly
+        shell: bash
+      - name: Rename JAR with OS suffix
+        shell: bash
+        run: |
+          SRC=$(find target/out/jvm -name "MonadCore2D-assembly-*.jar" | head -n1)
+          DEST="target/out/jvm/MonadCore2D-assembly-${VERSION}-${{ matrix.suffix }}.jar"
+          echo "Renaming $SRC -> $DEST"
+          mv "$SRC" "$DEST"
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar-${{ matrix.suffix }}
+          path: target/out/jvm/MonadCore2D-assembly-${{ env.VERSION }}-${{ matrix.suffix }}.jar
 
+  release:
+    needs: [ check-version, build ]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.check-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
       - name: Install Quarkdown
         run: curl -fsSL https://raw.githubusercontent.com/quarkdown-labs/get-quarkdown/refs/heads/main/install.sh | sudo env "PATH=$PATH" bash
-
       - name: Generate PDF Documentation
         run: quarkdown c docs/main.qd --pdf --out-name="documentation"
-
+      - name: Download all JAR artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: jar-*
+          path: release-assets
+          merge-multiple: true
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -81,5 +121,5 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            target/out/jvm/scala-3.8.4/monadcore2d/MonadCore2D-assembly-**.jar
+            release-assets/*.jar
             quarkdown-output/documentation.pdf

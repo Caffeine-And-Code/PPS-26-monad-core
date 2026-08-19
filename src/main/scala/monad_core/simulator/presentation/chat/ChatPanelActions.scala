@@ -29,3 +29,11 @@ object ChatPanelActions:
           case Left(error) =>
             waiting.toError(error.message)
       case _ => state
+
+  def onHistoryCleaned(
+      state: ChatPanelState,
+      result: Either[BaseError, Unit]
+  ): ChatPanelState =
+    result match
+      case Right(_)    => ChatPanelState.Ready(Vector.empty, state.prompt)
+      case Left(error) => state.toError(error.message)

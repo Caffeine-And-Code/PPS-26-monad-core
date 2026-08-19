@@ -1,0 +1,85 @@
+@font-face {
+    font-family: 'TestFont';
+    src: url('/fonts/Roboto-Regular.ttf');
+}
+
+.root {
+    -fx-font-family: 'TestFont';
+}
+
+.form-dialog-root {
+    -fx-background-color: #1a1b1f;
+}
+
+.form-dialog-grid {
+    -fx-background-color: #1a1b1f;
+}
+
+.form-field-label {
+    -fx-text-fill: #e4e4e7;
+    -fx-font-size: 13px;
+}
+
+.form-field-input {
+    -fx-background-color: #26272c;
+    -fx-text-fill: #e4e4e7;
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 6;
+    -fx-padding: 6 10 6 10;
+    -fx-prompt-text-fill: rgba(228, 228, 231, 0.4);
+}
+
+.form-field-input:focused {
+    -fx-border-color: rgba(80, 200, 120, 0.5);
+}
+
+.form-dialog-save {
+    -fx-background-color: rgba(80, 200, 120, 0.15);
+    -fx-text-fill: #50c878;
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(80, 200, 120, 0.4);
+    -fx-border-radius: 6;
+    -fx-padding: 6 16 6 16;
+    -fx-cursor: hand;
+}
+
+.form-dialog-save:hover {
+    -fx-background-color: rgba(80, 200, 120, 0.25);
+}
+
+.form-dialog-cancel {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e4e4e7;
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(255, 255, 255, 0.15);
+    -fx-border-radius: 6;
+    -fx-padding: 6 16 6 16;
+    -fx-cursor: hand;
+}
+
+.form-dialog-cancel:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+}
+
+.form-field-select {
+    -fx-background-color: #26272c;
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 6;
+}
+
+.form-field-select .list-cell,
+.form-field-select .combo-box-popup .list-cell {
+    -fx-text-fill: #e4e4e7;
+    -fx-background-color: #26272c;
+}
+
+.form-field-select .combo-box-popup .list-view {
+    -fx-background-color: #26272c;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+}
+
+.form-field-select .arrow-button {
+    -fx-background-color: transparent;
+}

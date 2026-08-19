@@ -1,0 +1,24 @@
+name: format-policy-check.yml
+on:
+  pull_request:
+    branches:
+      - main
+      - development
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Java and sbt Cache
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup SBT
+        uses: sbt/setup-sbt@v1
+
+      - name: Check Format Policy
+        run: sbt scalafmtCheckAll
