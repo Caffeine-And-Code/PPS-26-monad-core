@@ -9,9 +9,9 @@ import scalafx.scene.control.*
 private[forms] object FormFieldControlFactory:
 
   def create(
-              spec: FormFieldSpec,
-              onDependentSelectionChange: (SelectFieldSpec, String) => Unit
-            ): (Node, () => String) =
+      spec: FormFieldSpec,
+      onDependentSelectionChange: (SelectFieldSpec, String) => Unit
+  ): (Node, () => String) =
     spec match
       case tf: TextFieldSpec =>
         val field = new TextField {

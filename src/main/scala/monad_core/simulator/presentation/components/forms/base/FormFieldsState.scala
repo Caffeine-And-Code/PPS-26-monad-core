@@ -3,20 +3,20 @@ package monad_core.simulator.presentation.components.forms.base
 import scalafx.scene.Node
 
 final private[forms] case class FormFieldsState(
-                                                 activeInputs: Map[String, () => String] = Map.empty,
-                                                 dynamicNodes: Seq[Node] = Seq.empty
-                                               )
+    activeInputs: Map[String, () => String] = Map.empty,
+    dynamicNodes: Seq[Node] = Seq.empty
+)
 
 private[forms] object FormFieldsState:
 
   extension (state: FormFieldsState)
 
     def withField(
-                   id: String,
-                   getValue: () => String,
-                   nodes: Seq[Node],
-                   isDynamic: Boolean
-                 ): FormFieldsState =
+        id: String,
+        getValue: () => String,
+        nodes: Seq[Node],
+        isDynamic: Boolean
+    ): FormFieldsState =
       val updatedInputs = state.activeInputs + (id -> getValue)
       val updatedDynamicNodes =
         if isDynamic then state.dynamicNodes ++ nodes else state.dynamicNodes

@@ -13,11 +13,11 @@ import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
 final case class ChooseTeamFormDialogProps(
-                                            teams: Seq[Team],
-                                            onSubmit: Team => Unit,
-                                            onError: BaseError => Unit,
-                                            anchorNode: Option[Node] = None
-                                          )
+    teams: Seq[Team],
+    onSubmit: Team => Unit,
+    onError: BaseError => Unit,
+    anchorNode: Option[Node] = None
+)
 
 object ChooseTeamFormDialog:
 
@@ -44,8 +44,8 @@ object ChooseTeamFormDialog:
         owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
         onSubmit = values =>
           viewModel.resolveSelectedTeam(values).foreach {
-            case Right(team)  => props.onSubmit(team)
-            case Left(error)  => props.onError(error)
+            case Right(team) => props.onSubmit(team)
+            case Left(error) => props.onError(error)
           }
       )
     )
