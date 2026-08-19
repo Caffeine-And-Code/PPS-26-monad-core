@@ -11,15 +11,15 @@ class PhysicsRuleTest extends AnyFunSuite with Matchers:
       override val RuleId: String = "rule1"
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     val rule2: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule1"
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     rule1 == rule2 shouldBe true
 
@@ -29,15 +29,15 @@ class PhysicsRuleTest extends AnyFunSuite with Matchers:
 
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     val rule2: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule2"
 
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     rule1 == rule2 shouldBe false

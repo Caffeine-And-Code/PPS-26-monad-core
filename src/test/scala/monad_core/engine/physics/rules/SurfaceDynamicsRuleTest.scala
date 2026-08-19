@@ -38,7 +38,7 @@ class SurfaceDynamicsRuleTest
   test("the rule should return the unchanged scene when there are no entities"):
     val scene = sceneWithSurfaces(List(), List())
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result shouldBe scene
 
@@ -63,7 +63,7 @@ class SurfaceDynamicsRuleTest
       contains = Map((fixedEntity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == fixedEntity.id).value
 
@@ -91,7 +91,7 @@ class SurfaceDynamicsRuleTest
       contains = Map((entity.id.value, surface.id.value) -> false)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -115,7 +115,7 @@ class SurfaceDynamicsRuleTest
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -145,7 +145,7 @@ class SurfaceDynamicsRuleTest
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -179,7 +179,7 @@ class SurfaceDynamicsRuleTest
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -219,7 +219,7 @@ class SurfaceDynamicsRuleTest
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -259,7 +259,7 @@ class SurfaceDynamicsRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value

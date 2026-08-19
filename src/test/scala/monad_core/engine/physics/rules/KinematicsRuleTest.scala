@@ -38,7 +38,7 @@ class KinematicsRuleTest
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
-    result.value shouldBe scene
+    result.value.state shouldBe scene
 
   test("the rule should not update the scene if the entity has no speed (fixed entity)"):
     val fixedEntity = makeFixedEntityCircle()
@@ -47,7 +47,7 @@ class KinematicsRuleTest
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
-    val resultEntity = result.value.allEntities.find(_.id == fixedEntity.id).value
+    val resultEntity = result.value.state.allEntities.find(_.id == fixedEntity.id).value
 
     resultEntity.position shouldBe fixedEntity.position
 
@@ -71,7 +71,7 @@ class KinematicsRuleTest
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
-    val resultEntity = result.value.allEntities.find(_.id == movingEntity.id).value
+    val resultEntity = result.value.state.allEntities.find(_.id == movingEntity.id).value
 
     resultEntity.position shouldBe expectedPosition
 
@@ -137,8 +137,8 @@ class KinematicsRuleTest
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
-    val resultEntity1 = result.value.allEntities.find(_.id == entity1.id).value
-    val resultEntity2 = result.value.allEntities.find(_.id == entity2.id).value
+    val resultEntity1 = result.value.state.allEntities.find(_.id == entity1.id).value
+    val resultEntity2 = result.value.state.allEntities.find(_.id == entity2.id).value
 
     resultEntity1.position shouldBe expectedPosition1
     resultEntity2.position shouldBe expectedPosition2

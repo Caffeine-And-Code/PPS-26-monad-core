@@ -3,7 +3,12 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.{+, Entity, Surface}
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{
+  PhysicsDomainError,
+  PhysicsError,
+  PhysicsRule,
+  PhysicsRuleResult
+}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object SurfaceDynamicsRule:
@@ -16,7 +21,7 @@ private[physics] object SurfaceDynamicsRule:
 
     override def apply(scene: State, dt: Long)(using
         collisionDetector: CollisionDetector
-    ): Either[PhysicsError, State] =
+    ): Either[PhysicsError, PhysicsRuleResult] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
@@ -27,7 +32,7 @@ private[physics] object SurfaceDynamicsRule:
         updatedEntities <- applySurfacesToEntities(entitiesInsideSurfaces, dt)
 
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
-      yield updatedScene
+      yield PhysicsRuleResult(updatedScene)
 
   private def findEntitiesInsideSurfaces(entities: List[Entity], surfaces: List[Surface])(using
       collisionDetector: CollisionDetector

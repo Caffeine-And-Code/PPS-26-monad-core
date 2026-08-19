@@ -1,15 +1,27 @@
 package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.events.Event.EntityCollisionDetectedEvent
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{EngineError, Entity, Vector2D}
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{
+  PhysicsDomainError,
+  PhysicsError,
+  PhysicsRule,
+  PhysicsRuleResult
+}
 import monad_core.engine.physics.pathfinding.SizeHelper
 import monad_core.engine.physics.utils.*
 
 private[physics] object BorderContactRule:
   private val Id = "border-contact"
+
+  final private case class DetectedBorderCollision(
+      entity: Entity,
+      wall: Entity,
+      collision: Collision
+  )
 
   given borderContactRule: PhysicsRule with
 
@@ -17,33 +29,60 @@ private[physics] object BorderContactRule:
 
     override def apply(scene: State, dt: Long)(using
         detector: CollisionDetector
-    ): Either[PhysicsError, State] =
+    ): Either[PhysicsError, PhysicsRuleResult] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
 
-        activeCollisions <- findCollisions(
+        detectedCollisions <- findCollisions(
           entities,
           scene.UpperLeftCorner,
           scene.LowerRightCorner
         ).left.map(PhysicsDomainError.apply)
+        activeCollisions = toCollisionMap(entities, detectedCollisions)
 
         updatedEntities <- CollisionResolver(activeCollisions)
 
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
-      yield updatedScene
+      yield PhysicsRuleResult(
+        state = updatedScene,
+        events = detectedCollisions.map(toEvent)
+      )
 
     private def findCollisions(
         entities: List[Entity],
         upperLeft: Vector2D,
         lowerRight: Vector2D
-    )(using detector: CollisionDetector): Either[EngineError, CollisionMap] =
-      entities.foldLeft(Right(Map.empty): Either[EngineError, CollisionMap]) { case (acc, entity) =>
-        for
-          collisions <- collisionWithBorder(entity, upperLeft, lowerRight)
-          result     <- acc.map(_.updated(entity, collisions))
-        yield result
+    )(using detector: CollisionDetector): Either[EngineError, Vector[DetectedBorderCollision]] =
+      entities.foldLeft(
+        Right(Vector.empty): Either[EngineError, Vector[DetectedBorderCollision]]
+      ) { case (acc, entity) =>
+        acc.flatMap { detected =>
+          collisionWithBorder(entity, upperLeft, lowerRight).map { collisions =>
+            detected ++ collisions.map { case (wall, collision) =>
+              DetectedBorderCollision(entity, wall, collision)
+            }
+          }
+        }
       }
+
+    private def toCollisionMap(
+        entities: List[Entity],
+        collisions: Vector[DetectedBorderCollision]
+    ): CollisionMap =
+      entities.map { entity =>
+        val entityCollisions = collisions.collect {
+          case DetectedBorderCollision(`entity`, wall, collision) => wall -> collision
+        }.toList
+        entity -> entityCollisions
+      }.toMap
+
+    private def toEvent(detected: DetectedBorderCollision): EntityCollisionDetectedEvent =
+      EntityCollisionDetectedEvent(
+        entityId = detected.entity.id,
+        modelCollidedWith = detected.wall,
+        collisionData = detected.collision
+      )
 
     private def collisionWithBorder(
         entity: Entity,

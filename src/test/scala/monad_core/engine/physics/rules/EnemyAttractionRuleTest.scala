@@ -59,7 +59,7 @@ class EnemyAttractionRuleTest
   test("the rule should return the unchanged scene when there are no entities"):
     val scene = sceneWithTeams(List(), List())
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result shouldBe scene
 
@@ -77,7 +77,7 @@ class EnemyAttractionRuleTest
 
     val scene = sceneWithTeams(List(entity), List(entityTeam))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -105,7 +105,7 @@ class EnemyAttractionRuleTest
 
     val scene = sceneWithTeams(List(fixedEntity, enemy), List(fixedEntityTeam, enemyTeam))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == fixedEntity.id).value
 
@@ -137,7 +137,7 @@ class EnemyAttractionRuleTest
 
     val scene = sceneWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
-    val result       = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
     resultEntity.speed.value shouldBe expectedSpeed
@@ -178,7 +178,7 @@ class EnemyAttractionRuleTest
 
     val scene = sceneWithTeams(List(entity1, entity2, enemy), List(entityTeam, enemyTeam))
 
-    val result        = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value
 

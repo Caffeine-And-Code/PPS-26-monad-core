@@ -3,7 +3,7 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
@@ -17,7 +17,7 @@ private[physics] object EnemyAttractionRule:
 
     override def apply(scene: State, dt: Long)(using
         detector: CollisionDetector
-    ): Either[PhysicsError, State] =
+    ): Either[PhysicsError, PhysicsRuleResult] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities
@@ -33,7 +33,7 @@ private[physics] object EnemyAttractionRule:
           scene.LowerRightCorner
         )
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
-      yield updatedScene
+      yield PhysicsRuleResult(updatedScene)
 
     private def applyEnemyAttraction(
         entities: List[Entity],
