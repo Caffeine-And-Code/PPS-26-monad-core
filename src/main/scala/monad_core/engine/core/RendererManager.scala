@@ -2,30 +2,34 @@ package monad_core.engine.core
 
 import monad_core.engine.core.traits.{RenderEngine, State}
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.TeamId
-import monad_core.engine.public_api.Painter
-import scalafx.scene.paint.Color
+import monad_core.engine.model.{EngineColor, EngineError, TeamId}
+import monad_core.engine.simulator.Painter
 
 object RendererManager extends RenderEngine:
-  override def render(state: State, alpha: Double)(using painter: Painter): Unit =
-    for (surface <- state.allSurfaces)
-      surface.shape match
-        case _: Circle => painter.drawCircle(surface, painter.baseColor)
-        case _: Rectangle => painter.drawRectangle(surface, painter.baseColor)
 
-    val teamsMap: Map[TeamId, Color] = Map.from(
-      state.allTeams.map(
-        team => (team.id, painter.teamIdColorRelation(team.id))
-      )
-    )
+  override def render(state: State)(using
+      painter: Painter
+  ): Either[EngineError, Unit] =
+    for
+      baseColor <- painter.baseColor
+      teamsMap <- state.allTeams.foldLeft[Either[EngineError, Map[TeamId, EngineColor]]](
+        Right(Map.empty)
+      ) { (acc, team) =>
+        for
+          map   <- acc
+          color <- painter.teamIdColorRelation(team.id)
+        yield map + (team.id -> color)
+      }
+    yield
+      for (surface <- state.allSurfaces)
+        surface.shape match
+          case _: Circle    => painter.drawCircle(surface, baseColor)
+          case _: Rectangle => painter.drawRectangle(surface, baseColor)
 
-    def getTeamColorOrDefault(optionalTeamId: Option[TeamId]): Color =
-      if optionalTeamId.isEmpty then
-        painter.baseColor
-      else
-        teamsMap.getOrElse(optionalTeamId.get, painter.baseColor)
+      def getTeamColorOrDefault(optionalTeamId: Option[TeamId]): EngineColor =
+        optionalTeamId.flatMap(teamsMap.get).getOrElse(baseColor)
 
-    for (entity <- state.allEntities)
-      entity.shape match
-        case _: Circle => painter.drawCircle(entity, getTeamColorOrDefault(entity.teamId))
-        case _: Rectangle => painter.drawRectangle(entity, getTeamColorOrDefault(entity.teamId))
+      for (entity <- state.allEntities)
+        entity.shape match
+          case _: Circle    => painter.drawCircle(entity, getTeamColorOrDefault(entity.teamId))
+          case _: Rectangle => painter.drawRectangle(entity, getTeamColorOrDefault(entity.teamId))

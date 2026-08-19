@@ -21,7 +21,7 @@ class ContainsTest extends AnyFunSuite with Inside with Matchers with MockFactor
     )
 
     forAll(cases): (position, vector, expected) =>
-      val circle = Shape2D.circle(10).value
+      val circle                 = Shape2D.circle(10).value
       val placed: Placed[Circle] = Placed(position, circle)
 
       val containsInstance = mock[Contains[Circle]]

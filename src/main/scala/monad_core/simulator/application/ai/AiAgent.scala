@@ -6,17 +6,17 @@ import monad_core.simulator.errors.BaseError
 import scala.concurrent.Future
 
 case class AskAgentCommand(
-                          conversationId: ConversationId,
-                          prompt: UserPrompt,
-                          )
+    conversationId: ConversationId,
+    prompt: UserPrompt
+)
 
 case class CleanHistoryCommand(
-                              conversationId: ConversationId
-                              )
+    conversationId: ConversationId
+)
 
-trait AiAgent :
+trait AiAgent:
   def ask(command: AskAgentCommand): Future[Either[AgentResponseError, AgentResponse]]
 
-  val agentInfo: AgentInfo
+  def getAgentInfo: AgentInfo
 
   def cleanHistory(command: CleanHistoryCommand): Either[BaseError, Unit]

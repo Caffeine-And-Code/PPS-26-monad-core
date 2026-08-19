@@ -2,8 +2,8 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -11,8 +11,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.*
 
-class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with DialogTesting with FormTesting:
-  val TeamNameFieldIndex: Int = 0
+class SaveTeamFormDialogTest
+    extends AnyFunSuite
+    with Inside
+    with Matchers
+    with DialogTesting
+    with FormTesting:
+  val TeamNameFieldIndex: Int      = 0
   val EnemiesMultiSelectIndex: Int = 0
 
   private val possibleEnemies: Seq[Team] = Seq(
@@ -78,7 +83,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
 
   test("SaveTeamFormDialog invokes onSubmit with correct team name and enemies"):
     var submittedTeam: Option[Team] = None
-    val expectedName = "NewTeam"
+    val expectedName                = "NewTeam"
 
     val props = SaveTeamFormDialogProps(
       title = "Add Team Test",
@@ -103,7 +108,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
     providedTeam.enemies should be(Set(possibleEnemies.head.id, possibleEnemies(1).id))
 
   test("SaveTeamFormDialog invokes onError when form values are invalid"):
-    var capturedError: Option[EngineError] = None
+    var capturedError: Option[BaseError] = None
 
     val props = SaveTeamFormDialogProps(
       title = "Invalid Team Test",
@@ -134,7 +139,7 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
     onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
       assertMatchesVisualSnapshot("edit_team_form_dialog", rootNode, maxDiffPercentage = 10.0)
@@ -170,10 +175,14 @@ class SaveTeamFormDialogTest extends AnyFunSuite with Inside with Matchers with 
     onFxThread {
       getOrFail(SaveTeamFormDialog.show(props))
 
-      val activeStage = getRequiredActiveStage
+      val activeStage                  = getRequiredActiveStage
       val rootNode: scalafx.scene.Node = activeStage.getScene.getRoot
 
-      assertMatchesVisualSnapshot("save_team_form_dialog_initial", rootNode, maxDiffPercentage = 9.2)
+      assertMatchesVisualSnapshot(
+        "save_team_form_dialog_initial",
+        rootNode,
+        maxDiffPercentage = 9.2
+      )
     }
 
   test("SaveTeamFormDialog matches architectural snapshot on creation"):

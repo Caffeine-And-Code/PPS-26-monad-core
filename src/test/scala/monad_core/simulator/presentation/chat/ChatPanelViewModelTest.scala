@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.chat
 
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
-import monad_core.simulator.domain.ai.{AgentResponse, AgentResponseError, ConversationId, ConversationNotFoundError, UserPrompt}
+import monad_core.simulator.domain.ai.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite
@@ -13,15 +13,15 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
 
   given ExecutionContext = ExecutionContext.parasitic
 
-  private val validPrompt = "Hello"
-  private val validAnswer = AgentResponse("Hi!")
-  private val emptyPrompt = ""
-  private val userMessage = ChatMessage(validPrompt, MessageAuthor.User)
-  private val conversationId = ConversationId.from("chat1").value
+  private val validPrompt                             = "Hello"
+  private val validAnswer                             = AgentResponse("Hi!")
+  private val emptyPrompt                             = ""
+  private val userMessage                             = ChatMessage(validPrompt, MessageAuthor.User)
+  private val conversationId                          = ConversationId.from("chat1").value
   private val executeInUIThread: (() => Unit) => Unit = action => action()
 
   test("onPromptChange changes the state containing the new prompt"):
-    val aiAgent = mock[AiAgent]
+    val aiAgent   = mock[AiAgent]
     val viewModel = new ChatPanelViewModel(aiAgent, executeInUIThread)
 
     viewModel.onPromptChange(validPrompt)
@@ -30,8 +30,9 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("onSubmit change state to waiting and asks the agent once"):
     val pendingResponse = Promise[Either[AgentResponseError, AgentResponse]]()
-    val aiAgent = mock[AiAgent]
-    val askAgentCommand = AskAgentCommand(ConversationId.from("chat1").value, UserPrompt.from(validPrompt).value)
+    val aiAgent         = mock[AiAgent]
+    val askAgentCommand =
+      AskAgentCommand(ConversationId.from("chat1").value, UserPrompt.from(validPrompt).value)
     aiAgent.ask.expects(askAgentCommand).returning(pendingResponse.future).once()
     val viewModel = new ChatPanelViewModel(aiAgent, executeInUIThread)
     viewModel.onPromptChange(validPrompt)
@@ -42,10 +43,11 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("the agent response is published using the UI thread"):
     val pendingResponse = Promise[Either[AgentResponseError, AgentResponse]]()
-    val aiAgent = mock[AiAgent]
-    val uiExecutor = mockFunction[() => Unit, Unit]
-    val viewModel = new ChatPanelViewModel(aiAgent, uiExecutor)
-    val askAgentCommand = AskAgentCommand(ConversationId.from("chat1").value, UserPrompt.from(validPrompt).value)
+    val aiAgent         = mock[AiAgent]
+    val uiExecutor      = mockFunction[() => Unit, Unit]
+    val viewModel       = new ChatPanelViewModel(aiAgent, uiExecutor)
+    val askAgentCommand =
+      AskAgentCommand(ConversationId.from("chat1").value, UserPrompt.from(validPrompt).value)
 
     aiAgent.ask.expects(askAgentCommand).returning(pendingResponse.future).once()
     uiExecutor.expects(*).onCall((action: () => Unit) => action()).once()
@@ -61,11 +63,12 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
     )
 
   test("when agent response fails the states become an error state"):
-    val error = AgentResponseError("Agent unavailable")
+    val error           = AgentResponseError("Agent unavailable")
     val pendingResponse = Promise[Either[AgentResponseError, AgentResponse]]()
-    val aiAgent = mock[AiAgent]
-    val viewModel = new ChatPanelViewModel(aiAgent, executeInUIThread)
-    val askAgentCommand = AskAgentCommand(ConversationId.from("chat1").value, UserPrompt.from(validPrompt).value)
+    val aiAgent         = mock[AiAgent]
+    val viewModel       = new ChatPanelViewModel(aiAgent, executeInUIThread)
+    val askAgentCommand =
+      AskAgentCommand(ConversationId.from("chat1").value, UserPrompt.from(validPrompt).value)
 
     aiAgent.ask.expects(askAgentCommand).returning(pendingResponse.future).once()
 
@@ -81,7 +84,7 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
     )
 
   test("onClearHistory cleans the agent history and removes all messages"):
-    val aiAgent = mock[AiAgent]
+    val aiAgent   = mock[AiAgent]
     val viewModel = new ChatPanelViewModel(aiAgent, executeInUIThread)
     viewModel.state.value = ChatPanelState.Ready(Seq(userMessage), validPrompt)
 
@@ -104,8 +107,8 @@ class ChatPanelViewModelTest extends AnyFunSuite with Matchers with MockFactory:
     viewModel.state.value shouldBe ChatPanelState.initial
 
   test("onClearHistory preserves messages when ai agent clean history fails"):
-    val error = ConversationNotFoundError(conversationId)
-    val aiAgent = mock[AiAgent]
+    val error     = ConversationNotFoundError(conversationId)
+    val aiAgent   = mock[AiAgent]
     val viewModel = new ChatPanelViewModel(aiAgent, executeInUIThread)
     viewModel.state.value = ChatPanelState.Ready(Seq(userMessage), validPrompt)
 

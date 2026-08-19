@@ -21,16 +21,30 @@ import scalafx.stage.Stage
 import scala.jdk.CollectionConverters.*
 
 class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTesting:
-  private case class MissingIcon() extends Image(fileName = "does-not-exist.png", width = 16, height = 16)
+
+  private case class MissingIcon()
+      extends Image(fileName = "does-not-exist.png", width = 16, height = 16)
 
   private def simulateClick(node: scalafx.scene.Node): Unit =
     val event = new MouseEvent(
       MouseEvent.MOUSE_CLICKED,
-      0, 0, 0, 0,
-      MouseButton.PRIMARY, 1,
-      false, false, false, false,
-      true, false, false,
-      true, false, false, null
+      0,
+      0,
+      0,
+      0,
+      MouseButton.PRIMARY,
+      1,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      null
     )
     Event.fireEvent(node.delegate, event)
 
@@ -54,7 +68,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
   test("toMenuItem should invoke onSelect when the item's action fires"):
     onFxThread {
       var selected = false
-      val item = MenuButtonItem(label = "My Action", onSelect = () => selected = true)
+      val item     = MenuButtonItem(label = "My Action", onSelect = () => selected = true)
 
       item.toMenuItem.fire()
 
@@ -63,7 +77,8 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
 
   test("toMenuItem should reflect the initial isDisabled value"):
     onFxThread {
-      val disabledItem = MenuButtonItem(label = "Disabled", onSelect = () => (), isDisabled = BooleanProperty(true))
+      val disabledItem =
+        MenuButtonItem(label = "Disabled", onSelect = () => (), isDisabled = BooleanProperty(true))
       val enabledItem = MenuButtonItem(label = "Enabled", onSelect = () => ())
 
       disabledItem.toMenuItem.disable.value should be(true)
@@ -97,7 +112,9 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
         case Right(_) => ()
     }
 
-  test("MenuButton.build should wrap the underlying error in CannotBuildButton when the default image cannot be loaded"):
+  test(
+    "MenuButton.build should wrap the underlying error in CannotBuildButton when the default image cannot be loaded"
+  ):
     onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
@@ -112,7 +129,9 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
           error.buttonId should be(MenuButton.toString)
     }
 
-  test("MenuButton.build should wrap the underlying error in CannotBuildButton when the active image cannot be loaded"):
+  test(
+    "MenuButton.build should wrap the underlying error in CannotBuildButton when the active image cannot be loaded"
+  ):
     onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
@@ -136,7 +155,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
         items = Seq(MenuButtonItem(label = "Item 1", onSelect = () => ()))
       )
 
-      val btn = MenuButton.build(props).value
+      val btn   = MenuButton.build(props).value
       val stage = showInStage(btn)
 
       simulateClick(btn)
@@ -156,13 +175,13 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
         items = Seq(MenuButtonItem(label = "Item 1", onSelect = () => selected = true))
       )
 
-      val btn = MenuButton.build(props).value
+      val btn   = MenuButton.build(props).value
       val stage = showInStage(btn)
 
       simulateClick(btn)
 
       val contextMenu = findOpenContextMenu().value
-      val menuItem = contextMenu.getItems.asScala.find(_.getText == "Item 1").value
+      val menuItem    = contextMenu.getItems.asScala.find(_.getText == "Item 1").value
 
       menuItem.fire()
 
@@ -171,18 +190,24 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
       stage.close()
     }
 
-  test("MenuButton should build disabled menu items when the corresponding MenuButtonItem is disabled"):
+  test(
+    "MenuButton should build disabled menu items when the corresponding MenuButtonItem is disabled"
+  ):
     onFxThread {
       val props = MenuButtonProps(
         imageConfig = BaseImageConfig(),
         defaultImage = Image.ToolsIcon(),
         items = Seq(
           MenuButtonItem(label = "Enabled", onSelect = () => ()),
-          MenuButtonItem(label = "Disabled", onSelect = () => (), isDisabled = BooleanProperty(true))
+          MenuButtonItem(
+            label = "Disabled",
+            onSelect = () => (),
+            isDisabled = BooleanProperty(true)
+          )
         )
       )
 
-      val btn = MenuButton.build(props).value
+      val btn   = MenuButton.build(props).value
       val stage = showInStage(btn)
 
       simulateClick(btn)
@@ -220,7 +245,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
         )
       )
 
-      val btn = MenuButton.build(props).value
+      val btn   = MenuButton.build(props).value
       val stage = showInStage(btn)
 
       assertMatchesVisualSnapshot("menu_button_initial", btn, maxDiffPercentage = 5.0)
@@ -239,7 +264,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
         )
       )
 
-      val btn = MenuButton.build(props).value
+      val btn   = MenuButton.build(props).value
       val stage = showInStage(btn)
 
       assertMatchesArchitecturalSnapshotOfStage("menu_button_initial", stage)

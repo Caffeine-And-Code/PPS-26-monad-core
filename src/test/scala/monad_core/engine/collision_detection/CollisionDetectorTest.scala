@@ -28,12 +28,14 @@ class CollisionDetectorTest extends AnyFunSuite with Matchers with MockFactory:
 
     result shouldBe expectedCollision
 
-  test("isInside delegates to the shape containment typeclass using the container shape and target position"):
-    val target = Entity.circle("en1", Vector2D(1, 2), 1).value
+  test(
+    "isInside delegates to the shape containment typeclass using the container shape and target position"
+  ):
+    val target    = Entity.circle("en1", Vector2D(1, 2), 1).value
     val container = Surface.rectangle("sur1", Vector2D(0, 0), 10, 10).value
-    val collides = mock[Collides[Shape2D, Shape2D]]
-    val contains = mock[Contains[Shape2D]]
-    val detector = CollisionDetector.fromGeometry(using collides, contains)
+    val collides  = mock[Collides[Shape2D, Shape2D]]
+    val contains  = mock[Contains[Shape2D]]
+    val detector  = CollisionDetector.fromGeometry(using collides, contains)
 
     contains.checkIfContains
       .expects(container.placed, target.position)

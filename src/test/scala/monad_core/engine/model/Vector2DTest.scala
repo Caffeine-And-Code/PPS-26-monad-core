@@ -94,3 +94,4 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     val result = point.rotated(90)
     result.x shouldBe 0.0 +- 0.1
     result.y shouldBe 2.0 +- 0.1
+

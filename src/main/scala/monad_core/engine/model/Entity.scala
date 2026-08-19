@@ -32,17 +32,17 @@ object Entity:
 
   extension (entity: Entity)
 
-    def moveTo(newPosition: Vector2D): Either[EngineError, Entity] =
-      validateAndReturn(entity.copy(position = newPosition))
+    def moveTo(newPosition: Vector2D): Entity =
+      entity.copy(position = newPosition)
 
-    def moveBy(space: Vector2D): Either[EngineError, Entity] =
-      validateAndReturn(entity.copy(position = entity.position + space))
+    def moveBy(space: Vector2D): Entity =
+      entity.copy(position = entity.position + space)
 
-    def rotateTo(rotation: Double): Either[EngineError, Entity] =
-      validateAndReturn(entity.copy(rotation = rotation))
+    def rotateTo(rotation: Double): Entity =
+      entity.copy(rotation = rotation)
 
-    def withSpeed(speed: Vector2D): Either[EngineError, Entity] =
-      validateAndReturn(entity.copy(speed = Some(speed)))
+    def withSpeed(speed: Vector2D): Entity =
+      entity.copy(speed = Some(speed))
 
     def withoutSpeed: Entity =
       entity.copy(speed = None)
@@ -64,7 +64,7 @@ object Entity:
 
     def applyDamage(damage: Int): Either[EngineError, Entity] =
       entity.health match
-        case None => Left(CannotApplyDamageToNoneHealthEntity())
+        case None         => Left(CannotApplyDamageToNoneHealthEntity())
         case Some(health) => (health - damage).map(health => entity.copy(health = Some(health)))
 
     def withTeamId(teamId: String): Either[EngineError, Entity] =

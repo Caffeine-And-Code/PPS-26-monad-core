@@ -1,3 +1,14 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+lazy val releaseVersion: String = {
+  val props = new Properties()
+  props.load(new FileInputStream("project/build.properties"))
+  props.getProperty("release_version")
+}
+
+ThisBuild / version := releaseVersion
+
 scalaVersion := "3.8.4"
 
 // Classify the os to choose the building dependencies
@@ -94,7 +105,7 @@ lazy val root = rootProject
       }
     }
   ).settings(
-    assembly / mainClass := Some("Launcher"),
+    assembly / mainClass := Some("monad_core.Launcher"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList("META-INF", _*) => MergeStrategy.discard
@@ -105,4 +116,12 @@ lazy val root = rootProject
 
 ThisBuild / scalacOptions ++= Seq(
   "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
+)
+
+strykerMutate := Seq(
+  "src/main/scala/monad_core/engine/**/*.scala"
+)
+
+strykerTestFilter := Seq(
+  "monad_core.engine.*"
 )

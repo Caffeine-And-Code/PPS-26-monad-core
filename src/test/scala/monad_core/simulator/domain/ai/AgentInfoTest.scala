@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 
 class AgentInfoTest extends AnyFunSuite with Matchers with Inside:
 
-  private val provider = "Ollama"
+  private val provider  = "Ollama"
   private val modelName = "llama:20b"
 
   test("can create an agent info"):

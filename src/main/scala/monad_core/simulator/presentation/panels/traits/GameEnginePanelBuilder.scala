@@ -1,8 +1,7 @@
 package monad_core.simulator.presentation.panels.traits
 
-import monad_core.engine.errors.EngineError
-import monad_core.simulator.presentation.resources.ImageConfigRecord
+import monad_core.simulator.errors.BaseError
 import scalafx.scene.layout.VBox
 
 trait GameEnginePanelBuilder:
-  def build(): Either[EngineError, VBox]
+  def build(): Either[BaseError, VBox]

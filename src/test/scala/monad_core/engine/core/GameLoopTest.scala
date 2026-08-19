@@ -1,288 +1,338 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
-import monad_core.engine.core.{EditMode, GameLoop, SimulationMode}
-import monad_core.engine.public_api.Painter
+import helpers.arrangers.EngineColorArranger
+import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
+import monad_core.engine.core.traits.{PhysicsEngine, State}
+import monad_core.engine.core.{
+  GameLoop,
+  InvalidAccumulator,
+  InvalidLastTime,
+  InvalidMaxFrameTime,
+  InvalidMaxFrameTimeTickTimeRatio,
+  InvalidTickTime,
+  LoopMode
+}
+import monad_core.engine.simulator.Painter
+import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
+import monad_core.engine.core.traits.PhysicsEngine
+import monad_core.engine.helper.MockSceneHelper
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
+class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockSceneHelper:
 
-  val DefaultTickTime = 16_000_000L
-  val DefaultMaxFrameTime = 250_000_000L
-  val MockState: State = mock[State]
-  val MockPhysics: PhysicsEngine = mock[PhysicsEngine]
-  val MockRender: RenderEngine = mock[RenderEngine]
-  val InitialTime = 0L
+  val DefaultTickTime        = 16_000_000L
+  val DefaultMaxFrameTime    = 250_000_000L
+  val MockState: State       = sceneWithEntities(List.empty)
+  val InitialTime            = 0L
+  val StandardLoop: GameLoop = GameLoop().value
+
+  given MockPhysics: PhysicsEngine = mock[PhysicsEngine]
+  given MockPainter: Painter       = mock[Painter]
+
+  def setupPainterInteractions(painter: Painter): Unit =
+    (() => painter.baseColor)
+      .expects()
+      .returns(Right(EngineColorArranger.arrangeRed()))
+      .anyNumberOfTimes()
 
   test("a game loop should start in edit mode by default"):
-    val gameLoop = GameLoop()
-
-    gameLoop.mode shouldBe EditMode
+    StandardLoop.mode shouldBe LoopMode.EditMode
 
   test("a game loop should be able to switch between edit mode and simulation mode"):
-    val gameLoop = GameLoop()
-
-    val simulationLoop = gameLoop.withMode(SimulationMode)
+    val simulationLoop = StandardLoop.withMode(SimulationMode)
 
     simulationLoop.mode shouldBe SimulationMode
 
   test("a game loop should be able to switch between simulation mode and edit mode"):
-    val gameLoop = GameLoop()
-
-    val simulationLoop = gameLoop.withMode(SimulationMode)
-    val editLoop = simulationLoop.withMode(EditMode)
+    val simulationLoop = StandardLoop.withMode(SimulationMode)
+    val editLoop       = simulationLoop.withMode(EditMode)
 
     editLoop.mode shouldBe EditMode
 
   test("our game loop should have a default tick period of 60Hz"):
-    val gameLoop = GameLoop()
+    StandardLoop.tickTime shouldBe DefaultTickTime
 
-    gameLoop.tickTime shouldBe DefaultTickTime
+  test("our game loop should have a default max frame time"):
+    StandardLoop.maxFrameTime shouldBe DefaultMaxFrameTime
 
   test("a game loop should allow configuring a custom tick time"):
-    val gameLoop = GameLoop()
     val differentTickTime = 10_000_000L
 
-    val differentTickLoop = gameLoop.withTickTime(differentTickTime)
+    val differentTickLoop = StandardLoop.withTickTime(differentTickTime).value
 
     differentTickLoop.tickTime shouldBe differentTickTime
 
-  test("a game loop should not be running by default"):
-    val gameLoop = GameLoop()
+  test(
+    "a game loop should reject non-positive values or values exceeding max frame time for tick time"
+  ):
+    StandardLoop.withTickTime(0L) shouldBe Left(InvalidTickTime(0L))
+    StandardLoop.withTickTime(DefaultMaxFrameTime + 1L) shouldBe Left(
+      InvalidMaxFrameTimeTickTimeRatio(DefaultMaxFrameTime, DefaultMaxFrameTime + 1L)
+    )
 
-    gameLoop.isRunning shouldBe false
+  test("a game loop should not be running by default"):
+    StandardLoop.isRunning shouldBe false
 
   test("a game loop can be started and stopped"):
-    val gameLoop = GameLoop()
-    val startedLoop = gameLoop.start()
+    val startedLoop = StandardLoop.start()
     val stoppedLoop = startedLoop.stop()
 
     startedLoop.isRunning shouldBe true
     stoppedLoop.isRunning shouldBe false
 
   test("if the game loop is not running, it should not update the physics"):
-
     given painter: Painter = mock[Painter]
 
-    val initialLoop = GameLoop()
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = 1_000_000L
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(*, *).never()
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
 
-    val (currentScene, _) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (currentScene, _) = StandardLoop.tick(scene, currentTime).value
 
-    currentScene shouldBe MockState
+    currentScene shouldBe scene
+
+  test("the game loop should have have two modes: edit and simulation"):
+    LoopMode.values should contain allOf (LoopMode.EditMode, LoopMode.SimulationMode)
+    LoopMode.valueOf("EditMode") shouldBe LoopMode.EditMode
+    LoopMode.fromOrdinal(1) shouldBe LoopMode.SimulationMode
 
   test("if the game loop is in edit mode, it should not update the physics"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
-    val initialLoop = GameLoop().start()
+    val scene       = sceneWithEntities(List.empty)
+    val initialLoop = StandardLoop.start()
     val currentTime = 1_000_000L
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(*, *).never()
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
 
-    val (currentScene, _) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (currentScene, _) = initialLoop.tick(scene, currentTime).value
 
-    currentScene shouldBe MockState
+    currentScene shouldBe scene
 
-  test("if the game loop is in edit mode or not running, it should still update its last timestamp"):
+  test(
+    "if the game loop is in edit mode or not running, it should still update its last timestamp"
+  ):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = 30_000_000L
-    val initialLoop = GameLoop(lastTime = InitialTime)
+    val initialLoop = GameLoop(lastTime = InitialTime).value
+    setupPainterInteractions(painter)
 
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
-
-    val (_, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (_, currentLoop) = initialLoop.tick(scene, currentTime).value
 
     currentLoop.lastTime shouldBe currentTime
 
-  test("in simulation mode, passing less than one tick period should not invoke the physics engine"):
+  test(
+    "in simulation mode, passing less than one tick period should not invoke the physics engine"
+  ):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
+    val scene          = sceneWithEntities(List.empty)
     val timeDifference = 1L
-    val currentTime = DefaultTickTime - timeDifference
-    val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
+    val currentTime    = DefaultTickTime - timeDifference
+    val initialLoop =
+      GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(*, *).never()
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
 
-    val (currentScene, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (currentScene, currentLoop) = initialLoop.tick(scene, currentTime).value
 
-    currentScene shouldBe MockState
+    currentScene shouldBe scene
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing exactly one tick period should invoke the physics engine once"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
-    val updatedScene = mock[State]
-    val currentTime = DefaultTickTime
-    val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
+    val scene        = sceneWithEntities(List.empty)
+    val updatedScene = sceneWithEntities(List.empty)
+    val currentTime  = DefaultTickTime
+    val initialLoop =
+      GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
-    MockPhysics.step.expects(MockState, currentTime).returning(updatedScene).once()
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
+    MockPhysics.step.expects(scene, currentTime).returning(Right(updatedScene)).once()
+    setupPainterInteractions(painter)
 
-    val (currentScene, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (currentScene, currentLoop) = initialLoop.tick(scene, currentTime).value
 
     currentScene shouldBe updatedScene
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing two tick periods should invoke the physics engine twice"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
-    val sceneStep1 = mock[State]
-    val sceneStep2 = mock[State]
+    val scene       = sceneWithEntities(List.empty)
+    val sceneStep1  = sceneWithEntities(List.empty)
+    val sceneStep2  = sceneWithEntities(List.empty)
     val currentTime = DefaultTickTime * 2
-    val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
+    val initialLoop =
+      GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
+    setupPainterInteractions(painter)
     inSequence:
-      MockPhysics.step.expects(MockState, DefaultTickTime).returning(sceneStep1).once()
-      MockPhysics.step.expects(sceneStep1, DefaultTickTime).returning(sceneStep2).once()
+      MockPhysics.step.expects(scene, DefaultTickTime).returning(Right(sceneStep1)).once()
+      MockPhysics.step.expects(sceneStep1, DefaultTickTime).returning(Right(sceneStep2)).once()
 
-    val (currentScene, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (currentScene, currentLoop) = initialLoop.tick(scene, currentTime).value
 
     currentScene shouldBe sceneStep2
     currentLoop.lastTime shouldBe currentTime
 
   test("in simulation mode, remaining time after fixed updates must be saved in the accumulator"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
-    val updatedScene = mock[State]
-    val currentTime = 20_000_000L
+    val scene              = sceneWithEntities(List.empty)
+    val updatedScene       = sceneWithEntities(List.empty)
+    val currentTime        = 20_000_000L
     val correctAccumulator = 4_000_000L
-    val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
+    val initialLoop =
+      GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
-    MockPhysics.step.expects(MockState, DefaultTickTime).returning(updatedScene).once()
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
+    MockPhysics.step.expects(scene, DefaultTickTime).returning(Right(updatedScene)).once()
+    setupPainterInteractions(painter)
 
-    val (_, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (_, currentLoop) = initialLoop.tick(scene, currentTime).value
 
     currentLoop.accumulator shouldBe correctAccumulator
 
   test("massive lag spikes must be clamped to prevent overload"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
-    val currentTime = 1_000_000_000L
-    val correctAccumulator = 10_000_000L
+    val scene                  = sceneWithEntities(List.empty)
+    val currentTime            = 1_000_000_000L
+    val correctAccumulator     = 10_000_000L
     val correctIterationNumber = 15 // #iterations = 250ms / 16ms = 15
-    val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime, maxFrameTime = DefaultMaxFrameTime)
+    val initialLoop = GameLoop(
+      mode = SimulationMode,
+      isRunning = true,
+      lastTime = InitialTime,
+      maxFrameTime = DefaultMaxFrameTime
+    ).value
 
-    MockPhysics.step.expects(*, *).repeated(correctIterationNumber)
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
+    MockPhysics.step
+      .expects(*, *)
+      .returning(Right(scene))
+      .repeated(correctIterationNumber)
+    setupPainterInteractions(painter)
 
-    val (_, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
-
-    currentLoop.accumulator shouldBe correctAccumulator
-
-  test("game loop must invoke the render engine passing the correct interpolation alpha"):
-
-    given painter: Painter = mock[Painter]
-
-    val updatedScene = mock[State]
-    val currentTime = 20_000_000L
-    val correctAlpha = 0.25 // alpha = 4ms / 16ms = 0.25
-    val correctAccumulator = 4_000_000L
-    val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
-
-    MockPhysics.step.expects(MockState, DefaultTickTime).returning(updatedScene).once()
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(updatedScene, correctAlpha, painter).once()
-
-    val (_, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
+    val (_, currentLoop) = initialLoop.tick(scene, currentTime).value
 
     currentLoop.accumulator shouldBe correctAccumulator
-
-  test("game loop must invoke the render engine with static alpha when stopped"):
-
-    given painter: Painter = mock[Painter]
-
-    val currentTime = 20_000_000L
-    val correctAlpha = 1.0
-    val initialLoop = GameLoop(lastTime = InitialTime)
-
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(MockState, correctAlpha, painter).once()
-
-    val (currentScene, currentLoop) = initialLoop.tick(MockState, MockPhysics, MockRender, currentTime)
-
-    currentScene shouldBe MockState
 
   test("stopping or switching mode must freeze the simulation, which can then be resumed"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
-    val updatedScene = mock[State]
+    val scene        = sceneWithEntities(List.empty)
+    val updatedScene = sceneWithEntities(List.empty)
     val partialTime1 = 16_000_000L
     val partialTime2 = 32_000_000L
     val partialTime3 = 48_000_000L
-    val initialLoop = GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime)
+    val initialLoop =
+      GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
-    (MockRender.render(_: State, _: Double)(using _: Painter)).expects(*, *, *).anyNumberOfTimes()
-    inSequence:
-      MockPhysics.step.expects(MockState, DefaultTickTime).returning(updatedScene).once()
-      MockPhysics.step.expects(*, DefaultTickTime).returning(updatedScene).once()
+    MockPhysics.step.expects(scene, DefaultTickTime).returning(Right(updatedScene)).once()
+    setupPainterInteractions(painter)
+    MockPhysics.step.expects(*, DefaultTickTime).returning(Right(updatedScene)).once()
 
-    val (scene1, loop1) = initialLoop.tick(MockState, MockPhysics, MockRender, partialTime1)
-    val loopPaused = loop1.stop()
-    val (scene2, loop2) = loopPaused.tick(scene1, MockPhysics, MockRender, partialTime2)
-    val loopResumed = loop2.start()
-    val (scene3, currentLoop) = loopResumed.tick(scene2, MockPhysics, MockRender, partialTime3)
+    val (scene1, loop1)       = initialLoop.tick(scene, partialTime1).value
+    val loopPaused            = loop1.stop()
+    val (scene2, loop2)       = loopPaused.tick(scene1, partialTime2).value
+    val loopResumed           = loop2.start()
+    val (scene3, currentLoop) = loopResumed.tick(scene2, partialTime3).value
 
     scene2 shouldBe scene1
     scene3 shouldBe updatedScene
     currentLoop.isRunning shouldBe true
 
-  test("a game loop should throw IllegalArgumentException when tick time is non-positive"):
+  test("a game loop should be InvalidTickTime when tick time is non-positive"):
     val invalidTickTime = 0L
+    GameLoop(tickTime = invalidTickTime) shouldBe Left(InvalidTickTime(invalidTickTime))
 
-    val exception = intercept[IllegalArgumentException] {
-      GameLoop(tickTime = invalidTickTime)
-    }
-
-    exception shouldNot be(null)
-
-  test("a game loop should throw IllegalArgumentException when last time value is negative"):
+  test("a game loop should be InvalidLastTime when last time value is negative"):
     val invalidLastTime = -1L
+    GameLoop(lastTime = invalidLastTime) shouldBe Left(InvalidLastTime(invalidLastTime))
 
-    val exception = intercept[IllegalArgumentException] {
-      GameLoop(lastTime = invalidLastTime)
-    }
+  test("a game loop should allow last time value to be zero"):
+    val validLastTime = 0L
+    val loop          = GameLoop(lastTime = validLastTime)
+    loop.isRight shouldBe true
 
-    exception shouldNot be(null)
+  test("a game loop should allow last time value to be positive"):
+    val validLastTime = 1L
+    val loop          = GameLoop(lastTime = validLastTime)
+    loop.isRight shouldBe true
 
-  test("a game loop should throw IllegalArgumentException when accumulator is negative"):
+  test("a game loop should be InvalidAccumulator when accumulator is negative"):
     val invalidAccumulator = -1L
+    GameLoop(accumulator = invalidAccumulator) shouldBe Left(InvalidAccumulator(invalidAccumulator))
 
-    val exception = intercept[IllegalArgumentException] {
-      GameLoop(accumulator = invalidAccumulator)
-    }
-
-    exception shouldNot be(null)
-
-  test("a game loop should throw IllegalArgumentException when max frame time is non-positive"):
+  test("a game loop should be InvalidMaxFrameTime when max frame time is non-positive"):
     val invalidTickTime = 0L
+    GameLoop(maxFrameTime = invalidTickTime) shouldBe Left(InvalidMaxFrameTime(invalidTickTime))
 
-    val exception = intercept[IllegalArgumentException] {
-      GameLoop(maxFrameTime = invalidTickTime)
-    }
-
-    exception shouldNot be(null)
-
-  test("GameLoop should throw IllegalArgumentException when max frame time is less than tick time"):
+  test(
+    "GameLoop should be InvalidMaxFrameTimeTickTimeRatio when max frame time is less than tick time"
+  ):
     val invalidMaxFrameTime = DefaultTickTime - 1L
+    GameLoop(tickTime = DefaultTickTime, maxFrameTime = invalidMaxFrameTime) shouldBe Left(
+      InvalidMaxFrameTimeTickTimeRatio(invalidMaxFrameTime, DefaultTickTime)
+    )
 
-    val exception = intercept[IllegalArgumentException] {
-      GameLoop(tickTime = DefaultTickTime, maxFrameTime = invalidMaxFrameTime)
-    }
+  test("GameLoop should allow max frame time to equal tick time"):
+    val loop = GameLoop(
+      tickTime = DefaultTickTime,
+      maxFrameTime = DefaultTickTime
+    )
 
-    exception shouldNot be(null)
+    loop.isRight shouldBe true
+
+  test("if a running game loop is in edit mode, it should not update the physics"):
+
+    given painter: Painter = mock[Painter]
+
+    val scene       = sceneWithEntities(List.empty)
+    val currentTime = DefaultTickTime
+    val editLoop    = GameLoop(mode = EditMode, isRunning = true)
+
+    MockPhysics.step.expects(*, *).never()
+    setupPainterInteractions(painter)
+
+    val (currentScene, currentLoop) =
+      editLoop.value.tick(scene, currentTime)(using MockPhysics, painter).value
+
+    currentScene shouldBe scene
+    currentLoop.lastTime shouldBe currentTime
+
+  test("default game loop should be valid and have default values"):
+    val defaultLoop = GameLoop.default()
+
+    defaultLoop.mode shouldBe EditMode
+    defaultLoop.tickTime shouldBe DefaultTickTime
+    defaultLoop.isRunning shouldBe false
+    defaultLoop.lastTime shouldBe InitialTime
+    defaultLoop.accumulator shouldBe 0L
+    defaultLoop.maxFrameTime shouldBe DefaultMaxFrameTime
+
+  test("withTickTime should reject a negative tick time"):
+    StandardLoop.withTickTime(-1L) shouldBe Left(InvalidTickTime(-1L))
+
+  test("withTickTime should allow a tick time equal to max frame time"):
+    StandardLoop.withTickTime(DefaultMaxFrameTime).value.tickTime shouldBe DefaultMaxFrameTime
+
+  test("GameLoop should allow a positive initial accumulator"):
+    GameLoop(accumulator = 1L).value.accumulator shouldBe 1L
