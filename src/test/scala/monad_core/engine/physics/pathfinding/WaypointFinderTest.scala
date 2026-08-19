@@ -1,8 +1,8 @@
 package monad_core.engine.physics.pathfinding
 
-import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.*
-import PathRectangle.vertexes
+import monad_core.engine.model.Shape2D.{Circle, Rectangle}
+import monad_core.engine.physics.pathfinding.PathRectangle.vertexes
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite

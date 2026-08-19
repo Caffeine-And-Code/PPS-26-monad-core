@@ -22,12 +22,144 @@ import monad_core.simulator.presentation.panels.support.FormUtilities.{
 }
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
+import scalafx.animation.AnimationTimer
 import scalafx.scene.control.ContextMenu
 import scalafx.scene.layout.{Priority, VBox}
 
+object SceneRendererPanel extends SceneRendererPanelBuilder:
+
+  private case class SceneRendererViewModel(world: World, gameEngineRuntime: GameEngineRuntime)
+
+  extension (viewModel: SceneRendererViewModel)
+    private def error: Option[BaseError] = viewModel.gameEngineRuntime.getError
+
+    private def findClickableAt(x: Double, y: Double): Option[Clickable] =
+      val clickableElements: List[Clickable] =
+        viewModel.world.getAllEntities ++ viewModel.world.getAllSurfaces
+
+      clickableElements.find(_.checkMouseHit((x, y)))
+
+    private def onSaveEntity(entity: Entity): Unit =
+      given GameEngineRuntime = viewModel.gameEngineRuntime
+
+      onActionMakeSnapshot(SaveEntityCommand(entity), viewModel.world.updateEntity)
+
+    private def onRemoveEntity(entity: Entity): Unit =
+      given GameEngineRuntime = viewModel.gameEngineRuntime
+
+      onActionMakeSnapshot(entity.id, id => viewModel.world.removeEntity(id.value))
+
+    private def onSaveSurface(surface: Surface): Unit =
+      given GameEngineRuntime = viewModel.gameEngineRuntime
+
+      onActionMakeSnapshot(SaveSurfaceCommand(surface), viewModel.world.updateSurface)
+
+    private def onRemoveSurface(surface: Surface): Unit =
+      given GameEngineRuntime = viewModel.gameEngineRuntime
+
+      onActionMakeSnapshot(surface.id, id => viewModel.world.removeSurface(id.value))
+
+    private def startRendering(onFrame: World => Unit)(using Painter): AnimationTimer =
+      viewModel.gameEngineRuntime.resetToSnapshot()
+      val animationTimer = AnimationTimer { currentTime =>
+        viewModel.gameEngineRuntime.tick(currentTime)(onFrame)
+      }
+      animationTimer.start()
+
+      animationTimer
+
+  def build()(using
+      gameEngineRuntime: GameEngineRuntime,
+      world: World,
+      architect: ShapeArchitect,
+      painter: Painter
+  ): Either[BaseError, VBox] =
+
+    val viewModel = SceneRendererViewModel(world, gameEngineRuntime)
+
+    viewModel.error match
+      case Some(err) => Left(err)
+      case None =>
+        val canvas      = ResizableCanvas()
+        val menusAnchor = Some(canvas)
+
+        def resizeWorld(): Unit =
+          val width  = canvas.width.value
+          val height = canvas.height.value
+
+          if width > 0 && height > 0 then gameEngineRuntime.resize(width, height)
+
+        canvas.width.onChange {
+          resizeWorld()
+        }
+
+        canvas.height.onChange {
+          resizeWorld()
+        }
+
+        resizeWorld()
+
+        RightClickContextMenu.attachTo(
+          canvas = canvas,
+          findElementAt = viewModel.findClickableAt,
+          buildMenuItems = {
+            case entity: Entity =>
+              Seq(
+                MenuButtonItem(
+                  s"Edit ${entity.id} Entity",
+                  () =>
+                    SaveEntityFormDialog.show(
+                      props = SaveEntityFormDialogProps(
+                        title = "Entity Settings",
+                        anchorNode = menusAnchor,
+                        onSubmit = viewModel.onSaveEntity,
+                        teams = world.getAllTeams,
+                        onError = displayError,
+                        entityToUpdate = Some(entity)
+                      )
+                    )
+                ),
+                MenuButtonItem(
+                  s"Remove ${entity.id} Entity",
+                  () => viewModel.onRemoveEntity(entity)
+                )
+              )
+            case surface: Surface =>
+              Seq(
+                MenuButtonItem(
+                  s"Edit ${surface.id} Surface",
+                  () =>
+                    SaveSurfaceFormDialog.show(
+                      props = SaveSurfaceFormDialogProps(
+                        title = "Surface Settings",
+                        anchorNode = menusAnchor,
+                        onSubmit = viewModel.onSaveSurface,
+                        onError = displayError,
+                        surfaceToUpdate = Some(surface)
+                      )
+                    )
+                ),
+                MenuButtonItem(
+                  s"Remove ${surface.id} Surface",
+                  () => viewModel.onRemoveSurface(surface)
+                )
+              )
+          }
+        )
+
+        viewModel.startRendering(_ => ShapePainter.paint(canvas.graphicsContext2D))
+
+        val container = new VBox:
+          children = Seq(canvas)
+          style = PanelStyles.base
+
+        VBox.setVgrow(canvas, Priority.Always)
+
+        Right(container)
+
 type Clickable = Surface | Entity
 
-private[panels] object MouseHitDetector:
+private object MouseHitDetector:
 
   extension (clickable: Clickable)
 
@@ -45,27 +177,24 @@ private[panels] object MouseHitDetector:
         case Shape2D.Circle(radius) =>
           val distanceX = mouseClickX - elementPositionX
           val distanceY = mouseClickY - elementPositionY
-
           (distanceX * distanceX + distanceY * distanceY) <= (radius * radius)
 
-        case Shape2D.Rectangle(height, width) =>
+        case Shape2D.Rectangle(width, height) =>
           val halfW = width / 2
           val halfH = height / 2
-
           mouseClickX >= (elementPositionX - halfW) && mouseClickX <= (elementPositionX + halfW) &&
           mouseClickY >= (elementPositionY - halfH) && mouseClickY <= (elementPositionY + halfH)
 
     def checkMouseHit(mouseClick: (Double, Double)): Boolean =
       clickable match
-        case surface: Surface =>
-          checkGenericHit(surface.position, mouseClick, surface.shape)
-        case entity: Entity => checkGenericHit(entity.position, mouseClick, entity.shape)
+        case surface: Surface => checkGenericHit(surface.position, mouseClick, surface.shape)
+        case entity: Entity   => checkGenericHit(entity.position, mouseClick, entity.shape)
 
-private[panels] object EntityContextMenu:
+private object RightClickContextMenu:
 
   def attachTo(
       canvas: javafx.scene.canvas.Canvas,
-      findEntityAt: (Double, Double) => Option[Clickable],
+      findElementAt: (Double, Double) => Option[Clickable],
       buildMenuItems: Clickable => Seq[MenuButtonItem]
   ): Unit =
 
@@ -79,114 +208,12 @@ private[panels] object EntityContextMenu:
         val localX = e.getX
         val localY = e.getY
 
-        findEntityAt(localX, localY) match
+        findElementAt(localX, localY) match
           case Some(entity) =>
             contextMenu.items.clear()
             contextMenu.items ++= buildMenuItems(entity).map(_.toMenuItem)
-
             contextMenu.show(canvas, e.getScreenX, e.getScreenY)
 
           case None =>
             contextMenu.hide()
     )
-
-object SceneRendererPanel extends SceneRendererPanelBuilder:
-
-  def build()(using
-      gameEngineRuntime: GameEngineRuntime,
-      world: World,
-      architect: ShapeArchitect,
-      painter: Painter
-  ): Either[BaseError, VBox] =
-
-    val canvas      = ResizableCanvas()
-    val menusAnchor = Some(canvas)
-
-    def resizeWorld(): Unit =
-      val width  = canvas.width.value
-      val height = canvas.height.value
-
-      if width > 0 && height > 0 then gameEngineRuntime.resize(width, height)
-
-    canvas.width.onChange {
-      resizeWorld()
-    }
-
-    canvas.height.onChange {
-      resizeWorld()
-    }
-
-    resizeWorld()
-
-    val findEntitiesAt: (Double, Double) => Option[Clickable] = (x, y) =>
-      val entities: List[Clickable]          = world.getAllEntities
-      val surfaces: List[Clickable]          = world.getAllSurfaces
-      val clickableElements: List[Clickable] = entities ++ surfaces
-      clickableElements.find(_.checkMouseHit((x, y)))
-
-    EntityContextMenu.attachTo(
-      canvas = canvas,
-      findEntityAt = findEntitiesAt,
-      buildMenuItems = {
-        case entity: Entity =>
-          Seq(
-            MenuButtonItem(
-              s"Edit ${entity.id} Entity",
-              () =>
-                SaveEntityFormDialog.show(
-                  props = SaveEntityFormDialogProps(
-                    title = "Entity Settings",
-                    anchorNode = menusAnchor,
-                    onSubmit =
-                      entity => onActionMakeSnapshot(SaveEntityCommand(entity), world.updateEntity),
-                    teams = world.getAllTeams,
-                    onError = displayError,
-                    entityToUpdate = Some(entity)
-                  )
-                )
-            ),
-            MenuButtonItem(
-              s"Remove ${entity.id} Entity",
-              () => onActionMakeSnapshot(entity.id, id => world.removeEntity(id.value))
-            )
-          )
-        case surface: Surface =>
-          Seq(
-            MenuButtonItem(
-              s"Edit ${surface.id} Surface",
-              () =>
-                SaveSurfaceFormDialog.show(
-                  props = SaveSurfaceFormDialogProps(
-                    title = "Surface Settings",
-                    anchorNode = menusAnchor,
-                    onSubmit = surface =>
-                      onActionMakeSnapshot(SaveSurfaceCommand(surface), world.updateSurface),
-                    onError = displayError,
-                    surfaceToUpdate = Some(surface)
-                  )
-                )
-            ),
-            MenuButtonItem(
-              s"Remove ${surface.id} Surface",
-              () => onActionMakeSnapshot(surface.id, id => world.removeSurface(id.value))
-            )
-          )
-      }
-    )
-
-    val onFrame: World => Unit = _ => ShapePainter.paint(canvas.graphicsContext2D)
-
-    gameEngineRuntime.attach(onFrame)
-    val gameEngineError = gameEngineRuntime.getError
-
-    if gameEngineError.isDefined then Left(gameEngineError.get)
-    else
-      gameEngineRuntime.resetToSnapshot()
-
-      val container = new VBox:
-        children = Seq(canvas)
-        style = PanelStyles.sceneRenderer
-
-      VBox.setVgrow(canvas, Priority.Always)
-
-      Right(container)

@@ -1,12 +1,12 @@
 package monad_core.simulator.domain.ai.agent_evaluator
 
+import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationScore.*
 import monad_core.simulator.domain.ai.agent_evaluation.{
   AgentEvaluationResult,
   AgentEvaluationScore,
   InvalidAgentEvaluationValue,
   InvalidCorrectChooses
 }
-import monad_core.simulator.domain.ai.agent_evaluation.AgentEvaluationScore.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite

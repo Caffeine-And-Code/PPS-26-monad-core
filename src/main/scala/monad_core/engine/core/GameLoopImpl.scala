@@ -31,8 +31,8 @@ private case class GameLoopImpl(
       painter: Painter
   ): Either[EngineError, (State, GameLoop)] =
     if !isRunning || mode == LoopMode.EditMode then
-      RendererManager.render(state)
-      Right((state, this.copy(lastTime = currentTime)))
+      for _ <- RendererManager.render(state)
+      yield (state, this.copy(lastTime = currentTime))
     else
       val elapsedTime   = currentTime - lastTime
       val clampedTime   = Math.min(elapsedTime, maxFrameTime)
@@ -47,9 +47,8 @@ private case class GameLoopImpl(
           nextScene = currentScene,
           interpolationAlpha = alpha
         )
-      yield
-        RendererManager.render(interpolatedScene)
-        (currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
+        _ <- RendererManager.render(interpolatedScene)
+      yield(currentScene, this.copy(lastTime = currentTime, accumulator = currentAccumulator))
 
   @tailrec
   private def runFixedUpdate(

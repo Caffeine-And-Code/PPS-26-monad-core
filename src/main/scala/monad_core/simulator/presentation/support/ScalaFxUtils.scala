@@ -4,12 +4,10 @@ import scalafx.Includes.{jfxScene2sfx, jfxWindow2sfx}
 import scalafx.scene.Node
 import scalafx.stage.Window
 
-private[presentation] object ScalaFxUtils {
+private[presentation] object ScalaFxUtils:
 
   private def ownerWindowOf(node: Node): Option[Window] =
     Option(node.scene.value).flatMap(s => Option(s.window.value))
 
   def ownerWindowOfOption(node: Option[Node]): Option[Window] =
     node.flatMap(ownerWindowOf)
-
-}

@@ -9,7 +9,6 @@ import monad_core.simulator.presentation.components.forms.parsers.LocatableFormS
   getEnumValue
 }
 import monad_core.simulator.presentation.components.forms.parsers.{
-  BaseFormParser,
   EntityFormParser,
   LocatableFormShapes
 }
@@ -49,22 +48,26 @@ object SaveEntityFormDialog:
   private[forms] val Shapes =
     Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
+  private case class SaveEntityViewModel(entityToUpdate: Option[Entity])
+
+  extension (viewModel: SaveEntityViewModel)
+
+    private def resolveEntity(values: Map[String, String]): Either[BaseError, Entity] =
+      viewModel.entityToUpdate match
+        case Some(entity) => EntityFormParser.buildEntity(values, () => entity.id.value)
+        case None         => EntityFormParser.buildEntity(values)
+
   def show(props: SaveEntityFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.entityToUpdate)
+    val viewModel     = SaveEntityViewModel(props.entityToUpdate)
 
     FormDialog.show(
       FormDialogProps(
         title = props.title,
         fields = buildFields(props.teams, defaultValues),
         owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
-        onSubmit = values =>
-          val result = props.entityToUpdate match
-            case Some(entity) =>
-              EntityFormParser.buildEntity(values, () => entity.id.value)
-            case None =>
-              EntityFormParser.buildEntity(values)
-
-          result.matchToResult(props.onError)(props.onSubmit)
+        onSubmit =
+          values => viewModel.resolveEntity(values).matchToResult(props.onError)(props.onSubmit)
       )
     )
   }
@@ -110,26 +113,10 @@ object SaveEntityFormDialog:
         id = EntityFormParser.ShapeKey,
         label = "Shape",
         options = Shapes,
-        dependentFields = Map(
-          LocatableFormShapes.CircleLabel -> Seq(
-            TextFieldSpec(
-              id = BaseFormParser.RadiusKey,
-              label = "Radius",
-              defaultValue = defaultValues.radius
-            )
-          ),
-          LocatableFormShapes.RectangleLabel -> Seq(
-            TextFieldSpec(
-              id = BaseFormParser.HeightKey,
-              label = "Height",
-              defaultValue = defaultValues.height
-            ),
-            TextFieldSpec(
-              id = BaseFormParser.LengthKey,
-              label = "Width",
-              defaultValue = defaultValues.length
-            )
-          )
+        dependentFields = FormDialog.buildShapeFields(
+          radiusDefaultValue = defaultValues.radius,
+          heightDefaultValue = defaultValues.height,
+          widthDefaultValue = defaultValues.length
         ),
         defaultValue = defaultValues.shape
       ),

@@ -1,3 +1,14 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+lazy val releaseVersion: String = {
+  val props = new Properties()
+  props.load(new FileInputStream("project/build.properties"))
+  props.getProperty("release_version")
+}
+
+ThisBuild / version := releaseVersion
+
 scalaVersion := "3.8.4"
 
 // Classify the os to choose the building dependencies
