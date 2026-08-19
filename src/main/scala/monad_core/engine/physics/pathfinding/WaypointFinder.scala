@@ -7,8 +7,6 @@ import monad_core.engine.physics.utils.PhysicsUtil
 
 private[pathfinding] object WaypointFinder:
 
-  private val WaypointsNumber = 2
-
   def apply(start: Entity, target: Entity): List[Vector2D] =
     target.shape match
       case circle: Circle =>
@@ -39,8 +37,9 @@ private[pathfinding] object WaypointFinder:
       PointOnCircle(target.position, circle.radius, angle2)
     )
 
-  private def angleScore(a: Vector2D, b: Vector2D): Double =
-    (a dot b) / (a.magnitude * b.magnitude)
+  private def signedAngle(from: Vector2D, to: Vector2D): Double =
+    val cross = from.x * to.y - from.y * to.x
+    math.atan2(cross, from dot to)
 
   private def findRectangleWaypoints(
       start: Entity,
@@ -52,10 +51,12 @@ private[pathfinding] object WaypointFinder:
 
     val centerDirection = target.position - start.position
 
-    vertexes
+    val vertexesByAngle = vertexes
       .map { vertex =>
-        vertex -> angleScore(centerDirection, vertex - start.position)
+        vertex -> signedAngle(centerDirection, vertex - start.position)
       }
-      .sortBy(_._2)
-      .take(WaypointsNumber)
-      .map(_._1)
+
+    List(
+      vertexesByAngle.minBy(_._2)._1,
+      vertexesByAngle.maxBy(_._2)._1
+    )

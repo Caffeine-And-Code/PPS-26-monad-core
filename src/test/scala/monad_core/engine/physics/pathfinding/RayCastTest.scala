@@ -42,15 +42,20 @@ class RayCastTest extends AnyFunSuite with Matchers:
           rectangle.verticalSize(From.position) / 2 + WayPointDisplacement
         )
 
-    val normalToWaypoint = (raw - obstacle.position).normalized
-    val entityDisplacement = Vector2D(
-      if normalToWaypoint.x > 0 then horizontalDisplacement else -horizontalDisplacement,
-      if normalToWaypoint.y > 0 then verticalDisplacement else -verticalDisplacement
-    )
+    val direction = raw - obstacle.position
 
-    val totalDisplacement = normalToWaypoint * entityDisplacement.magnitude
-
-    raw + totalDisplacement
+    obstacle.shape match
+      case _: Rectangle =>
+        raw + Vector2D(
+          math.signum(direction.x) * horizontalDisplacement,
+          math.signum(direction.y) * verticalDisplacement
+        )
+      case _: Circle =>
+        val entityDisplacement = Vector2D(
+          if direction.x > 0 then horizontalDisplacement else -horizontalDisplacement,
+          if direction.y > 0 then verticalDisplacement else -verticalDisplacement
+        )
+        raw + direction.normalized * entityDisplacement.magnitude
 
   private val UpperLeftCorner: Vector2D  = Vector2D(-20.0, -20.0)
   private val LowerRightCorner: Vector2D = Vector2D(40.0, 40.0)
@@ -202,14 +207,43 @@ class RayCastTest extends AnyFunSuite with Matchers:
     sameWaypoint(result, expectedWaypoints.head)
     || sameWaypoint(result, expectedWaypoints(1)) shouldBe true
 
-  test("hunter clearance should use the largest shape dimension"):
+  test("hunter radius should contain the whole hunter shape"):
     val hunter = makeMovingEntityRectangle(
-      id = "clearance-hunter",
+      id = "radius-hunter",
       width = 10.0,
       height = 2.0
     )
 
-    RayCast.hunterClearance(hunter) shouldBe 4.0
+    RayCast.hunterRadius(hunter) shouldBe math.sqrt(26.0)
+
+  test("inflating circle vertexes should add the hunter clearance"):
+    val obstacle = makeMovingEntityCircle(
+      id = "inflated-circle",
+      position = Vector2D(5.0, 5.0),
+      radius = 2.0
+    )
+    val originalVertexes = VertexFinder(List(obstacle))
+
+    val inflated = RayCast.inflateVertexes(
+      originalVertexes,
+      List(obstacle),
+      inflation = 3.0
+    )(obstacle.id)
+
+    inflated.foreach { vertex =>
+      vertex.euclideanDistance(obstacle.position) shouldBe 5.0 +- EpsilonDisplace
+    }
+
+  test("a waypoint should clear both axes of a non-square rectangle"):
+    val obstacle = makeMovingEntityRectangle(
+      id = "wide-obstacle",
+      position = Vector2D(10.0, 10.0),
+      width = 12.0,
+      height = 4.0
+    )
+    val topRightCorner = Vector2D(16.0, 12.0)
+
+    RayCast.actualWaypoint(obstacle, From, topRightCorner) shouldBe Vector2D(22.0, 18.0)
 
   test("a waypoint touching the left scene boundary should be valid"):
     RayCast.isValidWayPoint(
@@ -246,3 +280,12 @@ class RayCastTest extends AnyFunSuite with Matchers:
       Vector2D(0.0, 0.0),
       Vector2D(20.0, 11.0)
     ) shouldBe true
+
+  test("a waypoint inside the left boundary but outside the top boundary should be invalid"):
+    RayCast.isValidWayPoint(
+      To,
+      From,
+      Vector2D(10.0, 0.0),
+      Vector2D(0.0, 0.0),
+      Vector2D(20.0, 20.0)
+    ) shouldBe false
