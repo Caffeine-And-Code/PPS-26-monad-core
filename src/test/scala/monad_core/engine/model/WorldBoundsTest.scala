@@ -8,7 +8,7 @@ class WorldBoundsTest extends AnyFunSuite with Matchers:
 
   test("WorldBounds should be created successfully with valid width and height"):
     val result = WorldBounds(100.0, 50.0).value
-    
+
     result.upperLeft shouldBe Vector2D(0.0, 0.0)
     result.lowerRight shouldBe Vector2D(100.0, 50.0)
 
@@ -35,9 +35,9 @@ class WorldBoundsTest extends AnyFunSuite with Matchers:
 
   test("WorldBounds should return an error when width is zero and height is negative"):
     WorldBounds(0.0, -50.0) shouldBe Left(WorldBoundsCannotBeNegativeOrZero())
-    
+
   test("WorldBounds should return a correct default instance"):
     val defaultBounds = WorldBounds.default
-    
+
     defaultBounds.upperLeft shouldBe Vector2D(0.0, 0.0)
     defaultBounds.lowerRight shouldBe Vector2D(100.0, 100.0)

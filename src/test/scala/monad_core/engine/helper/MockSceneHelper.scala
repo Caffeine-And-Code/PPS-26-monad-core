@@ -1,6 +1,11 @@
 package monad_core.engine.helper
 
-import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, CannotRemoveEntity, CannotRemoveNonPresentElementFromMap}
+import monad_core.engine.core.{
+  CannotAddAlreadyPresentElementInMap,
+  CannotAddEntity,
+  CannotRemoveEntity,
+  CannotRemoveNonPresentElementFromMap
+}
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.{Entity, Surface, Team, WorldBounds}
 import org.scalamock.scalatest.MockFactory
@@ -20,7 +25,7 @@ private[engine] trait MockSceneHelper:
       entities: List[Entity],
       teams: List[Team] = List.empty,
       surfaces: List[Surface] = List.empty,
-      removeEntities: Boolean = true,
+      removeEntities: Boolean = true
   ): State =
     val scene = mock[State]
 
@@ -62,8 +67,7 @@ private[engine] trait MockSceneHelper:
               removeEntities = removeEntities
             )
           )
-        else
-          Left(CannotRemoveEntity(CannotRemoveNonPresentElementFromMap(entity.id)))
+        else Left(CannotRemoveEntity(CannotRemoveNonPresentElementFromMap(entity.id)))
       }
       .anyNumberOfTimes()
 

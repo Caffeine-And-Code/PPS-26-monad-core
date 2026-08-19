@@ -8,7 +8,7 @@ import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object EnemyAttractionRule:
-  private val Id           = "enemy-attraction"
+  private val Id          = "enemy-attraction"
   private val MaxTurnRate = 4.0 // radians per second
 
   given enemyAttractionRule: PhysicsRule with
@@ -18,7 +18,6 @@ private[physics] object EnemyAttractionRule:
     override def apply(scene: State, dt: Long)(using
         detector: CollisionDetector
     ): Either[PhysicsError, State] =
-
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities
@@ -107,15 +106,15 @@ private[physics] object EnemyAttractionRule:
   ): Entity =
     val speedMagnitude = currentSpeed.magnitude
 
-    val currentAngle = math.atan2(currentSpeed.y, currentSpeed.x)
+    val currentAngle    = math.atan2(currentSpeed.y, currentSpeed.x)
     val targetDirection = (targetPosition - entity.position).normalized
 
     if targetDirection.magnitude == 0 then entity
     else
-      val targetAngle = math.atan2(targetDirection.y, targetDirection.x)
+      val targetAngle     = math.atan2(targetDirection.y, targetDirection.x)
       val angleDifference = normalizeAngle(targetAngle - currentAngle)
-      val appliedTurn = angleDifference.max(-maxTurnAngle).min(maxTurnAngle)
-      val newAngle = currentAngle + appliedTurn
+      val appliedTurn     = angleDifference.max(-maxTurnAngle).min(maxTurnAngle)
+      val newAngle        = currentAngle + appliedTurn
 
       entity.withSpeed(
         Vector2D(

@@ -264,4 +264,3 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     result shouldBe Left(
       EngineErrorAdapted(WorldBoundsCannotBeNegativeOrZero())
     )
-

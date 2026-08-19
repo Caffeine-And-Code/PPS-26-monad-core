@@ -71,12 +71,14 @@ class WaypointFinderTest extends AnyFunSuite with Matchers:
     waypoints should contain theSameElementsAs expectedWaypoints
 
   test("rectangle waypoints should bracket a non-square obstacle"):
-    val target = Entity.rectangle(
-      "wide-target",
-      Vector2D(12.5, 15.0),
-      height = 2.0,
-      length = 10.0
-    ).value
+    val target = Entity
+      .rectangle(
+        "wide-target",
+        Vector2D(12.5, 15.0),
+        height = 2.0,
+        length = 10.0
+      )
+      .value
 
     val centerDirection = target.position - Start.position
     val waypointAngles = WaypointFinder(Start, target).map { waypoint =>

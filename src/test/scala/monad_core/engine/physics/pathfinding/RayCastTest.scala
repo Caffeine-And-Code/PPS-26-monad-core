@@ -86,10 +86,11 @@ class RayCastTest extends AnyFunSuite with Matchers:
       width = 1.0,
       height = 1.0
     )
-    val entities = List(lateralFrom, To, obstacle)
+    val entities         = List(lateralFrom, To, obstacle)
     val entitiesVertexes = VertexFinder(entities.filterNot(_.id == lateralFrom.id))
 
-    val result = RayCast(To, lateralFrom, entities, entitiesVertexes, UpperLeftCorner, LowerRightCorner)
+    val result =
+      RayCast(To, lateralFrom, entities, entitiesVertexes, UpperLeftCorner, LowerRightCorner)
 
     result.value.value should not be To.position
 

@@ -1,9 +1,9 @@
 package monad_core.engine.model
 
 final class WorldBounds private (
-                        val upperLeft: Vector2D,
-                        val lowerRight: Vector2D
-                      )
+    val upperLeft: Vector2D,
+    val lowerRight: Vector2D
+)
 
 object WorldBounds:
 

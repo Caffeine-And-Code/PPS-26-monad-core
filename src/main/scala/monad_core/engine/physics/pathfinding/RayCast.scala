@@ -10,7 +10,7 @@ import monad_core.engine.physics.core.{
 private[physics] object RayCast:
 
   private val WayPointDisplacement = 5.0
-  private val HunterMargin          = 1.0
+  private val HunterMargin         = 1.0
 
   def apply(
       to: Entity,
@@ -126,7 +126,7 @@ private[physics] object RayCast:
           math.signum(cornerDirection.y) * vertical
         )
       case _: Shape2D.Circle =>
-        val direction = (waypoint - to.position).normalized
+        val direction             = (waypoint - to.position).normalized
         val displacementMagnitude = Vector2D(horizontal, vertical).magnitude
         waypoint + direction * displacementMagnitude
 

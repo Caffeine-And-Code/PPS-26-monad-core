@@ -22,7 +22,7 @@ class BorderContactRuleTest
 
   private val Rule = BorderContactRule.borderContactRule
 
-  private val UpperLeftBound = Vector2D(0.0, 0.0)
+  private val UpperLeftBound  = Vector2D(0.0, 0.0)
   private val LowerRightBound = Vector2D(100.0, 100.0)
 
   given CollisionDetector = mock[CollisionDetector]

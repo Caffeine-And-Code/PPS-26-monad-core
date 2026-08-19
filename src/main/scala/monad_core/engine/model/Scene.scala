@@ -53,16 +53,17 @@ case class Scene(
   override def allTeams: List[Team] = teams.map((id, team) => team).toList
 
   override def allSurfaces: List[Surface] = surfaces.map((id, surfaces) => surfaces).toList
-  
+
   def resize(width: Double, height: Double): Either[EngineError, Scene] =
     val newBounds = WorldBounds(width, height)
     newBounds match
       case Left(err) => Left(err)
-      case Right(bounds) => Right(
-        this.copy(
-          bounds = bounds
+      case Right(bounds) =>
+        Right(
+          this.copy(
+            bounds = bounds
+          )
         )
-      )
 
 object Scene:
 

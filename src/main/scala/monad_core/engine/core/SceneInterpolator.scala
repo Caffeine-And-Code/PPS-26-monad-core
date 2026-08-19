@@ -25,8 +25,7 @@ object SceneInterpolator:
     )
 
   private def validateAlpha(alpha: Double): Either[EngineError, Double] =
-    if alpha < 0.0 || alpha > 1.0 then
-      Left(InvalidInterpolationAlpha(alpha))
+    if alpha < 0.0 || alpha > 1.0 then Left(InvalidInterpolationAlpha(alpha))
     else Right(alpha)
 
   private def interpolateBounds(
@@ -49,24 +48,22 @@ object SceneInterpolator:
   ): EntityMap =
     val previousById = previousEntities.map(entity => entity.id -> entity).toMap
 
-    nextEntities
-      .map { nextEntity =>
-        val interpolatedEntity = previousById
-          .get(nextEntity.id)
-          .map(previousEntity =>
-            nextEntity.moveTo(
-              interpolateVector(
-                previousEntity.position,
-                nextEntity.position,
-                alpha
-              )
+    nextEntities.map { nextEntity =>
+      val interpolatedEntity = previousById
+        .get(nextEntity.id)
+        .map(previousEntity =>
+          nextEntity.moveTo(
+            interpolateVector(
+              previousEntity.position,
+              nextEntity.position,
+              alpha
             )
           )
-          .getOrElse(nextEntity)
+        )
+        .getOrElse(nextEntity)
 
-        interpolatedEntity.id -> interpolatedEntity
-      }
-      .toMap
+      interpolatedEntity.id -> interpolatedEntity
+    }.toMap
 
   private def interpolateVector(
       previous: Vector2D,

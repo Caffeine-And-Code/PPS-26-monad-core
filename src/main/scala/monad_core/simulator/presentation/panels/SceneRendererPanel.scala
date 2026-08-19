@@ -106,8 +106,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
       val width  = canvas.width.value
       val height = canvas.height.value
 
-      if width > 0 && height > 0 then
-        gameEngineRuntime.resize(width, height)
+      if width > 0 && height > 0 then gameEngineRuntime.resize(width, height)
 
     canvas.width.onChange {
       resizeWorld()

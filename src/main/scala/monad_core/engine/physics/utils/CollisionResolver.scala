@@ -98,18 +98,19 @@ object CollisionResolver:
       entitySpeed: Vector2D,
       collision: Collision
   ): Either[PhysicsError, Vector2D] =
-
     other.speed match
-      case None => Right(
-        PhysicsUtil.reflectOnFixed(
-          entitySpeed,
-          collision.normalVector
+      case None =>
+        Right(
+          PhysicsUtil.reflectOnFixed(
+            entitySpeed,
+            collision.normalVector
+          )
         )
-      )
-      case Some(s) => PhysicsUtil.reflectOnMobile(
-        entitySpeed,
-        s,
-        collision.normalVector,
-        entity.weight,
-        other.weight
-      )
+      case Some(s) =>
+        PhysicsUtil.reflectOnMobile(
+          entitySpeed,
+          s,
+          collision.normalVector,
+          entity.weight,
+          other.weight
+        )

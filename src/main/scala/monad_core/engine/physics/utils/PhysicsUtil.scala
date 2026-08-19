@@ -1,11 +1,7 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{
-  NegativeDeltaTime,
-  PhysicsError,
-  ZeroMassError
-}
+import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsError, ZeroMassError}
 
 private[physics] object PhysicsUtil:
 
@@ -28,8 +24,7 @@ private[physics] object PhysicsUtil:
       upperLeftCorner: Vector2D,
       lowerRightCorner: Vector2D
   ): Either[PhysicsError, Vector2D] =
-    for
-      disp <- displacement(speed, deltaTime)
+    for disp <- displacement(speed, deltaTime)
     yield position + disp
 
   def acceleration(
@@ -63,7 +58,7 @@ private[physics] object PhysicsUtil:
       speed: Vector2D,
       normal: Vector2D
   ): Vector2D =
-    val speedAlongNormal = speed dot normal
+    val speedAlongNormal         = speed dot normal
     val incomingSpeedAlongNormal = math.min(speedAlongNormal, 0.0)
 
     speed - (normal * (2.0 * incomingSpeedAlongNormal))

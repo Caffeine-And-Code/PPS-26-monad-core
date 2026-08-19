@@ -113,7 +113,9 @@ class EnemyAttractionRuleTest
 
     resultEntity.speed shouldBe fixedEntity.speed
 
-  test("the rule should orient a mobile entity toward its nearest enemy without changing speed magnitude"):
+  test(
+    "the rule should orient a mobile entity toward its nearest enemy without changing speed magnitude"
+  ):
 
     val entity = addTeam(
       makeMovingEntityCircle(
@@ -272,7 +274,7 @@ class EnemyAttractionRuleTest
     )
     val entityTeam = makeTeam(entity.teamId.value.value, Set(enemy.teamId.value.value))
     val enemyTeam  = makeTeam(enemy.teamId.value.value)
-    val scene = sceneWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
+    val scene      = sceneWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 

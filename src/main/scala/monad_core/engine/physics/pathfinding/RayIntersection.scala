@@ -26,11 +26,13 @@ private[pathfinding] object RayIntersection:
         val distances =
           edges.flatMap { case (a, b) =>
             raySegmentIntersection(rayStart, rayDirection, a, b)
-          } ++ vertices.flatMap(vertex => rayVertexIntersection(
-            rayStart,
-            rayDirection,
-            vertex
-          ))
+          } ++ vertices.flatMap(vertex =>
+            rayVertexIntersection(
+              rayStart,
+              rayDirection,
+              vertex
+            )
+          )
 
         distances
           .filter(_ > Epsilon)
@@ -73,12 +75,11 @@ private[pathfinding] object RayIntersection:
       vertex: Vector2D
   ): Option[Double] =
     val directionMagnitude = rayDirection.magnitude
-    val difference = vertex - rayStart
-    val distanceOnRay = (difference dot rayDirection) / directionMagnitude
+    val difference         = vertex - rayStart
+    val distanceOnRay      = (difference dot rayDirection) / directionMagnitude
     val distanceFromRay = math.abs(
       difference.x * rayDirection.y - difference.y * rayDirection.x
     ) / directionMagnitude
 
-    if distanceOnRay > Epsilon && distanceFromRay <= Epsilon then
-      Some(distanceOnRay)
+    if distanceOnRay > Epsilon && distanceFromRay <= Epsilon then Some(distanceOnRay)
     else None

@@ -46,7 +46,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory:
   test("SceneInterpolator should interpolate an entity position"):
     val previousEntity = Entity.circle("entity", Vector2D(0.0, 10.0), 1.0).value
     val nextEntity     = previousEntity.moveTo(Vector2D(100.0, 50.0))
-    val alpha = 0.25
+    val alpha          = 0.25
 
     val result = SceneInterpolator(
       stateWith(entities = List(previousEntity)),

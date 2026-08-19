@@ -10,13 +10,14 @@ import monad_core.simulator.errors.BaseError
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import scalafx.animation.AnimationTimer
 
-final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ()) extends GameEngineRuntime:
-  private val lock                           = new Object
-  private var gameLoop                       = GameLoop.default()
-  private var currentWorld: Option[World]    = None
-  private var timer: Option[AnimationTimer]  = None
-  private var currentSnapshot: Option[Scene] = None
-  private var error: Option[BaseError]       = None
+final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
+    extends GameEngineRuntime:
+  private val lock                                        = new Object
+  private var gameLoop                                    = GameLoop.default()
+  private var currentWorld: Option[World]                 = None
+  private var timer: Option[AnimationTimer]               = None
+  private var currentSnapshot: Option[Scene]              = None
+  private var error: Option[BaseError]                    = None
   private var currentDimensions: Option[(Double, Double)] = None
 
   given physics: PhysicsManager = PhysicsManager.default()
@@ -90,8 +91,7 @@ final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ()) ext
             world.createEntity(SaveEntityCommand(entity))
           case Left(error) =>
             Left(error.adaptError())
-      else
-        Right(())
+      else Right(())
     }
 
   override def getError: Option[BaseError] = error
@@ -112,5 +112,6 @@ final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ()) ext
       resizeResult
 
 object MonadCoreGameEngineRuntime:
+
   def apply(onError: BaseError => Unit = _ => ()): MonadCoreGameEngineRuntime =
     new MonadCoreGameEngineRuntime(onError)

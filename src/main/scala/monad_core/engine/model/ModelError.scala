@@ -28,4 +28,5 @@ case class WeightCannotBeNegativeOrZero() extends EngineError("Weight cannot be 
 
 case class ATeamCannotBeItsOwnEnemy() extends EngineError("A team cannot be its own enemy")
 
-case class WorldBoundsCannotBeNegativeOrZero() extends EngineError("World bounds cannot be negative or zero")
+case class WorldBoundsCannotBeNegativeOrZero()
+    extends EngineError("World bounds cannot be negative or zero")

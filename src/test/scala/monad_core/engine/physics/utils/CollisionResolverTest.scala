@@ -3,10 +3,7 @@ package monad_core.engine.physics.utils
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{PhysicsError, PhysicsRuleError, ZeroMassError}
-import monad_core.engine.helper.DummyEntityHelper.{
-  makeFixedEntityCircle,
-  makeMovingEntityCircle
-}
+import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite

@@ -17,7 +17,7 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
-final class ScalaFxLauncher(mainStage: MainStageBuilder) :
+final class ScalaFxLauncher(mainStage: MainStageBuilder):
 
   private val MinStageWidth         = 1024.0
   private val MinStageHeight        = 720.0

@@ -41,7 +41,7 @@ private case class GameLoopImpl(
       for
         res <- runFixedUpdate(remainingTime, state, state)
         (previousScene, currentScene, currentAccumulator) = res
-        alpha                              = currentAccumulator.toDouble / tickTime.toDouble
+        alpha = currentAccumulator.toDouble / tickTime.toDouble
         interpolatedScene <- SceneInterpolator(
           previousScene = previousScene,
           nextScene = currentScene,
@@ -53,17 +53,14 @@ private case class GameLoopImpl(
 
   @tailrec
   private def runFixedUpdate(
-                              remainingTime: Long,
-                              previousScene: State,
-                              currentScene: State
-                            )
-                            (using physics: PhysicsEngine)
-  : Either[EngineError, (State, State, Long)] =
+      remainingTime: Long,
+      previousScene: State,
+      currentScene: State
+  )(using physics: PhysicsEngine): Either[EngineError, (State, State, Long)] =
     if remainingTime < tickTime then Right((previousScene, currentScene, remainingTime))
     else
       val updatedScene = physics.step(currentScene, tickTime)
       updatedScene match
-        case Left(err)           => Left(err)
+        case Left(err) => Left(err)
         case Right(updatedScene) =>
           runFixedUpdate(remainingTime - tickTime, currentScene, updatedScene)
-

@@ -1,7 +1,15 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.traits.State
-import monad_core.engine.core.{GameLoop, InvalidAccumulator, InvalidLastTime, InvalidMaxFrameTime, InvalidMaxFrameTimeTickTimeRatio, InvalidTickTime, LoopMode}
+import monad_core.engine.core.{
+  GameLoop,
+  InvalidAccumulator,
+  InvalidLastTime,
+  InvalidMaxFrameTime,
+  InvalidMaxFrameTimeTickTimeRatio,
+  InvalidTickTime,
+  LoopMode
+}
 import monad_core.engine.simulator.Painter
 import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
 import monad_core.engine.core.traits.PhysicsEngine
@@ -11,10 +19,7 @@ import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class GameLoopTest extends AnyFunSuite
-  with Matchers
-  with MockFactory
-  with MockSceneHelper:
+class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockSceneHelper:
 
   val DefaultTickTime        = 16_000_000L
   val DefaultMaxFrameTime    = 250_000_000L
@@ -73,7 +78,7 @@ class GameLoopTest extends AnyFunSuite
   test("if the game loop is not running, it should not update the physics"):
     given painter: Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = 1_000_000L
 
     MockPhysics.step.expects(*, *).never()
@@ -91,7 +96,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene       = sceneWithEntities(List.empty)
     val initialLoop = StandardLoop.start()
     val currentTime = 1_000_000L
 
@@ -107,7 +112,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = 30_000_000L
     val initialLoop = GameLoop(lastTime = InitialTime).value
 
@@ -121,7 +126,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene          = sceneWithEntities(List.empty)
     val timeDifference = 1L
     val currentTime    = DefaultTickTime - timeDifference
     val initialLoop =
@@ -138,7 +143,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene        = sceneWithEntities(List.empty)
     val updatedScene = sceneWithEntities(List.empty)
     val currentTime  = DefaultTickTime
     val initialLoop =
@@ -155,7 +160,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene       = sceneWithEntities(List.empty)
     val sceneStep1  = sceneWithEntities(List.empty)
     val sceneStep2  = sceneWithEntities(List.empty)
     val currentTime = DefaultTickTime * 2
@@ -175,7 +180,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene              = sceneWithEntities(List.empty)
     val updatedScene       = sceneWithEntities(List.empty)
     val currentTime        = 20_000_000L
     val correctAccumulator = 4_000_000L
@@ -192,7 +197,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene                  = sceneWithEntities(List.empty)
     val currentTime            = 1_000_000_000L
     val correctAccumulator     = 10_000_000L
     val correctIterationNumber = 15 // #iterations = 250ms / 16ms = 15
@@ -216,7 +221,7 @@ class GameLoopTest extends AnyFunSuite
 
     given Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene        = sceneWithEntities(List.empty)
     val updatedScene = sceneWithEntities(List.empty)
     val partialTime1 = 16_000_000L
     val partialTime2 = 32_000_000L
@@ -247,12 +252,12 @@ class GameLoopTest extends AnyFunSuite
 
   test("a game loop should allow last time value to be zero"):
     val validLastTime = 0L
-    val loop = GameLoop(lastTime = validLastTime)
+    val loop          = GameLoop(lastTime = validLastTime)
     loop.isRight shouldBe true
 
   test("a game loop should allow last time value to be positive"):
     val validLastTime = 1L
-    val loop = GameLoop(lastTime = validLastTime)
+    val loop          = GameLoop(lastTime = validLastTime)
     loop.isRight shouldBe true
 
   test("a game loop should be InvalidAccumulator when accumulator is negative"):
@@ -283,7 +288,7 @@ class GameLoopTest extends AnyFunSuite
 
     given painter: Painter = mock[Painter]
 
-    val scene = sceneWithEntities(List.empty)
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = DefaultTickTime
     val editLoop    = GameLoop(mode = EditMode, isRunning = true)
 
