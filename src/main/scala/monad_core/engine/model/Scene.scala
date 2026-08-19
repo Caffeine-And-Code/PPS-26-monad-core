@@ -3,7 +3,7 @@ package monad_core.engine.model
 import monad_core.engine.core.*
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
-import monad_core.engine.model.Scene.{entitiesLens, surfacesLens, teamsLens, *}
+import monad_core.engine.model.Scene.*
 
 type EntityMap  = Map[LocatableId, Entity]
 type SurfaceMap = Map[LocatableId, Surface]
@@ -19,33 +19,33 @@ case class Scene(
 
   // Gets
   def getEntity(id: LocatableId): Either[EngineError, Entity] =
-    getFromMap(entitiesLens, this, id, EntityNotFound(id))
+    getFromMap(Scene.entitiesLens, this, id, EntityNotFound(id))
 
   def getTeam(id: TeamId): Either[EngineError, Team] =
-    getFromMap(teamsLens, this, id, TeamNotFound(id))
+    getFromMap(Scene.teamsLens, this, id, TeamNotFound(id))
 
   def getSurface(id: LocatableId): Either[EngineError, Surface] =
-    getFromMap(surfacesLens, this, id, SurfaceNotFound(id))
+    getFromMap(Scene.surfacesLens, this, id, SurfaceNotFound(id))
 
   // Adds
   def addEntity(entity: Entity): Either[EngineError, Scene] =
-    addToMap(entitiesLens, this, entity.id, entity, CannotAddEntity(_))
+    addToMap(Scene.entitiesLens, this, entity.id, entity, CannotAddEntity(_))
 
   def addTeam(team: Team): Either[EngineError, Scene] =
-    addToMap(teamsLens, this, team.id, team, CannotAddTeam(_))
+    addToMap(Scene.teamsLens, this, team.id, team, CannotAddTeam(_))
 
   def addSurface(surface: Surface): Either[EngineError, Scene] =
-    addToMap(surfacesLens, this, surface.id, surface, CannotAddSurface(_))
+    addToMap(Scene.surfacesLens, this, surface.id, surface, CannotAddSurface(_))
 
   // Removes
   def removeEntity(entity: Entity): Either[EngineError, Scene] =
-    removeFromMap(entitiesLens, this, entity.id, CannotRemoveEntity(_))
+    removeFromMap(Scene.entitiesLens, this, entity.id, CannotRemoveEntity(_))
 
   def removeTeam(team: Team): Either[EngineError, Scene] =
-    removeFromMap(teamsLens, this, team.id, CannotRemoveTeam(_))
+    removeFromMap(Scene.teamsLens, this, team.id, CannotRemoveTeam(_))
 
   def removeSurface(surface: Surface): Either[EngineError, Scene] =
-    removeFromMap(surfacesLens, this, surface.id, CannotRemoveSurface(_))
+    removeFromMap(Scene.surfacesLens, this, surface.id, CannotRemoveSurface(_))
 
   override def allEntities: List[Entity] = entities.map((id, entity) => entity).toList
 

@@ -1,19 +1,17 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.traits.State
+import helpers.arrangers.EngineColorArranger
+import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
+import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.core.{
   GameLoop,
   InvalidAccumulator,
-  InvalidLastTime,
   InvalidMaxFrameTime,
   InvalidMaxFrameTimeTickTimeRatio,
   InvalidTickTime,
   LoopMode
 }
 import monad_core.engine.simulator.Painter
-import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
-import monad_core.engine.core.traits.RenderEngine
-import monad_core.engine.core.traits.PhysicsEngine
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -29,6 +27,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   given MockPhysics: PhysicsEngine = mock[PhysicsEngine]
   given MockPainter: Painter       = mock[Painter]
+
+  def setupPainterInteractions(painter: Painter): Unit =
+    (() => painter.baseColor)
+      .expects()
+      .returns(Right(EngineColorArranger.arrangeRed()))
+      .anyNumberOfTimes()
 
   def setupGenericStateCalls(): Unit =
     setupStateCalls(MockState)
@@ -88,6 +92,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
     val currentTime = 1_000_000L
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(*, *).never()
     setupGenericStateCalls()
 
@@ -102,11 +107,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("if the game loop is in edit mode, it should not update the physics"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val initialLoop = StandardLoop.start()
     val currentTime = 1_000_000L
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(*, *).never()
     setupGenericStateCalls()
 
@@ -118,11 +124,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     "if the game loop is in edit mode or not running, it should still update its last timestamp"
   ):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val currentTime = 30_000_000L
     val initialLoop = GameLoop(lastTime = InitialTime).value
 
+    setupPainterInteractions(painter)
     setupGenericStateCalls()
 
     val (_, currentLoop) = initialLoop.tick(MockState, currentTime).value
@@ -133,13 +140,14 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     "in simulation mode, passing less than one tick period should not invoke the physics engine"
   ):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val timeDifference = 1L
     val currentTime    = DefaultTickTime - timeDifference
     val initialLoop =
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(*, *).never()
     setupGenericStateCalls()
 
@@ -150,13 +158,14 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("in simulation mode, passing exactly one tick period should invoke the physics engine once"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val updatedScene = mock[State]
     val currentTime  = DefaultTickTime
     val initialLoop =
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(MockState, currentTime).returning(Right(updatedScene)).once()
     setupStateCalls(updatedScene)
 
@@ -167,7 +176,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("in simulation mode, passing two tick periods should invoke the physics engine twice"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val sceneStep1  = mock[State]
     val sceneStep2  = mock[State]
@@ -175,6 +184,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     val initialLoop =
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
+    setupPainterInteractions(painter)
     setupStateCalls(sceneStep2)
     inSequence:
       MockPhysics.step.expects(MockState, DefaultTickTime).returning(Right(sceneStep1)).once()
@@ -187,7 +197,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("in simulation mode, remaining time after fixed updates must be saved in the accumulator"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val updatedScene       = mock[State]
     val currentTime        = 20_000_000L
@@ -195,6 +205,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     val initialLoop =
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(MockState, DefaultTickTime).returning(Right(updatedScene)).once()
     setupStateCalls(updatedScene)
 
@@ -204,7 +215,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("massive lag spikes must be clamped to prevent overload"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val currentTime            = 1_000_000_000L
     val correctAccumulator     = 10_000_000L
@@ -221,6 +232,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       .returning(Right(MockState))
       .repeated(correctIterationNumber)
     setupGenericStateCalls()
+    setupPainterInteractions(painter)
 
     val (_, currentLoop) = initialLoop.tick(MockState, currentTime).value
 
@@ -228,7 +240,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("stopping or switching mode must freeze the simulation, which can then be resumed"):
 
-    given Painter = mock[Painter]
+    given painter: Painter = mock[Painter]
 
     val updatedScene = mock[State]
     val partialTime1 = 16_000_000L
@@ -239,6 +251,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
     setupGenericStateCalls()
     setupStateCalls(updatedScene)
+    setupPainterInteractions(painter)
     MockPhysics.step.expects(MockState, DefaultTickTime).returning(Right(updatedScene)).once()
     MockPhysics.step.expects(*, DefaultTickTime).returning(Right(updatedScene)).once()
 
@@ -290,6 +303,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     val editLoop    = GameLoop(mode = EditMode, isRunning = true)
 
     MockPhysics.step.expects(*, *).never()
+    setupPainterInteractions(painter)
     setupGenericStateCalls()
 
     val (currentScene, currentLoop) =

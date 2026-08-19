@@ -30,11 +30,24 @@ final class GameEnginePanel(
   private val SpacingRatio           = 0.02
   private val TopPanelMinHeight      = 80.0
 
+  private case class GameEnginePanelViewModel(gameEngineRuntime: GameEngineRuntime):
+    val isEngineRunning: BooleanProperty = BooleanProperty(gameEngineRuntime.isRunning)
+
+  extension (viewModel: GameEnginePanelViewModel)
+
+    private def onModeChange(isButtonActive: Boolean): Unit =
+      if isButtonActive then viewModel.gameEngineRuntime.start()
+      else viewModel.gameEngineRuntime.stop()
+      viewModel.isEngineRunning.value = viewModel.gameEngineRuntime.isRunning
+
+    private def onStopClick(): Unit =
+      viewModel.gameEngineRuntime.resetToSnapshot()
+
   def build(): Either[BaseError, VBox] =
     gameEngineRuntime.initializeWorld(world)
     gameEngineRuntime.createSnapshot()
 
-    val isEngineRunning = BooleanProperty(gameEngineRuntime.isRunning)
+    val viewModel = GameEnginePanelViewModel(gameEngineRuntime)
 
     for
       sceneRendererPanel <- rendererPanel
@@ -42,22 +55,19 @@ final class GameEnginePanel(
         .left
         .map(error => CannotBuildPanel(error, this.toString))
 
-      onModeChange = (isButtonActive: Boolean) =>
-        if isButtonActive then gameEngineRuntime.start()
-        else gameEngineRuntime.stop()
-        isEngineRunning.value = gameEngineRuntime.isRunning
-
-      onStopClick = () => gameEngineRuntime.resetToSnapshot()
-
       gameEngineModePanel <- modePanel
-        .build(imageConfig, onModeChange, onStopClick, isEngineRunning)
+        .build(
+          imageConfig,
+          viewModel.onModeChange,
+          viewModel.onStopClick,
+          viewModel.isEngineRunning
+        )
         .left
         .map(error => CannotBuildPanel(error, this.toString))
     yield
       val container = new VBox {
         children = Seq(gameEngineModePanel, sceneRendererPanel)
       }
-
       container.spacing <== container.height * SpacingRatio
 
       gameEngineModePanel.prefHeight <== container.height * TopPanelHeightRatio

@@ -5,7 +5,7 @@ import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
 
 trait GameEngineRuntime extends EngineControl:
-  def attach(renderer: World => Unit)(using Painter): Unit
+  def tick(currentTime: Long)(renderer: World => Unit)(using Painter): Unit
   def createSnapshot(): Unit
   def resetToSnapshot(): Unit
   def initializeWorld(world: World, withDefaultEntity: Boolean = true): Either[BaseError, Unit]
