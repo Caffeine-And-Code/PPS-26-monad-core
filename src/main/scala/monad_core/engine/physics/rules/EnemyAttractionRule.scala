@@ -8,8 +8,8 @@ import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object EnemyAttractionRule:
-  private val Id                     = "enemy-attraction"
-  private val AttractionAcceleration = 1.0
+  private val Id           = "enemy-attraction"
+  private val MaxTurnRate = 4.0 // radians per second
 
   given enemyAttractionRule: PhysicsRule with
 
@@ -18,6 +18,7 @@ private[physics] object EnemyAttractionRule:
     override def apply(scene: State, dt: Long)(using
         detector: CollisionDetector
     ): Either[PhysicsError, State] =
+
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities
@@ -30,7 +31,8 @@ private[physics] object EnemyAttractionRule:
           teams,
           vertexes,
           scene.bounds.upperLeft,
-          scene.bounds.lowerRight
+          scene.bounds.lowerRight,
+          dt
         )
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
       yield updatedScene
@@ -40,7 +42,8 @@ private[physics] object EnemyAttractionRule:
         teams: List[Team],
         vertexes: Map[LocatableId, List[Vector2D]],
         upperLeftCorner: Vector2D,
-        lowerRightCorner: Vector2D
+        lowerRightCorner: Vector2D,
+        dt: Long
     ): Either[PhysicsError, List[Entity]] = {
       val entitiesToMove = entities.filterNot(_.isFixed)
 
@@ -53,7 +56,8 @@ private[physics] object EnemyAttractionRule:
             teams,
             vertexes,
             upperLeftCorner,
-            lowerRightCorner
+            lowerRightCorner,
+            dt
           )
             .map(updatedEntity => updatedEntities :+ updatedEntity)
     }
@@ -64,7 +68,8 @@ private[physics] object EnemyAttractionRule:
         teams: List[Team],
         vertexes: Map[LocatableId, List[Vector2D]],
         upperLeftCorner: Vector2D,
-        lowerRightCorner: Vector2D
+        lowerRightCorner: Vector2D,
+        dt: Long
     ): Either[PhysicsError, Entity] =
       val nearestEnemy = PhysicsUtil.nearestEnemy(
         entity,
@@ -87,16 +92,52 @@ private[physics] object EnemyAttractionRule:
             case Left(err) => Left(err)
             case Right(Some(targetPos)) =>
               for
-                direction = (targetPos - entity.position).normalized
-                speed     = direction * AttractionAcceleration
                 currentSpeed <- entity.speed match
                   case Some(s) => Right(s)
-                  case None    => Left(PhysicsRuleError(s"Entity ${entity.id} has no speed to apply enemy attraction"))
-                  
-                result = entity.withSpeed(currentSpeed + speed)
+                  case None    => 
+                    Left(PhysicsRuleError(s"Entity ${entity.id} has no speed to apply enemy attraction"))
+
+                seconds <- PhysicsUtil.timeLongToSeconds(dt)
+                result = orientSpeed(
+                  entity,
+                  currentSpeed,
+                  targetPos,
+                  MaxTurnRate * seconds
+                )
               yield result
             case Right(None) =>
               Right(entity)
 
         case None =>
           Right(entity)
+
+    private def orientSpeed(
+        entity: Entity,
+        currentSpeed: Vector2D,
+        targetPosition: Vector2D,
+        maxTurnAngle: Double
+    ): Entity =
+      val speedMagnitude = currentSpeed.magnitude
+
+      if speedMagnitude == 0 then entity
+      else
+        val currentAngle = math.atan2(currentSpeed.y, currentSpeed.x)
+        val targetDirection = (targetPosition - entity.position).normalized
+
+        if targetDirection.magnitude == 0 then entity
+        else
+          val targetAngle = math.atan2(targetDirection.y, targetDirection.x)
+          val angleDifference = normalizeAngle(targetAngle - currentAngle)
+          val appliedTurn = angleDifference.max(-maxTurnAngle).min(maxTurnAngle)
+          val newAngle = currentAngle + appliedTurn
+
+          entity.withSpeed(
+            Vector2D(
+              math.cos(newAngle) * speedMagnitude,
+              math.sin(newAngle) * speedMagnitude
+            )
+          )
+
+    private def normalizeAngle(angle: Double): Double =
+      val twoPi = 2 * math.Pi
+      ((angle + math.Pi) % twoPi + twoPi) % twoPi - math.Pi

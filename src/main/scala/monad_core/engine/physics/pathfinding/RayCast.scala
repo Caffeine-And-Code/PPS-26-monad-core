@@ -9,7 +9,8 @@ import monad_core.engine.physics.core.{
 
 private[physics] object RayCast:
 
-  private def WayPointDisplacement = 0.1
+  private val WayPointDisplacement = 5.0
+  private val CornerDisplacement    = 1.0
 
   def apply(
       to: Entity,
@@ -22,19 +23,38 @@ private[physics] object RayCast:
     val entitiesVertexesWithoutFrom = entitiesVertexes.filterNot(_._1 == from.id)
 
     val rayDirection = (to.position - from.position).normalized
+    val perpendicularDirection = Vector2D(-rayDirection.y, rayDirection.x)
+    val hunterClearance = (math.max(
+      SizeHelper.horizontalShapeSize(from),
+      SizeHelper.verticalShapeSize(from)
+    ) / 2) - CornerDisplacement
 
-    val firstObject = RayIntersection(
+    val rayOrigins = List(
       from.position,
-      rayDirection,
-      entitiesVertexesWithoutFrom
+      from.position + perpendicularDirection * hunterClearance,
+      from.position - perpendicularDirection * hunterClearance
     )
 
+    val firstObjects = rayOrigins.flatMap { origin =>
+      RayIntersection.withDistance(
+        origin,
+        rayDirection,
+        entitiesVertexesWithoutFrom
+      )
+    }
+
+    val firstObject = firstObjects
+      .filter(_._1 != to.id)
+      .minByOption(_._2)
+      .orElse(firstObjects.find(_._1 == to.id))
+
     firstObject match
-      case Some(first) =>
+      case Some((first, _)) =>
         if first == to.id then Right(Some(to.position))
         else
           findEncounteredEntityWayPoint(
             first,
+            to,
             from,
             entities,
             entitiesVertexesWithoutFrom,
@@ -45,6 +65,7 @@ private[physics] object RayCast:
 
   private def findEncounteredEntityWayPoint(
       firstEncounteredEntity: LocatableId,
+      originalTarget: Entity,
       from: Entity,
       entities: List[Entity],
       entitiesVertexes: Map[LocatableId, List[Vector2D]],
@@ -60,6 +81,7 @@ private[physics] object RayCast:
 
         val bestWaypoint = findBestWaypoint(
           target,
+          originalTarget,
           from,
           waypoints,
           upperLeftSceneCorner,
@@ -109,6 +131,7 @@ private[physics] object RayCast:
 
   private def findBestWaypoint(
       to: Entity,
+      originalTarget: Entity,
       from: Entity,
       waypoints: List[Vector2D],
       upperLeftSceneCorner: Vector2D,
@@ -128,4 +151,4 @@ private[physics] object RayCast:
       )
 
     if validWaypoints.isEmpty then None
-    else Some(validWaypoints.minBy(_.euclideanDistance(from.position)))
+    else Some(validWaypoints.minBy(_.euclideanDistance(originalTarget.position)))

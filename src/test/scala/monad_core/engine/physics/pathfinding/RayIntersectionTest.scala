@@ -61,6 +61,32 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
 
     result shouldBe IntersectedRectangleEntity.id
 
+  test("RayIntersection should detect a vertex lying exactly on the ray"):
+    val vertexEntity = makeFixedEntityRectangle(
+      id = "vertex",
+      position = Vector2D(5.0, 1.0),
+      height = 1.0,
+      width = 1.0
+    )
+    val vertexMap = Map(vertexEntity.id -> List(Vector2D(5.0, 1.0)))
+
+    val result = RayIntersection(RayStart, RayDirection, vertexMap)
+
+    result shouldBe Some(vertexEntity.id)
+
+  test("RayIntersection should return the distance of the closest hit"):
+    val vertexEntity = makeFixedEntityRectangle(
+      id = "vertex-distance",
+      position = Vector2D(5.0, 1.0),
+      height = 1.0,
+      width = 1.0
+    )
+    val vertexMap = Map(vertexEntity.id -> List(Vector2D(5.0, 1.0)))
+
+    val result = RayIntersection.withDistance(RayStart, RayDirection, vertexMap)
+
+    result shouldBe Some(vertexEntity.id -> 4.0)
+
   test("RayIntersection should return the id of an intersected circle"):
 
     val vertexMap = VertexFinder(

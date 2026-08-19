@@ -33,18 +33,16 @@ class RayCastTest extends AnyFunSuite with Matchers:
     val (horizontalDisplacement, verticalDisplacement) = From.shape match
       case circle: Circle =>
         (
-          circle.radius + EpsilonDisplace,
-          circle.radius + EpsilonDisplace
+          circle.radius + WayPointDisplacement,
+          circle.radius + WayPointDisplacement
         )
       case rectangle: Rectangle =>
         (
-          rectangle.horizontalSize(From.position) + EpsilonDisplace,
-          rectangle.verticalSize(From.position) + EpsilonDisplace
+          rectangle.horizontalSize(From.position) / 2 + WayPointDisplacement,
+          rectangle.verticalSize(From.position) / 2 + WayPointDisplacement
         )
 
     val normalToWaypoint = (raw - obstacle.position).normalized
-    val moduleToWaypoint = (raw - obstacle.position).magnitude
-
     val entityDisplacement = Vector2D(
       if normalToWaypoint.x > 0 then horizontalDisplacement else -horizontalDisplacement,
       if normalToWaypoint.y > 0 then verticalDisplacement else -verticalDisplacement
@@ -54,10 +52,14 @@ class RayCastTest extends AnyFunSuite with Matchers:
 
     raw + totalDisplacement
 
-  private val UpperLeftCorner: Vector2D  = Vector2D(0.0, 0.0)
-  private val LowerRightCorner: Vector2D = Vector2D(20.0, 20.0)
+  private val UpperLeftCorner: Vector2D  = Vector2D(-20.0, -20.0)
+  private val LowerRightCorner: Vector2D = Vector2D(40.0, 40.0)
 
-  private val EpsilonDisplace = 0.1
+  private val TightUpperLeftCorner: Vector2D  = Vector2D(0.0, 0.0)
+  private val TightLowerRightCorner: Vector2D = Vector2D(20.0, 20.0)
+
+  private val WayPointDisplacement = 5.0
+  private val EpsilonDisplace      = 1e-8
 
   test("RayCast should return the position of the target entity when there are no obstacles"):
     val entities         = List(From, To)
@@ -66,6 +68,25 @@ class RayCastTest extends AnyFunSuite with Matchers:
     val result = RayCast(To, From, entities, entitiesVertexes, UpperLeftCorner, LowerRightCorner)
 
     result shouldBe Right(Some(To.position))
+
+  test("RayCast should detect an obstacle hit only by a lateral ray"):
+    val lateralFrom = makeMovingEntityCircle(
+      id = "lateral-from",
+      position = Vector2D(1.0, 1.0),
+      radius = 2.0
+    )
+    val obstacle = makeMovingEntityRectangle(
+      id = "lateral-obstacle",
+      position = Vector2D(4.2928932188, 5.7071067812),
+      width = 1.0,
+      height = 1.0
+    )
+    val entities = List(lateralFrom, To, obstacle)
+    val entitiesVertexes = VertexFinder(entities.filterNot(_.id == lateralFrom.id))
+
+    val result = RayCast(To, lateralFrom, entities, entitiesVertexes, UpperLeftCorner, LowerRightCorner)
+
+    result.value.value should not be To.position
 
   test(
     "RayCast should return Left(RayIntersectedNothing) when neither target entity is not intersected"
@@ -107,7 +128,14 @@ class RayCastTest extends AnyFunSuite with Matchers:
     val entities         = List(From, To, obstacle)
     val entitiesVertexes = VertexFinder(entities)
 
-    val result = RayCast(To, From, entities, entitiesVertexes, UpperLeftCorner, LowerRightCorner)
+    val result = RayCast(
+      To,
+      From,
+      entities,
+      entitiesVertexes,
+      TightUpperLeftCorner,
+      TightLowerRightCorner
+    )
 
     result shouldBe Right(None)
 
@@ -126,7 +154,7 @@ class RayCastTest extends AnyFunSuite with Matchers:
 
     val waypoints = WaypointFinder(From, obstacle)
 
-    val expectedRawWaypoint = waypoints.minBy(_.euclideanDistance(From.position))
+    val expectedRawWaypoint = waypoints.minBy(_.euclideanDistance(To.position))
 
     val expectedWaypoint = rawToActualWaypoint(expectedRawWaypoint, obstacle)
 

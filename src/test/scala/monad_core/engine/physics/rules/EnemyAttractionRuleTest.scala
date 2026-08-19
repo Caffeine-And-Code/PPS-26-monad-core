@@ -25,8 +25,6 @@ class EnemyAttractionRuleTest
 
   private val Rule = EnemyAttractionRule.enemyAttractionRule
 
-  private val AttractionAcceleration = 1.0
-
   private val Epsilon = 1e-12
 
   private val UpperLeftBound  = Vector2D(0.0, 0.0)
@@ -50,7 +48,7 @@ class EnemyAttractionRuleTest
     )
 
     val direction = (targetPos.value.value - entity.position).normalized
-    entity.speed.value + direction * AttractionAcceleration
+    direction * entity.speed.value.magnitude
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
@@ -115,7 +113,7 @@ class EnemyAttractionRuleTest
 
     resultEntity.speed shouldBe fixedEntity.speed
 
-  test("the rule should accelerate a mobile entity toward its nearest enemy"):
+  test("the rule should orient a mobile entity toward its nearest enemy without changing speed magnitude"):
 
     val entity = addTeam(
       makeMovingEntityCircle(
@@ -144,7 +142,9 @@ class EnemyAttractionRuleTest
     val result       = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
-    resultEntity.speed.value shouldBe expectedSpeed
+    resultEntity.speed.value.x shouldBe expectedSpeed.x +- Epsilon
+    resultEntity.speed.value.y shouldBe expectedSpeed.y +- Epsilon
+    resultEntity.speed.value.magnitude shouldBe entity.speed.value.magnitude +- Epsilon
 
   test("the rule should update every mobile entity that has an enemy"):
 
@@ -160,7 +160,7 @@ class EnemyAttractionRuleTest
     val entity2 = addTeam(
       makeMovingEntityCircle(
         id = "entity2",
-        position = Vector2D(5.0, 5.0),
+        position = Vector2D(5.0, 8.0),
         speed = Vector2D(0.0, 1.0)
       ),
       "teamA"
@@ -190,3 +190,5 @@ class EnemyAttractionRuleTest
     resultEntity1.speed.value.y shouldBe expectedSpeed1.y +- Epsilon
     resultEntity2.speed.value.x shouldBe expectedSpeed2.x +- Epsilon
     resultEntity2.speed.value.y shouldBe expectedSpeed2.y +- Epsilon
+    resultEntity1.speed.value.magnitude shouldBe entity1.speed.value.magnitude +- Epsilon
+    resultEntity2.speed.value.magnitude shouldBe entity2.speed.value.magnitude +- Epsilon
