@@ -7,7 +7,7 @@ import monad_core.engine.simulator.Painter
 
 object RendererManager extends RenderEngine:
 
-  override def render(state: State, alpha: Double)(using
+  override def render(state: State)(using
       painter: Painter
   ): Either[EngineError, Unit] =
     for

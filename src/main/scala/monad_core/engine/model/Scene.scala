@@ -14,7 +14,8 @@ case class Lens[S, A](get: S => A, set: (S, A) => S)
 case class Scene(
     entities: EntityMap = Map.empty,
     surfaces: SurfaceMap = Map.empty,
-    teams: TeamMap = Map.empty
+    teams: TeamMap = Map.empty,
+    bounds: WorldBounds = WorldBounds.default
 ) extends State:
 
   // Gets
@@ -52,6 +53,17 @@ case class Scene(
   override def allTeams: List[Team] = teams.map((id, team) => team).toList
 
   override def allSurfaces: List[Surface] = surfaces.map((id, surfaces) => surfaces).toList
+
+  def resize(width: Double, height: Double): Either[EngineError, Scene] =
+    val newBounds = WorldBounds(width, height)
+    newBounds match
+      case Left(err) => Left(err)
+      case Right(bounds) =>
+        Right(
+          this.copy(
+            bounds = bounds
+          )
+        )
 
 object Scene:
 

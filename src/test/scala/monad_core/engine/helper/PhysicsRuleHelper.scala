@@ -1,4 +1,4 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.Event
@@ -9,7 +9,7 @@ object PhysicsRuleHelper:
 
   def makeDummyRule(
       id: String = "rule-id",
-      action: (State, Long) => Either[PhysicsError, State],
+      action: (State, Long) => Either[PhysicsError, State] = (_1, _2) => Right(_1),
       events: Vector[Event] = Vector.empty
   ): PhysicsRule =
     new PhysicsRule:

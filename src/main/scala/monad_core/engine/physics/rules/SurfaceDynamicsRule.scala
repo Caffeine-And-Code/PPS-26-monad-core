@@ -7,7 +7,8 @@ import monad_core.engine.physics.core.{
   PhysicsDomainError,
   PhysicsError,
   PhysicsRule,
-  PhysicsRuleResult
+  PhysicsRuleResult,
+  PhysicsRuleError
 }
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
@@ -55,13 +56,18 @@ private[physics] object SurfaceDynamicsRule:
         }
     }
 
-  private def applySurfaceDynamics(
+  private[physics] def applySurfaceDynamics(
       entity: Entity,
       surface: Surface,
       dt: Long
   ): Either[PhysicsError, Entity] =
     for
-      speed = entity.speed.get
+      speed <- entity.speed match
+        case Some(s) => Right(s)
+        case None =>
+          Left(
+            PhysicsRuleError(s"Entity ${entity.id} is fixed, it cannot be applied surface dynamics")
+          )
 
       speedAfterForce <-
         surface.appliedForce match

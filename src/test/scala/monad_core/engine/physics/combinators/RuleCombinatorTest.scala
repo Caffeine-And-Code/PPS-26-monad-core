@@ -3,6 +3,8 @@ package monad_core.engine.physics.combinators
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.Event.EntityUpdatedEvent
 import monad_core.engine.core.traits.State
+import monad_core.engine.helper.PhysicsConstantHelper.DeltaTimeOneSecond
+import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
 import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.physics.combinators.RuleCombinator
 import monad_core.engine.physics.combinators.RuleCombinator.*
@@ -12,8 +14,6 @@ import monad_core.engine.physics.core.{
   PhysicsRuleError,
   PhysicsRuleResult
 }
-import monad_core.engine.physics.helper.PhysicsConstantHelper.*
-import monad_core.engine.physics.helper.PhysicsRuleHelper.makeDummyRule
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite

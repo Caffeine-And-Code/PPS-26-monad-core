@@ -32,3 +32,6 @@ case class CannotRemoveSurface(genericError: CannotRemoveNonPresentElementFromMa
 
 case class CannotRemoveNonPresentElementFromMap[Key](key: Key)
     extends EngineError(s"Element with key $key not present of type ${key.getClass}")
+
+case class InvalidInterpolationAlpha(alpha: Double)
+    extends EngineError(s"Interpolation alpha must be between 0 and 1: $alpha")

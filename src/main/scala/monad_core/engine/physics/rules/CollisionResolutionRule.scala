@@ -63,9 +63,9 @@ private[physics] object CollisionResolutionRule:
       collisions
         .flatMap { detected =>
           Vector(
-            detected.first -> (detected.second, detected.collision),
-            detected.second -> (
-              detected.first,
+            detected.second -> (detected.first, detected.collision),
+            detected.first -> (
+              detected.second,
               detected.collision.copy(normalVector = detected.collision.normalVector.flip)
             )
           )

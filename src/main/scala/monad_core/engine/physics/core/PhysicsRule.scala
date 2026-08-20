@@ -18,9 +18,9 @@ trait PhysicsRule:
 
   override def equals(obj: Any): Boolean =
     obj match
-      case that: PhysicsRule if this.RuleId.nonEmpty && that.RuleId.nonEmpty =>
-        this.RuleId == that.RuleId
-      case _ => super.equals(obj)
+      case other: PhysicsRule if this.RuleId.nonEmpty =>
+        this.RuleId == other.RuleId
+      case _ => false
 
   override def hashCode(): Int =
-    if RuleId.nonEmpty then RuleId.hashCode else super.hashCode()
+    RuleId.hashCode

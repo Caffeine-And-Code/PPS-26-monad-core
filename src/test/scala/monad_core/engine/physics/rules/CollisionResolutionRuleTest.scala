@@ -4,12 +4,16 @@ import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.Event.EntityCollisionDetectedEvent
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeFixedEntityCircle,
+  makeMovingEntityCircle,
+  makeMovingEntityRectangle
+}
+import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.model.Entity.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.physics.helper.PhysicsConstantHelper.*
-import monad_core.engine.physics.helper.PhysicsEntityHelper.*
-import monad_core.engine.physics.helper.{PhysicsDetectorHelper, PhysicsSceneHelper}
+import monad_core.engine.helper.{MockDetectorHelper, MockSceneHelper}
 import monad_core.engine.physics.utils.{CollisionResolver, PhysicsUtil}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -21,8 +25,8 @@ class CollisionResolutionRuleTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with PhysicsDetectorHelper
-    with PhysicsSceneHelper:
+    with MockDetectorHelper
+    with MockSceneHelper:
 
   private val Rule = CollisionResolutionRule.collisionResolutionRule
 
@@ -75,14 +79,18 @@ class CollisionResolutionRuleTest
     )
 
   test("the rule should push mobile entity outside collision with fixed entity"):
-
-    val mobileEntity    = makeMovingEntityCircle(id = "mobile", position = Vector2D(0, 0))
-    val fixedEntity     = makeFixedEntityCircle(id = "fixed", position = Vector2D(1, 0))
-    val collisionNormal = Vector2D(1, 0)
-    val collisionDepth  = 1.0
+    val mobileEntity          = makeMovingEntityCircle(id = "mobile", position = Vector2D(0, 0))
+    val fixedEntity           = makeFixedEntityCircle(id = "fixed", position = Vector2D(1, 0))
+    val collisionNormal       = Vector2D(1, 0)
+    val mobileCollisionNormal = collisionNormal.flip
+    val collisionDepth        = 1.0
 
     val expectedPosition =
-      PhysicsUtil.pushMobileOverlappingFixed(mobileEntity.position, collisionNormal, collisionDepth)
+      PhysicsUtil.pushMobileOverlappingFixed(
+        mobileEntity.position,
+        mobileCollisionNormal,
+        collisionDepth
+      )
     val scene = sceneWithEntities(List(mobileEntity, fixedEntity))
 
     given CollisionDetector = detectorWithCollisions(
@@ -96,9 +104,9 @@ class CollisionResolutionRuleTest
   test(
     "the rule should resolve collision and bounce only a mobile entity colliding with a fixed entity"
   ):
-
-    val collisionNormal = Vector2D(-1, 0)
-    val collisionDepth  = 1.0
+    val collisionNormal       = Vector2D(-1, 0)
+    val mobileCollisionNormal = collisionNormal.flip
+    val collisionDepth        = 1.0
 
     val movingEntity = makeMovingEntityCircle(
       id = "moving",
@@ -112,10 +120,11 @@ class CollisionResolutionRuleTest
 
     val expectedMovingPosition = PhysicsUtil.pushMobileOverlappingFixed(
       movingEntity.position,
-      collisionNormal,
+      mobileCollisionNormal,
       collisionDepth
     )
-    val expectedMovingSpeed = PhysicsUtil.reflectOnFixed(movingEntity.speed.value, collisionNormal)
+    val expectedMovingSpeed =
+      PhysicsUtil.reflectOnFixed(movingEntity.speed.value, mobileCollisionNormal)
 
     val scene = sceneWithEntities(List(movingEntity, fixedEntity))
 
@@ -147,13 +156,14 @@ class CollisionResolutionRuleTest
       speed = Vector2D(-1, 0)
     ).withWeight(2).value
 
-    val collisionNormal = Vector2D(1, 0)
-    val collisionDepth  = 1.0
+    val collisionNormal   = Vector2D(1, 0)
+    val firstEntityNormal = collisionNormal.flip
+    val collisionDepth    = 1.0
 
     val expectedPosition1 = PhysicsUtil
       .pushMobileOverlappingMobile(
         entity1.position,
-        collisionNormal,
+        firstEntityNormal,
         collisionDepth,
         entity1.weight,
         entity2.weight
@@ -163,7 +173,7 @@ class CollisionResolutionRuleTest
     val expectedPosition2 = PhysicsUtil
       .pushMobileOverlappingMobile(
         entity2.position,
-        collisionNormal * -1,
+        collisionNormal,
         collisionDepth,
         entity2.weight,
         entity1.weight
@@ -174,7 +184,7 @@ class CollisionResolutionRuleTest
       .reflectOnMobile(
         entity1.speed.value,
         entity2.speed.value,
-        collisionNormal,
+        firstEntityNormal,
         entity1.weight,
         entity2.weight
       )
@@ -184,7 +194,7 @@ class CollisionResolutionRuleTest
       .reflectOnMobile(
         entity2.speed.value,
         entity1.speed.value,
-        collisionNormal * -1,
+        collisionNormal,
         entity2.weight,
         entity1.weight
       )
@@ -238,10 +248,11 @@ class CollisionResolutionRuleTest
     result shouldBe Left(ZeroMassError())
 
   test("the rule should update equally circular and rectangular entities"):
-    val initialPosition = Vector2D(2, 2)
-    val initialSpeed    = Vector2D(1, 0)
-    val collisionNormal = Vector2D(-1, 0)
-    val collisionDepth  = 1.0
+    val initialPosition       = Vector2D(2, 2)
+    val initialSpeed          = Vector2D(1, 0)
+    val collisionNormal       = Vector2D(-1, 0)
+    val mobileCollisionNormal = collisionNormal.flip
+    val collisionDepth        = 1.0
 
     val circularEntity = makeMovingEntityCircle(
       id = "circular",
@@ -262,11 +273,11 @@ class CollisionResolutionRuleTest
 
     val expectedPosition = PhysicsUtil.pushMobileOverlappingFixed(
       initialPosition,
-      collisionNormal,
+      mobileCollisionNormal,
       collisionDepth
     )
 
-    val expectedSpeed = PhysicsUtil.reflectOnFixed(initialSpeed, collisionNormal)
+    val expectedSpeed = PhysicsUtil.reflectOnFixed(initialSpeed, mobileCollisionNormal)
 
     val scene = sceneWithEntities(List(circularEntity, rectangularEntity, fixedEntity))
 
@@ -336,14 +347,16 @@ class CollisionResolutionRuleTest
       position = Vector2D(2, 0)
     )
 
-    val collision1 = Collision(Vector2D(-1, 0), 1.0)
-    val collision2 = Collision(Vector2D(0, -1), 5.0)
+    val collision1       = Collision(Vector2D(-1, 0), 1.0)
+    val collision2       = Collision(Vector2D(0, -1), 5.0)
+    val mobileCollision1 = collision1.copy(normalVector = collision1.normalVector.flip)
+    val mobileCollision2 = collision2.copy(normalVector = collision2.normalVector.flip)
 
     val expectedEntity = CollisionResolver(
       Map(
         entity -> List(
-          (wall1, collision1),
-          (wall2, collision2)
+          (wall1, mobileCollision1),
+          (wall2, mobileCollision2)
         )
       )
     ).value.find(_.id == entity.id).value

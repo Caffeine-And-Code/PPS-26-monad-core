@@ -1,13 +1,13 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, Vector2D}
-import monad_core.engine.physics.helper.PhysicsConstantHelper.{DefaultRadius, DeltaTimeOneSecond}
-import monad_core.engine.physics.helper.PhysicsEntityHelper.makeMovingEntityCircle
+import PhysicsConstantHelper.{DefaultRadius, DeltaTimeOneSecond}
+import DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.physics.utils.{BorderWall, BorderWallType}
 import org.scalatest.EitherValues.convertEitherToValuable
 
-object BorderContactHelper:
+private[engine] object BorderContactHelper:
 
   def generateSingleWallEntities(
       borderType: BorderWallType,

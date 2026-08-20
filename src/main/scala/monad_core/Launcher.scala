@@ -18,6 +18,7 @@ import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluatorConsolePrinter,
   AgentEvaluatorPrinter
 }
+import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.panels.{
   AiModelChatPanel,
   GameEngineModePanel,
@@ -36,7 +37,9 @@ object Launcher:
   private def guiApplication(): Either[BaseError, Unit] =
     given World = MonadCoreWorld()
 
-    given GameEngineRuntime = MonadCoreGameEngineRuntime()
+    given GameEngineRuntime = MonadCoreGameEngineRuntime { error =>
+      NotificationManager.show(error.message, Error)
+    }
 
     given painter: Painter = PaintArchitect
 

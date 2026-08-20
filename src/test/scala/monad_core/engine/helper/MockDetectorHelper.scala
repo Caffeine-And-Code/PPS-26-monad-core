@@ -1,11 +1,11 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, Surface, Vector2D}
 import org.scalamock.scalatest.MockFactory
 
-private[physics] trait PhysicsDetectorHelper:
+private[engine] trait MockDetectorHelper:
 
   self: MockFactory =>
 

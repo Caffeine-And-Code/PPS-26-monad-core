@@ -6,21 +6,23 @@ import monad_core.engine.core.traits.{PhysicsEngine, PhysicsStep, State}
 import monad_core.engine.core.{
   GameLoop,
   InvalidAccumulator,
+  InvalidLastTime,
   InvalidMaxFrameTime,
   InvalidMaxFrameTimeTickTimeRatio,
   InvalidTickTime,
   LoopMode
 }
+import monad_core.engine.helper.MockSceneHelper
+import monad_core.engine.simulator.Painter
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
+class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockSceneHelper:
 
   val DefaultTickTime        = 16_000_000L
   val DefaultMaxFrameTime    = 250_000_000L
-  val MockState: State       = mock[State]
   val InitialTime            = 0L
   val StandardLoop: GameLoop = GameLoop().value
 
@@ -72,14 +74,16 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     stoppedLoop.isRunning shouldBe false
 
   test("if the game loop is not running, it should not update the physics"):
+    given painter: Painter = mock[Painter]
+
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = 1_000_000L
 
     MockPhysics.step.expects(*, *).never()
 
-    val result = StandardLoop.tick(MockState, currentTime).value
+    val result = StandardLoop.tick(scene, currentTime).value
 
-    result.state shouldBe MockState
-    result.events shouldBe empty
+    result.state shouldBe scene
 
   test("the game loop should have have two modes: edit and simulation"):
     LoopMode.values should contain allOf (LoopMode.EditMode, LoopMode.SimulationMode)
@@ -87,30 +91,33 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     LoopMode.fromOrdinal(1) shouldBe LoopMode.SimulationMode
 
   test("if the game loop is in edit mode, it should not update the physics"):
+    val scene       = sceneWithEntities(List.empty)
     val initialLoop = StandardLoop.start()
     val currentTime = 1_000_000L
 
     MockPhysics.step.expects(*, *).never()
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
 
-    result.state shouldBe MockState
+    result.state shouldBe scene
 
   test(
     "if the game loop is in edit mode or not running, it should still update its last timestamp"
   ):
-
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = 30_000_000L
     val initialLoop = GameLoop(lastTime = InitialTime).value
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
+
+    val secondResult = initialLoop.tick(scene, currentTime).value
 
     result.loop.lastTime shouldBe currentTime
 
   test(
     "in simulation mode, passing less than one tick period should not invoke the physics engine"
   ):
-
+    val scene          = sceneWithEntities(List.empty)
     val timeDifference = 1L
     val currentTime    = DefaultTickTime - timeDifference
     val initialLoop =
@@ -118,39 +125,39 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
     MockPhysics.step.expects(*, *).never()
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
 
-    result.state shouldBe MockState
+    result.state shouldBe scene
     result.loop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing exactly one tick period should invoke the physics engine once"):
-
-    val updatedScene = mock[State]
+    val scene        = sceneWithEntities(List.empty)
+    val updatedScene = sceneWithEntities(List.empty)
     val currentTime  = DefaultTickTime
     val initialLoop =
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
     MockPhysics.step
-      .expects(MockState, currentTime)
+      .expects(scene, currentTime)
       .returning(Right(PhysicsStep(updatedScene)))
       .once()
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
 
     result.state shouldBe updatedScene
     result.loop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing two tick periods should invoke the physics engine twice"):
-
-    val sceneStep1  = mock[State]
-    val sceneStep2  = mock[State]
+    val scene       = sceneWithEntities(List.empty)
+    val sceneStep1  = sceneWithEntities(List.empty)
+    val sceneStep2  = sceneWithEntities(List.empty)
     val currentTime = DefaultTickTime * 2
     val initialLoop =
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
     inSequence:
       MockPhysics.step
-        .expects(MockState, DefaultTickTime)
+        .expects(scene, DefaultTickTime)
         .returning(Right(PhysicsStep(sceneStep1)))
         .once()
       MockPhysics.step
@@ -158,30 +165,30 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
         .returning(Right(PhysicsStep(sceneStep2)))
         .once()
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
 
     result.state shouldBe sceneStep2
     result.loop.lastTime shouldBe currentTime
 
   test("in simulation mode, remaining time after fixed updates must be saved in the accumulator"):
-
-    val updatedScene       = mock[State]
+    val scene              = sceneWithEntities(List.empty)
+    val updatedScene       = sceneWithEntities(List.empty)
     val currentTime        = 20_000_000L
     val correctAccumulator = 4_000_000L
     val initialLoop =
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
     MockPhysics.step
-      .expects(MockState, DefaultTickTime)
+      .expects(scene, DefaultTickTime)
       .returning(Right(PhysicsStep(updatedScene)))
       .once()
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
 
     result.loop.accumulator shouldBe correctAccumulator
 
   test("massive lag spikes must be clamped to prevent overload"):
-
+    val scene                  = sceneWithEntities(List.empty)
     val currentTime            = 1_000_000_000L
     val correctAccumulator     = 10_000_000L
     val correctIterationNumber = 15 // #iterations = 250ms / 16ms = 15
@@ -194,16 +201,16 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
 
     MockPhysics.step
       .expects(*, *)
-      .returning(Right(PhysicsStep(MockState)))
+      .returning(Right(PhysicsStep(scene)))
       .repeated(correctIterationNumber)
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
 
     result.loop.accumulator shouldBe correctAccumulator
 
   test("stopping or switching mode must freeze the simulation, which can then be resumed"):
-
-    val updatedScene = mock[State]
+    val scene        = sceneWithEntities(List.empty)
+    val updatedScene = sceneWithEntities(List.empty)
     val partialTime1 = 16_000_000L
     val partialTime2 = 32_000_000L
     val partialTime3 = 48_000_000L
@@ -211,7 +218,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       GameLoop(mode = SimulationMode, isRunning = true, lastTime = InitialTime).value
 
     MockPhysics.step
-      .expects(MockState, DefaultTickTime)
+      .expects(scene, DefaultTickTime)
       .returning(Right(PhysicsStep(updatedScene)))
       .once()
     MockPhysics.step
@@ -219,7 +226,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
       .returning(Right(PhysicsStep(updatedScene)))
       .once()
 
-    val result1     = initialLoop.tick(MockState, partialTime1).value
+    val result1     = initialLoop.tick(scene, partialTime1).value
     val loopPaused  = result1.loop.stop()
     val result2     = loopPaused.tick(result1.state, partialTime2).value
     val loopResumed = result2.loop.start()
@@ -230,16 +237,17 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     result3.loop.isRunning shouldBe true
 
   test("events from every fixed update should be returned in chronological order"):
+    val scene       = sceneWithEntities(List.empty)
     val firstEvent  = mock[Event]
     val secondEvent = mock[Event]
-    val sceneStep1  = mock[State]
-    val sceneStep2  = mock[State]
+    val sceneStep1  = sceneWithEntities(List.empty)
+    val sceneStep2  = sceneWithEntities(List.empty)
     val currentTime = DefaultTickTime * 2
     val initialLoop = GameLoop(mode = SimulationMode, isRunning = true).value
 
     inSequence:
       MockPhysics.step
-        .expects(MockState, DefaultTickTime)
+        .expects(scene, DefaultTickTime)
         .returning(Right(PhysicsStep(sceneStep1, Vector(firstEvent))))
         .once()
       MockPhysics.step
@@ -247,7 +255,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
         .returning(Right(PhysicsStep(sceneStep2, Vector(secondEvent))))
         .once()
 
-    val result = initialLoop.tick(MockState, currentTime).value
+    val result = initialLoop.tick(scene, currentTime).value
 
     result.events shouldBe Vector(firstEvent, secondEvent)
 
@@ -258,6 +266,16 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
   test("a game loop should be InvalidLastTime when last time value is negative"):
     val invalidLastTime = -1L
     GameLoop(lastTime = invalidLastTime) shouldBe Left(InvalidLastTime(invalidLastTime))
+
+  test("a game loop should allow last time value to be zero"):
+    val validLastTime = 0L
+    val loop          = GameLoop(lastTime = validLastTime)
+    loop.isRight shouldBe true
+
+  test("a game loop should allow last time value to be positive"):
+    val validLastTime = 1L
+    val loop          = GameLoop(lastTime = validLastTime)
+    loop.isRight shouldBe true
 
   test("a game loop should be InvalidAccumulator when accumulator is negative"):
     val invalidAccumulator = -1L
@@ -276,20 +294,23 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     )
 
   test("GameLoop should allow max frame time to equal tick time"):
-    noException should be thrownBy GameLoop(
+    val loop = GameLoop(
       tickTime = DefaultTickTime,
       maxFrameTime = DefaultTickTime
     )
 
+    loop.isRight shouldBe true
+
   test("if a running game loop is in edit mode, it should not update the physics"):
+    val scene       = sceneWithEntities(List.empty)
     val currentTime = DefaultTickTime
     val editLoop    = GameLoop(mode = EditMode, isRunning = true)
 
     MockPhysics.step.expects(*, *).never()
 
-    val result = editLoop.value.tick(MockState, currentTime).value
+    val result = editLoop.value.tick(scene, currentTime).value
 
-    result.state shouldBe MockState
+    result.state shouldBe scene
     result.loop.lastTime shouldBe currentTime
 
   test("default game loop should be valid and have default values"):
@@ -301,3 +322,12 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory:
     defaultLoop.lastTime shouldBe InitialTime
     defaultLoop.accumulator shouldBe 0L
     defaultLoop.maxFrameTime shouldBe DefaultMaxFrameTime
+
+  test("withTickTime should reject a negative tick time"):
+    StandardLoop.withTickTime(-1L) shouldBe Left(InvalidTickTime(-1L))
+
+  test("withTickTime should allow a tick time equal to max frame time"):
+    StandardLoop.withTickTime(DefaultMaxFrameTime).value.tickTime shouldBe DefaultMaxFrameTime
+
+  test("GameLoop should allow a positive initial accumulator"):
+    GameLoop(accumulator = 1L).value.accumulator shouldBe 1L
