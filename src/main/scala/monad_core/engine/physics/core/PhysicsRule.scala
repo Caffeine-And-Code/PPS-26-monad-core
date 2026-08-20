@@ -1,12 +1,12 @@
 package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.events.Event
+import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.State
 
 final case class PhysicsRuleResult(
     state: State,
-    events: Vector[Event] = Vector.empty
+    events: Vector[EngineEvent] = Vector.empty
 )
 
 trait PhysicsRule:

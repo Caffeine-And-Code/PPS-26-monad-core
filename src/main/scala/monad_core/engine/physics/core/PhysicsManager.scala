@@ -1,8 +1,8 @@
 package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.events.Event
-import monad_core.engine.core.events.Event.EntityUpdatedEvent
+import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.core.events.EngineEvent.EntityUpdated
 import monad_core.engine.core.traits.{PhysicsEngine, PhysicsStep, State}
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
@@ -39,7 +39,7 @@ final case class PhysicsManager private (
   def isEnabled(rule: PhysicsRule): Boolean =
     enabledRules.contains(rule)
 
-  private def detectEntityUpdateEvents(before: State, after: State): Vector[Event] =
+  private def detectEntityUpdateEvents(before: State, after: State): Vector[EngineEvent] =
     val previousEntities = before.allEntities.map(entity => entity.id -> entity).toMap
     val currentEntities  = after.allEntities.map(entity => entity.id -> entity).toMap
 
@@ -47,7 +47,7 @@ final case class PhysicsManager private (
       .sortBy(_.value)
       .collect {
         case id if previousEntities(id) != currentEntities(id) =>
-          EntityUpdatedEvent(currentEntities(id))
+          EntityUpdated(previousEntities(id), currentEntities(id))
       }
 
 object PhysicsManager:

@@ -1,7 +1,8 @@
 package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.events.Event.{EntityCollisionDetectedEvent, EntityUpdatedEvent}
+import monad_core.engine.core.events.EngineEvent.{CollisionDetected, EntityUpdated}
+import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, Scene, Vector2D}
@@ -169,7 +170,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
     result shouldBe Left(PhysicsRuleError("Test error"))
 
-  test("step should emit an EntityUpdatedEvent for every changed entity"):
+  test("step should emit an EntityUpdated event with the previous and current entity"):
     val initialEntity = Entity.circle("entity", Vector2D(10, 10), 1).value
     val updatedEntity = initialEntity.moveTo(Vector2D(20, 20))
     val initialScene  = Scene(entities = Map(initialEntity.id -> initialEntity))
@@ -185,7 +186,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val result = manager.step(initialScene, DeltaTimeOneSecond).value
 
     result.state shouldBe updatedScene
-    result.events shouldBe Vector(EntityUpdatedEvent(updatedEntity))
+    result.events shouldBe Vector(EntityUpdated(initialEntity, updatedEntity))
 
   test("step should emit a collision event before entity state events"):
     val mobileEntity = Entity
@@ -199,8 +200,9 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
         fixedEntity.id  -> fixedEntity
       )
     )
-    val collision      = Collision(Vector2D(1, 0), 2)
-    val collisionEvent = EntityCollisionDetectedEvent(mobileEntity.id, fixedEntity, collision)
+    val collision = Collision(Vector2D(1, 0), 2)
+    val collisionEvent =
+      CollisionDetected(mobileEntity.id, CollisionTarget.Entity(fixedEntity.id), collision)
     val collisionRule = makeDummyRule(
       CollisionResolutionRule.collisionResolutionRule.RuleId,
       MockAction,

@@ -1,7 +1,7 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
-import monad_core.engine.core.events.Event
+import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.{PhysicsEngine, PhysicsStep, State}
 import monad_core.engine.core.{
   GameLoop,
@@ -238,8 +238,8 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockS
 
   test("events from every fixed update should be returned in chronological order"):
     val scene       = sceneWithEntities(List.empty)
-    val firstEvent  = mock[Event]
-    val secondEvent = mock[Event]
+    val firstEvent  = mock[EngineEvent]
+    val secondEvent = mock[EngineEvent]
     val sceneStep1  = sceneWithEntities(List.empty)
     val sceneStep2  = sceneWithEntities(List.empty)
     val currentTime = DefaultTickTime * 2

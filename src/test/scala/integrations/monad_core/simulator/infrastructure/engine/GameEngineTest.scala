@@ -2,6 +2,8 @@ package integrations.monad_core.simulator.infrastructure.engine
 
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.core.GameLoop
+import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.core.events.EngineEvent.EntityUpdated
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.world.World
@@ -67,15 +69,18 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
       "engine stopped delivering frames after play/pause"
     )
 
-  test("a simulation tick commits the state reconstructed from emitted events"):
+  test("a simulation tick commits the final state and publishes emitted events"):
     val movingEntity = getOrFail(
       Entity
         .circle("moving", Vector2D(10, 10), 1)
         .map(_.withSpeed(Vector2D(1, 0)))
     )
-    val initialScene = getOrFail(Scene().addEntity(movingEntity))
-    val world        = MonadCoreWorld(initialScene)
-    val engine       = MonadCoreGameEngineRuntime()
+    val initialScene   = getOrFail(Scene().addEntity(movingEntity))
+    val world          = MonadCoreWorld(initialScene)
+    val receivedEvents = new AtomicReference(Vector.empty[EngineEvent])
+    val engine = MonadCoreGameEngineRuntime(
+      onEvents = events => receivedEvents.set(events)
+    )
 
     getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
     engine.start()
@@ -83,6 +88,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     val updatedEntity = getOrFail(world.getEntity(movingEntity.id.value))
     updatedEntity.position.x should be > movingEntity.position.x
+    receivedEvents.get() shouldBe Vector(EntityUpdated(movingEntity, updatedEntity))
 
   test(
     "reset replaces the world; frames observed afterwards reflect the new world, not the old one"

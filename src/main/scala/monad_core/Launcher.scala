@@ -1,6 +1,7 @@
 package monad_core
 
 import monad_core.engine.simulator.Painter
+import monad_core.engine.core.events.EngineEvent
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
@@ -11,7 +12,12 @@ import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedA
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
-import monad_core.simulator.infrastructure.logging.ConsoleLogger
+import monad_core.simulator.infrastructure.logging.{
+  ConsoleLogger,
+  EventLogEntry,
+  EventLogLevel,
+  formatEvents
+}
 import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluationArguments,
   AgentEvaluationRuntime,
@@ -35,11 +41,22 @@ import scala.Console.{GREEN, RESET}
 object Launcher:
 
   private def guiApplication(): Either[BaseError, Unit] =
-    given World = MonadCoreWorld()
+    given Logger = ConsoleLogger
 
-    given GameEngineRuntime = MonadCoreGameEngineRuntime { error =>
-      NotificationManager.show(error.message, Error)
-    }
+    val logger = summon[Logger]
+    val logEvents: Vector[EngineEvent] => Unit = events =>
+      formatEvents(events).foreach:
+        case EventLogEntry(EventLogLevel.Info, message)  => logger.info(message)
+        case EventLogEntry(EventLogLevel.Trace, message) => logger.trace(message)
+
+    given World = MonadCoreWorld(
+      onEvents = logEvents
+    )
+
+    given GameEngineRuntime = MonadCoreGameEngineRuntime(
+      onError = error => NotificationManager.show(error.message, Error),
+      onEvents = logEvents
+    )
 
     given painter: Painter = PaintArchitect
 

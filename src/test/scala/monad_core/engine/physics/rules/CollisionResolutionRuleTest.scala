@@ -1,7 +1,8 @@
 package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.events.Event.EntityCollisionDetectedEvent
+import monad_core.engine.core.events.EngineEvent.CollisionDetected
+import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
 import monad_core.engine.helper.DummyEntityHelper.{
@@ -75,7 +76,7 @@ class CollisionResolutionRuleTest
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using detector).value
 
     result.events shouldBe Vector(
-      EntityCollisionDetectedEvent(entity1.id, entity2, collision)
+      CollisionDetected(entity1.id, CollisionTarget.Entity(entity2.id), collision)
     )
 
   test("the rule should push mobile entity outside collision with fixed entity"):

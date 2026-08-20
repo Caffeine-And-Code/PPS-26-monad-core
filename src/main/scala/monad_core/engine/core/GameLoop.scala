@@ -1,13 +1,13 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.events.Event
+import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.model.EngineError
 
 final case class GameLoopTickResult(
     state: State,
     loop: GameLoop,
-    events: Vector[Event],
+    events: Vector[EngineEvent],
     alpha: Double
 )
 

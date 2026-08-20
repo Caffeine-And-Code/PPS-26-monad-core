@@ -1,5 +1,7 @@
 package monad_core.simulator.infrastructure.engine
 
+import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.core.events.EngineEvent.{EntityCreated, EntityRemoved, EntityUpdated}
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{
@@ -10,8 +12,9 @@ import monad_core.simulator.application.engine.world.{
 }
 import monad_core.simulator.errors.BaseError
 
-case class MonadCoreWorld(
-    initialScene: Scene = Scene()
+final class MonadCoreWorld(
+    initialScene: Scene,
+    onEvents: Vector[EngineEvent] => Unit
 ) extends World:
 
   var currentScene: Scene = initialScene
@@ -31,21 +34,27 @@ case class MonadCoreWorld(
     yield entity
 
   override def createEntity(command: SaveEntityCommand): Either[BaseError, Unit] =
-    for scene <- currentScene.addEntity(command.entity).adaptError()
-    yield currentScene = scene
+    currentScene.addEntity(command.entity).adaptError().map { scene =>
+      currentScene = scene
+      publish(EntityCreated(command.entity))
+    }
 
   override def removeEntity(entityId: String): Either[BaseError, Unit] =
     for
       entity <- getEntity(entityId)
       scene  <- currentScene.removeEntity(entity).adaptError()
-    yield currentScene = scene
+    yield
+      currentScene = scene
+      publish(EntityRemoved(entity))
 
   override def updateEntity(command: SaveEntityCommand): Either[BaseError, Unit] =
     for
-      entityId = command.entity.id.value
-      _ <- removeEntity(entityId)
-      _ <- createEntity(command)
-    yield currentScene
+      previous             <- getEntity(command.entity.id.value)
+      sceneWithoutPrevious <- currentScene.removeEntity(previous).adaptError()
+      updatedScene         <- sceneWithoutPrevious.addEntity(command.entity).adaptError()
+    yield
+      currentScene = updatedScene
+      publish(EntityUpdated(previous, command.entity))
 
   override def getAllSurfaces: List[Surface] =
     currentScene.surfaces.values.toList
@@ -104,3 +113,14 @@ case class MonadCoreWorld(
     yield currentScene
 
   override def scene: Scene = currentScene
+
+  private def publish(event: EngineEvent): Unit =
+    onEvents(Vector(event))
+
+object MonadCoreWorld:
+
+  def apply(
+      initialScene: Scene = Scene(),
+      onEvents: Vector[EngineEvent] => Unit = _ => ()
+  ): MonadCoreWorld =
+    new MonadCoreWorld(initialScene, onEvents)

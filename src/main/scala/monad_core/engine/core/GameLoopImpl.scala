@@ -1,7 +1,7 @@
 package monad_core.engine.core
 
 import monad_core.engine.core.GameLoop.StaticAlpha
-import monad_core.engine.core.events.Event
+import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.model.EngineError
 
@@ -10,7 +10,7 @@ import scala.annotation.tailrec
 private case class FixedUpdateResult(
     updatedState: State,
     accumulator: Long,
-    accumulatedEvents: Vector[Event]
+    accumulatedEvents: Vector[EngineEvent]
 )
 
 private case class GameLoopImpl(
@@ -65,7 +65,7 @@ private case class GameLoopImpl(
   private def runFixedUpdate(
       remainingTime: Long,
       currentScene: State,
-      accumulatedEvents: Vector[Event]
+      accumulatedEvents: Vector[EngineEvent]
   )(using physics: PhysicsEngine): Either[EngineError, FixedUpdateResult] =
     if remainingTime < tickTime then
       Right(

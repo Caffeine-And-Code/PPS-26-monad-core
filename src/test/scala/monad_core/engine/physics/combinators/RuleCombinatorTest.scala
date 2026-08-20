@@ -1,7 +1,7 @@
 package monad_core.engine.physics.combinators
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.events.Event.EntityUpdatedEvent
+import monad_core.engine.core.events.EngineEvent.EntityCreated
 import monad_core.engine.core.traits.State
 import monad_core.engine.helper.PhysicsConstantHelper.DeltaTimeOneSecond
 import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
@@ -48,8 +48,8 @@ class RuleCombinatorTest extends AnyFunSuite with Matchers with MockFactory:
   test("sequence should accumulate rule events in execution order"):
     val entity1 = Entity.circle("entity-1", Vector2D(0, 0), 1).value
     val entity2 = Entity.circle("entity-2", Vector2D(1, 0), 1).value
-    val event1  = EntityUpdatedEvent(entity1)
-    val event2  = EntityUpdatedEvent(entity2)
+    val event1  = EntityCreated(entity1)
+    val event2  = EntityCreated(entity2)
     val rule1   = makeDummyRule(action = (_, _) => Right(Scene1), events = Vector(event1))
     val rule2   = makeDummyRule(action = (_, _) => Right(Scene2), events = Vector(event2))
 

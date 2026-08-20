@@ -1,7 +1,8 @@
 package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.events.Event.EntityCollisionDetectedEvent
+import monad_core.engine.core.events.EngineEvent.CollisionDetected
+import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
@@ -75,9 +76,9 @@ private[physics] object CollisionResolutionRule:
         .mapValues(_.toList)
         .toMap
 
-    private def toEvent(detected: DetectedCollision): EntityCollisionDetectedEvent =
-      EntityCollisionDetectedEvent(
+    private def toEvent(detected: DetectedCollision): CollisionDetected =
+      CollisionDetected(
         entityId = detected.first.id,
-        modelCollidedWith = detected.second,
-        collisionData = detected.collision
+        target = CollisionTarget.Entity(detected.second.id),
+        collision = detected.collision
       )

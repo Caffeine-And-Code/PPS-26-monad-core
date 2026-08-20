@@ -1,16 +1,19 @@
 package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.core.GameLoop
+import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.{EngineFacade, EventDispatcher, EventManager, Painter, RendererManager, SceneInterpolator, dispatchEvents, registerEvents}
+import monad_core.engine.simulator.{EngineFacade, Painter, RendererManager, SceneInterpolator}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.errors.BaseError
 
-final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
-    extends GameEngineRuntime:
+final class MonadCoreGameEngineRuntime(
+    onError: BaseError => Unit = _ => (),
+    onEvents: Vector[EngineEvent] => Unit = _ => ()
+) extends GameEngineRuntime:
   private val lock                                        = new Object
   private var gameLoop                                    = GameLoop.default()
   private var currentWorld: Option[World]                 = None
@@ -34,13 +37,8 @@ final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
         EngineFacade.tick(gameLoop, world.scene, currentTime) match
           case Right(tickResult) =>
             tickResult.state match
-              case _: Scene =>
-                val eventManager = EventManager().registerEvents(tickResult.events)
-                val (dispatchedScene, _) =
-                  eventManager.dispatchEvents(world.scene)(EventDispatcher.handle)
-
+              case scene: Scene =>
                 val processedScene = for
-                  scene <- dispatchedScene
                   interpolatedScene <- SceneInterpolator(
                     previousScene = world.scene,
                     nextScene = scene,
@@ -57,6 +55,7 @@ final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
                       case _ => ()
 
                     gameLoop = tickResult.loop
+                    onEvents(tickResult.events)
                     renderer(world)
 
                   case Left(engineError) =>
@@ -139,5 +138,8 @@ final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
 
 object MonadCoreGameEngineRuntime:
 
-  def apply(onError: BaseError => Unit = _ => ()): MonadCoreGameEngineRuntime =
-    new MonadCoreGameEngineRuntime(onError)
+  def apply(
+      onError: BaseError => Unit = _ => (),
+      onEvents: Vector[EngineEvent] => Unit = _ => ()
+  ): MonadCoreGameEngineRuntime =
+    new MonadCoreGameEngineRuntime(onError, onEvents)

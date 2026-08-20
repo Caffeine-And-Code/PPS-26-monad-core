@@ -1,6 +1,8 @@
 package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.core.*
+import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.core.events.EngineEvent.{EntityCreated, EntityRemoved, EntityUpdated}
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.errors.EngineErrorAdapted
 import monad_core.simulator.application.engine.world.{
@@ -16,18 +18,23 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
+import scala.collection.mutable.ListBuffer
+
 class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
   val baseEntity: Entity   = Entity.circle("id", Vector2D(0, 0), 2).value
   val baseSurface: Surface = Surface.circle("id", Vector2D(0, 0), 2).value
   val baseTeam: Team       = Team(TeamId("id").value, Set.empty).value
 
-  def newWorld(): (Scene, World) =
+  def newWorld(
+      onEvents: Vector[EngineEvent] => Unit = _ => ()
+  ): (Scene, World) =
     val state: Scene = mock[Scene]
-    (state, MonadCoreWorld(state))
+    (state, MonadCoreWorld(state, onEvents))
 
   test("createEntity actually creates the entity"):
-    val (state, worldTest) = newWorld()
+    val publishedEvents    = ListBuffer.empty[EngineEvent]
+    val (state, worldTest) = newWorld(events => publishedEvents ++= events)
     val nextState: Scene   = mock[Scene]
     state.addEntity.expects(baseEntity).returns(Right(nextState))
     val command = SaveEntityCommand(baseEntity)
@@ -36,9 +43,11 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     result shouldBe Right(())
     worldTest.scene shouldBe nextState
+    publishedEvents.toList shouldBe List(EntityCreated(baseEntity))
 
   test("createEntity carries the state errors"):
-    val (state, worldTest) = newWorld()
+    val publishedEvents    = ListBuffer.empty[EngineEvent]
+    val (state, worldTest) = newWorld(events => publishedEvents ++= events)
     val expectedError      = CannotAddEntity(CannotAddAlreadyPresentElementInMap(baseEntity.id))
 
     state.addEntity.expects(baseEntity).returns(Left(expectedError))
@@ -49,9 +58,11 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     inside(result):
       case Left(error) =>
         error should be(EngineErrorAdapted(expectedError))
+    publishedEvents shouldBe empty
 
   test("removeEntity removes entity successfully when present"):
-    val (state, worldTest) = newWorld()
+    val publishedEvents    = ListBuffer.empty[EngineEvent]
+    val (state, worldTest) = newWorld(events => publishedEvents ++= events)
     val nextState          = mock[Scene]
     state.getEntity.expects(baseEntity.id).returns(Right(baseEntity))
     state.removeEntity.expects(baseEntity).returns(Right(nextState))
@@ -60,6 +71,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
 
     result shouldBe Right(())
     worldTest.scene shouldBe nextState
+    publishedEvents.toList shouldBe List(EntityRemoved(baseEntity))
 
   test("removeEntity propagates error if entity is not found"):
     val (state, worldTest) = newWorld()
@@ -72,23 +84,27 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
       case Left(error) =>
         error should be(EngineErrorAdapted(expectedError))
 
-  test("updateEntity removes old entity and creates updated one"):
-    val (state, worldTest) = newWorld()
+  test("updateEntity atomically replaces the entity and publishes one update event"):
+    val publishedEvents    = ListBuffer.empty[EngineEvent]
+    val (state, worldTest) = newWorld(events => publishedEvents ++= events)
     val intermediateState  = mock[Scene]
     val finalState         = mock[Scene]
-    val command            = SaveEntityCommand(baseEntity)
+    val updatedEntity      = baseEntity.moveTo(Vector2D(10, 20))
+    val command            = SaveEntityCommand(updatedEntity)
 
     state.getEntity.expects(baseEntity.id).returns(Right(baseEntity))
     state.removeEntity.expects(baseEntity).returns(Right(intermediateState))
-    intermediateState.addEntity.expects(baseEntity).returns(Right(finalState))
+    intermediateState.addEntity.expects(updatedEntity).returns(Right(finalState))
 
     val result = worldTest.updateEntity(command)
 
     result shouldBe Right(())
     worldTest.scene shouldBe finalState
+    publishedEvents.toList shouldBe List(EntityUpdated(baseEntity, updatedEntity))
 
   test("updateEntity propagates the state error if Entity was not found"):
-    val (state, worldTest) = newWorld()
+    val publishedEvents    = ListBuffer.empty[EngineEvent]
+    val (state, worldTest) = newWorld(events => publishedEvents ++= events)
     val command            = SaveEntityCommand(baseEntity)
     val expectedError      = EntityNotFound(baseEntity.id)
 
@@ -99,6 +115,25 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     inside(result):
       case Left(error) =>
         error should be(EngineErrorAdapted(expectedError))
+    publishedEvents shouldBe empty
+
+  test("updateEntity preserves the original scene and emits no event if replacement fails"):
+    val publishedEvents    = ListBuffer.empty[EngineEvent]
+    val (state, worldTest) = newWorld(events => publishedEvents ++= events)
+    val intermediateState  = mock[Scene]
+    val updatedEntity      = baseEntity.moveTo(Vector2D(10, 20))
+    val command            = SaveEntityCommand(updatedEntity)
+    val expectedError      = CannotAddEntity(CannotAddAlreadyPresentElementInMap(baseEntity.id))
+
+    state.getEntity.expects(baseEntity.id).returns(Right(baseEntity))
+    state.removeEntity.expects(baseEntity).returns(Right(intermediateState))
+    intermediateState.addEntity.expects(updatedEntity).returns(Left(expectedError))
+
+    val result = worldTest.updateEntity(command)
+
+    result shouldBe Left(EngineErrorAdapted(expectedError))
+    worldTest.scene shouldBe state
+    publishedEvents shouldBe empty
 
   test("createTeam actually creates the team"):
     val (state, worldTest) = newWorld()
