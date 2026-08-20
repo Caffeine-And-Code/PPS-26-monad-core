@@ -53,7 +53,7 @@ private[physics] object CollisionResolutionRule:
     )(using detector: CollisionDetector): List[(Entity, (Entity, Collision))] =
       detector.collision(e1, e2).toList.flatMap { collision =>
         List(
-          e1 -> (e2, collision),
-          e2 -> (e1, collision.copy(normalVector = collision.normalVector.flip))
+          e2 -> (e1, collision),
+          e1 -> (e2, collision.copy(normalVector = collision.normalVector.flip))
         )
       }

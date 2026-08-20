@@ -1,9 +1,9 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.model.{Surface, Vector2D}
 import org.scalatest.EitherValues.convertEitherToValuable
 
-object PhysicsSurfaceHelper:
+private[engine] object DummySurfaceHelper:
 
   def makeSurfaceCircle(
       id: String = "surface",

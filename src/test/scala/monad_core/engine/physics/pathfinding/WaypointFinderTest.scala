@@ -1,8 +1,8 @@
 package monad_core.engine.physics.pathfinding
 
-import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.*
-import PathRectangle.vertexes
+import monad_core.engine.model.Shape2D.{Circle, Rectangle}
+import monad_core.engine.physics.pathfinding.PathRectangle.vertexes
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -10,6 +10,10 @@ import org.scalatest.matchers.should.Matchers
 
 class WaypointFinderTest extends AnyFunSuite with Matchers:
   private val Start = Entity.circle("start", Vector2D(0, 0), 1).value
+
+  private def signedAngle(from: Vector2D, to: Vector2D): Double =
+    val cross = from.x * to.y - from.y * to.x
+    math.atan2(cross, from dot to)
 
   test("WaypointFinder should return the correct waypoints for a circle target"):
 
@@ -53,15 +57,33 @@ class WaypointFinderTest extends AnyFunSuite with Matchers:
 
     val centerDirection = target.position - Start.position
 
-    val expectedWaypoints = vertices
-      .map { vertex =>
-        vertex -> (centerDirection dot (vertex - Start.position))
-          / (centerDirection.magnitude * (vertex - Start.position).magnitude)
-      }
-      .sortBy(_._2)
-      .take(2)
-      .map(_._1)
+    val verticesByAngle = vertices.map { vertex =>
+      vertex -> signedAngle(centerDirection, vertex - Start.position)
+    }
+
+    val expectedWaypoints = List(
+      verticesByAngle.minBy(_._2)._1,
+      verticesByAngle.maxBy(_._2)._1
+    )
 
     val waypoints = WaypointFinder(Start, target)
 
     waypoints should contain theSameElementsAs expectedWaypoints
+
+  test("rectangle waypoints should bracket a non-square obstacle"):
+    val target = Entity
+      .rectangle(
+        "wide-target",
+        Vector2D(12.5, 15.0),
+        height = 2.0,
+        length = 10.0
+      )
+      .value
+
+    val centerDirection = target.position - Start.position
+    val waypointAngles = WaypointFinder(Start, target).map { waypoint =>
+      signedAngle(centerDirection, waypoint - Start.position)
+    }
+
+    waypointAngles.min should be < 0.0
+    waypointAngles.max should be > 0.0

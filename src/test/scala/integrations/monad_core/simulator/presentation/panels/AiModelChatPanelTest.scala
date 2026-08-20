@@ -3,19 +3,13 @@ package integrations.monad_core.simulator.presentation.panels
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
-import monad_core.simulator.domain.ai.{
-  AgentInfo,
-  AgentResponse,
-  AgentResponseError,
-  ConversationId,
-  UserPrompt
-}
+import monad_core.simulator.domain.ai.*
 import monad_core.simulator.presentation.panels.AiModelChatPanel
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.scene.layout.VBox as ScalaFxVBox
-import org.scalatest.EitherValues.*
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 

@@ -1,6 +1,7 @@
 package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.model.*
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
   SaveSurfaceCommand,
@@ -8,13 +9,17 @@ import monad_core.simulator.application.engine.world.{
   World
 }
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 
 case class MonadCoreWorld(
     initialScene: Scene = Scene()
 ) extends World:
 
   var currentScene: Scene = initialScene
+
+  override def resize(width: Double, height: Double): Either[BaseError, Unit] =
+    currentScene.resize(width, height).adaptError().map { scene =>
+      currentScene = scene
+    }
 
   override def getAllEntities: List[Entity] =
     currentScene.entities.values.toList

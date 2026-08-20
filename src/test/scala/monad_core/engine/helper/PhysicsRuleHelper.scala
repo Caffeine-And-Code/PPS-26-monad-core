@@ -1,4 +1,4 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State

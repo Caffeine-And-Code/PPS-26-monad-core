@@ -1,16 +1,23 @@
 package monad_core.engine.physics.pathfinding
 
-import monad_core.engine.model.{-, LocatableId, Vector2D}
+import monad_core.engine.model.{-, LocatableId, Vector2D, dot, magnitude}
 
 private[pathfinding] object RayIntersection:
 
-  private val Epsilon: Double = 1e-10
+  private[pathfinding] val Epsilon: Double = 1e-8
 
   def apply(
       rayStart: Vector2D,
       rayDirection: Vector2D,
       vertexMap: Map[LocatableId, List[Vector2D]]
   ): Option[LocatableId] =
+    withDistance(rayStart, rayDirection, vertexMap).map(_._1)
+
+  def withDistance(
+      rayStart: Vector2D,
+      rayDirection: Vector2D,
+      vertexMap: Map[LocatableId, List[Vector2D]]
+  ): Option[(LocatableId, Double)] =
     vertexMap
       .flatMap { case (id, vertices) =>
         val edges =
@@ -18,20 +25,23 @@ private[pathfinding] object RayIntersection:
 
         val distances =
           edges.flatMap { case (a, b) =>
-            raySegmentIntersection(
+            raySegmentIntersection(rayStart, rayDirection, a, b)
+          } ++ vertices.flatMap(vertex =>
+            rayVertexIntersection(
               rayStart,
               rayDirection,
-              a,
-              b
+              vertex
             )
-          }
+          )
 
-        distances.minOption.map(distance => id -> distance)
+        distances
+          .filter(_ > Epsilon)
+          .minOption
+          .map(distance => id -> distance)
       }
       .minByOption(_._2)
-      .map(_._1)
 
-  private def raySegmentIntersection(
+  private[pathfinding] def raySegmentIntersection(
       rayStart: Vector2D,
       rayDirection: Vector2D,
       vertex1: Vector2D,
@@ -58,3 +68,18 @@ private[pathfinding] object RayIntersection:
       else
         None
   }
+
+  private[pathfinding] def rayVertexIntersection(
+      rayStart: Vector2D,
+      rayDirection: Vector2D,
+      vertex: Vector2D
+  ): Option[Double] =
+    val directionMagnitude = rayDirection.magnitude
+    val difference         = vertex - rayStart
+    val distanceOnRay      = (difference dot rayDirection) / directionMagnitude
+    val distanceFromRay = math.abs(
+      difference.x * rayDirection.y - difference.y * rayDirection.x
+    ) / directionMagnitude
+
+    if distanceOnRay > Epsilon && distanceFromRay <= Epsilon then Some(distanceOnRay)
+    else None

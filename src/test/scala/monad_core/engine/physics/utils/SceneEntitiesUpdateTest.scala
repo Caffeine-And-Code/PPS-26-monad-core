@@ -8,8 +8,8 @@ import monad_core.engine.core.{
 }
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.PhysicsDomainError
-import monad_core.engine.physics.helper.PhysicsEntityHelper.makeMovingEntityCircle
-import monad_core.engine.physics.helper.PhysicsSceneHelper
+import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
+import monad_core.engine.helper.MockSceneHelper
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -20,7 +20,7 @@ class SceneEntitiesUpdateTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with PhysicsSceneHelper:
+    with MockSceneHelper:
 
   private val Entity1 = makeMovingEntityCircle(
     id = "entity1",
