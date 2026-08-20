@@ -13,7 +13,7 @@ object ShapePainter:
     private def toColor: Color =
       engineColor match
         case RGB(r, g, b) => Color.rgb(r.value, g.value, b.value)
-        case HSL(h, s, l) => Color.hsb(h.value, s.value / 100, l.value / 100)
+        case HSL(h, s, l) => Color.hsb(h.value, s.value / 100.0, l.value / 100.0)
 
   def paint(gc: GraphicsContext)(using drawer: ShapeArchitect): Unit =
     val commands = drawer.drainBuffer()

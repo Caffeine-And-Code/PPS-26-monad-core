@@ -1,12 +1,7 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{
-  NegativeDeltaTime,
-  OutOfBoundEntity,
-  PhysicsError,
-  ZeroMassError
-}
+import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsError, ZeroMassError}
 
 private[physics] object PhysicsUtil:
 
@@ -29,15 +24,8 @@ private[physics] object PhysicsUtil:
       upperLeftCorner: Vector2D,
       lowerRightCorner: Vector2D
   ): Either[PhysicsError, Vector2D] =
-    for
-      disp <- displacement(speed, deltaTime)
-      calcPos = position + disp
-      nextPos <-
-        if calcPos.x < upperLeftCorner.x || calcPos.y < upperLeftCorner.y ||
-          calcPos.x > lowerRightCorner.x || calcPos.y > lowerRightCorner.y
-        then Left(OutOfBoundEntity(calcPos))
-        else Right(calcPos)
-    yield nextPos
+    for disp <- displacement(speed, deltaTime)
+    yield position + disp
 
   def acceleration(
       force: Vector2D,
@@ -70,10 +58,10 @@ private[physics] object PhysicsUtil:
       speed: Vector2D,
       normal: Vector2D
   ): Vector2D =
-    val speedAlongNormal = speed dot normal
+    val speedAlongNormal         = speed dot normal
+    val incomingSpeedAlongNormal = math.min(speedAlongNormal, 0.0)
 
-    if speedAlongNormal >= 0.0 then speed
-    else speed - (normal * (2.0 * speedAlongNormal))
+    speed - (normal * (2.0 * incomingSpeedAlongNormal))
 
   def pushMobileOverlappingFixed(
       position: Vector2D,

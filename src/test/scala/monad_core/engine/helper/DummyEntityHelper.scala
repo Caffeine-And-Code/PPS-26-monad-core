@@ -1,9 +1,9 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.model.{Entity, Vector2D}
 import org.scalatest.EitherValues.convertEitherToValuable
 
-private[physics] object PhysicsEntityHelper:
+private[engine] object DummyEntityHelper:
 
   def makeFixedEntityCircle(
       id: String = "entity",

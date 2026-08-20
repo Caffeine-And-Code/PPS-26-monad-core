@@ -83,6 +83,22 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
         val canvas      = ResizableCanvas()
         val menusAnchor = Some(canvas)
 
+        def resizeWorld(): Unit =
+          val width  = canvas.width.value
+          val height = canvas.height.value
+
+          if width > 0 && height > 0 then gameEngineRuntime.resize(width, height)
+
+        canvas.width.onChange {
+          resizeWorld()
+        }
+
+        canvas.height.onChange {
+          resizeWorld()
+        }
+
+        resizeWorld()
+
         RightClickContextMenu.attachTo(
           canvas = canvas,
           findElementAt = viewModel.findClickableAt,
@@ -135,7 +151,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
 
         val container = new VBox:
           children = Seq(canvas)
-          style = PanelStyles.base
+          style = PanelStyles.sceneRenderer
 
         VBox.setVgrow(canvas, Priority.Always)
 
@@ -163,7 +179,7 @@ private object MouseHitDetector:
           val distanceY = mouseClickY - elementPositionY
           (distanceX * distanceX + distanceY * distanceY) <= (radius * radius)
 
-        case Shape2D.Rectangle(width, height) =>
+        case Shape2D.Rectangle(height, width) =>
           val halfW = width / 2
           val halfH = height / 2
           mouseClickX >= (elementPositionX - halfW) && mouseClickX <= (elementPositionX + halfW) &&

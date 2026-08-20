@@ -9,12 +9,14 @@ import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.errors.BaseError
 
-final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
-  private val lock                           = new Object
-  private var gameLoop                       = GameLoop.default()
-  private var currentWorld: Option[World]    = None
-  private var currentSnapshot: Option[Scene] = None
-  private var error: Option[BaseError]       = None
+final class MonadCoreGameEngineRuntime(onError: BaseError => Unit = _ => ())
+    extends GameEngineRuntime:
+  private val lock                                        = new Object
+  private var gameLoop                                    = GameLoop.default()
+  private var currentWorld: Option[World]                 = None
+  private var currentSnapshot: Option[Scene]              = None
+  private var error: Option[BaseError]                    = None
+  private var currentDimensions: Option[(Double, Double)] = None
 
   given physics: PhysicsManager = PhysicsManager.default()
 
@@ -33,14 +35,16 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
           case Right((nextState, nextLoop)) =>
             (world, nextState) match
               case (monadCoreWorld: MonadCoreWorld, scene: Scene) =>
-                monadCoreWorld.currentScene = world.scene
+                monadCoreWorld.currentScene = scene
               case _ => ()
 
             gameLoop = nextLoop
             renderer(world)
 
           case Left(engineError) =>
-            error = Some(engineError.adaptError())
+            val adaptedError = engineError.adaptError()
+            error = Some(adaptedError)
+            onError(adaptedError)
             stop()
       }
 
@@ -67,22 +71,41 @@ final class MonadCoreGameEngineRuntime extends GameEngineRuntime:
       lock.synchronized:
         currentWorld = Some(world)
 
-    if withDefaultEntity then
-      Entity.circle(id = "starter", position = Vector2D(15, 15), radius = 15) match
-        case Right(entity) =>
-          world.createEntity(
-            SaveEntityCommand(entity)
-          )
+    val resizeResult = lock.synchronized:
+      currentDimensions match
+        case Some((width, height)) => world.resize(width, height)
+        case None                  => Right(())
 
-          setCurrentWorld()
-
-          Right(())
-        case Left(error) => Left(error.adaptError())
-    else
+    resizeResult.flatMap { _ =>
       setCurrentWorld()
-      Right(())
+
+      if withDefaultEntity then
+        Entity
+          .circle(id = "starter", position = Vector2D(15, 15), radius = 15)
+          .left
+          .map(_.adaptError())
+          .flatMap(entity => world.createEntity(SaveEntityCommand(entity)))
+      else Right(())
+    }
 
   override def getError: Option[BaseError] = error
 
+  override def resize(width: Double, height: Double): Either[BaseError, Unit] =
+    lock.synchronized:
+      currentDimensions = Some((width, height))
+      val resizeResult = currentWorld match
+        case Some(world) => world.resize(width, height)
+        case None        => Right(())
+
+      resizeResult.foreach { _ =>
+        currentSnapshot = currentSnapshot.flatMap { snapshot =>
+          snapshot.resize(width, height).toOption
+        }
+      }
+
+      resizeResult
+
 object MonadCoreGameEngineRuntime:
-  def apply(): MonadCoreGameEngineRuntime = new MonadCoreGameEngineRuntime
+
+  def apply(onError: BaseError => Unit = _ => ()): MonadCoreGameEngineRuntime =
+    new MonadCoreGameEngineRuntime(onError)

@@ -1,9 +1,9 @@
-package monad_core.engine.physics.helper
+package monad_core.engine.helper
 
 import monad_core.engine.model.{Entity, Team}
 import org.scalatest.EitherValues.convertEitherToValuable
 
-private[physics] object PhysicsTeamHelper:
+private[engine] object DummyTeamHelper:
 
   def addTeam(entity: Entity, teamId: String): Entity =
     entity.withTeamId(teamId).value
