@@ -1,4 +1,4 @@
-package monad_core.engine.core
+package monad_core.engine.simulator
 
 import monad_core.engine.core.traits.{RenderEngine, State}
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}

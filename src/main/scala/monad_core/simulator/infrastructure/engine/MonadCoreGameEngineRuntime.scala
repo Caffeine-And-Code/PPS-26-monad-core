@@ -1,16 +1,9 @@
 package monad_core.simulator.infrastructure.engine
 
-import monad_core.engine.core.{GameLoop, RendererManager, SceneInterpolator}
+import monad_core.engine.core.GameLoop
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.{
-  EngineFacade,
-  EventDispatcher,
-  EventManager,
-  Painter,
-  dispatchEvents,
-  registerEvents
-}
+import monad_core.engine.simulator.{EngineFacade, EventDispatcher, EventManager, Painter, RendererManager, SceneInterpolator, dispatchEvents, registerEvents}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}

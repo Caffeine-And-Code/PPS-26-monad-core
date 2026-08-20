@@ -3,7 +3,7 @@ package monad_core.engine.core
 import helpers.arrangers.EngineColorArranger
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
-import monad_core.engine.simulator.Painter
+import monad_core.engine.simulator.{Painter, RendererManager}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
