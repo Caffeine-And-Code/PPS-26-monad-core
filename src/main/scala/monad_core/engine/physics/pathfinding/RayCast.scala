@@ -115,8 +115,10 @@ private[physics] object RayCast:
       from: Entity,
       waypoint: Vector2D
   ): Vector2D =
-    val horizontal = SizeHelper.horizontalShapeSize(from) / 2 + WayPointDisplacement
-    val vertical   = SizeHelper.verticalShapeSize(from) / 2 + WayPointDisplacement
+
+    val displace: Double => Double = _ / 2.0 + WayPointDisplacement
+    val horizontal = displace(SizeHelper.horizontalShapeSize(from))
+    val vertical   = displace(SizeHelper.verticalShapeSize(from))
 
     to.shape match
       case _: Shape2D.Rectangle =>
