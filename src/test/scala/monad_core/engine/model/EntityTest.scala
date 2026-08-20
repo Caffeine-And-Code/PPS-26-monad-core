@@ -1,6 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{
   CannotApplyNegativeDamage,
@@ -11,7 +10,6 @@ import monad_core.engine.model.{
   Vector2D,
   WeightCannotBeNegativeOrZero
 }
-import monad_core.engine.model.{CannotApplyDamageToNoneHealthEntity, CannotApplyNegativeDamage, Entity, HealthCannotBeNegativeOrZero, LocatableIdCannotBeEmpty, PositionIsValid, Shape2D, Vector2D, WeightCannotBeNegative}
 import org.scalatest.EitherValues.*
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite

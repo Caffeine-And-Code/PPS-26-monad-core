@@ -1,7 +1,7 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.{EngineError, Entity, Vector2D}
+import monad_core.engine.model.*
 
 enum BorderWallType:
   case Left, Right, Top, Bottom
@@ -29,18 +29,81 @@ object BorderWall:
     for
       wall <- wallSelector(position, upperLeft, lowerRight, horizontal, vertical, borderType)
 
-      normal = borderType match
-        case BorderWallType.Left   => Vector2D(1, 0)
-        case BorderWallType.Right  => Vector2D(-1, 0)
-        case BorderWallType.Top    => Vector2D(0, 1)
-        case BorderWallType.Bottom => Vector2D(0, -1)
+      (normal, depth) = collisionVectorDepht(
+        wall,
+        upperLeft,
+        lowerRight,
+        borderType
+      )
+      point = collisionPoint(entity, upperLeft, lowerRight, borderType)
+    yield (wall, Collision(normal, depth, point))
 
-      depth = borderType match
-        case BorderWallType.Left   => math.abs(wall.position.x - upperLeft.x)
-        case BorderWallType.Right  => math.abs(wall.position.x - lowerRight.x)
-        case BorderWallType.Top    => math.abs(wall.position.y - upperLeft.y)
-        case BorderWallType.Bottom => math.abs(wall.position.y - lowerRight.y)
-    yield (wall, Collision(normal, depth))
+  private def collisionVectorDepht(
+      wall: Entity,
+      upperLeft: Vector2D,
+      lowerRight: Vector2D,
+      borderType: BorderWallType
+  ): (Vector2D, Double) =
+    borderType match
+      case BorderWallType.Left =>
+        (
+          Vector2D(1, 0),
+          math.abs(wall.position.x - upperLeft.x)
+        )
+      case BorderWallType.Right =>
+        (
+          Vector2D(-1, 0),
+          math.abs(wall.position.x - lowerRight.x)
+        )
+      case BorderWallType.Top =>
+        (
+          Vector2D(0, 1),
+          math.abs(wall.position.y - upperLeft.y)
+        )
+      case BorderWallType.Bottom =>
+        (
+          Vector2D(0, -1),
+          math.abs(wall.position.y - lowerRight.y)
+        )
+
+  private def collisionPoint(
+      entity: Entity,
+      upperLeft: Vector2D,
+      lowerRight: Vector2D,
+      borderType: BorderWallType
+  ): Vector2D =
+    val supportDirection = borderType match
+      case BorderWallType.Left   => Vector2D(-1, 0)
+      case BorderWallType.Right  => Vector2D(1, 0)
+      case BorderWallType.Top    => Vector2D(0, -1)
+      case BorderWallType.Bottom => Vector2D(0, 1)
+
+    val supportCentre = entity.shape match
+      case Shape2D.Circle(_) => entity.position
+      case rectangle: Shape2D.Rectangle =>
+        val lengthAxis = Vector2D(1, 0).rotated(entity.rotation)
+        val heightAxis = Vector2D(0, 1).rotated(entity.rotation)
+        val vertices = for
+          lengthSign <- List(-1, 1)
+          heightSign <- List(-1, 1)
+        yield entity.position +
+          lengthAxis * rectangle.halfLength * lengthSign +
+          heightAxis * rectangle.halfHeight * heightSign
+
+        val projections = vertices.map(_ dot supportDirection)
+        val maximum     = projections.max
+        val epsilon     = 1e-9
+        val supportVertices = vertices
+          .zip(projections)
+          .collect { case (vertex, projection) if maximum - projection <= epsilon => vertex }
+
+        supportVertices.reduce(_ + _) * (1.0 / supportVertices.size)
+
+    borderType match
+      case BorderWallType.Left   => supportCentre.copy(x = upperLeft.x)
+      case BorderWallType.Right  => supportCentre.copy(x = lowerRight.x)
+      case BorderWallType.Top    => supportCentre.copy(y = upperLeft.y)
+      case BorderWallType.Bottom => supportCentre.copy(y = lowerRight.y)
 
   private def moveWall(
       wall: Either[EngineError, Entity],

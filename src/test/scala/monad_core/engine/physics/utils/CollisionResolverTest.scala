@@ -67,7 +67,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val fixedEntity = makeFixedEntityCircle(id = "fixed")
     val otherEntity = makeMovingEntityCircle(id = "moving")
-    val collision   = Collision(Vector2D(1, 0), 1.0)
+    val collision   = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val collisions: CollisionMap = Map(fixedEntity -> List((otherEntity, collision)))
 
@@ -81,7 +81,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val entity1   = makeMovingEntityCircle(id = "entity1")
     val entity2   = makeMovingEntityCircle(id = "entity2").withWeight(1).value
-    val collision = Collision(Vector2D(1, 0), 1.0)
+    val collision = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val collisions: CollisionMap = Map(entity1 -> List((entity2, collision)))
 
@@ -95,7 +95,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val entity1   = makeMovingEntityCircle(id = "entity1")
     val entity2   = makeMovingEntityCircle(id = "entity2")
-    val collision = Collision(Vector2D(1, 0), 1.0)
+    val collision = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val collisions: CollisionMap = Map(entity1 -> List((entity2, collision)))
 
@@ -111,7 +111,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val entity1   = makeMovingEntityCircle(id = "entity1", speed = speed)
     val entity2   = makeFixedEntityCircle(id = "entity2")
-    val collision = Collision(Vector2D(1, 0), 1.0)
+    val collision = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val expectedPosition = expectedPositionMobileFixed(entity1, collision)
 
@@ -133,8 +133,8 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     val entity1 = makeMovingEntityCircle(id = "entity1", speed = Vector2D(1, 0)).withWeight(1).value
     val entity2 =
       makeMovingEntityCircle(id = "entity2", speed = Vector2D(-1, 0)).withWeight(1).value
-    val collision1 = Collision(Vector2D(1, 0), 1.0)
-    val collision2 = Collision(Vector2D(-1, 0), 1.0)
+    val collision1 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
+    val collision2 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
 
     val expectedPosition1 = expectedPositionMobileMobile(entity1, entity2, collision1).value
 
@@ -167,9 +167,9 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     val entity2 =
       makeMovingEntityCircle(id = "entity2", speed = Vector2D(-1, 0)).withWeight(1).value
     val entity3     = makeFixedEntityCircle(id = "entity3")
-    val collision12 = Collision(Vector2D(1, 0), 1.0)
-    val collision21 = Collision(Vector2D(-1, 0), 1.0)
-    val collision13 = Collision(Vector2D(0, 1), 1.0)
+    val collision12 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
+    val collision21 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
+    val collision13 = Collision(Vector2D(0, 1), 1.0, Vector2D(0, 0))
 
     val expectedPositionAfter12 = expectedPositionMobileMobile(entity1, entity2, collision12).value
     val expectedSpeedAfter12    = expectedSpeedMobileMobile(entity1, entity2, collision12).value

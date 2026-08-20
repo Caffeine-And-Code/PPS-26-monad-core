@@ -1,6 +1,9 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeMovingEntityCircle,
+  makeMovingEntityRectangle
+}
 import monad_core.engine.model.Vector2D
 import monad_core.engine.helper.PhysicsConstantHelper.DefaultRadius
 import org.scalatest.funsuite.AnyFunSuite
@@ -43,6 +46,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       UpperLeftCorner.x - (entity.position.x - DefaultRadius)
     )
     collision.normalVector shouldBe Vector2D(1, 0)
+    collision.collisionPoint shouldBe Vector2D(UpperLeftCorner.x, entity.position.y)
 
   test("this function should create an entity for a margin on the right side of the scene"):
 
@@ -73,6 +77,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       LowerRightCorner.x - (entity.position.x + DefaultRadius)
     )
     collision.normalVector shouldBe Vector2D(-1, 0)
+    collision.collisionPoint shouldBe Vector2D(LowerRightCorner.x, entity.position.y)
 
   test("this function should create an entity for a margin on the top side of the scene"):
 
@@ -103,6 +108,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       UpperLeftCorner.y - (entity.position.y - DefaultRadius)
     )
     collision.normalVector shouldBe Vector2D(0, 1)
+    collision.collisionPoint shouldBe Vector2D(entity.position.x, UpperLeftCorner.y)
 
   test("this function should create an entity for a margin on the bottom side of the scene"):
 
@@ -133,3 +139,28 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       LowerRightCorner.y - (entity.position.y + DefaultRadius)
     )
     collision.normalVector shouldBe Vector2D(0, -1)
+    collision.collisionPoint shouldBe Vector2D(entity.position.x, LowerRightCorner.y)
+
+  test("the collision point should be the outermost vertex of a rotated rectangle"):
+    val entity = makeMovingEntityRectangle(
+      position = Vector2D(10, 50),
+      width = 20,
+      height = 10,
+      speed = Vector2D(-1, 0)
+    ).rotateTo(30)
+
+    val horizontalHalfSize = 10 * math.cos(math.toRadians(30)) + 5 * math.sin(math.toRadians(30))
+    val verticalHalfSize   = 10 * math.sin(math.toRadians(30)) + 5 * math.cos(math.toRadians(30))
+
+    val collision = BorderWall(
+      entity,
+      horizontalHalfSize,
+      verticalHalfSize,
+      UpperLeftCorner,
+      LowerRightCorner,
+      BorderWallType.Left
+    ).value._2
+
+    collision.collisionPoint.x shouldBe UpperLeftCorner.x
+    collision.collisionPoint.y shouldBe (50 - 10 * math.sin(math.toRadians(30)) +
+      5 * math.cos(math.toRadians(30))) +- 1e-9

@@ -58,7 +58,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     val result = ShapeCollision.circleCollidesWithCircle.checkCollision(firstCircle, secondCircle)
 
-    result shouldBe Some(Collision(Vector2D(1, 0), 0))
+    result shouldBe Some(Collision(Vector2D(1, 0), 0, Vector2D(2, 0)))
 
   test("rectangle collides with another rectangle"):
     val cases = Table(
@@ -114,7 +114,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     val result =
       ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
 
-    result shouldBe Some(Collision(Vector2D(1, 0), 0))
+    result shouldBe Some(Collision(Vector2D(1, 0), 0, Vector2D(2, 0)))
 
   test("rectangles touching vertically collide with zero penetration"):
     val firstRectangle  = Placed(Vector2D(0, 0), Shape2D.rectangle(4, 4).value)
@@ -123,7 +123,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     val result =
       ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
 
-    result shouldBe Some(Collision(Vector2D(0, 1), 0))
+    result shouldBe Some(Collision(Vector2D(0, 1), 0, Vector2D(0, 2)))
 
   test("rectangle collision returns full overlaps on the horizontal axis"):
     val firstRectangle  = Placed(Vector2D(0, 0), Shape2D.rectangle(4, 4).value)
@@ -132,7 +132,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     val result =
       ShapeCollision.rectangleCollidesWithRectangle.checkCollision(firstRectangle, secondRectangle)
 
-    result shouldBe Some(Collision(Vector2D(1, 0), 4))
+    result shouldBe Some(Collision(Vector2D(1, 0), 4, Vector2D(0, 0)))
 
   test("circle collides with a rectangle"):
     val cases = Table(
@@ -195,7 +195,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     val result = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle)
 
-    result shouldBe Some(Collision(Vector2D(-1, 0), 0))
+    result shouldBe Some(Collision(Vector2D(-1, 0), 0, Vector2D(3, 0)))
 
   test("circle collides with another rectangle too if it is fully inside it"):
 

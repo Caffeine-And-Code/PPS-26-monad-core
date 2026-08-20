@@ -1,7 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
-
 final case class Surface private(
                                   id: LocatableId,
                                   position: Vector2D,

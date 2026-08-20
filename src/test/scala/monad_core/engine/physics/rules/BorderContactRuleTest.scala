@@ -39,7 +39,10 @@ class BorderContactRuleTest
     val scene = sceneWithEntities(List(entity))
 
     given CollisionDetector = detectorWithCollisions(
-      Map((entity.id.value, wall.id.value) -> (collision.normalVector, collision.penetrationDepth))
+      Map((entity.id.value, wall.id.value) -> (
+        collision.normalVector, 
+        collision.penetrationDepth, 
+        collision.collisionPoint))
     )
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
@@ -71,11 +74,13 @@ class BorderContactRuleTest
       Map(
         (entity.id.value, leftWall.id.value) -> (
           leftCollision.normalVector,
-          leftCollision.penetrationDepth
+          leftCollision.penetrationDepth,
+          leftCollision.collisionPoint
         ),
         (entity.id.value, bottomWall.id.value) -> (
           bottomCollision.normalVector,
-          bottomCollision.penetrationDepth
+          bottomCollision.penetrationDepth,
+          bottomCollision.collisionPoint
         )
       )
     )
@@ -202,9 +207,14 @@ class BorderContactRuleTest
       Map(
         (entity1.id.value, wall1.id.value) -> (
           collision1.normalVector,
-          collision1.penetrationDepth
+          collision1.penetrationDepth,
+          collision1.collisionPoint
         ),
-        (entity2.id.value, wall2.id.value) -> (collision2.normalVector, collision2.penetrationDepth)
+        (entity2.id.value, wall2.id.value) -> (
+          collision2.normalVector,
+          collision2.penetrationDepth,
+          collision2.collisionPoint
+        )
       )
     )
 
