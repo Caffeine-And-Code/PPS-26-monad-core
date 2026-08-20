@@ -4,79 +4,86 @@ La strategia di testing di **MonadCore2D** è stata costruita su più livelli, i
 
 ## Tecnologie usate
 
-Il framework di riferimento è **ScalaTest**, usato prevalentemente tramite `AnyFunSuite`, `Matchers` e gli helper per ispezionare valori `Either` e `Option`. **ScalaMock** permette di isolare le dipendenze e di verificare il protocollo di interazione tra componenti: chiamate effettuate, argomenti ricevuti, ordine delle operazioni e metodi che non devono essere invocati. Per insiemi di casi omogenei vengono impiegati anche i test table-driven di ScalaTest, utili soprattutto per intervalli numerici, combinazioni di forme e varianti dei componenti grafici.
+Il framework di riferimento è **ScalaTest**, utilizzato prevalentemente tramite `AnyFunSuite`, `Matchers` e gli helper per ispezionare valori `Either` e `Option`. **ScalaMock** permette di isolare le dipendenze e di verificare il protocollo di interazione tra componenti: chiamate effettuate, argomenti ricevuti, ordine delle operazioni e metodi che non devono essere invocati. Per insiemi di casi omogenei vengono impiegati anche i test table-driven di ScalaTest, utili soprattutto per intervalli numerici, combinazioni di forme e varianti dei componenti grafici.
 
 I test dell'interfaccia utilizzano direttamente **ScalaFX** e **JavaFX**, con helper dedicati all'inizializzazione del toolkit e all'esecuzione delle operazioni sul JavaFX Application Thread. Il progetto integra inoltre un sistema realizzato internamente per gli snapshot strutturali e visuali.
 
-La copertura viene misurata tramite il runner di **IntelliJ IDEA**, scelto dal gruppo come strumento di sviluppo e analisi. La qualità delle asserzioni dell'engine può essere valutata anche mediante **Stryker4s**, configurato nella build per il mutation testing. I test end-to-end dell'assistente usano invece **Langchain4j** e un modello servito localmente da **Ollama**.
+La copertura viene misurata tramite il runner di **IntelliJ IDEA**, scelto dal gruppo come strumento di sviluppo e analisi. La qualità delle asserzioni dell'engine può essere valutata anche mediante **Stryker4s**, configurato nella build per il mutation testing. I test end-to-end dell'assistente utilizzano invece **LangChain4j** e un modello servito localmente da **Ollama**.
 
 ## Grado di copertura
 
 Il report generato da IntelliJ IDEA, relativo alla suite standard e limitato ai sorgenti di produzione, riporta i seguenti valori:
 
-| Metrica | Copertura |
-|-|-|
-| Classi | 97,2% |
-| Metodi | 93,6% |
-| Righe | 92,9% |
+.tablesort {2}
+    | Metrica | Copertura |
+    | ------- | --------- |
+    | Classi  | 97,2%     |
+    | Metodi  | 93,6%     |
+    | Righe   | 92,9%     |
 
-La copertura è distribuita su entrambi i sottosistemi: nell'engine interessa in particolare modello, geometria, collision detection, game loop, regole fisiche e pathfinding; nel simulator comprende dominio, servizi applicativi, adapter infrastrutturali, gestione asincrona e componenti grafici.
+La copertura è distribuita su entrambi i sottosistemi: nell'engine interessa in particolare il modello, la geometria, la collision detection, il game loop, le regole fisiche e il pathfinding; nel simulator comprende il dominio, i servizi applicativi, gli adapter infrastrutturali, la gestione asincrona e i componenti grafici.
 
-La sola line coverage non garantisce tuttavia che un test sia in grado di riconoscere un comportamento errato. Per questo è stato configurato anche Stryker4s sui sorgenti dell'engine: il mutation testing introduce modifiche artificiali nel codice e controlla che almeno un test fallisca. La coverage di IntelliJ e il mutation score forniscono quindi due informazioni complementari, rispettivamente sull'estensione del codice esercitato e sull'efficacia delle asserzioni.
+La sola line coverage non garantisce, tuttavia, che un test sia in grado di riconoscere un comportamento errato. Per questo motivo è stato configurato anche Stryker4s sui sorgenti dell'engine: il mutation testing introduce modifiche artificiali nel codice e controlla che almeno un test fallisca. La coverage di IntelliJ e il mutation score forniscono quindi due informazioni complementari, rispettivamente sull'estensione del codice esercitato e sull'efficacia delle asserzioni.
 
 ## Metodologia usata
 
-Lo sviluppo ha seguito il ciclo **Red--Green--Refactor** del TDD:
+Lo sviluppo ha seguito il ciclo **Red-Green-Refactor** del TDD:
 
-1. **Red**: il comportamento atteso viene prima espresso mediante un test, che deve fallire perché la funzionalità non è ancora presente o perché riproduce un difetto;
+1. **Red**: il comportamento atteso viene prima espresso mediante un test, che deve fallire perché la funzionalità non è ancora presente oppure perché riproduce un difetto;
 2. **Green**: viene introdotta l'implementazione minima necessaria a soddisfare il test;
 3. **Refactor**: codice e test vengono migliorati mantenendo verde l'intera suite.
 
-In questo modo i test hanno guidato la progettazione delle API e la scomposizione delle responsabilità, oltre a costituire una rete di sicurezza per i refactoring successivi. I nomi dei test descrivono il comportamento osservabile, così che la suite possa essere letta anche come specifica eseguibile del sistema.
+In questo modo, i test hanno guidato la progettazione delle API e la scomposizione delle responsabilità, oltre a costituire una rete di sicurezza per i refactoring successivi. I nomi dei test descrivono il comportamento osservabile, così che la suite possa essere letta anche come specifica eseguibile del sistema.
 
-I test unitari seguono generalmente la struttura *Arrange--Act--Assert*. Le dipendenze vengono sostituite con mock quando l'obiettivo è verificare esclusivamente la responsabilità dell'unità in esame. Per il modello e gli algoritmi geometrici si controllano sistematicamente sia i casi validi sia i limiti del dominio: valori nulli o negativi, punti sul bordo, forme separate, tangenti, sovrapposte o contenute e condizioni prossime alle tolleranze numeriche. Nei test della fisica vengono inoltre verificati l'aggiornamento immutabile della scena, la composizione sequenziale delle regole, lo *short-circuit* in presenza di un errore e il comportamento con più entità.
+I test unitari seguono generalmente la struttura *Arrange-Act-Assert*. Le dipendenze vengono sostituite con mock quando l'obiettivo è verificare esclusivamente la responsabilità dell'unità in esame. Per il modello e gli algoritmi geometrici vengono controllati sistematicamente sia i casi validi sia i limiti del dominio: valori nulli o negativi, punti sul bordo, forme separate, tangenti, sovrapposte o contenute e condizioni prossime alle tolleranze numeriche. Nei test della fisica vengono inoltre verificati l'aggiornamento immutabile della scena, la composizione sequenziale delle regole, lo *short-circuit* in presenza di un errore e il comportamento con più entità.
 
 I test di integrazione utilizzano invece collaboratori reali quando è necessario verificare che più parti del sistema producano insieme il comportamento desiderato. La suite eseguita normalmente dalla build rimane deterministica e non richiede servizi remoti; le verifiche che interrogano realmente un modello linguistico sono collocate in una configurazione SBT separata, denominata `llmIntegrationTest`.
+
+Sono stati classificati come **test di integrazione** anche alcuni test che, per finalità, potrebbero essere considerati unitari o di snapshot, ma che richiedono l'inizializzazione del toolkit grafico e l'esecuzione sul thread applicativo di **ScalaFX/JavaFX**. Poiché tale infrastruttura non può essere efficacemente sostituita tramite mock, questi test dipendono necessariamente dall'interazione tra i componenti grafici dell'applicazione e il runtime JavaFX. Questa dipendenza è stata quindi considerata una forma di integrazione tra componenti e ha motivato la loro classificazione come test di integrazione.
 
 ## Esempi rilevanti
 
 ### Collision detection e fisica
 
-La distinzione tra test unitari e di integrazione è evidente nella collision detection. I primi sostituiscono le type class `Collides` e `Contains` con mock e verificano che `CollisionDetector` deleghi correttamente. I secondi utilizzano le implementazioni geometriche reali e controllano il risultato complessivo su entità e superfici concrete. In questo modo un errore può essere ricondotto più facilmente all'orchestrazione del detector oppure agli algoritmi geometrici sottostanti.
+La distinzione tra test unitari e test di integrazione è evidente nella collision detection. I primi sostituiscono le type class `Collides` e `Contains` con mock e verificano che `CollisionDetector` deleghi correttamente. I secondi utilizzano le implementazioni geometriche reali e controllano il risultato complessivo su entità e superfici concrete. In questo modo, un errore può essere ricondotto più facilmente all'orchestrazione del detector oppure agli algoritmi geometrici sottostanti.
 
 Per le regole fisiche vengono verificati sia i singoli calcoli sia la loro applicazione alla scena. Tra i casi più significativi rientrano il movimento con intervalli temporali diversi, la risoluzione delle collisioni tra corpi mobili e fissi, il contatto con i bordi, l'effetto delle superfici e l'attrazione verso il nemico più vicino. I test del game loop controllano inoltre la frequenza degli aggiornamenti, l'accumulatore temporale, la limitazione dei picchi di latenza e le transizioni tra modalità di modifica e simulazione.
 
 ### Interfaccia grafica e snapshot testing
 
-I test ScalaFX verificano il comportamento osservabile di stage, pannelli, pulsanti e form: proprietà reattive, abilitazione dei controlli, callback, validazione degli input, propagazione degli errori e contenuto prodotto dopo le interazioni.
+I test ScalaFX verificano il comportamento osservabile di stage, pannelli, pulsanti e form: proprietà reattive, abilitazione dei controlli, callback, validazione degli input, propagazione degli errori e contenuto prodotto in seguito alle interazioni.
 
-Per intercettare regressioni difficili da descrivere con singole asserzioni sono stati realizzati due tipi complementari di snapshot test:
+Per intercettare regressioni difficili da descrivere mediante singole asserzioni, sono stati realizzati due tipi complementari di snapshot test:
 
-- gli **snapshot strutturali** serializzano in JSON l'albero della scena, includendo tipo dei nodi, identificatori, classi di stile, testo e figli;
-- gli **snapshot visuali** confrontano il rendering con immagini PNG di riferimento. Il confronto tollera piccole differenze per canale dovute all'antialiasing, normalizza dimensioni dipendenti dal sistema operativo e fallisce solo oltre una soglia esplicita di pixel differenti.
+* gli **snapshot strutturali** serializzano in JSON l'albero della scena, includendo il tipo dei nodi, gli identificatori, le classi di stile, il testo e i figli;
+* gli **snapshot visuali** confrontano il rendering con immagini PNG di riferimento. Il confronto tollera piccole differenze per canale dovute all'antialiasing, normalizza le dimensioni dipendenti dal sistema operativo e fallisce solo oltre una soglia esplicita di pixel differenti.
 
-Le baseline versionate coprono, tra gli altri, il launcher, i dialog di creazione e modifica, i pulsanti, le notifiche e il canvas ridimensionabile. Se una baseline non esiste viene generata e il test fallisce intenzionalmente: l'immagine o il JSON devono quindi essere esaminati e accettati esplicitamente prima che un'esecuzione successiva possa passare.
+Le baseline versionate coprono, tra gli altri, il launcher, i dialog di creazione e modifica, i pulsanti, le notifiche e il canvas ridimensionabile. Se una baseline non esiste, viene generata e il test fallisce intenzionalmente: l'immagine o il JSON devono quindi essere esaminati e accettati esplicitamente prima che un'esecuzione successiva possa avere esito positivo.
 
 ### Vincoli architetturali e DDD
 
-La struttura architetturale non è affidata soltanto a una convenzione. Un insieme di matcher dedicati analizza gli import dei sorgenti e rende eseguibili alcuni vincoli del design. Viene controllato che l'engine resti indipendente dal simulator e che JavaFX e ScalaFX siano confinati al layer di presentation.
+La struttura architetturale non è affidata soltanto a una convenzione: è stata infatti realizzata una serie di utility che estendono la classe di test base per analizzare gli import dei sorgenti, rendendo eseguibili alcuni vincoli del design.
 
-Per il simulator, i test verificano la corretta implementazione dell'organizzazione **Domain-Driven Design** adottata dal progetto. In particolare, proteggono il domain dalle dipendenze verso i layer esterni e controllano le relazioni ammesse tra domain, application, infrastructure e presentation. In questo modo le direzioni di dipendenza stabilite dal design diventano regole automatiche di regressione: l'introduzione di un import non ammesso rende fallita la suite.
+In particolare, viene controllato che l'engine resti indipendente dal simulator, che JavaFX e ScalaFX siano confinati al layer di presentation e che, per il simulator application, venga verificata la corretta implementazione dell'organizzazione **Domain-Driven Design** adottata dal progetto. I test proteggono inoltre il domain dalle dipendenze verso i layer esterni e controllano le relazioni ammesse tra domain, application, infrastructure e presentation.
+
+In questo modo, le direzioni di dipendenza stabilite dal design diventano regole automatiche di regressione: l'introduzione di un import non ammesso provoca il fallimento della suite.
 
 ### Assistente LLM
 
-Il comportamento emergente dell'assistente non può essere verificato interamente tramite mock o confronto esatto di stringhe. Nei test di integrazione LLM i servizi applicativi `World` e `GameEngineRuntime` restano mockati, mentre l'assistente e il modello sono reali. È così possibile osservare le decisioni del modello senza modificare una simulazione reale.
+Il comportamento emergente dell'assistente non può essere verificato interamente tramite mock o mediante il confronto esatto di stringhe. Nei test di integrazione LLM, i servizi applicativi `World` e `GameEngineRuntime` restano mockati, mentre l'assistente e il modello sono reali. È così possibile osservare le decisioni del modello senza modificare una simulazione reale.
 
-Gli scenari coprono conversazione senza tool, lettura e modifica delle entità, sequenze di tool, memoria tra messaggi, richiesta di informazioni mancanti, divieto di modificare il mondo durante l'esecuzione del motore, rispetto dell'ambito tematico e uso della lingua dell'utente. Le asserzioni sono state adattate alla natura non deterministica delle risposte mediante tre strategie:
+Gli scenari coprono la conversazione senza tool, la lettura e la modifica delle entità, le sequenze di tool, la memoria tra messaggi, la richiesta di informazioni mancanti, il divieto di modificare il mondo durante l'esecuzione del motore, il rispetto dell'ambito tematico e l'uso della lingua dell'utente.
 
-- confronto diretto per le informazioni che devono comparire nella risposta;
-- matcher sui tool eseguiti, per verificarne assenza, unicità o insieme atteso;
-- tecnica **LLM-as-a-Judge** per proprietà semantiche non esprimibili come semplice uguaglianza. Un secondo assistente, configurato con temperatura zero, riceve un criterio e restituisce esclusivamente `PASS` o `FAIL`.
+Le asserzioni sono state adattate alla natura non deterministica delle risposte mediante tre strategie:
 
-## Altri elementi utili
+* confronto diretto per le informazioni che devono comparire nella risposta;
+* matcher sui tool eseguiti, per verificarne l'assenza, l'unicità o l'insieme atteso;
+* tecnica **LLM-as-a-Judge** per proprietà semantiche non esprimibili mediante una semplice uguaglianza. Un secondo assistente, configurato con temperatura zero, riceve un criterio e restituisce esclusivamente `PASS` o `FAIL`.
 
-I test standard vengono eseguiti da SBT in processi JVM separati per classe e senza parallelismo tra i processi forkati. Questa scelta riduce le interferenze dovute allo stato globale del toolkit JavaFX e rende più riproducibili i test grafici. Le attese asincrone sono inoltre limitate da timeout, così un malfunzionamento non può bloccare indefinitamente la suite.
+## Esecuzione e CI/CD
 
-Ad ogni pull request verso `main` o `development`, GitHub Actions esegue `sbt test` su Java 21. I test grafici vengono avviati in un display virtuale **Xvfb**, con font controllati, per poter verificare JavaFX anche in un ambiente Linux headless. La pipeline impedisce quindi l'integrazione di modifiche che introducano regressioni funzionali, grafiche o architetturali nella suite standard.
+I test standard vengono eseguiti da SBT in processi JVM separati per classe e senza parallelismo tra i processi forkati. Questa scelta riduce le interferenze dovute allo stato globale del toolkit JavaFX e rende più riproducibili i test grafici. Le attese asincrone sono inoltre limitate da timeout, in modo che un malfunzionamento non possa bloccare indefinitamente la suite.
 
-I test che dipendono da Ollama vengono eseguiti separatamente tramite `sbt "llmIntegrationTest / test"`. La loro esclusione dalla pipeline standard evita che disponibilità del modello, latenza e variabilità generativa rendano instabile la continuous integration. Costituiscono quindi un controllo end-to-end da eseguire in un ambiente preparato esplicitamente, in particolare prima delle release o dopo modifiche a prompt, tool e memoria conversazionale.
+A ogni pull request verso `main` o `development` e a ogni push su qualsiasi branch, GitHub Actions esegue `sbt test` su Java 21. I test grafici vengono avviati in un display virtuale **Xvfb**, con font controllati, per consentire la verifica di JavaFX anche in un ambiente Linux headless. La pipeline impedisce quindi l'integrazione di modifiche che introducano regressioni funzionali, grafiche o architetturali nella suite standard.
+
+I test che dipendono da Ollama vengono eseguiti separatamente tramite `sbt "llmIntegrationTest / test"`. La loro esclusione dalla pipeline standard evita che la disponibilità del modello, la latenza e la variabilità generativa rendano instabile la continuous integration. Costituiscono quindi un controllo end-to-end da eseguire in un ambiente preparato esplicitamente, in particolare prima delle release o dopo modifiche a prompt, tool e memoria conversazionale.
