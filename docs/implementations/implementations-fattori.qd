@@ -1,0 +1,174 @@
+## Fabio Fattori
+
+Mi sono occupato principalmente del modello e della gestione della scena, dell'API pubblica e del collegamento tra engine e applicazione, dell'interfaccia grafica ScalaFX, del sistema di eventi e di alcune infrastrutture di test. Il perimetro del contributo è stato verificato sulla cronologia Git considerando entrambe le mie identità e seguendo spostamenti e rinominazioni dei file. I blame mostrano un'attribuzione prevalente o esclusiva nei seguenti gruppi di sorgenti:
+
+- `engine/model/Scene.scala`, `engine/core/traits/State.scala`, `EngineFacade.scala`, `RendererManager.scala`, `EngineColor.scala` e l'astrazione `Painter`;
+- gli adapter `MonadCoreWorld`, `MonadCoreGameEngineRuntime` e `PaintArchitect`, insieme alle operazioni applicative su entità, superfici e team;
+- gli stage e i pannelli ScalaFX del motore, i componenti `IconButton`, `MenuButton`, `ResizableCanvas` e `NotificationManager`, il sistema di form e i relativi parser;
+- l'ADT `EngineEvent`, la propagazione degli eventi attraverso fisica e game loop e `EventLogFormatter`;
+- le utility per gli snapshot strutturali e visuali, i test architetturali e numerosi test unitari e di integrazione dei componenti precedenti.
+
+Per le parti condivise ho lavorato principalmente con Francesco Tonelli e Mattia Senni. Francesco ha realizzato il nucleo del fixed update, dell'interpolazione e della pipeline fisica; io ne ho curato l'esposizione attraverso la facade, l'integrazione applicativa e l'estensione per il trasporto degli eventi. Con Mattia ho condiviso l'organizzazione a layer del simulator, entro la quale ho collocato il sottosistema grafico e implementato i relativi adapter e controlli architetturali.
+
+### Modello funzionale della scena
+
+Ho implementato `Scene` come aggregato immutabile contenente tre mappe, indicizzate tramite `LocatableId` e `TeamId`, per entità, superfici e team. Le operazioni di lettura, inserimento e rimozione non modificano l'istanza corrente, ma producono rispettivamente un valore o una nuova scena dentro `Either[EngineError, A]`. Gli errori di dominio rimangono quindi valori espliciti e componibili, senza eccezioni o valori sentinella.
+
+Per evitare di replicare la stessa logica sulle tre mappe ho introdotto una lente minimale `Lens[S, A]`, formata da una funzione di lettura e da una di sostituzione. Le tre istanze per entità, superfici e team sono fornite come `given`; le funzioni generiche `getFromMap`, `addToMap` e `removeFromMap` operano poi sulla lente ricevuta. Questa soluzione concentra in un solo punto il controllo di presenza delle chiavi e la costruzione degli errori specifici, mantenendo tipizzate le API pubbliche. Ho concatenato le operazioni più articolate tramite for-comprehension, sfruttando lo short-circuit di `Either`.
+
+Il trait `State` espone al game loop e alla fisica soltanto le operazioni necessarie sullo stato del mondo. `Scene` ne costituisce l'implementazione concreta; insieme a Francesco ho integrato la gestione dei limiti del mondo e l'interpolazione senza alterare la semantica immutabile dell'aggregato.
+
+### API pubblica e integrazione applicativa
+
+L'engine è stato progettato come pacchetto installabile e utilizzabile anche da applicazioni diverse dal simulator incluso nel progetto. Per questo ho implementato `EngineFacade` come punto d'ingresso pubblico al game loop: il client fornisce `GameLoop`, `State`, tempo corrente e implementazione fisica, mentre la facade delega l'avanzamento al core e restituisce un `Either[EngineError, GameLoopTickResult]`. Lo stato e il loop aggiornato restano valori espliciti; l'API non introduce quindi stato globale e non espone al client i dettagli di orchestrazione interni.
+
+Nel simulator ho implementato `MonadCoreWorld`, adapter della porta applicativa `World`. Ogni comando viene tradotto in operazioni pure su `Scene`; soltanto dopo un `Right` l'adapter sostituisce lo stato corrente. Ho centralizzato in `ErrorsAdapter` le conversioni tra `EngineError` e `BaseError`, così i layer esterni non dipendono dalla gerarchia di errore interna al motore.
+
+`MonadCoreGameEngineRuntime`, realizzato sulle porte applicative condivise con Mattia e integrato con i componenti dell'engine di Francesco, orchestra l'esecuzione attraverso `EngineFacade`. Il runtime sincronizza l'accesso allo stato, gestisce avvio, pausa, snapshot, ripristino e ridimensionamento del mondo e aggiorna la scena soltanto dopo il completamento corretto del tick. Le dipendenze di fisica e rendering sono fornite tramite parametri `using`, evitando istanziazioni nascoste nei componenti di presentazione.
+
+### Renderer sostituibile
+
+Ho progettato `RendererManager` affinché dipenda unicamente da `State` e dal contratto `Painter`, non da ScalaFX o da una specifica libreria grafica. Il manager visita gli elementi della scena, sceglie l'operazione in base alla variante di `Shape2D` e risolve i colori di superfici, entità e team. Tutti gli effetti di disegno sono però delegati al `Painter` ricevuto come parametro contestuale `using`.
+
+Il simulator fornisce `PaintArchitect`, che implementa `Painter` traducendo le richieste in una sequenza di `DrawCommand`; `ShapePainter` consuma poi questi comandi tramite il `GraphicsContext` ScalaFX. Questo adapter è soltanto l'implementazione fornita dal progetto: chi installa il pacchetto engine può definire un proprio `CustomPainter`, per esempio basato su un altro framework grafico o su un renderer headless, e passarlo a `RendererManager` senza modificare né ricompilare il core.
+
+.mermaid
+    classDiagram
+        direction TB
+
+        class ClientApplication {
+            <<external application>>
+            +runTick()
+            +renderState()
+        }
+
+        class EngineFacade {
+            <<facade>>
+            +tick()
+        }
+
+        class GameLoop
+        class GameLoopTickResult
+        class State
+
+        class RendererManager {
+            +render(State)(using Painter)
+        }
+
+        class Painter {
+            <<trait>>
+            +baseEntityColor()
+            +baseSurfaceColor()
+            +teamIdColorRelation()
+            +drawCircle()
+            +drawRectangle()
+        }
+
+        class PaintArchitect {
+            <<provided adapter>>
+        }
+
+        class CustomPainter {
+            <<external implementation>>
+        }
+
+        ClientApplication --> EngineFacade : usa il game loop
+        EngineFacade ..> GameLoop : delega tick
+        GameLoop --> GameLoopTickResult : produce
+        ClientApplication --> RendererManager : renderizza lo State
+        RendererManager ..> State : legge
+        RendererManager ..> Painter : richiede via using
+        Painter <|.. PaintArchitect : implementazione fornita
+        Painter <|.. CustomPainter : implementazione sostituibile
+        ClientApplication ..> CustomPainter : fornisce come given
+
+### Interfaccia grafica e form dichiarativi
+
+Ho implementato la maggior parte del sottosistema ScalaFX: composizione dello stage principale, pannello di controllo del motore, canvas ridimensionabile, rendering della scena e operazioni di creazione, modifica e rimozione. I pannelli ricevono collaboratori astratti tramite dependency injection e mantengono lo stato dell'interazione in piccoli view model locali. Le proprietà reattive di ScalaFX sincronizzano lo stato dei pulsanti e disabilitano le operazioni di modifica durante la simulazione.
+
+In `SceneRendererPanel` ho collegato un `AnimationTimer` al runtime, sincronizzato i limiti del mondo con le dimensioni del canvas e implementato la selezione degli elementi tramite hit detection sulle due varianti di `Shape2D`. Il menu contestuale viene costruito in funzione del tipo unione `Entity | Surface`; il pattern matching seleziona quindi a tempo di compilazione le azioni ammesse per l'elemento scelto. Prima di ogni mutazione richiesta dalla GUI creo uno snapshot, utilizzato dal comando di arresto per riportare il mondo allo stato precedente alla simulazione.
+
+Per i dialoghi ho evitato schermate indipendenti e duplicate. `FormFieldSpec` è un ADT composto da campi testuali, selezioni singole e selezioni multiple. `FormFieldControlFactory` interpreta la specifica e produce sia il nodo grafico sia una funzione `() => String` per leggerne il valore. `FormFieldsState` conserva in modo immutabile queste funzioni e i nodi dinamici; quando, ad esempio, cambia la forma selezionata, i campi dipendenti per raggio oppure altezza e larghezza vengono sostituiti e lo stato viene copiato senza riferimenti obsoleti.
+
+Ho separato inoltre i parser di entità, superfici e team, che trasformano la mappa dei valori del form in oggetti di dominio mediante pattern matching e for-comprehension. La validazione resta affidata ai costruttori dell'engine e ogni fallimento viene riportato come `Either[BaseError, A]`. Lo stesso dialogo può così operare sia in creazione sia in modifica: nel secondo caso i valori predefiniti sono ricavati dall'oggetto esistente e viene preservato il suo identificatore.
+
+Per mostrare gli errori che raggiungono la presentazione ho realizzato `NotificationManager`. Il componente mantiene una coda immutabile di notifiche, assegna uno stile in base al tipo algebrico `NotificationType` e compone transizioni di ingresso, attesa e dissolvenza. La gestione centralizzata evita che pannelli e form duplichino la logica di visualizzazione degli errori.
+
+### Eventi del motore e logging
+
+Ho modellato il sistema di eventi tramite un ADT sealed: `EntityCreated`, `EntityRemoved`, `EntityUpdated` e `CollisionDetected`. Anche il bersaglio di una collisione è tipizzato tramite l'enum `CollisionTarget`, che distingue entità, superficie e lato del bordo. In questo modo i consumer effettuano pattern matching esaustivo e non devono interpretare stringhe o payload non strutturati.
+
+Per la propagazione ho adottato uno schema simile a un writer, senza introdurre dipendenze esterne. Ogni `PhysicsRule` restituisce un `PhysicsRuleResult` composto dal nuovo stato e da un `Vector[EngineEvent]`; `RuleCombinator.sequence` concatena gli eventi mentre compone le regole con `foldLeft` e `flatMap`, preservando lo short-circuit in caso di `PhysicsError`. Le regole di collisione producono eventi completi di normale e profondità di penetrazione, mentre `PhysicsManager` confronta lo stato iniziale e finale per ricavare gli aggiornamenti delle entità.
+
+Nel game loop, lavorando sulla base sviluppata con Francesco, ho introdotto `GameLoopTickResult`: oltre al nuovo stato e al loop aggiornato, il risultato trasporta l'alpha di interpolazione e tutti gli eventi accumulati nei fixed update eseguiti durante un frame. Ho spostato il rendering fuori dal loop e l'ho affidato al runtime; il core temporale rimane quindi indipendente dagli effetti grafici e gli eventi non vengono persi quando un frame richiede più aggiornamenti fisici.
+
+Le mutazioni esplicite delle entità effettuate tramite `MonadCoreWorld` pubblicano gli eventi di creazione, rimozione e aggiornamento, mentre `MonadCoreGameEngineRuntime` inoltra quelli prodotti dalla fisica. Al composition root ho collegato entrambi allo stesso callback. `EventLogFormatter` trasforma infine ciascun caso dell'ADT in un `EventLogEntry` strutturato, con livello `Info` o `Trace`, consumato attraverso la porta applicativa `Logger`. Engine, formattazione e destinazione del log restano pertanto disaccoppiati.
+
+.mermaid
+    flowchart TD
+        subgraph Engine[Pacchetto engine]
+            Rule[PhysicsRule]
+            RuleResult[PhysicsRuleResult<br/>State + Vector di EngineEvent]
+            Combinator[RuleCombinator.sequence]
+            Physics[PhysicsManager]
+            Step[PhysicsStep]
+            Loop[GameLoop<br/>fixed update]
+            TickResult[GameLoopTickResult<br/>State + Loop + Eventi + Alpha]
+
+            Rule --> RuleResult
+            RuleResult --> Combinator
+            Combinator --> Physics
+            Physics --> Step
+            Step --> Loop
+            Loop --> TickResult
+        end
+
+        subgraph Simulator[Applicazione simulator]
+            World[MonadCoreWorld<br/>create, remove, update]
+            Runtime[MonadCoreGameEngineRuntime]
+            Callback[Callback condiviso<br/>Vector di EngineEvent]
+            Formatter[EventLogFormatter]
+            LogEntry[EventLogEntry<br/>Info oppure Trace]
+            Logger[Logger]
+
+            World -->|eventi applicativi| Callback
+            Runtime -->|eventi fisici| Callback
+            Callback --> Formatter
+            Formatter --> LogEntry
+            LogEntry --> Logger
+        end
+
+        TickResult --> Runtime
+
+### Continuous Integration e Continuous Delivery
+
+Mi sono occupato in autonomia della progettazione e della manutenzione dell'intera pipeline CI/CD, composta da workflow GitHub Actions distinti per verifica, rilascio e pubblicazione della documentazione. Ho mantenuto separate le responsabilità dei job, in modo che un errore di formattazione, un test fallito o una versione non valida interrompano la pipeline prima della produzione degli artifact.
+
+La Continuous Integration esegue la suite Scala su ogni branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa font e un display virtuale Xvfb per rendere eseguibili in ambiente Linux headless anche gli snapshot test JavaFX e, con l'integrazione dei generatori logici, installa SWI-Prolog prima di `sbt test`. Un workflow separato applica alle pull request la format policy tramite `sbt scalafmtCheckAll`; la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile e non una convenzione affidata al singolo sviluppatore.
+
+La Continuous Delivery viene avviata da un push su `main`. Il primo job legge `release_version` da `project/build.properties`, recupera tramite GitHub CLI l'ultima release e accetta soltanto una versione strettamente maggiore. La build usa poi una matrice di runner Linux, Windows e macOS: ogni piattaforma esegue `sbt assembly`, rinomina il fat JAR includendo versione e sistema operativo e pubblica l'artifact intermedio. Questa distinzione è necessaria perché la distribuzione include i moduli JavaFX specifici della piattaforma.
+
+Soltanto dopo il completamento della matrice, il job di release genera con Quarkdown il PDF della relazione, scarica i tre JAR e crea una GitHub Release con tag versionato, note automatiche e tutti gli artifact richiesti per la consegna. In parallelo, un workflow dedicato compila la stessa relazione in HTML e la distribuisce su GitHub Pages. Ho configurato esplicitamente anche i permessi necessari alla scrittura delle release e al deployment tramite token OIDC, limitandoli ai soli job che ne hanno bisogno.
+
+.mermaid
+    flowchart TD
+        Push[Push su un branch] --> Tests[Test Scala<br/>Java 21 + Xvfb + SWI-Prolog]
+        PR[Pull request verso<br/>main o development] --> Tests
+        PR --> Format[scalafmtCheckAll]
+
+        Main[Push su main] --> Version[Verifica incremento<br/>release_version]
+        Version --> Matrix[Assembly su matrice<br/>Linux, Windows, macOS]
+        Matrix --> Artifacts[Fat JAR versionati]
+        Artifacts --> Pdf[Relazione PDF<br/>con Quarkdown]
+        Pdf --> Release[GitHub Release]
+
+        Main --> Html[Relazione HTML<br/>con Quarkdown]
+        Html --> Pages[GitHub Pages]
+
+### Infrastrutture di verifica implementate
+
+Oltre ai test delle funzionalità di mia competenza, ho realizzato diversi supporti riutilizzabili. Il primo è il sistema di snapshot della GUI: `SceneGraphSerializer` converte ricorsivamente il scene graph JavaFX in una rappresentazione JSON stabile, mentre `SnapshotTesting` confronta sia questa struttura sia immagini PNG. Il confronto visuale normalizza le dimensioni dipendenti dal sistema operativo, ammette una tolleranza esplicita per canale contro le differenze di antialiasing e misura la percentuale di pixel difformi.
+
+Il secondo supporto rende eseguibili i vincoli architetturali. `ArchitectureChecker` analizza gli import dei package e fornisce matcher ScalaTest con cui verifico l'indipendenza dell'engine, la direzione delle dipendenze tra domain, application, infrastructure e presentation e il confinamento di ScalaFX/JavaFX nel layer grafico. Questi controlli hanno guidato anche il refactoring dei miei componenti verso la struttura a layer condivisa con Mattia.
+
+Infine, ho realizzato due generatori Prolog che producono durante la build tabelle ScalaTest per le combinazioni di tipi di notifica e di campi geometrici opzionali. I task SBT invocano SWI-Prolog e scrivono i sorgenti Scala nella directory gestita di test; la pipeline CI installa quindi anche il runtime Prolog prima di eseguire la suite. Questa integrazione evita di mantenere manualmente prodotti cartesiani di casi e collega la generazione logica dei dati ai test automatizzati.
