@@ -113,6 +113,7 @@ object ShapeCollision:
           else calculateNorm(first.center, second.center)
         val firstContact  = first.center + normal * first.shape.radius
         val secondContact = second.center - normal * second.shape.radius
+
         Collision(normal, penetrationDepth, (firstContact + secondContact) * 0.5)
 
   given rectangleCollidesWithRectangle: Collides[Rectangle, Rectangle] with
@@ -133,6 +134,7 @@ object ShapeCollision:
         val (axis, penetrationDepth) = overlaps.minBy(_._2)
         val normal                   = if centerDistance.dot(axis) >= 0 then axis else axis.flip
         val collisionPoint           = intersectionCenter(first, second)
+
         Collision(normal, penetrationDepth, collisionPoint)
 
   given circleCollidesWithRectangle: Collides[Circle, Rectangle] with
@@ -151,13 +153,15 @@ object ShapeCollision:
 
       if distance > 0 then
         val penetrationDepth = circle.shape.radius - distance
+
         Option.when(penetrationDepth >= 0):
           Collision(
             circleToClosestPoint.normalized.rotated(rectangle.rotation),
             penetrationDepth,
             worldPoint(localClosestPoint, rectangle)
           )
-      else Some(collisionFromCircleInsideRectangle(circle, rectangle, localCircle))
+      else
+        Some(collisionFromCircleInsideRectangle(circle, rectangle, localCircle))
 
   given rectangleCollidesWithCircle: Collides[Rectangle, Circle] with
 
