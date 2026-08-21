@@ -49,13 +49,15 @@ object Launcher:
         case EventLogEntry(EventLogLevel.Info, message)  => logger.info(message)
         case EventLogEntry(EventLogLevel.Trace, message) => logger.trace(message)
 
-    given World = MonadCoreWorld(
-      onEvents = logEvents
-    )
-
-    given GameEngineRuntime = MonadCoreGameEngineRuntime(
+    val runtime = MonadCoreGameEngineRuntime(
       onError = error => NotificationManager.show(error.message, Error),
       onEvents = logEvents
+    )
+    given GameEngineRuntime = runtime
+
+    given World = MonadCoreWorld(
+      onEvents = logEvents,
+      currentMode = () => runtime.mode
     )
 
     given painter: Painter = PaintArchitect

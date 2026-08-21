@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.engine
 
+import monad_core.engine.core.LoopMode
 import monad_core.engine.core.events.EngineEvent
-import monad_core.engine.core.events.EngineEvent.{EntityCreated, EntityRemoved, EntityUpdated}
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{
@@ -11,10 +11,13 @@ import monad_core.simulator.application.engine.world.{
   World
 }
 import monad_core.simulator.errors.BaseError
+import monad_core.simulator.infrastructure.engine.world.WorldEdit.*
+import monad_core.simulator.infrastructure.engine.world.{WorldEdit, WorldEditor}
 
 final class MonadCoreWorld(
     initialScene: Scene,
-    onEvents: Vector[EngineEvent] => Unit
+    onEvents: Vector[EngineEvent] => Unit,
+    currentMode: () => LoopMode
 ) extends World:
 
   var currentScene: Scene = initialScene
@@ -34,27 +37,13 @@ final class MonadCoreWorld(
     yield entity
 
   override def createEntity(command: SaveEntityCommand): Either[BaseError, Unit] =
-    currentScene.addEntity(command.entity).adaptError().map { scene =>
-      currentScene = scene
-      publish(EntityCreated(command.entity))
-    }
+    applyEdit(CreateEntity(command.entity))
 
   override def removeEntity(entityId: String): Either[BaseError, Unit] =
-    for
-      entity <- getEntity(entityId)
-      scene  <- currentScene.removeEntity(entity).adaptError()
-    yield
-      currentScene = scene
-      publish(EntityRemoved(entity))
+    LocatableId(entityId).adaptError().flatMap(id => applyEdit(RemoveEntity(id)))
 
   override def updateEntity(command: SaveEntityCommand): Either[BaseError, Unit] =
-    for
-      previous             <- getEntity(command.entity.id.value)
-      sceneWithoutPrevious <- currentScene.removeEntity(previous).adaptError()
-      updatedScene         <- sceneWithoutPrevious.addEntity(command.entity).adaptError()
-    yield
-      currentScene = updatedScene
-      publish(EntityUpdated(previous, command.entity))
+    applyEdit(UpdateEntity(command.entity))
 
   override def getAllSurfaces: List[Surface] =
     currentScene.surfaces.values.toList
@@ -66,23 +55,13 @@ final class MonadCoreWorld(
     yield surface
 
   override def createSurface(command: SaveSurfaceCommand): Either[BaseError, Unit] =
-    for
-      surface = command.surface
-      scene <- currentScene.addSurface(surface).adaptError()
-    yield currentScene = scene
+    applyEdit(CreateSurface(command.surface))
 
   override def removeSurface(id: String): Either[BaseError, Unit] =
-    for
-      surface <- getSurface(id)
-      scene   <- currentScene.removeSurface(surface).adaptError()
-    yield currentScene = scene
+    LocatableId(id).adaptError().flatMap(surfaceId => applyEdit(RemoveSurface(surfaceId)))
 
   override def updateSurface(command: SaveSurfaceCommand): Either[BaseError, Unit] =
-    for
-      surfaceId = command.surface.id.value
-      _ <- removeSurface(surfaceId)
-      _ <- createSurface(command)
-    yield currentScene
+    applyEdit(UpdateSurface(command.surface))
 
   override def getAllTeams: List[Team] =
     currentScene.teams.values.toList
@@ -94,33 +73,27 @@ final class MonadCoreWorld(
     yield team
 
   override def createTeam(command: SaveTeamCommand): Either[BaseError, Unit] =
-    for
-      team = command.team
-      scene <- currentScene.addTeam(team).adaptError()
-    yield currentScene = scene
+    applyEdit(CreateTeam(command.team))
 
   override def removeTeam(id: String): Either[BaseError, Unit] =
-    for
-      team  <- getTeam(id)
-      scene <- currentScene.removeTeam(team).adaptError()
-    yield currentScene = scene
+    TeamId(id).adaptError().flatMap(teamId => applyEdit(RemoveTeam(teamId)))
 
   override def updateTeam(command: SaveTeamCommand): Either[BaseError, Unit] =
-    for
-      teamId = command.team.id.value
-      _ <- removeTeam(teamId)
-      _ <- createTeam(command)
-    yield currentScene
+    applyEdit(UpdateTeam(command.team))
 
   override def scene: Scene = currentScene
 
-  private def publish(event: EngineEvent): Unit =
-    onEvents(Vector(event))
+  private def applyEdit(edit: WorldEdit): Either[BaseError, Unit] =
+    WorldEditor(currentMode(), currentScene, edit).map { result =>
+      currentScene = result.scene
+      if result.events.nonEmpty then onEvents(result.events)
+    }
 
 object MonadCoreWorld:
 
   def apply(
       initialScene: Scene = Scene(),
-      onEvents: Vector[EngineEvent] => Unit = _ => ()
+      onEvents: Vector[EngineEvent] => Unit = _ => (),
+      currentMode: () => LoopMode = () => LoopMode.EditMode
   ): MonadCoreWorld =
-    new MonadCoreWorld(initialScene, onEvents)
+    new MonadCoreWorld(initialScene, onEvents, currentMode)

@@ -1,6 +1,6 @@
 package monad_core.simulator.infrastructure.engine
 
-import monad_core.engine.core.GameLoop
+import monad_core.engine.core.LoopMode
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
@@ -15,7 +15,7 @@ final class MonadCoreGameEngineRuntime(
     onEvents: Vector[EngineEvent] => Unit = _ => ()
 ) extends GameEngineRuntime:
   private val lock                                        = new Object
-  private var gameLoop                                    = GameLoop.default()
+  private var engineSession                               = EngineFacade.default
   private var currentWorld: Option[World]                 = None
   private var currentSnapshot: Option[Scene]              = None
   private var error: Option[BaseError]                    = None
@@ -25,16 +25,16 @@ final class MonadCoreGameEngineRuntime(
 
   override def start(): Unit =
     lock.synchronized:
-      gameLoop = gameLoop.start()
+      engineSession = EngineFacade.start(engineSession)
 
   override def stop(): Unit =
     lock.synchronized:
-      gameLoop = gameLoop.stop()
+      engineSession = EngineFacade.stop(engineSession)
 
   override def tick(currentTime: Long)(renderer: World => Unit)(using painter: Painter): Unit =
     lock.synchronized:
       currentWorld.foreach { world =>
-        EngineFacade.tick(gameLoop, world.scene, currentTime) match
+        EngineFacade.tick(engineSession, world.scene, currentTime, physics) match
           case Right(tickResult) =>
             tickResult.state match
               case scene: Scene =>
@@ -54,7 +54,7 @@ final class MonadCoreGameEngineRuntime(
                         monadCoreWorld.currentScene = scene
                       case _ => ()
 
-                    gameLoop = tickResult.loop
+                    engineSession = tickResult.nextSession
                     onEvents(tickResult.events)
                     renderer(world)
 
@@ -74,7 +74,10 @@ final class MonadCoreGameEngineRuntime(
     stop()
 
   override def isRunning: Boolean =
-    lock.synchronized(gameLoop.isRunning)
+    lock.synchronized(EngineFacade.isRunning(engineSession))
+
+  def mode: LoopMode =
+    lock.synchronized(EngineFacade.mode(engineSession))
 
   override def createSnapshot(): Unit =
     lock.synchronized:
@@ -86,7 +89,7 @@ final class MonadCoreGameEngineRuntime(
         case (Some(monadCoreWorld: MonadCoreWorld), Some(scene)) =>
           monadCoreWorld.currentScene = scene
         case _ => ()
-      gameLoop = GameLoop.default()
+      engineSession = EngineFacade.default
 
   override def initializeWorld(
       world: World,

@@ -12,6 +12,7 @@ import monad_core.simulator.application.engine.world.{
   World
 }
 import monad_core.simulator.infrastructure.engine.MonadCoreWorld
+import monad_core.simulator.infrastructure.engine.world.SceneEditingNotAllowed
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -44,6 +45,21 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     result shouldBe Right(())
     worldTest.scene shouldBe nextState
     publishedEvents.toList shouldBe List(EntityCreated(baseEntity))
+
+  test("mutations are not interpreted while the engine is in simulation mode"):
+    val publishedEvents = ListBuffer.empty[EngineEvent]
+    val initialScene    = mock[Scene]
+    val worldTest = MonadCoreWorld(
+      initialScene,
+      events => publishedEvents ++= events,
+      () => LoopMode.SimulationMode
+    )
+
+    val result = worldTest.createEntity(SaveEntityCommand(baseEntity))
+
+    result shouldBe Left(SceneEditingNotAllowed)
+    worldTest.scene shouldBe initialScene
+    publishedEvents shouldBe empty
 
   test("createEntity carries the state errors"):
     val publishedEvents    = ListBuffer.empty[EngineEvent]
