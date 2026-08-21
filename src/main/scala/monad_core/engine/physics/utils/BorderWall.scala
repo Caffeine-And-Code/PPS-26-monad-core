@@ -6,7 +6,7 @@ import monad_core.engine.model.*
 private[engine] case class BorderWallResult(
     wall: Entity,
     collision: Collision
- )
+)
 
 private[engine] object BorderWall:
 

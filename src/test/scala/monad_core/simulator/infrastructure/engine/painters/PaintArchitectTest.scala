@@ -81,7 +81,7 @@ class PaintArchitectTest
     val rotated = RectangleEntity.rotateTo(45.0).value
 
     PaintArchitect.drawRectangle(rotated, ArchitectEntityBaseColor)
-    
+
     inside(PaintArchitect.drainBuffer().head):
       case DrawCommand.Rectangle(_, _, _, _, rotation, _) => rotation shouldBe 45.0
 

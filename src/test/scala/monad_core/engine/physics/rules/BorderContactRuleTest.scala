@@ -61,7 +61,11 @@ class BorderContactRuleTest
     resultEntity.position shouldBe defaultValues.expectedPosition
     resultEntity.speed shouldBe Some(defaultValues.expectedSpeed)
     outcome.events shouldBe Vector(
-      CollisionDetected(defaultValues.entity.id, CollisionTarget.Border(borderSide), defaultValues.collision)
+      CollisionDetected(
+        defaultValues.entity.id,
+        CollisionTarget.Border(borderSide),
+        defaultValues.collision
+      )
     )
 
   private def testCornerWall(borderSideV: BorderSide, borderSideH: BorderSide) =

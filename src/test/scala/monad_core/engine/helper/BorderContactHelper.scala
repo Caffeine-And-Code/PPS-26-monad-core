@@ -7,15 +7,15 @@ import DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.physics.utils.BorderWall
 import org.scalatest.EitherValues.convertEitherToValuable
 
-private[engine] case class SingleWallResult (
+private[engine] case class SingleWallResult(
     entity: Entity,
     wall: Entity,
     collision: Collision,
     expectedPosition: Vector2D,
     expectedSpeed: Vector2D
-  )
+)
 
-private[engine] case class CornerWallResult (
+private[engine] case class CornerWallResult(
     entity: Entity,
     wall1: Entity,
     collision1: Collision,
@@ -23,7 +23,7 @@ private[engine] case class CornerWallResult (
     collision2: Collision,
     expectedPosition: Vector2D,
     expectedSpeed: Vector2D
-  )
+)
 
 private[engine] object BorderContactHelper:
 

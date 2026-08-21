@@ -3,7 +3,12 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRule, PhysicsRuleResult}
+import monad_core.engine.physics.core.{
+  PhysicsDomainError,
+  PhysicsError,
+  PhysicsRule,
+  PhysicsRuleResult
+}
 import monad_core.engine.physics.utils.{PhysicsUtil, Rotation, SceneEntitiesUpdate}
 
 private[physics] object KinematicsRule:
