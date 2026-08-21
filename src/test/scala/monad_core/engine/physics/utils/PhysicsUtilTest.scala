@@ -1,8 +1,12 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
+import monad_core.engine.geometry.Collision
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeFixedEntityRectangle,
+  makeMovingEntityCircle
+}
 import monad_core.engine.helper.DummyTeamHelper.{addTeam, makeTeam}
-import monad_core.engine.helper.PhysicsConstantHelper.NegativeDt
+import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{NegativeDeltaTime, ZeroMassError}
 import monad_core.engine.physics.utils.PhysicsUtil
@@ -56,13 +60,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val dtS                  = PhysicsUtil.timeLongToSeconds(dt).value
     val expectedNextPosition = Vector2D(position.x + speed.x * dtS, position.y + speed.y * dtS)
 
-    val result = PhysicsUtil.nextPosition(
-      position = position,
-      speed = speed,
-      deltaTime = dt,
-      upperLeftCorner = UpperLeftCorner,
-      lowerRightCorner = LowerRightCorner
-    )
+    val result = PhysicsUtil.nextPosition(position = position, speed = speed, deltaTime = dt)
 
     result.value shouldBe expectedNextPosition
 
@@ -70,13 +68,8 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val position = Vector2D(5.0, 2.0)
     val speed    = Vector2D(4.0, 6.0)
 
-    val result = PhysicsUtil.nextPosition(
-      position = position,
-      speed = speed,
-      deltaTime = NegativeDt,
-      upperLeftCorner = UpperLeftCorner,
-      lowerRightCorner = LowerRightCorner
-    )
+    val result =
+      PhysicsUtil.nextPosition(position = position, speed = speed, deltaTime = NegativeDt)
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
@@ -85,13 +78,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val speed    = Vector2D(-1.0, -1.0)
     val dt       = 500_000_000L
 
-    val result = PhysicsUtil.nextPosition(
-      position = position,
-      speed = speed,
-      deltaTime = dt,
-      upperLeftCorner = UpperLeftCorner,
-      lowerRightCorner = LowerRightCorner
-    )
+    val result = PhysicsUtil.nextPosition(position = position, speed = speed, deltaTime = dt)
 
     result.isRight shouldBe true
 
@@ -278,6 +265,20 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     )
 
     result.value shouldBe expectedSpeed
+
+  test("reflectOnMobile should preserve speed when the entities are separating"):
+    val speed      = Vector2D(2.0, 0.0)
+    val otherSpeed = Vector2D(1.0, 0.0)
+
+    val result = PhysicsUtil.reflectOnMobile(
+      speed = speed,
+      otherSpeed = otherSpeed,
+      normal = Vector2D(1.0, 0.0),
+      mass = Some(Weight(1).value),
+      massOther = Some(Weight(1).value)
+    )
+
+    result.value shouldBe speed
 
   test("reflectOnMobile should return a flipped speed for a force against the normal"):
     val speed      = Vector2D(-2.0, 0.0)
@@ -512,13 +513,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val position = Vector2D(9.0, 9.0)
     val speed    = Vector2D(1.0, 1.0)
 
-    PhysicsUtil.nextPosition(
-      position,
-      speed,
-      1_000_000_000L,
-      UpperLeftCorner,
-      LowerRightCorner
-    ) shouldBe Right(LowerRightCorner)
+    PhysicsUtil.nextPosition(position, speed, 1_000_000_000L) shouldBe Right(LowerRightCorner)
 
   test("nearestEnemy should ignore candidates without a team"):
     val entity = addTeam(
@@ -536,3 +531,12 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       List(entity, unassignedCandidate),
       List(team)
     ) shouldBe None
+
+  test("applyAngularFriction should reduce angular speed with the same friction factor"):
+    val result = PhysicsUtil.applyAngularFriction(
+      angularSpeed = 120.0,
+      frictionIndex = 0.25,
+      deltaTime = DeltaTimeOneSecond
+    )
+
+    result.value shouldBe 90.0

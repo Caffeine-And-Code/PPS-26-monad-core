@@ -24,6 +24,10 @@ object ShapePainter:
       case DrawCommand.Circle(x, y, r, c) =>
         gc.fill = c.toColor
         gc.fillOval(x - r, y - r, r * 2, r * 2)
-      case DrawCommand.Rectangle(x, y, w, h, c) =>
+      case DrawCommand.Rectangle(x, y, w, h, rotation, c) =>
         gc.fill = c.toColor
-        gc.fillRect(x - w / 2, y - h / 2, w, h)
+        gc.save()
+        gc.translate(x, y)
+        gc.rotate(rotation)
+        gc.fillRect(-w / 2, -h / 2, w, h)
+        gc.restore()

@@ -11,14 +11,16 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 
 class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with MockFactory:
-  val EntityRadius: Double     = 5
-  val EntityLength: Double     = 6
-  val EntityHeight: Double     = 7
-  val EntityPosition: Vector2D = Vector2D(10, 11)
-  val EntitySpeed: Vector2D    = Vector2D(12, 13)
-  val EntityWeight: Double     = 14
-  val EntityHealth: Int        = 15
-  val EntityTeamId: String     = "teamIdValue"
+  val EntityRadius: Double       = 5
+  val EntityLength: Double       = 6
+  val EntityHeight: Double       = 7
+  val EntityPosition: Vector2D   = Vector2D(10, 11)
+  val EntitySpeed: Vector2D      = Vector2D(12, 13)
+  val EntityWeight: Double       = 14
+  val EntityHealth: Int          = 15
+  val EntityTeamId: String       = "teamIdValue"
+  val EntityRotation: Double     = 30.0
+  val EntityAngularSpeed: Double = -45.0
 
   val EntityFormValues: Map[String, String] = Map(
     EntityFormParser.PositionXKey -> EntityPosition.x.toString,
@@ -39,11 +41,13 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
 
   def buildFormValuesWithOptionalParams(formValues: Map[String, String]): Map[String, String] =
     formValues
-      + (EntityFormParser.TeamIdKey -> EntityTeamId)
-      + (EntityFormParser.SpeedXKey -> EntitySpeed.x.toString)
-      + (EntityFormParser.SpeedYKey -> EntitySpeed.y.toString)
-      + (EntityFormParser.WeightKey -> EntityWeight.toString)
-      + (EntityFormParser.HealthKey -> EntityHealth.toString)
+      + (EntityFormParser.TeamIdKey       -> EntityTeamId)
+      + (EntityFormParser.SpeedXKey       -> EntitySpeed.x.toString)
+      + (EntityFormParser.SpeedYKey       -> EntitySpeed.y.toString)
+      + (EntityFormParser.WeightKey       -> EntityWeight.toString)
+      + (EntityFormParser.HealthKey       -> EntityHealth.toString)
+      + (EntityFormParser.RotationKey     -> EntityRotation.toString)
+      + (EntityFormParser.AngularSpeedKey -> EntityAngularSpeed.toString)
 
   test("A circle entity can be converted from form values by utilizing the default id generator"):
     val expectedCircle = Shape2D.circle(EntityRadius).value
@@ -160,6 +164,8 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
           entity.health should be(Some(EntityHealth))
           entity.weight should be(Some(EntityWeight))
           entity.speed should be(Some(EntitySpeed))
+          entity.rotation should be(EntityRotation)
+          entity.angularSpeed should be(Some(EntityAngularSpeed))
 
   test("buildByShape should correctly construct entities based on shape type"):
     val testCases = Table(

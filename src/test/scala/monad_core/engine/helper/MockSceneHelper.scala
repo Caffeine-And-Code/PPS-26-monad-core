@@ -15,16 +15,17 @@ private[engine] trait MockSceneHelper:
 
   self: MockFactory =>
 
-  private def mockBounds(scene: State): Unit =
+  private def mockBounds(scene: State, bounds: WorldBounds): Unit =
     (() => scene.bounds)
       .expects()
-      .returning(WorldBounds(100, 100).value)
+      .returning(bounds)
       .anyNumberOfTimes()
 
   private def sceneWith(
       entities: List[Entity],
       teams: List[Team] = List.empty,
       surfaces: List[Surface] = List.empty,
+      bounds: WorldBounds = WorldBounds(100, 100).value,
       removeEntities: Boolean = true
   ): State =
     val scene = mock[State]
@@ -53,6 +54,7 @@ private[engine] trait MockSceneHelper:
               entities = entities,
               teams = teams,
               surfaces = surfaces,
+              bounds = bounds,
               removeEntities = false
             )
           )
@@ -64,6 +66,7 @@ private[engine] trait MockSceneHelper:
               entities = updatedEntities,
               teams = teams,
               surfaces = surfaces,
+              bounds = bounds,
               removeEntities = removeEntities
             )
           )
@@ -82,13 +85,14 @@ private[engine] trait MockSceneHelper:
               entities = entities :+ entity,
               teams = teams,
               surfaces = surfaces,
+              bounds = bounds,
               removeEntities = removeEntities
             )
           )
       }
       .anyNumberOfTimes()
 
-    mockBounds(scene)
+    mockBounds(scene, bounds)
     scene
 
   def sceneWithEntities(entities: List[Entity]): State =
@@ -116,4 +120,10 @@ private[engine] trait MockSceneHelper:
     sceneWith(
       entities = entities,
       surfaces = surfaces
+    )
+
+  def sceneWithBounds(bounds: WorldBounds): State =
+    sceneWith(
+      entities = List.empty,
+      bounds = bounds
     )

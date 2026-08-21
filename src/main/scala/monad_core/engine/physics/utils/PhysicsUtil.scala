@@ -20,9 +20,7 @@ private[physics] object PhysicsUtil:
   def nextPosition(
       position: Vector2D,
       speed: Vector2D,
-      deltaTime: Long,
-      upperLeftCorner: Vector2D,
-      lowerRightCorner: Vector2D
+      deltaTime: Long
   ): Either[PhysicsError, Vector2D] =
     for disp <- displacement(speed, deltaTime)
     yield position + disp
@@ -41,10 +39,23 @@ private[physics] object PhysicsUtil:
       frictionIndex: Double,
       deltaTime: Long
   ): Either[PhysicsError, Vector2D] =
+    frictionFactor(frictionIndex, deltaTime).map(speed * _)
+
+  def applyAngularFriction(
+      angularSpeed: Double,
+      frictionIndex: Double,
+      deltaTime: Long
+  ): Either[PhysicsError, Double] =
+    frictionFactor(frictionIndex, deltaTime).map(angularSpeed * _)
+
+  private def frictionFactor(
+      frictionIndex: Double,
+      deltaTime: Long
+  ): Either[PhysicsError, Double] =
     for
       seconds <- timeLongToSeconds(deltaTime)
       factor = math.max(0.0, 1.0 - frictionIndex * seconds)
-    yield speed * factor
+    yield factor
 
   def squaredDistance(first: Vector2D, second: Vector2D): Double =
     val dx = second.x - first.x
@@ -91,9 +102,11 @@ private[physics] object PhysicsUtil:
 
       relativeVelocity = speed - otherSpeed
 
-      velocityAlongNormal = relativeVelocity dot normal
+      velocityAlongNormal         = relativeVelocity dot normal
+      incomingVelocityAlongNormal = math.min(velocityAlongNormal, 0.0)
 
-      impulse = -2.0 * velocityAlongNormal / (1.0 / actualMass + 1.0 / actualOtherMass)
+      impulse =
+        -2.0 * incomingVelocityAlongNormal / (1.0 / actualMass + 1.0 / actualOtherMass)
 
       actualSpeed = speed + (normal * (impulse / actualMass))
     yield actualSpeed

@@ -54,8 +54,9 @@ class PaintArchitectTest
         DrawCommand.Rectangle(
           RectangleEntity.position.x,
           RectangleEntity.position.y,
-          w,
           h,
+          w,
+          RectangleEntity.rotation,
           ArchitectBaseColor
         )
       case _ => fail("RectangleEntity is not a Rectangle")
@@ -70,6 +71,14 @@ class PaintArchitectTest
     PaintArchitect.drawRectangle(CircleEntity, ArchitectBaseColor)
 
     PaintArchitect.drainBuffer().length should be(0)
+
+  test("DrawRectangle preserves the locatable rotation in the draw command"):
+    val rotated = RectangleEntity.rotateTo(45.0).value
+
+    PaintArchitect.drawRectangle(rotated, ArchitectBaseColor)
+
+    inside(PaintArchitect.drainBuffer().head):
+      case DrawCommand.Rectangle(_, _, _, _, rotation, _) => rotation shouldBe 45.0
 
   test("drainBuffer returns accumulated commands and clears internal state"):
     PaintArchitect.drawCircle(CircleEntity, ArchitectBaseColor)

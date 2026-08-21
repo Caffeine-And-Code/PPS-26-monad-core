@@ -2,6 +2,7 @@ package monad_core.engine.core
 
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
+import monad_core.engine.physics.utils.Rotation
 
 object SceneInterpolator:
 
@@ -13,12 +14,13 @@ object SceneInterpolator:
     for
       alpha  <- validateAlpha(interpolationAlpha)
       bounds <- interpolateBounds(previousScene.bounds, nextScene.bounds, alpha)
-    yield Scene(
-      entities = interpolateEntities(
+      entities <- interpolateEntities(
         previousScene.allEntities,
         nextScene.allEntities,
         alpha
-      ),
+      )
+    yield Scene(
+      entities = entities,
       surfaces = nextScene.allSurfaces.map(surface => surface.id -> surface).toMap,
       teams = nextScene.allTeams.map(team => team.id -> team).toMap,
       bounds = bounds
@@ -45,25 +47,32 @@ object SceneInterpolator:
       previousEntities: List[Entity],
       nextEntities: List[Entity],
       alpha: Double
-  ): EntityMap =
+  ): Either[EngineError, EntityMap] =
     val previousById = previousEntities.map(entity => entity.id -> entity).toMap
 
-    nextEntities.map { nextEntity =>
-      val interpolatedEntity = previousById
-        .get(nextEntity.id)
-        .map(previousEntity =>
-          nextEntity.moveTo(
-            interpolateVector(
-              previousEntity.position,
-              nextEntity.position,
-              alpha
-            )
-          )
-        )
-        .getOrElse(nextEntity)
-
-      interpolatedEntity.id -> interpolatedEntity
-    }.toMap
+    nextEntities
+      .foldLeft(Right(Map.empty): Either[EngineError, EntityMap]): (result, nextEntity) =>
+        for
+          entities <- result
+          interpolatedEntity <- previousById.get(nextEntity.id) match
+            case Some(previousEntity) =>
+              nextEntity
+                .moveTo(
+                  interpolateVector(
+                    previousEntity.position,
+                    nextEntity.position,
+                    alpha
+                  )
+                )
+                .rotateTo(
+                  Rotation.interpolate(
+                    previousEntity.rotation,
+                    nextEntity.rotation,
+                    alpha
+                  )
+                )
+            case None => Right(nextEntity)
+        yield entities.updated(interpolatedEntity.id, interpolatedEntity)
 
   private def interpolateVector(
       previous: Vector2D,

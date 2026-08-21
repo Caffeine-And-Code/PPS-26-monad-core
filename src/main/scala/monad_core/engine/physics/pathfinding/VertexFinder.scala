@@ -2,8 +2,8 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
-import monad_core.engine.physics.pathfinding.PathCircle.*
-import monad_core.engine.physics.pathfinding.PathRectangle.*
+import monad_core.engine.physics.pathfinding.CircleVertexes.*
+import monad_core.engine.physics.pathfinding.RectangleVertexes.*
 
 object VertexFinder:
   private val CircleVertexes: Int = 16
@@ -18,4 +18,4 @@ object VertexFinder:
       case circle: Circle =>
         circle.vertexes(entity.position, CircleVertexes)
       case rectangle: Rectangle =>
-        rectangle.vertexes(entity.position)
+        rectangle.vertexes(entity.position, entity.rotation)

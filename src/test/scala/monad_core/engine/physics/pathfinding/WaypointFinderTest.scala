@@ -2,7 +2,7 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.physics.pathfinding.PathRectangle.vertexes
+import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -87,3 +87,16 @@ class WaypointFinderTest extends AnyFunSuite with Matchers:
 
     waypointAngles.min should be < 0.0
     waypointAngles.max should be > 0.0
+
+  test("rectangle waypoints should be selected from rotated vertexes"):
+    val target = Entity
+      .rectangle("rotated-target", Vector2D(10.0, 10.0), height = 2.0, length = 6.0)
+      .value
+      .rotateTo(45.0)
+      .value
+    val rectangle       = target.shape.asInstanceOf[Rectangle]
+    val rotatedVertexes = rectangle.vertexes(target.position, target.rotation)
+
+    WaypointFinder(Start, target).foreach { waypoint =>
+      rotatedVertexes should contain(waypoint)
+    }

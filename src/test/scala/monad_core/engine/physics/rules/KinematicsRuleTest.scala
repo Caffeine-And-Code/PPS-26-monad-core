@@ -2,7 +2,7 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle, makeMovingEntityRectangle}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
 import monad_core.engine.physics.core.*
@@ -60,13 +60,7 @@ class KinematicsRuleTest
     val scene = sceneWithEntities(List(movingEntity))
 
     val expectedPosition = PhysicsUtil
-      .nextPosition(
-        movingEntity.position,
-        movingEntity.speed.value,
-        DeltaTimeOneSecond,
-        scene.bounds.upperLeft,
-        scene.bounds.lowerRight
-      )
+      .nextPosition(movingEntity.position, movingEntity.speed.value, DeltaTimeOneSecond)
       .value
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
@@ -92,23 +86,11 @@ class KinematicsRuleTest
     val scene = sceneWithEntities(List(entity1, entity2))
 
     val expectedPosition1 = PhysicsUtil
-      .nextPosition(
-        entity1.position,
-        entity1.speed.value,
-        DeltaTimeOneSecond,
-        scene.bounds.upperLeft,
-        scene.bounds.lowerRight
-      )
+      .nextPosition(entity1.position, entity1.speed.value, DeltaTimeOneSecond)
       .value
 
     val expectedPosition2 = PhysicsUtil
-      .nextPosition(
-        entity2.position,
-        entity2.speed.value,
-        DeltaTimeOneSecond,
-        scene.bounds.upperLeft,
-        scene.bounds.lowerRight
-      )
+      .nextPosition(entity2.position, entity2.speed.value, DeltaTimeOneSecond)
       .value
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
@@ -119,12 +101,27 @@ class KinematicsRuleTest
     resultEntity1.position shouldBe expectedPosition1
     resultEntity2.position shouldBe expectedPosition2
 
-  test("moveEntity should report the entity id when speed is missing"):
-    val entity = makeFixedEntityCircle(id = "fixed-without-speed")
-    val scene  = sceneWithEntities(List(entity))
+  test("the rule should rotate an entity using angular speed"):
+    val rotatingEntity = makeFixedEntityCircle(id = "rotating")
+      .withAngularSpeed(90.0)
+    val scene = sceneWithEntities(List(rotatingEntity))
 
-    KinematicsRule.moveEntity(scene, entity, DeltaTimeOneSecond) shouldBe Left(
-      PhysicsRuleError(
-        s"Entity ${entity.id} has no speed to apply kinematics"
-      )
-    )
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+
+    result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 90.0
+
+  test("angular integration should wrap rotations into a full turn"):
+    
+    val rotatingEntity = makeMovingEntityRectangle(
+      id = "rotating",
+      position = Vector2D(0.0, 0.0),
+      width = 10.0,
+      height = 5.0,
+      rotation = 350.0
+    ).withAngularSpeed(20.0)
+    
+    val scene = sceneWithEntities(List(rotatingEntity))
+
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+
+    result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 10.0

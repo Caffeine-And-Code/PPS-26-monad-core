@@ -3,6 +3,7 @@ package monad_core.engine.geometry
 import monad_core.engine.geometry.{Collision, Placed, ShapeCollision}
 import monad_core.engine.model.{Shape2D, Vector2D}
 import org.scalatest.EitherValues.*
+import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.*
@@ -45,7 +46,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       result shouldBe Some(collision)
 
   test("circle not collides with another circle"):
-    val firstCircle = Placed(Vector2D(3, 3), Shape2D.circle(9).value)
+    val firstCircle  = Placed(Vector2D(3, 3), Shape2D.circle(9).value)
     val secondCircle = Placed(Vector2D(15, 3), Shape2D.circle(2).value)
 
     val result = ShapeCollision.circleCollidesWithCircle.checkCollision(firstCircle, secondCircle)
@@ -70,22 +71,22 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(2.5, 0), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(1, 0), 2.5, Vector2D(1.25, 2.5))
+        Collision(Vector2D(1, 0), 2.5, Vector2D(1.25, 0))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(0, 2.5), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(0, 1), 2.5, Vector2D(2.5, 1.25))
+        Collision(Vector2D(0, 1), 2.5, Vector2D(0, 1.25))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(-2.5, 0), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(-1, 0), 2.5, Vector2D(-1.25, 2.5))
+        Collision(Vector2D(-1, 0), 2.5, Vector2D(-1.25, 0))
       ),
       (
         Placed(Vector2D(0, 0), Shape2D.rectangle(5, 5).value),
         Placed(Vector2D(0, -2.5), Shape2D.rectangle(5, 5).value),
-        Collision(Vector2D(0, -1), 2.5, Vector2D(2.5, -1.25))
+        Collision(Vector2D(0, -1), 2.5, Vector2D(0, -1.25))
       )
     )
 
@@ -134,6 +135,20 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     result shouldBe Some(Collision(Vector2D(1, 0), 4, Vector2D(0, 0)))
 
+  test("rotated rectangle collision should return the center of the contact region"):
+    val first  = Placed(Vector2D(10.0, 10.0), Shape2D.rectangle(2.0, 4.0).value, 90.0)
+    val second = Placed(Vector2D(10.0, 13.0), Shape2D.rectangle(2.0, 4.0).value, 90.0)
+
+    val collision = ShapeCollision.rectangleCollidesWithRectangle
+      .checkCollision(first, second)
+      .value
+
+    collision.normalVector.x shouldBe 0.0 +- 1e-9
+    collision.normalVector.y shouldBe 1.0 +- 1e-9
+    collision.penetrationDepth shouldBe 1.0 +- 1e-9
+    collision.collisionPoint.x shouldBe 10.0 +- 1e-9
+    collision.collisionPoint.y shouldBe 11.5 +- 1e-9
+
   test("circle collides with a rectangle"):
     val cases = Table(
       (
@@ -178,7 +193,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     result shouldBe None
 
   test("circle collision with a rotated rectangle returns the world collision point"):
-    val circle = Placed(Vector2D(0, 4), Shape2D.circle(2).value)
+    val circle    = Placed(Vector2D(0, 4), Shape2D.circle(2).value)
     val rectangle = Placed(Vector2D(0, 0), Shape2D.rectangle(2, 6).value, 90)
 
     val collision = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle).get

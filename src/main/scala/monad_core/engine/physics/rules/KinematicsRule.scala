@@ -3,8 +3,13 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleError}
-import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
+import monad_core.engine.physics.core.{
+  PhysicsDomainError,
+  PhysicsError,
+  PhysicsRule,
+  PhysicsRuleError
+}
+import monad_core.engine.physics.utils.{PhysicsUtil, Rotation, SceneEntitiesUpdate}
 
 private[physics] object KinematicsRule:
   private val Id = "kinematics"
@@ -42,18 +47,18 @@ private[physics] object KinematicsRule:
       dt: Long
   ): Either[PhysicsError, Entity] =
     for
-      speed <- entity.speed match
-        case Some(s) => Right(s)
-        case None =>
-          Left(PhysicsRuleError(s"Entity ${entity.id} has no speed to apply kinematics"))
-
-      newPosition <- PhysicsUtil.nextPosition(
-        entity.position,
-        speed,
-        dt,
-        scene.bounds.upperLeft,
-        scene.bounds.lowerRight
-      ) match
-        case Right(pos) => Right(entity.moveTo(pos))
-        case Left(err)  => Left(err)
-    yield newPosition
+      seconds <- PhysicsUtil.timeLongToSeconds(dt)
+      movedEntity <- entity.speed match
+        case Some(speed) =>
+          PhysicsUtil
+            .nextPosition(entity.position, speed, dt)
+            .map(entity.moveTo)
+        case None => Right(entity)
+      rotatedEntity <- entity.angularSpeed match
+        case Some(angularSpeed) =>
+          movedEntity
+            .rotateTo(Rotation.normalize(entity.rotation + angularSpeed * seconds))
+            .left
+            .map(PhysicsDomainError.apply)
+        case None => Right(movedEntity)
+    yield rotatedEntity

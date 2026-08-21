@@ -36,8 +36,10 @@ object Entity:
     def moveBy(space: Vector2D): Entity =
       entity.copy(position = entity.position + space)
 
-    def rotateTo(rotation: Double): Entity =
-      entity.copy(rotation = rotation)
+    def rotateTo(rotation: Double): Either[EngineError, Entity] =
+      for
+        _ <- Locatable.validateRotation(rotation)
+      yield entity.copy(rotation = rotation)
 
     def withSpeed(speed: Vector2D): Entity =
       entity.copy(speed = Some(speed))

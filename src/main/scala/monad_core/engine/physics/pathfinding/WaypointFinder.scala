@@ -2,7 +2,7 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.physics.pathfinding.PathRectangle.vertexes
+import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
 import monad_core.engine.physics.utils.PhysicsUtil
 
 private[pathfinding] object WaypointFinder:
@@ -47,7 +47,7 @@ private[pathfinding] object WaypointFinder:
       rectangle: Rectangle
   ): List[Vector2D] =
 
-    val vertexes = rectangle.vertexes(target.position)
+    val vertexes = rectangle.vertexes(target.position, target.rotation)
 
     val centerDirection = target.position - start.position
 

@@ -2,14 +2,16 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle, makeMovingEntityRectangle}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockSceneHelper}
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.NegativeDeltaTime
+import monad_core.engine.physics.pathfinding.SizeHelper
 import monad_core.engine.physics.utils.BorderWallType
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
+import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -39,10 +41,13 @@ class BorderContactRuleTest
     val scene = sceneWithEntities(List(entity))
 
     given CollisionDetector = detectorWithCollisions(
-      Map((entity.id.value, wall.id.value) -> (
-        collision.normalVector, 
-        collision.penetrationDepth, 
-        collision.collisionPoint))
+      Map(
+        (entity.id.value, wall.id.value) -> (
+          collision.normalVector,
+          collision.penetrationDepth,
+          collision.collisionPoint
+        )
+      )
     )
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
@@ -227,3 +232,19 @@ class BorderContactRuleTest
     resultEntity1.speed shouldBe Some(expectedSpeed1)
     resultEntity2.position shouldBe expectedPosition2
     resultEntity2.speed shouldBe Some(expectedSpeed2)
+
+  test("the rule should use rotated rectangle extents at the scene border"):
+    val entity = makeMovingEntityRectangle(
+      id = "rotated",
+      position = Vector2D(10.0, 50.0),
+      width = 20.0,
+      height = 10.0,
+      speed = Vector2D(-1.0, 0.0)
+    ).rotateTo(30.0).value.withWeight(1).value
+    val scene = sceneWithEntities(List(entity))
+    val expectedHalfWidth = SizeHelper.horizontalShapeSize(entity) / 2
+
+    val result  = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val updated = result.allEntities.find(_.id == entity.id).value
+
+    updated.position.x shouldBe expectedHalfWidth +- 1e-9

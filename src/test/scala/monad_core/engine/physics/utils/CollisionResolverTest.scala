@@ -2,8 +2,13 @@ package monad_core.engine.physics.utils
 
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRuleError, ZeroMassError}
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.physics.core.{PhysicsError, ZeroMassError}
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeFixedEntityCircle,
+  makeFixedEntityRectangle,
+  makeMovingEntityCircle,
+  makeMovingEntityRectangle
+}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -125,6 +130,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     resultEntity.position shouldBe expectedPosition
     resultEntity.speed shouldBe Some(expectedSpeed)
+    resultEntity.angularSpeed shouldBe None
 
   test(
     "the function should return a list containing all updated entities when resolving a collision with two mobile entities"
@@ -133,8 +139,8 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     val entity1 = makeMovingEntityCircle(id = "entity1", speed = Vector2D(1, 0)).withWeight(1).value
     val entity2 =
       makeMovingEntityCircle(id = "entity2", speed = Vector2D(-1, 0)).withWeight(1).value
-    val collision1 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
-    val collision2 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
+    val collision1 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
+    val collision2 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val expectedPosition1 = expectedPositionMobileMobile(entity1, entity2, collision1).value
 
@@ -167,8 +173,8 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     val entity2 =
       makeMovingEntityCircle(id = "entity2", speed = Vector2D(-1, 0)).withWeight(1).value
     val entity3     = makeFixedEntityCircle(id = "entity3")
-    val collision12 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
-    val collision21 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
+    val collision12 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
+    val collision21 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
     val collision13 = Collision(Vector2D(0, 1), 1.0, Vector2D(0, 0))
 
     val expectedPositionAfter12 = expectedPositionMobileMobile(entity1, entity2, collision12).value
@@ -195,10 +201,3 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     resultEntity1.speed.value shouldBe expectedSpeed1
     resultEntity2.position shouldBe expectedPosition2
     resultEntity2.speed.value shouldBe expectedSpeed2
-
-  test("resolveMultipleBounces should report missing entity speed"):
-    val entity = makeFixedEntityCircle(id = "fixed-without-speed")
-
-    CollisionResolver.resolveMultipleBounces(entity, List.empty) shouldBe Left(
-      PhysicsRuleError("Entity has no speed to resolve bounce")
-    )

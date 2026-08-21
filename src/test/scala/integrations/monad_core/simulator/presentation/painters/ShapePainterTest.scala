@@ -144,7 +144,7 @@ class ShapePainterTest
 
     val expectedCommands = List(
       DrawCommand.Circle(100.0, 100.0, 25.0, BaseEngineColor),
-      DrawCommand.Rectangle(200.0, 200.0, 50.0, 80.0, BaseEngineColor)
+      DrawCommand.Rectangle(200.0, 200.0, 50.0, 80.0, 30.0, BaseEngineColor)
     )
 
     (() => mockArchitect.drainBuffer()).expects().returns(expectedCommands).once()

@@ -2,12 +2,10 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.model.{+, Entity, Surface}
+import monad_core.engine.model.{+, Entity, Surface, Vector2D}
 import monad_core.engine.physics.core.{
-  PhysicsDomainError,
   PhysicsError,
-  PhysicsRule,
-  PhysicsRuleError
+  PhysicsRule
 }
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
@@ -61,31 +59,46 @@ private[physics] object SurfaceDynamicsRule:
       dt: Long
   ): Either[PhysicsError, Entity] =
     for
-      speed <- entity.speed match
-        case Some(s) => Right(s)
-        case None =>
-          Left(
-            PhysicsRuleError(s"Entity ${entity.id} is fixed, it cannot be applied surface dynamics")
-          )
+      entityAfterForce <- applyForce(entity, surface)
 
-      speedAfterForce <-
-        surface.appliedForce match
-          case Some(force) =>
-            PhysicsUtil
-              .acceleration(force, entity.weight)
-              .map(acceleration => speed + acceleration)
-          case _ =>
-            Right(speed)
+      entityAfterSpeedFriction <- applyFriction(entityAfterForce, surface, dt)
 
-      speedAfterFriction <-
-        surface.frictionIndex match
-          case Some(friction) =>
-            PhysicsUtil
-              .applyFriction(speedAfterForce, friction, dt)
-              .left
-              .map(PhysicsDomainError.apply)
-          case _ =>
-            Right(speedAfterForce)
+      entityAfterAngularFriction <- applyAngular(entityAfterSpeedFriction, surface, dt)
+      
+    yield entityAfterAngularFriction
 
-      updatedEntity = entity.withSpeed(speedAfterFriction)
-    yield updatedEntity
+  private def applyForce(
+      entity: Entity,
+      surface: Surface
+  ): Either[PhysicsError, Entity] =
+    (entity.speed, surface.appliedForce) match
+      case (Some(speed), Some(force)) =>
+        PhysicsUtil
+          .acceleration(force, entity.weight)
+          .map(acceleration => entity.withSpeed(speed + acceleration))
+      case _ =>
+        Right(entity)
+        
+  private def applyFriction(
+      entity: Entity,
+      surface: Surface,
+      dt: Long
+  ): Either[PhysicsError, Entity] =
+    (entity.speed, surface.frictionIndex) match
+      case (Some(speed), Some(friction)) =>
+        PhysicsUtil
+          .applyFriction(speed, friction, dt)
+          .map(entity.withSpeed)
+      case _ => Right(entity)
+        
+  private def applyAngular(
+      entity: Entity,
+      surface: Surface,
+      dt: Long
+  ): Either[PhysicsError, Entity] =
+    (entity.angularSpeed, surface.frictionIndex) match
+      case (Some(angularSpeed), Some(friction)) =>
+        PhysicsUtil
+          .applyAngularFriction(angularSpeed, friction, dt)
+          .map(entity.withAngularSpeed)
+      case _ => Right(entity)

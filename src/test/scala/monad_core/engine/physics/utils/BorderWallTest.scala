@@ -147,7 +147,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       width = 20,
       height = 10,
       speed = Vector2D(-1, 0)
-    ).rotateTo(30)
+    ).rotateTo(30).value
 
     val horizontalHalfSize = 10 * math.cos(math.toRadians(30)) + 5 * math.sin(math.toRadians(30))
     val verticalHalfSize   = 10 * math.sin(math.toRadians(30)) + 5 * math.cos(math.toRadians(30))

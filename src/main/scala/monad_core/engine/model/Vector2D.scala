@@ -21,6 +21,9 @@ extension (v: Vector2D)
   infix def dot(toDot: Vector2D): Double =
     v.x * toDot.x + v.y * toDot.y
 
+  infix def cross(toCross: Vector2D): Double =
+    v.x * toCross.y - v.y * toCross.x
+
   infix def euclideanDistance(other: Vector2D): Double =
     math.sqrt(((v.x - other.x) ** 2) + ((v.y - other.y) ** 2))
 

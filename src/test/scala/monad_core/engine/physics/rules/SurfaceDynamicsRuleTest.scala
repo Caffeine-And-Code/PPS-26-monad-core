@@ -317,16 +317,16 @@ class SurfaceDynamicsRuleTest
 
     result shouldBe Left(ZeroMassError())
 
-  test("applySurfaceDynamics should report the entity id when speed is missing"):
-    val entity  = makeFixedEntityCircle(id = "fixed-without-speed")
+  test("surface friction should slow down angular speed without adding linear speed"):
+    val entity = makeFixedEntityCircle(id = "rotating")
+      .withAngularSpeed(90.0)
     val surface = makeSurfaceCircle(position = Vector2D(0.0, 0.0), radius = 5.0)
+      .withFrictionIndex(0.25)
+      .value
 
-    SurfaceDynamicsRule.applySurfaceDynamics(
-      entity,
-      surface,
-      DeltaTimeOneSecond
-    ) shouldBe Left(
-      PhysicsRuleError(
-        s"Entity ${entity.id} is fixed, it cannot be applied surface dynamics"
-      )
-    )
+    val result = SurfaceDynamicsRule
+      .applySurfaceDynamics(entity, surface, DeltaTimeOneSecond)
+      .value
+
+    result.angularSpeed.value shouldBe 67.5
+    result.speed shouldBe None

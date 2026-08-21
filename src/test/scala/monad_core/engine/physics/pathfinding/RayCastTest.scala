@@ -7,7 +7,6 @@ import monad_core.engine.helper.DummyEntityHelper.{
   makeMovingEntityCircle,
   makeMovingEntityRectangle
 }
-import monad_core.engine.physics.pathfinding.PathRectangle.*
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.compatible.Assertion
@@ -29,33 +28,18 @@ class RayCastTest extends AnyFunSuite with Matchers:
   )
 
   private def rawToActualWaypoint(raw: Vector2D, obstacle: Entity): Vector2D =
-
-    val (horizontalDisplacement, verticalDisplacement) = From.shape match
-      case circle: Circle =>
-        (
-          circle.radius + WayPointDisplacement,
-          circle.radius + WayPointDisplacement
-        )
-      case rectangle: Rectangle =>
-        (
-          rectangle.horizontalSize(From.position) / 2 + WayPointDisplacement,
-          rectangle.verticalSize(From.position) / 2 + WayPointDisplacement
-        )
-
+    val clearance = RayCast.hunterRadius(From) + WayPointDisplacement
     val direction = raw - obstacle.position
 
     obstacle.shape match
       case _: Rectangle =>
+        val localDirection = direction.rotated(-obstacle.rotation)
         raw + Vector2D(
-          math.signum(direction.x) * horizontalDisplacement,
-          math.signum(direction.y) * verticalDisplacement
-        )
+          math.signum(localDirection.x) * clearance,
+          math.signum(localDirection.y) * clearance
+        ).rotated(obstacle.rotation)
       case _: Circle =>
-        val entityDisplacement = Vector2D(
-          if direction.x > 0 then horizontalDisplacement else -horizontalDisplacement,
-          if direction.y > 0 then verticalDisplacement else -verticalDisplacement
-        )
-        raw + direction.normalized * entityDisplacement.magnitude
+        raw + direction.normalized * clearance
 
   private val UpperLeftCorner: Vector2D  = Vector2D(-20.0, -20.0)
   private val LowerRightCorner: Vector2D = Vector2D(40.0, 40.0)
@@ -233,6 +217,24 @@ class RayCastTest extends AnyFunSuite with Matchers:
 
     inflated.foreach { vertex =>
       vertex.euclideanDistance(obstacle.position) shouldBe 5.0 +- EpsilonDisplace
+    }
+
+  test("inflating a rotated rectangle should preserve its local axes"):
+    val obstacle = makeMovingEntityRectangle(
+      id = "rotated-obstacle",
+      position = Vector2D(10.0, 10.0),
+      width = 4.0,
+      height = 2.0,
+      rotation = 45.0
+    )
+    val original = VertexFinder(List(obstacle))
+
+    val inflated = RayCast.inflateVertexes(original, List(obstacle), inflation = 1.0)(obstacle.id)
+
+    inflated.foreach { vertex =>
+      val local = (vertex - obstacle.position).rotated(-obstacle.rotation)
+      math.abs(local.x) shouldBe 3.0 +- EpsilonDisplace
+      math.abs(local.y) shouldBe 2.0 +- EpsilonDisplace
     }
 
   test("a waypoint should clear both axes of a non-square rectangle"):
