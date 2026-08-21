@@ -5,6 +5,7 @@ import monad_core.engine.core.events.EngineEvent.{CollisionDetected, EntityUpdat
 import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
+import monad_core.engine.helper.MockStateHelper
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.helper.PhysicsConstantHelper.DeltaTimeOneSecond
 import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
@@ -14,7 +15,7 @@ import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
+class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with MockStateHelper:
 
   private val MockAction       = mockFunction[State, Long, Either[PhysicsError, State]]
   private val DefaultRuleCount = 5
@@ -30,11 +31,6 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
   private val DefaultManager = PhysicsManager.default()
 
   given MockDetector: CollisionDetector = mock[CollisionDetector]
-
-  private def setupEmptyEntityCalls(states: State*): Unit =
-    states.foreach(state =>
-      (() => state.allEntities).expects().returns(List.empty).anyNumberOfTimes()
-    )
 
   test("apply should create a PhysicsEngine with all provided rules enabled by default"):
     val manager = PhysicsManager(Vector(Rule1, Rule2))
@@ -112,13 +108,12 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val rule2   = makeDummyRule(Rule2Id, MockAction)
     val manager = PhysicsManager(Vector(rule1, rule2))
 
-    val initialScene    = mock[State]
-    val sceneAfterRule1 = mock[State]
-    val finalScene      = mock[State]
+    val initialScene    = stateWithEntities(List.empty)
+    val sceneAfterRule1 = stateWithEntities(List.empty)
+    val finalScene      = stateWithEntities(List.empty)
 
     action1.expects(initialScene, DeltaTimeOneSecond).returning(Right(sceneAfterRule1)).once()
     action2.expects(sceneAfterRule1, DeltaTimeOneSecond).returning(Right(finalScene)).once()
-    setupEmptyEntityCalls(initialScene, finalScene)
 
     val result = manager.step(initialScene, DeltaTimeOneSecond).value
 
@@ -136,14 +131,13 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
 
     val manager = PhysicsManager(Vector(rule1, rule2, rule3)).disable(rule2)
 
-    val initialScene    = mock[State]
-    val sceneAfterRule1 = mock[State]
-    val finalScene      = mock[State]
+    val initialScene    = stateWithEntities(List.empty)
+    val sceneAfterRule1 = stateWithEntities(List.empty)
+    val finalScene      = stateWithEntities(List.empty)
 
     action1.expects(initialScene, DeltaTimeOneSecond).returning(Right(sceneAfterRule1)).once()
     action2.expects(*, *).never()
     action3.expects(sceneAfterRule1, DeltaTimeOneSecond).returning(Right(finalScene)).once()
-    setupEmptyEntityCalls(initialScene, finalScene)
 
     val result = manager.step(initialScene, DeltaTimeOneSecond).value
 
@@ -158,7 +152,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val rule2   = makeDummyRule(Rule2Id, MockAction)
     val manager = PhysicsManager(Vector(rule1, rule2))
 
-    val initialScene = mock[State]
+    val initialScene = stateWithEntities(List.empty)
 
     action1
       .expects(initialScene, DeltaTimeOneSecond)

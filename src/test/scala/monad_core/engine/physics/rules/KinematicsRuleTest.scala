@@ -6,7 +6,7 @@ import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMo
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
 import monad_core.engine.physics.core.*
-import monad_core.engine.helper.{MockDetectorHelper, MockSceneHelper}
+import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues
@@ -20,7 +20,7 @@ class KinematicsRuleTest
     with Matchers
     with MockFactory
     with MockDetectorHelper
-    with MockSceneHelper:
+    with MockStateHelper:
 
   private val Rule = KinematicsRule.kinematicsRule
 
@@ -34,7 +34,7 @@ class KinematicsRuleTest
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged scene when the entities map is empty"):
-    val scene = sceneWithEntities(List())
+    val scene = stateWithEntities(List())
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
@@ -43,7 +43,7 @@ class KinematicsRuleTest
   test("the rule should not update the scene if the entity has no speed (fixed entity)"):
     val fixedEntity = makeFixedEntityCircle()
 
-    val scene = sceneWithEntities(List(fixedEntity))
+    val scene = stateWithEntities(List(fixedEntity))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
@@ -57,7 +57,7 @@ class KinematicsRuleTest
       id = "moving"
     )
 
-    val scene = sceneWithEntities(List(movingEntity))
+    val scene = stateWithEntities(List(movingEntity))
 
     val expectedPosition = PhysicsUtil
       .nextPosition(
@@ -89,7 +89,7 @@ class KinematicsRuleTest
       speed = Vector2D(0, 1)
     )
 
-    val scene = sceneWithEntities(List(entity1, entity2))
+    val scene = stateWithEntities(List(entity1, entity2))
 
     val expectedPosition1 = PhysicsUtil
       .nextPosition(
@@ -121,7 +121,7 @@ class KinematicsRuleTest
 
   test("moveEntity should report the entity id when speed is missing"):
     val entity = makeFixedEntityCircle(id = "fixed-without-speed")
-    val scene  = sceneWithEntities(List(entity))
+    val scene  = stateWithEntities(List(entity))
 
     KinematicsRule.moveEntity(scene, entity, DeltaTimeOneSecond) shouldBe Left(
       PhysicsRuleError(

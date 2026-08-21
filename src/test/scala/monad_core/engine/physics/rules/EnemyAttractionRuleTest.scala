@@ -7,7 +7,7 @@ import monad_core.engine.helper.DummyTeamHelper.{addTeam, makeTeam}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.helper.{MockDetectorHelper, MockSceneHelper}
+import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.rules.EnemyAttractionRule
 import org.scalamock.scalatest.MockFactory
@@ -21,7 +21,7 @@ class EnemyAttractionRuleTest
     with Matchers
     with MockFactory
     with MockDetectorHelper
-    with MockSceneHelper:
+    with MockStateHelper:
 
   private val Rule = EnemyAttractionRule.enemyAttractionRule
 
@@ -52,14 +52,14 @@ class EnemyAttractionRuleTest
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
-    val scene = sceneWithEntities(List.empty)
+    val scene = stateWithEntities(List.empty)
 
     val result = Rule.apply(scene, NegativeDt)(using summon[CollisionDetector])
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged scene when there are no entities"):
-    val scene = sceneWithTeams(List(), List())
+    val scene = stateWithTeams(List(), List())
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
@@ -77,7 +77,7 @@ class EnemyAttractionRuleTest
       enemies = Set("teamB")
     )
 
-    val scene = sceneWithTeams(List(entity), List(entityTeam))
+    val scene = stateWithTeams(List(entity), List(entityTeam))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
@@ -105,7 +105,7 @@ class EnemyAttractionRuleTest
     val fixedEntityTeam = makeTeam(fixedEntity.teamId.value.value, Set(enemy.teamId.value.value))
     val enemyTeam       = makeTeam(enemy.teamId.value.value)
 
-    val scene = sceneWithTeams(List(fixedEntity, enemy), List(fixedEntityTeam, enemyTeam))
+    val scene = stateWithTeams(List(fixedEntity, enemy), List(fixedEntityTeam, enemyTeam))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
@@ -139,7 +139,7 @@ class EnemyAttractionRuleTest
 
     val expectedSpeed = calculateRayCastSpeed(entity, enemy, List(entity, enemy))
 
-    val scene = sceneWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
+    val scene = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
     val resultEntity = result.allEntities.find(_.id == entity.id).value
@@ -182,7 +182,7 @@ class EnemyAttractionRuleTest
     val expectedSpeed1 = calculateRayCastSpeed(entity1, enemy, List(entity1, entity2, enemy))
     val expectedSpeed2 = calculateRayCastSpeed(entity2, enemy, List(entity1, entity2, enemy))
 
-    val scene = sceneWithTeams(List(entity1, entity2, enemy), List(entityTeam, enemyTeam))
+    val scene = stateWithTeams(List(entity1, entity2, enemy), List(entityTeam, enemyTeam))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
@@ -274,7 +274,7 @@ class EnemyAttractionRuleTest
     )
     val entityTeam = makeTeam(entity.teamId.value.value, Set(enemy.teamId.value.value))
     val enemyTeam  = makeTeam(enemy.teamId.value.value)
-    val scene      = sceneWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
+    val scene      = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 

@@ -6,7 +6,7 @@ import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
-import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockSceneHelper}
+import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockStateHelper}
 import monad_core.engine.model.{BorderSide, Vector2D}
 import monad_core.engine.physics.core.NegativeDeltaTime
 import org.scalamock.scalatest.MockFactory
@@ -18,7 +18,7 @@ class BorderContactRuleTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with MockSceneHelper
+    with MockStateHelper
     with MockDetectorHelper:
 
   private val Rule = BorderContactRule.borderContactRule
@@ -37,7 +37,7 @@ class BorderContactRuleTest
 
     val (entity, wall, collision, expectedPosition, expectedSpeed) = defaultValues
 
-    val scene = sceneWithEntities(List(entity))
+    val scene = stateWithEntities(List(entity))
 
     given CollisionDetector = detectorWithCollisions(
       Map((entity.id.value, wall.id.value) -> (collision.normalVector, collision.penetrationDepth))
@@ -70,7 +70,7 @@ class BorderContactRuleTest
     val expectedPosition = data._6
     val expectedSpeed    = data._7
 
-    val scene = sceneWithEntities(List(entity))
+    val scene = stateWithEntities(List(entity))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -94,14 +94,14 @@ class BorderContactRuleTest
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
-    val mockScene = sceneWithEntities(List.empty)
+    val mockScene = stateWithEntities(List.empty)
 
     val result = Rule.apply(mockScene, NegativeDt)(using summon[CollisionDetector])
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged scene when there are no entities"):
-    val scene = sceneWithEntities(List())
+    val scene = stateWithEntities(List())
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
@@ -113,7 +113,7 @@ class BorderContactRuleTest
       position = Vector2D(-10, -10)
     )
 
-    val scene = sceneWithEntities(List(fixedEntity))
+    val scene = stateWithEntities(List(fixedEntity))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
@@ -128,7 +128,7 @@ class BorderContactRuleTest
       speed = Vector2D(1, 1)
     )
 
-    val scene               = sceneWithEntities(List(entity))
+    val scene               = stateWithEntities(List(entity))
     given CollisionDetector = detectorWithoutCollision()
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
@@ -201,7 +201,7 @@ class BorderContactRuleTest
     val expectedPosition2 = data2._4
     val expectedSpeed2    = data2._5
 
-    val scene = sceneWithEntities(List(entity1, entity2))
+    val scene = stateWithEntities(List(entity1, entity2))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
