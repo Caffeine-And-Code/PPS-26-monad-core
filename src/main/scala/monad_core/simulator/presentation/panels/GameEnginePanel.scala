@@ -51,7 +51,7 @@ final class GameEnginePanel(
 
     for
       sceneRendererPanel <- rendererPanel
-        .build()
+        .build(viewModel.isEngineRunning)
         .left
         .map(error => CannotBuildPanel(error, this.toString))
 

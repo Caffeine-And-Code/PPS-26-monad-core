@@ -11,45 +11,45 @@ import monad_core.engine.model.{Entity, Surface, Team, WorldBounds}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 
-private[engine] trait MockSceneHelper:
+private[engine] trait MockStateHelper:
 
   self: MockFactory =>
 
-  private def mockBounds(scene: State): Unit =
-    (() => scene.bounds)
+  private def mockBounds(state: State): Unit =
+    (() => state.bounds)
       .expects()
       .returning(WorldBounds(100, 100).value)
       .anyNumberOfTimes()
 
-  private def sceneWith(
+  private def stateWith(
       entities: List[Entity],
       teams: List[Team] = List.empty,
       surfaces: List[Surface] = List.empty,
       removeEntities: Boolean = true
   ): State =
-    val scene = mock[State]
+    val state = mock[State]
 
-    (() => scene.allEntities)
+    (() => state.allEntities)
       .expects()
       .returning(entities)
       .anyNumberOfTimes()
 
-    (() => scene.allTeams)
+    (() => state.allTeams)
       .expects()
       .returning(teams)
       .anyNumberOfTimes()
 
-    (() => scene.allSurfaces)
+    (() => state.allSurfaces)
       .expects()
       .returning(surfaces)
       .anyNumberOfTimes()
 
-    scene.removeEntity
+    state.removeEntity
       .expects(*)
       .onCall { (entity: Entity) =>
         if !removeEntities then
           Right(
-            sceneWith(
+            stateWith(
               entities = entities,
               teams = teams,
               surfaces = surfaces,
@@ -60,7 +60,7 @@ private[engine] trait MockSceneHelper:
           val updatedEntities = entities.filterNot(_.id == entity.id)
 
           Right(
-            sceneWith(
+            stateWith(
               entities = updatedEntities,
               teams = teams,
               surfaces = surfaces,
@@ -71,14 +71,14 @@ private[engine] trait MockSceneHelper:
       }
       .anyNumberOfTimes()
 
-    scene.addEntity
+    state.addEntity
       .expects(*)
       .onCall { (entity: Entity) =>
         if entities.exists(_.id == entity.id) then
           Left(CannotAddEntity(CannotAddAlreadyPresentElementInMap(entity.id)))
         else
           Right(
-            sceneWith(
+            stateWith(
               entities = entities :+ entity,
               teams = teams,
               surfaces = surfaces,
@@ -88,32 +88,32 @@ private[engine] trait MockSceneHelper:
       }
       .anyNumberOfTimes()
 
-    mockBounds(scene)
-    scene
+    mockBounds(state)
+    state
 
-  def sceneWithEntities(entities: List[Entity]): State =
-    sceneWith(entities)
+  def stateWithEntities(entities: List[Entity]): State =
+    stateWith(entities)
 
-  def sceneWithEntitiesNotRemoving(entities: List[Entity]): State =
-    sceneWith(
+  def stateWithEntitiesNotRemoving(entities: List[Entity]): State =
+    stateWith(
       entities = entities,
       removeEntities = false
     )
 
-  def sceneWithTeams(
+  def stateWithTeams(
       entities: List[Entity],
       teams: List[Team]
   ): State =
-    sceneWith(
+    stateWith(
       entities = entities,
       teams = teams
     )
 
-  def sceneWithSurfaces(
+  def stateWithSurfaces(
       entities: List[Entity],
       surfaces: List[Surface]
   ): State =
-    sceneWith(
+    stateWith(
       entities = entities,
       surfaces = surfaces
     )

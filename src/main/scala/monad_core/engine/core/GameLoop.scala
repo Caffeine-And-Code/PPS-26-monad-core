@@ -1,8 +1,15 @@
 package monad_core.engine.core
 
-import monad_core.engine.core.traits.{PhysicsEngine, RenderEngine, State}
+import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.core.traits.{PhysicsEngine, State}
 import monad_core.engine.model.EngineError
-import monad_core.engine.simulator.Painter
+
+final case class GameLoopTickResult(
+    state: State,
+    loop: GameLoop,
+    events: Vector[EngineEvent],
+    alpha: Double
+)
 
 trait GameLoop:
   def mode: LoopMode
@@ -18,9 +25,8 @@ trait GameLoop:
   def stop(): GameLoop
 
   def tick(scene: State, currentTime: Long)(using
-      physics: PhysicsEngine,
-      painter: Painter
-  ): Either[EngineError, (State, GameLoop)]
+      physics: PhysicsEngine
+  ): Either[EngineError, GameLoopTickResult]
 
 object GameLoop:
   val DefaultTickTime                 = 16_000_000L

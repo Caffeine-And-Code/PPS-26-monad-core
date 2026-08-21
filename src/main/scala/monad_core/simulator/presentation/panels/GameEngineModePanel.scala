@@ -37,10 +37,12 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
       viewModel.editTeamsDisabled.value = teams.length <= 1
       viewModel.deleteTeamsDisabled.value = teams.isEmpty
 
-    private def onTeamMutationResult(result: Either[BaseError, Unit]): Unit =
-      result match
-        case Left(error) => displayError(error)
-        case Right(_)    => viewModel.refreshTeamAvailability()
+    private def refreshTeamsAfter(
+        result: Either[BaseError, Unit]
+    ): Either[BaseError, Unit] =
+      result.map { _ =>
+        viewModel.refreshTeamAvailability()
+      }
 
     private def addEntity(entity: Entity): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
@@ -57,7 +59,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
 
       onActionMakeSnapshot(
         SaveTeamCommand(team),
-        command => viewModel.onTeamMutationResult(viewModel.world.createTeam(command))
+        command => viewModel.refreshTeamsAfter(viewModel.world.createTeam(command))
       )
 
     private def updateTeam(team: Team): Unit =
@@ -70,7 +72,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
 
       onActionMakeSnapshot(
         teamId,
-        id => viewModel.onTeamMutationResult(viewModel.world.removeTeam(id.value))
+        id => viewModel.refreshTeamsAfter(viewModel.world.removeTeam(id.value))
       )
 
   def build(

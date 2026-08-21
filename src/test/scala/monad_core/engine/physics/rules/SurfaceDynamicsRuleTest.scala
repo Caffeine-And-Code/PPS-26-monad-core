@@ -8,7 +8,7 @@ import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, Negat
 import monad_core.engine.model.*
 import monad_core.engine.model.Entity.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.helper.{MockDetectorHelper, MockSceneHelper}
+import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.physics.rules.SurfaceDynamicsRule
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalamock.scalatest.MockFactory
@@ -22,7 +22,7 @@ class SurfaceDynamicsRuleTest
     with Matchers
     with MockFactory
     with MockDetectorHelper
-    with MockSceneHelper:
+    with MockStateHelper:
 
   private val Rule = SurfaceDynamicsRule.surfaceDynamicsRule
 
@@ -36,9 +36,9 @@ class SurfaceDynamicsRuleTest
     result.shouldBe(Left(NegativeDeltaTime(NegativeDt)))
 
   test("the rule should return the unchanged scene when there are no entities"):
-    val scene = sceneWithSurfaces(List(), List())
+    val scene = stateWithSurfaces(List(), List())
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result shouldBe scene
 
@@ -57,13 +57,13 @@ class SurfaceDynamicsRuleTest
       .withFrictionIndex(0.1)
       .value
 
-    val scene = sceneWithSurfaces(List(fixedEntity), List(surface))
+    val scene = stateWithSurfaces(List(fixedEntity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((fixedEntity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == fixedEntity.id).value
 
@@ -85,13 +85,13 @@ class SurfaceDynamicsRuleTest
       .withFrictionIndex(0.1)
       .value
 
-    val scene = sceneWithSurfaces(List(entity), List(surface))
+    val scene = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> false)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -109,13 +109,13 @@ class SurfaceDynamicsRuleTest
       radius = 5.0
     )
 
-    val scene = sceneWithSurfaces(List(entity), List(surface))
+    val scene = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -139,13 +139,13 @@ class SurfaceDynamicsRuleTest
 
     val expectedSpeedAfterForce = entity.speed.value + acceleration
 
-    val scene = sceneWithSurfaces(List(entity), List(surface))
+    val scene = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -173,13 +173,13 @@ class SurfaceDynamicsRuleTest
       )
       .value
 
-    val scene = sceneWithSurfaces(List(entity), List(surface))
+    val scene = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -213,13 +213,13 @@ class SurfaceDynamicsRuleTest
       )
       .value
 
-    val scene = sceneWithSurfaces(List(entity), List(surface))
+    val scene = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -250,7 +250,7 @@ class SurfaceDynamicsRuleTest
       .withFrictionIndex(0.1)
       .value
 
-    val scene = sceneWithSurfaces(List(entity1, entity2), List(surface))
+    val scene = stateWithSurfaces(List(entity1, entity2), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map(
@@ -259,7 +259,7 @@ class SurfaceDynamicsRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value
@@ -307,7 +307,7 @@ class SurfaceDynamicsRuleTest
       .withAppliedForce(Vector2D(10, 0))
       .value
 
-    val scene = sceneWithSurfaces(List(entity), List(surface))
+    val scene = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)

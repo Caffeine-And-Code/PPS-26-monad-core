@@ -1,10 +1,7 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.{EngineError, Entity, Vector2D}
-
-enum BorderWallType:
-  case Left, Right, Top, Bottom
+import monad_core.engine.model.{BorderSide, EngineError, Entity, Vector2D}
 
 object BorderWall:
 
@@ -19,7 +16,7 @@ object BorderWall:
       verticalHalfSize: Double,
       upperLeft: Vector2D,
       lowerRight: Vector2D,
-      borderType: BorderWallType
+      borderSide: BorderSide
   ): Either[EngineError, (Entity, Collision)] =
 
     val vertical   = verticalHalfSize
@@ -27,19 +24,19 @@ object BorderWall:
     val position   = entity.position
 
     for
-      wall <- wallSelector(position, upperLeft, lowerRight, horizontal, vertical, borderType)
+      wall <- wallSelector(position, upperLeft, lowerRight, horizontal, vertical, borderSide)
 
-      normal = borderType match
-        case BorderWallType.Left   => Vector2D(1, 0)
-        case BorderWallType.Right  => Vector2D(-1, 0)
-        case BorderWallType.Top    => Vector2D(0, 1)
-        case BorderWallType.Bottom => Vector2D(0, -1)
+      normal = borderSide match
+        case BorderSide.Left   => Vector2D(1, 0)
+        case BorderSide.Right  => Vector2D(-1, 0)
+        case BorderSide.Top    => Vector2D(0, 1)
+        case BorderSide.Bottom => Vector2D(0, -1)
 
-      depth = borderType match
-        case BorderWallType.Left   => math.abs(wall.position.x - upperLeft.x)
-        case BorderWallType.Right  => math.abs(wall.position.x - lowerRight.x)
-        case BorderWallType.Top    => math.abs(wall.position.y - upperLeft.y)
-        case BorderWallType.Bottom => math.abs(wall.position.y - lowerRight.y)
+      depth = borderSide match
+        case BorderSide.Left   => math.abs(wall.position.x - upperLeft.x)
+        case BorderSide.Right  => math.abs(wall.position.x - lowerRight.x)
+        case BorderSide.Top    => math.abs(wall.position.y - upperLeft.y)
+        case BorderSide.Bottom => math.abs(wall.position.y - lowerRight.y)
     yield (wall, Collision(normal, depth))
 
   private def moveWall(
@@ -126,31 +123,31 @@ object BorderWall:
       lowerRight: Vector2D,
       horizontal: Double,
       vertical: Double,
-      borderType: BorderWallType
+      borderSide: BorderSide
   ): Either[EngineError, Entity] =
-    borderType match
-      case BorderWallType.Left =>
+    borderSide match
+      case BorderSide.Left =>
         leftWall(
           position = position,
           upperLeft = upperLeft,
           horizontal = horizontal,
           vertical = vertical
         )
-      case BorderWallType.Right =>
+      case BorderSide.Right =>
         rightWall(
           position = position,
           lowerRight = lowerRight,
           horizontal = horizontal,
           vertical = vertical
         )
-      case BorderWallType.Top =>
+      case BorderSide.Top =>
         topWall(
           position = position,
           upperLeft = upperLeft,
           horizontal = horizontal,
           vertical = vertical
         )
-      case BorderWallType.Bottom =>
+      case BorderSide.Bottom =>
         bottomWall(
           position = position,
           lowerRight = lowerRight,
