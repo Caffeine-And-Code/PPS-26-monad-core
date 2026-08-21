@@ -164,3 +164,30 @@ class BorderWallTest extends AnyFunSuite with Matchers:
     collision.collisionPoint.x shouldBe UpperLeftCorner.x
     collision.collisionPoint.y shouldBe (50 - 10 * math.sin(math.toRadians(30)) +
       5 * math.cos(math.toRadians(30))) +- 1e-9
+
+  test("the collision point includes support vertices exactly within epsilon"):
+    val epsilon  = 1e-9
+    val height   = 2.0
+    val width    = epsilon
+    val angle    = math.toDegrees(math.asin(epsilon / height))
+    val position = Vector2D(0.0, 50.0)
+    val entity = makeMovingEntityRectangle(
+      position = position,
+      width = width,
+      height = height,
+      speed = Vector2D(-1, 0)
+    ).rotateTo(angle).value
+
+    val collision = BorderWall(
+      entity,
+      horizontalHalfSize = height / 2.0,
+      verticalHalfSize = height / 2.0,
+      upperLeft = UpperLeftCorner,
+      lowerRight = LowerRightCorner,
+      borderType = BorderWallType.Left
+    ).value._2
+    val expectedSupportY = position.y -
+      math.sin(math.toRadians(angle)) * (width / 2.0) / 3.0 +
+      math.cos(math.toRadians(angle)) * (height / 2.0) / 3.0
+
+    collision.collisionPoint.y shouldBe expectedSupportY +- 1e-12

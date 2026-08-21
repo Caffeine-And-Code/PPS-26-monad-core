@@ -85,8 +85,7 @@ private[physics] object EnemyAttractionRule:
               case None =>
                 Right(entity)
               case Some(currentSpeed) =>
-                for
-                  seconds <- PhysicsUtil.timeLongToSeconds(dt)
+                for seconds <- PhysicsUtil.timeLongToSeconds(dt)
                 yield orientSpeed(
                   entity,
                   currentSpeed,

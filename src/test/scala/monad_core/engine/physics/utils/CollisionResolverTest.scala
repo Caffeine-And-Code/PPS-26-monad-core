@@ -201,3 +201,98 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     resultEntity1.speed.value shouldBe expectedSpeed1
     resultEntity2.position shouldBe expectedPosition2
     resultEntity2.speed.value shouldBe expectedSpeed2
+
+  test("a rotation-only entity should not be translated while resolving overlap"):
+    val rotating = makeFixedEntityRectangle(id = "rotating")
+      .withWeight(1)
+      .value
+      .withAngularSpeed(0.0)
+    val wall      = makeFixedEntityRectangle(id = "wall")
+    val collision = Collision(Vector2D(1.0, 0.0), 2.0, rotating.position)
+
+    val result = CollisionResolver(Map(rotating -> List(wall -> collision))).value.head
+
+    result.position shouldBe rotating.position
+
+  test("a mobile entity should resolve the full overlap against a rotation-only entity"):
+    val mobile = makeMovingEntityCircle(
+      id = "mobile",
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    ).withWeight(1).value
+    val rotating = makeFixedEntityRectangle(id = "rotating")
+      .withWeight(1)
+      .value
+      .withAngularSpeed(0.0)
+    val collision = Collision(Vector2D(-1.0, 0.0), 2.0, Vector2D(0.0, 0.0))
+
+    val result = CollisionResolver(Map(mobile -> List(rotating -> collision))).value.head
+
+    result.position shouldBe Vector2D(-2.0, 0.0)
+
+  test("mobile overlap correction should move a heavier entity less"):
+    val heavy = makeMovingEntityCircle(
+      id = "heavy",
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    ).withWeight(3).value
+    val light = makeMovingEntityCircle(
+      id = "light",
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    ).withWeight(1).value
+    val heavyCollision = Collision(Vector2D(-1.0, 0.0), 4.0, Vector2D(0.0, 0.0))
+    val lightCollision = heavyCollision.copy(normalVector = Vector2D(1.0, 0.0))
+    val collisions = Map(
+      heavy -> List(light -> heavyCollision),
+      light -> List(heavy -> lightCollision)
+    )
+
+    val result       = CollisionResolver(collisions).value
+    val updatedHeavy = result.find(_.id == heavy.id).value
+    val updatedLight = result.find(_.id == light.id).value
+
+    updatedHeavy.position shouldBe Vector2D(-1.0, 0.0)
+    updatedLight.position shouldBe Vector2D(3.0, 0.0)
+
+  test("zero penetration should not change entity position"):
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(3.0, 4.0),
+      speed = Vector2D(1.0, 0.0)
+    )
+    val wall      = makeFixedEntityRectangle(id = "wall")
+    val collision = Collision(Vector2D(1.0, 0.0), 0.0, Vector2D(3.0, 4.0))
+
+    val result = CollisionResolver(Map(entity -> List(wall -> collision))).value.head
+
+    result.position shouldBe entity.position
+
+  test("overlap correction should follow each collision normal"):
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    )
+    val horizontalWall = makeFixedEntityRectangle(id = "horizontal")
+    val verticalWall   = makeFixedEntityRectangle(id = "vertical")
+    val collisions = List(
+      horizontalWall -> Collision(Vector2D(1.0, 0.0), 2.0, Vector2D(0.0, 0.0)),
+      verticalWall   -> Collision(Vector2D(0.0, -1.0), 3.0, Vector2D(0.0, 0.0))
+    )
+
+    val result = CollisionResolver(Map(entity -> collisions)).value.head
+
+    result.position shouldBe Vector2D(2.0, -3.0)
+
+  test("collision resolution should preserve unrelated entity properties"):
+    val entity = makeMovingEntityCircle(speed = Vector2D(1.0, 0.0))
+      .withHealth(80)
+      .value
+      .withTeamId("team")
+      .value
+    val wall      = makeFixedEntityRectangle(id = "wall")
+    val collision = Collision(Vector2D(1.0, 0.0), 1.0, Vector2D(0.0, 0.0))
+
+    val result = CollisionResolver(Map(entity -> List(wall -> collision))).value.head
+
+    result.health shouldBe entity.health
+    result.teamId shouldBe entity.teamId

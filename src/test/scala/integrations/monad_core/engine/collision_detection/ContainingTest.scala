@@ -96,12 +96,12 @@ class ContainingTest extends AnyFunSuite with Inside with Matchers:
 
   test("isInside considers the rotation of a rectangular surface"):
     val eitherSurface = Surface.rectangle("sur1", Vector2D(5, 5), 2, 8, 90)
-    val insideEntity = Entity.circle("inside", Vector2D(5, 8.9), 1)
+    val insideEntity  = Entity.circle("inside", Vector2D(5, 8.9), 1)
     val outsideEntity = Entity.circle("outside", Vector2D(8.9, 5), 1)
 
     val results = for
       surface <- eitherSurface
-      inside <- insideEntity
+      inside  <- insideEntity
       outside <- outsideEntity
     yield (inside.isInside(surface), outside.isInside(surface))
 

@@ -16,7 +16,7 @@ import org.scalatest.matchers.should.Matchers
 class SizeHelperTest extends AnyFunSuite with Matchers:
 
   private val Epsilon = 1e-9
-  
+
   private val EntityRectangle = makeFixedEntityRectangle(
     position = Vector2D(5.0, 6.0),
     height = 2.0,
@@ -75,9 +75,9 @@ class SizeHelperTest extends AnyFunSuite with Matchers:
     actualHorizontalSize shouldBe expectedHorizontalSize
 
   test("shape sizes should include rectangle rotation"):
-    val rotated            = EntityRectangle.rotateTo(30.0).value
-    val expectedHorizontalSize            = expectedHSize(rotated, 30.0)
-    val expectedVerticalSize              = expectedVSize(rotated, 30.0)
+    val rotated                = EntityRectangle.rotateTo(30.0).value
+    val expectedHorizontalSize = expectedHSize(rotated, 30.0)
+    val expectedVerticalSize   = expectedVSize(rotated, 30.0)
 
     horizontalShapeSize(rotated) shouldBe expectedHorizontalSize +- Epsilon
     verticalShapeSize(rotated) shouldBe expectedVerticalSize +- Epsilon

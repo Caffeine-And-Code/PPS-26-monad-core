@@ -22,18 +22,50 @@ object ShapeCollision:
     rectangle.shape.halfLength * math.abs(rectangleAxes.head dot axis) +
       rectangle.shape.halfHeight * math.abs(rectangleAxes.last dot axis)
 
-  private def supportPoint(rectangle: Placed[Rectangle], direction: Vector2D): Vector2D =
-    val vertexes        = rectangle.shape.vertexes(rectangle.center, rectangle.rotation)
-    val maximum         = vertexes.map(_ dot direction).max
-    val supportVertexes = vertexes.filter(vertex => maximum - vertex.dot(direction) <= Epsilon)
-
-    supportVertexes.reduce(_ + _) * (1.0 / supportVertexes.size)
-
   private def localPoint(point: Vector2D, reference: Placed[?]): Vector2D =
     (point - reference.center).rotated(-reference.rotation)
 
   private def worldPoint(point: Vector2D, reference: Placed[?]): Vector2D =
     reference.center + point.rotated(reference.rotation)
+
+  private def clipPolygon(
+      polygon: List[Vector2D],
+      signedDistance: Vector2D => Double
+  ): List[Vector2D] =
+    polygon.indices.toList.flatMap: index =>
+      val current         = polygon(index)
+      val next            = polygon((index + 1) % polygon.size)
+      val currentDistance = signedDistance(current)
+      val nextDistance    = signedDistance(next)
+      val currentInside   = currentDistance <= Epsilon
+      val nextInside      = nextDistance <= Epsilon
+
+      def intersection: Vector2D =
+        val ratio = currentDistance / (currentDistance - nextDistance)
+        current + (next - current) * ratio
+
+      if currentInside then
+        if nextInside then List(next)
+        else List(intersection)
+      else if nextInside then List(intersection, next)
+      else List.empty
+
+  private[geometry] def intersectionCenter(
+      first: Placed[Rectangle],
+      second: Placed[Rectangle]
+  ): Vector2D =
+    val firstInSecondLocal = first.shape
+      .vertexes(first.center, first.rotation)
+      .map(localPoint(_, second))
+    val clipped = Seq[Vector2D => Double](
+      _.x - second.shape.halfLength,
+      point => -point.x - second.shape.halfLength,
+      _.y - second.shape.halfHeight,
+      point => -point.y - second.shape.halfHeight
+    ).foldLeft(firstInSecondLocal)(clipPolygon)
+
+    if clipped.isEmpty then (first.center + second.center) * 0.5
+    else worldPoint(clipped.reduce(_ + _) * (1.0 / clipped.size), second)
 
   private def collisionFromCircleInsideRectangle(
       circle: Placed[Circle],
@@ -65,7 +97,7 @@ object ShapeCollision:
 
     Collision(
       nearestEdge._2.rotated(rectangle.rotation),
-      nearestEdge._1,
+      nearestEdge._1 + circle.shape.radius,
       worldPoint(nearestEdge._3, rectangle)
     )
 
@@ -76,7 +108,9 @@ object ShapeCollision:
       val penetrationDepth = first.shape.radius + second.shape.radius - distance
 
       Option.when(penetrationDepth >= 0):
-        val normal        = calculateNorm(first.center, second.center)
+        val normal =
+          if distance <= Epsilon then Vector2D(1, 0)
+          else calculateNorm(first.center, second.center)
         val firstContact  = first.center + normal * first.shape.radius
         val secondContact = second.center - normal * second.shape.radius
         Collision(normal, penetrationDepth, (firstContact + secondContact) * 0.5)
@@ -98,8 +132,7 @@ object ShapeCollision:
       Option.when(overlaps.forall(_._2 >= 0)):
         val (axis, penetrationDepth) = overlaps.minBy(_._2)
         val normal                   = if centerDistance.dot(axis) >= 0 then axis else axis.flip
-        val collisionPoint =
-          (supportPoint(first, normal) + supportPoint(second, normal.flip)) * 0.5
+        val collisionPoint           = intersectionCenter(first, second)
         Collision(normal, penetrationDepth, collisionPoint)
 
   given circleCollidesWithRectangle: Collides[Circle, Rectangle] with

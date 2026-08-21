@@ -1,6 +1,6 @@
 package monad_core.engine.physics.utils
 
-object Rotation:
+private[engine] object Rotation:
 
   private val FullTurn = 360.0
   private val HalfTurn = FullTurn / 2.0

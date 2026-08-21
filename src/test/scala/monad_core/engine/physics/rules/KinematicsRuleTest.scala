@@ -2,7 +2,11 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle, makeMovingEntityRectangle}
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeFixedEntityCircle,
+  makeMovingEntityCircle,
+  makeMovingEntityRectangle
+}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
 import monad_core.engine.physics.core.*
@@ -111,7 +115,7 @@ class KinematicsRuleTest
     result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 90.0
 
   test("angular integration should wrap rotations into a full turn"):
-    
+
     val rotatingEntity = makeMovingEntityRectangle(
       id = "rotating",
       position = Vector2D(0.0, 0.0),
@@ -119,7 +123,7 @@ class KinematicsRuleTest
       height = 5.0,
       rotation = 350.0
     ).withAngularSpeed(20.0)
-    
+
     val scene = sceneWithEntities(List(rotatingEntity))
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value

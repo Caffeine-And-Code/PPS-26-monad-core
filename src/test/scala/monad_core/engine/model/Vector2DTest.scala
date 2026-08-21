@@ -56,10 +56,10 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     result shouldBe 5
 
   test("can normalize a vector"):
-    val x: Double = 3
-    val y: Double = 4
+    val x: Double         = 3
+    val y: Double         = 4
     val magnitude: Double = 5
-    val vector = Vector2D(x, y)
+    val vector            = Vector2D(x, y)
 
     val result = vector.normalized
 
@@ -80,8 +80,8 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     result shouldBe Vector2D(-1, -2)
 
   test("can calculate the dot product"):
-    val firstPoint = Vector2D(2, 3)
-    val secondPoint = Vector2D(4, -1)
+    val firstPoint     = Vector2D(2, 3)
+    val secondPoint    = Vector2D(4, -1)
     val expectedResult = 5
 
     val result = firstPoint.dot(secondPoint)
@@ -94,4 +94,3 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     val result = point.rotated(90)
     result.x shouldBe 0.0 +- 0.1
     result.y shouldBe 2.0 +- 0.1
-

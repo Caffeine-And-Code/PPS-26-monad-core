@@ -238,8 +238,8 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
       entity.rotation shouldBe rotation
 
   test("cannot create or rotate an entity outside the valid degree interval"):
-    val entity = ValidEntity.value
-    val negativeRotation = -1
+    val entity            = ValidEntity.value
+    val negativeRotation  = -1
     val excessiveRotation = 361
 
     val creationResult = Entity.circle("entity", ValidPosition, 2, negativeRotation)
@@ -249,11 +249,11 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     rotationResult shouldBe Left(RotationMustBeAValidDegreeValue(excessiveRotation))
 
   test("can add and remove angular speed from an entity"):
-    val entity = ValidEntity.value
+    val entity       = ValidEntity.value
     val angularSpeed = -45
 
     val rotatingEntity = entity.withAngularSpeed(angularSpeed)
-    val fixedEntity = rotatingEntity.withoutAngularSpeed
+    val fixedEntity    = rotatingEntity.withoutAngularSpeed
 
     rotatingEntity.angularSpeed shouldBe Some(angularSpeed)
     rotatingEntity.isFixed shouldBe false

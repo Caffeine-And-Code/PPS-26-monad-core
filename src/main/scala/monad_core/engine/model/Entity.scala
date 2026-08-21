@@ -1,23 +1,39 @@
 package monad_core.engine.model
 
-final case class Entity private(
-                                 id: LocatableId,
-                                 position: Vector2D,
-                                 shape: Shape2D,
-                                 rotation: Double,
-                                 speed: Option[Vector2D] = None,
-                                 angularSpeed: Option[Double] = None,
-                                 weight: Option[Weight] = None,
-                                 health: Option[Health] = None,
-                                 teamId: Option[TeamId] = None
-                               ) extends Locatable
+final case class Entity private (
+    id: LocatableId,
+    position: Vector2D,
+    shape: Shape2D,
+    rotation: Double,
+    speed: Option[Vector2D] = None,
+    angularSpeed: Option[Double] = None,
+    weight: Option[Weight] = None,
+    health: Option[Health] = None,
+    teamId: Option[TeamId] = None
+) extends Locatable
 
 object Entity:
-  def circle(id: String, position: Vector2D, radius: Double, rotation: Double = 0): Either[EngineError, Entity] =
-    Locatable.circle(id, position, radius, rotation)((id, position, shape, rotation) => Entity(id, position, shape, rotation))
 
-  def rectangle(id: String, position: Vector2D, height: Double, length: Double, rotation: Double = 0): Either[EngineError, Entity] =
-    Locatable.rectangle(id, position, height, length, rotation)((id, position, shape, rotation) => Entity(id, position, shape, rotation))
+  def circle(
+      id: String,
+      position: Vector2D,
+      radius: Double,
+      rotation: Double = 0
+  ): Either[EngineError, Entity] =
+    Locatable.circle(id, position, radius, rotation)((id, position, shape, rotation) =>
+      Entity(id, position, shape, rotation)
+    )
+
+  def rectangle(
+      id: String,
+      position: Vector2D,
+      height: Double,
+      length: Double,
+      rotation: Double = 0
+  ): Either[EngineError, Entity] =
+    Locatable.rectangle(id, position, height, length, rotation)((id, position, shape, rotation) =>
+      Entity(id, position, shape, rotation)
+    )
 
   private def validateAndReturn(updated: Entity): Either[EngineError, Entity] =
     Entity.validate(updated).map(_ => updated)
@@ -25,7 +41,7 @@ object Entity:
   def validate(entity: Entity): Either[EngineError, Unit] =
     for {
       result <- Locatable.validatePosition(entity.position)
-      _ <- Locatable.validateRotation(entity.rotation)
+      _      <- Locatable.validateRotation(entity.rotation)
     } yield result
 
   extension (entity: Entity)
@@ -37,8 +53,7 @@ object Entity:
       entity.copy(position = entity.position + space)
 
     def rotateTo(rotation: Double): Either[EngineError, Entity] =
-      for
-        _ <- Locatable.validateRotation(rotation)
+      for _ <- Locatable.validateRotation(rotation)
       yield entity.copy(rotation = rotation)
 
     def withSpeed(speed: Vector2D): Entity =

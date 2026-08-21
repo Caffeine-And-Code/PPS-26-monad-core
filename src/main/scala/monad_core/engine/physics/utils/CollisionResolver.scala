@@ -5,7 +5,7 @@ import monad_core.engine.model.Entity
 import monad_core.engine.physics.core.PhysicsError
 import monad_core.engine.physics.utils.CollisionMap
 
-object CollisionResolver:
+private[physics] object CollisionResolver:
 
   def apply(
       collisions: CollisionMap

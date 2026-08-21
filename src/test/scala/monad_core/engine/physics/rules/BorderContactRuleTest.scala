@@ -2,7 +2,11 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle, makeMovingEntityRectangle}
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeFixedEntityCircle,
+  makeMovingEntityCircle,
+  makeMovingEntityRectangle
+}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockSceneHelper}
 import monad_core.engine.model.Vector2D
@@ -241,7 +245,7 @@ class BorderContactRuleTest
       height = 10.0,
       speed = Vector2D(-1.0, 0.0)
     ).rotateTo(30.0).value.withWeight(1).value
-    val scene = sceneWithEntities(List(entity))
+    val scene             = sceneWithEntities(List(entity))
     val expectedHalfWidth = SizeHelper.horizontalShapeSize(entity) / 2
 
     val result  = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value

@@ -3,7 +3,7 @@ package monad_core.engine.physics.pathfinding
 import monad_core.engine.model.Shape2D.Rectangle
 import monad_core.engine.model.*
 
-object RectangleVertexes:
+private[engine] object RectangleVertexes:
 
   extension (rectangle: Rectangle)
 

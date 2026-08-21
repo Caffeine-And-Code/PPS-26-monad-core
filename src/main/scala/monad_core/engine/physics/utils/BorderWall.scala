@@ -6,7 +6,7 @@ import monad_core.engine.model.*
 enum BorderWallType:
   case Left, Right, Top, Bottom
 
-object BorderWall:
+private[engine] object BorderWall:
 
   private val LeftWallId   = "left-wall"
   private val RightWallId  = "right-wall"

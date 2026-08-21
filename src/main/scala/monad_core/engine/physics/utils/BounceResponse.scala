@@ -13,7 +13,7 @@ private[physics] object BounceResponse:
   ): Either[PhysicsError, Entity] =
     (entity.speed, entity.angularSpeed) match
       case (Some(speed), None) =>
-        resolveSimpleBounce(entity, other, speed, collision)
+        resolveBounce(entity, other, speed, collision)
       case (Some(speed), Some(angularSpeed)) =>
         resolveBounceAndRotation(entity, other, speed, angularSpeed, collision)
       case (None, Some(angularSpeed)) =>
@@ -21,32 +21,45 @@ private[physics] object BounceResponse:
       case (None, None) =>
         Right(entity)
 
-  private def resolveSimpleBounce(
+  private def resolveBounce(
       entity: Entity,
       other: Entity,
       entitySpeed: Vector2D,
       collision: Collision
   ): Either[PhysicsError, Entity] =
-    val reflectedSpeed =
-      other.speed match
-        case None =>
-          Right(
-            PhysicsUtil.reflectOnFixed(
-              entitySpeed,
-              collision.normalVector
-            )
-          )
-        case Some(otherSpeed) =>
-          PhysicsUtil.reflectOnMobile(
-            entitySpeed,
-            otherSpeed,
-            collision.normalVector,
-            entity.weight,
-            other.weight
-          )
+    other.angularSpeed match
+      case Some(_) =>
+        PhysicsUtil
+          .collisionResponse(entity, other, collision)
+          .map((speedChange, _) => entity.withSpeed(entitySpeed + speedChange))
+      case None =>
+        val reflectedSpeed = resolveBasicBounce(
+          entity,
+          other,
+          entitySpeed,
+          collision
+        )
 
-    reflectedSpeed.map(entity.withSpeed)
-    
+        reflectedSpeed.map(entity.withSpeed)
+
+  private def resolveBasicBounce(
+      entity: Entity,
+      other: Entity,
+      entitySpeed: Vector2D,
+      collision: Collision
+  ): Either[PhysicsError, Vector2D] =
+    other.speed match
+      case None =>
+        Right(PhysicsUtil.reflectOnFixed(entitySpeed, collision.normalVector))
+      case Some(otherSpeed) =>
+        PhysicsUtil.reflectOnMobile(
+          entitySpeed,
+          otherSpeed,
+          collision.normalVector,
+          entity.weight,
+          other.weight
+        )
+
   private def resolveBounceAndRotation(
       entity: Entity,
       other: Entity,
@@ -54,7 +67,13 @@ private[physics] object BounceResponse:
       angularSpeed: Double,
       collision: Collision
   ): Either[PhysicsError, Entity] =
-    Right(entity)
+    PhysicsUtil
+      .collisionResponse(entity, other, collision)
+      .map:
+        case (speedChange, angularSpeedChange) =>
+          entity
+            .withSpeed(entitySpeed + speedChange)
+            .withAngularSpeed(angularSpeed + angularSpeedChange)
 
   private def resolveRotation(
       entity: Entity,
@@ -62,4 +81,6 @@ private[physics] object BounceResponse:
       angularSpeed: Double,
       collision: Collision
   ): Either[PhysicsError, Entity] =
-    Right(entity)  
+    PhysicsUtil
+      .collisionResponse(entity, other, collision)
+      .map((_, angularSpeedChange) => entity.withAngularSpeed(angularSpeed + angularSpeedChange))

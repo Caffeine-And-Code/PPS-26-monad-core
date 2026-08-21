@@ -19,7 +19,7 @@ object ShapeContainment:
         -container.shape.halfLength,
         container.shape.halfLength
       ).contains(localPoint.x)
-        && Interval(
+      && Interval(
         -container.shape.halfHeight,
         container.shape.halfHeight
       ).contains(localPoint.y)

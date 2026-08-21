@@ -68,7 +68,7 @@ class CollisionResolutionRuleTest
     val fixedEntity           = makeFixedEntityCircle(id = "fixed", position = Vector2D(1, 0))
     val collisionNormal       = Vector2D(1, 0)
     val mobileCollisionNormal = collisionNormal.flip
-    val collisionPoint = Vector2D(0.5, 0)
+    val collisionPoint        = Vector2D(0.5, 0)
     val collisionDepth        = 1.0
 
     val expectedPosition =
@@ -80,7 +80,13 @@ class CollisionResolutionRuleTest
     val scene = sceneWithEntities(List(mobileEntity, fixedEntity))
 
     given CollisionDetector = detectorWithCollisions(
-      Map((mobileEntity.id.value, fixedEntity.id.value) -> (collisionNormal, collisionDepth, collisionPoint))
+      Map(
+        (mobileEntity.id.value, fixedEntity.id.value) -> (
+          collisionNormal,
+          collisionDepth,
+          collisionPoint
+        )
+      )
     )
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
@@ -94,7 +100,7 @@ class CollisionResolutionRuleTest
     val collisionNormal       = Vector2D(-1, 0)
     val mobileCollisionNormal = collisionNormal.flip
     val collisionDepth        = 1.0
-    val collisionPoint = Vector2D(2, 2)
+    val collisionPoint        = Vector2D(2, 2)
 
     val movingEntity = makeMovingEntityCircle(
       id = "moving",
@@ -117,7 +123,13 @@ class CollisionResolutionRuleTest
     val scene = sceneWithEntities(List(movingEntity, fixedEntity))
 
     given CollisionDetector = detectorWithCollisions(
-      Map((movingEntity.id.value, fixedEntity.id.value) -> (collisionNormal, collisionDepth, collisionPoint))
+      Map(
+        (movingEntity.id.value, fixedEntity.id.value) -> (
+          collisionNormal,
+          collisionDepth,
+          collisionPoint
+        )
+      )
     )
 
     val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
@@ -147,7 +159,7 @@ class CollisionResolutionRuleTest
     val collisionNormal   = Vector2D(1, 0)
     val firstEntityNormal = collisionNormal.flip
     val collisionDepth    = 1.0
-    val collisionPoint = Vector2D(0.5, 0)
+    val collisionPoint    = Vector2D(0.5, 0)
 
     val expectedPosition1 = PhysicsUtil
       .pushMobileOverlappingMobile(
@@ -223,7 +235,7 @@ class CollisionResolutionRuleTest
 
     val collisionNormal = Vector2D(1, 0)
     val collisionDepth  = 1.0
-    val collisionPoint = Vector2D(0.5, 0)
+    val collisionPoint  = Vector2D(0.5, 0)
 
     val scene = sceneWithEntities(List(entity1, entity2))
 
@@ -243,7 +255,7 @@ class CollisionResolutionRuleTest
     val collisionNormal       = Vector2D(-1, 0)
     val mobileCollisionNormal = collisionNormal.flip
     val collisionDepth        = 1.0
-    val collisionPoint = Vector2D(2, 2)
+    val collisionPoint        = Vector2D(2, 2)
 
     val circularEntity = makeMovingEntityCircle(
       id = "circular",
@@ -274,8 +286,16 @@ class CollisionResolutionRuleTest
 
     given CollisionDetector = detectorWithCollisions(
       Map(
-        (circularEntity.id.value, fixedEntity.id.value)    -> (collisionNormal, collisionDepth, collisionPoint),
-        (rectangularEntity.id.value, fixedEntity.id.value) -> (collisionNormal, collisionDepth, collisionPoint)
+        (circularEntity.id.value, fixedEntity.id.value) -> (
+          collisionNormal,
+          collisionDepth,
+          collisionPoint
+        ),
+        (rectangularEntity.id.value, fixedEntity.id.value) -> (
+          collisionNormal,
+          collisionDepth,
+          collisionPoint
+        )
       )
     )
 
@@ -302,13 +322,17 @@ class CollisionResolutionRuleTest
 
     val collisionNormal = Vector2D(-1, 0)
     val collisionDepth  = 1.0
-    val collisionPoint = Vector2D(0.5, 0)
+    val collisionPoint  = Vector2D(0.5, 0)
 
     val scene = sceneWithEntities(List(fixedEntity1, fixedEntity2))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
-        (fixedEntity1.id.value, fixedEntity2.id.value) -> (collisionNormal, collisionDepth, collisionPoint)
+        (fixedEntity1.id.value, fixedEntity2.id.value) -> (
+          collisionNormal,
+          collisionDepth,
+          collisionPoint
+        )
       )
     )
 
@@ -357,9 +381,9 @@ class CollisionResolutionRuleTest
 
     given CollisionDetector = detectorWithCollisions(
       Map(
-        (entity.id.value, wall1.id.value) -> 
+        (entity.id.value, wall1.id.value) ->
           (collision1.normalVector, collision1.penetrationDepth, collision1.collisionPoint),
-        (entity.id.value, wall2.id.value) -> 
+        (entity.id.value, wall2.id.value) ->
           (collision2.normalVector, collision2.penetrationDepth, collision2.collisionPoint)
       )
     )

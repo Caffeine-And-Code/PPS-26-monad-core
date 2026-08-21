@@ -3,10 +3,7 @@ package monad_core.engine.physics.rules
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.{+, Entity, Surface, Vector2D}
-import monad_core.engine.physics.core.{
-  PhysicsError,
-  PhysicsRule
-}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object SurfaceDynamicsRule:
@@ -64,7 +61,6 @@ private[physics] object SurfaceDynamicsRule:
       entityAfterSpeedFriction <- applyFriction(entityAfterForce, surface, dt)
 
       entityAfterAngularFriction <- applyAngular(entityAfterSpeedFriction, surface, dt)
-      
     yield entityAfterAngularFriction
 
   private def applyForce(
@@ -78,7 +74,7 @@ private[physics] object SurfaceDynamicsRule:
           .map(acceleration => entity.withSpeed(speed + acceleration))
       case _ =>
         Right(entity)
-        
+
   private def applyFriction(
       entity: Entity,
       surface: Surface,
@@ -90,7 +86,7 @@ private[physics] object SurfaceDynamicsRule:
           .applyFriction(speed, friction, dt)
           .map(entity.withSpeed)
       case _ => Right(entity)
-        
+
   private def applyAngular(
       entity: Entity,
       surface: Surface,

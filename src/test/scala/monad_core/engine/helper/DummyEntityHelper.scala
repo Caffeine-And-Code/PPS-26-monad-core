@@ -12,12 +12,9 @@ private[engine] object DummyEntityHelper:
       rotation: Double = 0.0
   ): Entity =
     Entity
-      .circle(
-        id = id, 
-        position = Vector2D(0, 0), 
-        radius = radius, 
-        rotation = rotation)
-      .value.moveTo(position)
+      .circle(id = id, position = Vector2D(0, 0), radius = radius, rotation = rotation)
+      .value
+      .moveTo(position)
 
   def makeMovingEntityCircle(
       id: String = "entity",
@@ -26,13 +23,8 @@ private[engine] object DummyEntityHelper:
       speed: Vector2D = Vector2D(0, 0),
       rotation: Double = 0.0
   ): Entity =
-    makeFixedEntityCircle(
-      id = id,
-      position = position, 
-      radius = radius, 
-      rotation = rotation)
+    makeFixedEntityCircle(id = id, position = position, radius = radius, rotation = rotation)
       .withSpeed(speed)
-
 
   def makeFixedEntityRectangle(
       id: String = "entity",
@@ -43,11 +35,12 @@ private[engine] object DummyEntityHelper:
   ): Entity =
     Entity
       .rectangle(
-        id = id, 
-        position = Vector2D(0, 0), 
-        length = width, 
-        height = height, 
-        rotation = rotation)
+        id = id,
+        position = Vector2D(0, 0),
+        length = width,
+        height = height,
+        rotation = rotation
+      )
       .value
       .moveTo(position)
 
@@ -60,9 +53,10 @@ private[engine] object DummyEntityHelper:
       rotation: Double = 0.0
   ): Entity =
     makeFixedEntityRectangle(
-      id = id, 
-      position = position, 
-      width = width, 
-      height = height, 
-      rotation = rotation)
+      id = id,
+      position = position,
+      width = width,
+      height = height,
+      rotation = rotation
+    )
       .withSpeed(speed)

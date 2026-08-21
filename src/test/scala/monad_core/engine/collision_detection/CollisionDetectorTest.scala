@@ -12,12 +12,12 @@ import org.scalatest.matchers.should.Matchers
 class CollisionDetectorTest extends AnyFunSuite with Matchers with MockFactory:
 
   test("collision delegates to the shape collision typeclass using placed locatables"):
-    val first = Entity.circle("en1", Vector2D(0, 0), 5).value
-    val second = Entity.rectangle("en2", Vector2D(6, 0), 4, 4).value
+    val first             = Entity.circle("en1", Vector2D(0, 0), 5).value
+    val second            = Entity.rectangle("en2", Vector2D(6, 0), 4, 4).value
     val expectedCollision = Some(Collision(Vector2D(1, 0), 1, Vector2D(4, 0)))
-    val collides = mock[Collides[Shape2D, Shape2D]]
-    val contains = mock[Contains[Shape2D]]
-    val detector = CollisionDetector.fromGeometry(using collides, contains)
+    val collides          = mock[Collides[Shape2D, Shape2D]]
+    val contains          = mock[Contains[Shape2D]]
+    val detector          = CollisionDetector.fromGeometry(using collides, contains)
 
     collides.checkCollision
       .expects(first.placed, second.placed)
