@@ -14,7 +14,6 @@ import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockSt
 import monad_core.engine.model.{BorderSide, Vector2D}
 import monad_core.engine.physics.core.NegativeDeltaTime
 import monad_core.engine.physics.pathfinding.SizeHelper
-import monad_core.engine.physics.utils.BorderWallType
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable

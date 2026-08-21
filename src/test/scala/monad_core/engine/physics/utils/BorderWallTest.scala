@@ -184,7 +184,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       verticalHalfSize = height / 2.0,
       upperLeft = UpperLeftCorner,
       lowerRight = LowerRightCorner,
-      borderType = BorderSide.Left
+      borderSide = BorderSide.Left
     ).value._2
     val expectedSupportY = position.y -
       math.sin(math.toRadians(angle)) * (width / 2.0) / 3.0 +

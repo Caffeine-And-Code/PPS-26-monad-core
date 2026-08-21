@@ -110,7 +110,7 @@ class KinematicsRuleTest
       .withAngularSpeed(90.0)
     val scene = stateWithEntities(List(rotatingEntity))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 90.0
 
@@ -126,6 +126,6 @@ class KinematicsRuleTest
 
     val scene = stateWithEntities(List(rotatingEntity))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 10.0

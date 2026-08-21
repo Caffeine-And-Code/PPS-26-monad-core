@@ -80,8 +80,8 @@ class PaintArchitectTest
   test("DrawRectangle preserves the locatable rotation in the draw command"):
     val rotated = RectangleEntity.rotateTo(45.0).value
 
-    PaintArchitect.drawRectangle(rotated, ArchitectBaseColor)
-
+    PaintArchitect.drawRectangle(rotated, ArchitectEntityBaseColor)
+    
     inside(PaintArchitect.drainBuffer().head):
       case DrawCommand.Rectangle(_, _, _, _, rotation, _) => rotation shouldBe 45.0
 

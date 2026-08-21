@@ -67,7 +67,7 @@ class CollisionResolutionRuleTest
   test("the rule should emit the collision detected during resolution without detecting it twice"):
     val entity1   = makeMovingEntityCircle(id = "entity1", position = Vector2D(10, 10))
     val entity2   = makeFixedEntityCircle(id = "entity2", position = Vector2D(11, 10))
-    val collision = Collision(Vector2D(1, 0), 1)
+    val collision = Collision(Vector2D(1, 0), 1, Vector2D(10.5, 10))
     val scene     = stateWithEntities(List(entity1, entity2))
     val detector  = mock[CollisionDetector]
 
