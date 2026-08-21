@@ -18,9 +18,16 @@ object PaintArchitect extends Painter with ShapeArchitect:
     buffer.clear()
     commands
 
-  def baseColor: Either[EngineError, EngineColor] =
+  def baseEntityColor: Either[EngineError, EngineColor] =
     for uniqueValue <- RGBValue(255)
     yield RGB(uniqueValue, uniqueValue, uniqueValue)
+
+  def baseSurfaceColor: Either[EngineError, EngineColor] =
+    for
+      red   <- RGBValue(117)
+      green <- RGBValue(117)
+      blue  <- RGBValue(117)
+    yield RGB(red, green, blue)
 
   def teamIdColorRelation(id: TeamId): Either[EngineError, EngineColor] =
     val hash = MurmurHash3.stringHash(id.value)

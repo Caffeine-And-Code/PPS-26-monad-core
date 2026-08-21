@@ -1,6 +1,8 @@
 package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.events.EngineEvent.CollisionDetected
+import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
 import monad_core.engine.helper.DummyEntityHelper.{
@@ -12,7 +14,7 @@ import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, Negat
 import monad_core.engine.model.*
 import monad_core.engine.model.Entity.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.helper.{MockDetectorHelper, MockSceneHelper}
+import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.physics.utils.{CollisionResolver, PhysicsUtil}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -25,11 +27,11 @@ class CollisionResolutionRuleTest
     with Matchers
     with MockFactory
     with MockDetectorHelper
-    with MockSceneHelper:
+    with MockStateHelper:
 
   private val Rule = CollisionResolutionRule.collisionResolutionRule
 
-  private val MockScene   = sceneWithEntities(List())
+  private val MockScene   = stateWithEntities(List())
   given CollisionDetector = mock[CollisionDetector]
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
@@ -40,9 +42,9 @@ class CollisionResolutionRuleTest
 
   test("the rule should return the unchanged scene when there are no entities"):
 
-    val scene = sceneWithEntities(List())
+    val scene = stateWithEntities(List())
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result shouldBe scene
 
@@ -51,19 +53,33 @@ class CollisionResolutionRuleTest
     val entity1 = makeMovingEntityCircle(id = "entity1")
     val entity2 = makeFixedEntityCircle(id = "entity2")
 
-    val scene = sceneWithEntities(List(entity1, entity2))
+    val scene = stateWithEntities(List(entity1, entity2))
 
     given CollisionDetector = detectorWithoutCollision()
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity1.id).value
 
     resultEntity.position shouldBe entity1.position
     resultEntity.speed shouldBe entity1.speed
 
-  test("the rule should push mobile entity outside collision with fixed entity"):
+  test("the rule should emit the collision detected during resolution without detecting it twice"):
+    val entity1   = makeMovingEntityCircle(id = "entity1", position = Vector2D(10, 10))
+    val entity2   = makeFixedEntityCircle(id = "entity2", position = Vector2D(11, 10))
+    val collision = Collision(Vector2D(1, 0), 1)
+    val scene     = stateWithEntities(List(entity1, entity2))
+    val detector  = mock[CollisionDetector]
 
+    detector.collision.expects(entity1, entity2).returning(Some(collision)).once()
+
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using detector).value
+
+    result.events shouldBe Vector(
+      CollisionDetected(entity1.id, CollisionTarget.Entity(entity2.id), collision)
+    )
+
+  test("the rule should push mobile entity outside collision with fixed entity"):
     val mobileEntity          = makeMovingEntityCircle(id = "mobile", position = Vector2D(0, 0))
     val fixedEntity           = makeFixedEntityCircle(id = "fixed", position = Vector2D(1, 0))
     val collisionNormal       = Vector2D(1, 0)
@@ -77,7 +93,7 @@ class CollisionResolutionRuleTest
         mobileCollisionNormal,
         collisionDepth
       )
-    val scene = sceneWithEntities(List(mobileEntity, fixedEntity))
+    val scene = stateWithEntities(List(mobileEntity, fixedEntity))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -89,14 +105,13 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result.allEntities.find(_.id == mobileEntity.id).value.position shouldBe expectedPosition
 
   test(
     "the rule should resolve collision and bounce only a mobile entity colliding with a fixed entity"
   ):
-
     val collisionNormal       = Vector2D(-1, 0)
     val mobileCollisionNormal = collisionNormal.flip
     val collisionDepth        = 1.0
@@ -120,7 +135,7 @@ class CollisionResolutionRuleTest
     val expectedMovingSpeed =
       PhysicsUtil.reflectOnFixed(movingEntity.speed.value, mobileCollisionNormal)
 
-    val scene = sceneWithEntities(List(movingEntity, fixedEntity))
+    val scene = stateWithEntities(List(movingEntity, fixedEntity))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -132,7 +147,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultMoving = result.allEntities.find(_.id == movingEntity.id).value
     val resultFixed  = result.allEntities.find(_.id == fixedEntity.id).value
@@ -201,7 +216,7 @@ class CollisionResolutionRuleTest
       )
       .value
 
-    val scene = sceneWithEntities(List(entity1, entity2))
+    val scene = stateWithEntities(List(entity1, entity2))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -209,7 +224,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value
@@ -237,7 +252,7 @@ class CollisionResolutionRuleTest
     val collisionDepth  = 1.0
     val collisionPoint  = Vector2D(0.5, 0)
 
-    val scene = sceneWithEntities(List(entity1, entity2))
+    val scene = stateWithEntities(List(entity1, entity2))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -282,7 +297,7 @@ class CollisionResolutionRuleTest
 
     val expectedSpeed = PhysicsUtil.reflectOnFixed(initialSpeed, mobileCollisionNormal)
 
-    val scene = sceneWithEntities(List(circularEntity, rectangularEntity, fixedEntity))
+    val scene = stateWithEntities(List(circularEntity, rectangularEntity, fixedEntity))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -299,7 +314,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultCircular    = result.allEntities.find(_.id == circularEntity.id).value
     val resultRectangular = result.allEntities.find(_.id == rectangularEntity.id).value
@@ -324,7 +339,7 @@ class CollisionResolutionRuleTest
     val collisionDepth  = 1.0
     val collisionPoint  = Vector2D(0.5, 0)
 
-    val scene = sceneWithEntities(List(fixedEntity1, fixedEntity2))
+    val scene = stateWithEntities(List(fixedEntity1, fixedEntity2))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -336,7 +351,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultFixed1 = result.allEntities.find(_.id == fixedEntity1.id).value
     val resultFixed2 = result.allEntities.find(_.id == fixedEntity2.id).value
@@ -377,7 +392,7 @@ class CollisionResolutionRuleTest
       )
     ).value.find(_.id == entity.id).value
 
-    val scene = sceneWithEntities(List(entity, wall1, wall2))
+    val scene = stateWithEntities(List(entity, wall1, wall2))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
@@ -388,7 +403,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 

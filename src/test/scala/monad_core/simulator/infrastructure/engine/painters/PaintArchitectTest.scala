@@ -20,7 +20,7 @@ class PaintArchitectTest
     with BeforeAndAfterEach:
   val CircleEntity: Entity    = Entity.circle("CircleId", Vector2D(0, 0), 1).value
   val RectangleEntity: Entity = Entity.rectangle("RectangleId", Vector2D(0, 0), 10, 10).value
-  val ArchitectBaseColor: EngineColor = PaintArchitect.baseColor.value
+  val ArchitectEntityBaseColor: EngineColor = PaintArchitect.baseEntityColor.value
 
   override def beforeEach(): Unit =
     PaintArchitect.drainBuffer()
@@ -34,17 +34,22 @@ class PaintArchitectTest
   test("DrawCircle, provided with a Circle Locatable, enlists it in the drawing buffer"):
     val expectedCommandInList = CircleEntity.shape match
       case Shape2D.Circle(r) =>
-        DrawCommand.Circle(CircleEntity.position.x, CircleEntity.position.y, r, ArchitectBaseColor)
+        DrawCommand.Circle(
+          CircleEntity.position.x,
+          CircleEntity.position.y,
+          r,
+          ArchitectEntityBaseColor
+        )
       case _ => fail("CircleEntity is not a Circle")
 
-    PaintArchitect.drawCircle(CircleEntity, ArchitectBaseColor)
+    PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
 
     val commands = PaintArchitect.drainBuffer()
     commands.length should be(1)
     commands.head should be(expectedCommandInList)
 
   test("DrawCircle, provided with a Rectangle Locatable, does nothing"):
-    PaintArchitect.drawCircle(RectangleEntity, ArchitectBaseColor)
+    PaintArchitect.drawCircle(RectangleEntity, ArchitectEntityBaseColor)
 
     PaintArchitect.drainBuffer().length should be(0)
 
@@ -57,18 +62,18 @@ class PaintArchitectTest
           h,
           w,
           RectangleEntity.rotation,
-          ArchitectBaseColor
+          ArchitectEntityBaseColor
         )
       case _ => fail("RectangleEntity is not a Rectangle")
 
-    PaintArchitect.drawRectangle(RectangleEntity, ArchitectBaseColor)
+    PaintArchitect.drawRectangle(RectangleEntity, ArchitectEntityBaseColor)
 
     val commands = PaintArchitect.drainBuffer()
     commands.length should be(1)
     commands.head should be(expectedCommandInList)
 
   test("DrawRectangle, provided with a Circle Locatable, does nothing"):
-    PaintArchitect.drawRectangle(CircleEntity, ArchitectBaseColor)
+    PaintArchitect.drawRectangle(CircleEntity, ArchitectEntityBaseColor)
 
     PaintArchitect.drainBuffer().length should be(0)
 
@@ -81,8 +86,8 @@ class PaintArchitectTest
       case DrawCommand.Rectangle(_, _, _, _, rotation, _) => rotation shouldBe 45.0
 
   test("drainBuffer returns accumulated commands and clears internal state"):
-    PaintArchitect.drawCircle(CircleEntity, ArchitectBaseColor)
-    PaintArchitect.drawRectangle(RectangleEntity, ArchitectBaseColor)
+    PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
+    PaintArchitect.drawRectangle(RectangleEntity, ArchitectEntityBaseColor)
 
     val extractedCommands = PaintArchitect.drainBuffer()
     extractedCommands.length should be(2)

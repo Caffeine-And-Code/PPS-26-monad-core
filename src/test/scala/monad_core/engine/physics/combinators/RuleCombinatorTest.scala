@@ -1,12 +1,19 @@
 package monad_core.engine.physics.combinators
 
 import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.events.EngineEvent.EntityCreated
 import monad_core.engine.core.traits.State
 import monad_core.engine.helper.PhysicsConstantHelper.DeltaTimeOneSecond
+import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
+import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.physics.combinators.RuleCombinator
 import monad_core.engine.physics.combinators.RuleCombinator.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleError}
-import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
+import monad_core.engine.physics.core.{
+  PhysicsError,
+  PhysicsRule,
+  PhysicsRuleError,
+  PhysicsRuleResult
+}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -25,7 +32,7 @@ class RuleCombinatorTest extends AnyFunSuite with Matchers with MockFactory:
 
     val result = compositeRule(Scene0, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-    result shouldBe Scene0
+    result shouldBe PhysicsRuleResult(Scene0)
 
   test("sequence should apply rules in order and pass updated scene to next rule"):
 
@@ -36,7 +43,21 @@ class RuleCombinatorTest extends AnyFunSuite with Matchers with MockFactory:
     val compositeRule = RuleCombinator.sequence(Seq(rule1, rule2))
     val result = compositeRule(Scene0, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-    result shouldBe Scene2
+    result shouldBe PhysicsRuleResult(Scene2)
+
+  test("sequence should accumulate rule events in execution order"):
+    val entity1 = Entity.circle("entity-1", Vector2D(0, 0), 1).value
+    val entity2 = Entity.circle("entity-2", Vector2D(1, 0), 1).value
+    val event1  = EntityCreated(entity1)
+    val event2  = EntityCreated(entity2)
+    val rule1   = makeDummyRule(action = (_, _) => Right(Scene1), events = Vector(event1))
+    val rule2   = makeDummyRule(action = (_, _) => Right(Scene2), events = Vector(event2))
+
+    val result = RuleCombinator
+      .sequence(Seq(rule1, rule2))(Scene0, DeltaTimeOneSecond)
+      .value
+
+    result shouldBe PhysicsRuleResult(Scene2, Vector(event1, event2))
 
   test("sequence should short-circuit and stop execution on first error"):
     val expectedError = PhysicsRuleError("Rule 2 failed")
@@ -59,4 +80,4 @@ class RuleCombinatorTest extends AnyFunSuite with Matchers with MockFactory:
     val composedRule = rule1 + rule2
     val result = composedRule(Scene0, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
 
-    result shouldBe Scene2
+    result shouldBe PhysicsRuleResult(Scene2)

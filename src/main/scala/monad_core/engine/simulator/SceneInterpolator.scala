@@ -1,5 +1,6 @@
-package monad_core.engine.core
+package monad_core.engine.simulator
 
+import monad_core.engine.core.InvalidInterpolationAlpha
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
 import monad_core.engine.physics.utils.Rotation

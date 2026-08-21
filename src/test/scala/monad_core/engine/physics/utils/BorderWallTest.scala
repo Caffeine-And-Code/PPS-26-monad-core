@@ -4,7 +4,7 @@ import monad_core.engine.helper.DummyEntityHelper.{
   makeMovingEntityCircle,
   makeMovingEntityRectangle
 }
-import monad_core.engine.model.Vector2D
+import monad_core.engine.model.{BorderSide, Vector2D}
 import monad_core.engine.helper.PhysicsConstantHelper.DefaultRadius
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -31,7 +31,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Left
+      BorderSide.Left
     ).value
 
     val wall             = leftWallCollision._1
@@ -62,7 +62,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Right
+      BorderSide.Right
     ).value
 
     val wall              = rightWallCollision._1
@@ -93,7 +93,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Top
+      BorderSide.Top
     ).value
 
     val wall            = topWallCollision._1
@@ -124,7 +124,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Bottom
+      BorderSide.Bottom
     ).value
 
     val wall               = bottomWallCollision._1
@@ -158,7 +158,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       verticalHalfSize,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Left
+      BorderSide.Left
     ).value._2
 
     collision.collisionPoint.x shouldBe UpperLeftCorner.x
@@ -184,7 +184,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       verticalHalfSize = height / 2.0,
       upperLeft = UpperLeftCorner,
       lowerRight = LowerRightCorner,
-      borderType = BorderWallType.Left
+      borderType = BorderSide.Left
     ).value._2
     val expectedSupportY = position.y -
       math.sin(math.toRadians(angle)) * (width / 2.0) / 3.0 +

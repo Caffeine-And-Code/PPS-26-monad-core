@@ -2,6 +2,7 @@ package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
+import monad_core.engine.helper.PhysicsRuleHelper
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -11,15 +12,15 @@ class PhysicsRuleTest extends AnyFunSuite with Matchers:
       override val RuleId: String = "rule1"
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     val rule2: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule1"
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     rule1 == rule2 shouldBe true
 
@@ -29,95 +30,54 @@ class PhysicsRuleTest extends AnyFunSuite with Matchers:
 
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     val rule2: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule2"
 
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     rule1 == rule2 shouldBe false
 
   test("a PhysicsRule should have an empty id by default"):
-    val rule = new PhysicsRule:
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val rule = PhysicsRuleHelper.makeDummyRule("")
 
     rule.RuleId shouldBe ""
 
   test("two PhysicsRule instances with empty ids should not be equal"):
-    val rule1 = new PhysicsRule:
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
-
-    val rule2 = new PhysicsRule:
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val rule1 = PhysicsRuleHelper.makeDummyRule("")
+    val rule2 = PhysicsRuleHelper.makeDummyRule("")
 
     rule1 == rule2 shouldBe false
 
   test("a PhysicsRule with an empty id should not equal one with a non-empty id"):
-    val emptyIdRule = new PhysicsRule:
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val emptyIdRule = PhysicsRuleHelper.makeDummyRule("")
 
-    val namedRule: PhysicsRule = new PhysicsRule:
-      override val RuleId: String = "rule1"
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val namedRule: PhysicsRule = PhysicsRuleHelper.makeDummyRule("rule1")
 
     emptyIdRule == namedRule shouldBe false
     namedRule == emptyIdRule shouldBe false
 
   test("a PhysicsRule should equal itself"):
-    val rule: PhysicsRule = new PhysicsRule:
-      override val RuleId: String = "rule1"
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val rule: PhysicsRule = PhysicsRuleHelper.makeDummyRule("rule1")
 
     rule == rule shouldBe true
 
   test("a PhysicsRule should not equal null"):
-    val rule: PhysicsRule = new PhysicsRule:
-      override val RuleId: String = "rule1"
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val rule: PhysicsRule = PhysicsRuleHelper.makeDummyRule("rule1")
 
     rule == null shouldBe false
 
   test("a PhysicsRule with a non-empty id should use the id hash code"):
-    val rule: PhysicsRule = new PhysicsRule:
-      override val RuleId: String = "rule1"
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val rule: PhysicsRule = PhysicsRuleHelper.makeDummyRule("rule1")
 
     rule.hashCode() shouldBe "rule1".hashCode
 
   test("a PhysicsRule with an empty id should use an hash code based on an empty string"):
-    val rule = new PhysicsRule:
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        Right(scene)
+    val rule = PhysicsRuleHelper.makeDummyRule("")
 
     rule.hashCode() shouldBe "".hashCode

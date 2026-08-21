@@ -4,7 +4,7 @@ import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
 import monad_core.engine.physics.core.{
-  PhysicsDomainError,
+  PhysicsRuleResult,
   PhysicsError,
   PhysicsRule,
   PhysicsRuleError
@@ -20,7 +20,7 @@ private[physics] object KinematicsRule:
 
     override def apply(scene: State, dt: Long)(using
         detector: CollisionDetector
-    ): Either[PhysicsError, State] =
+    ): Either[PhysicsError, PhysicsRuleResult] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
@@ -28,7 +28,7 @@ private[physics] object KinematicsRule:
         updatedEntities <- applyKinematics(scene, entities, dt)
 
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
-      yield updatedScene
+      yield PhysicsRuleResult(updatedScene)
 
   private def applyKinematics(
       scene: State,

@@ -1,10 +1,7 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.*
-
-enum BorderWallType:
-  case Left, Right, Top, Bottom
+import monad_core.engine.model.{BorderSide, EngineError, Entity, Vector2D}
 
 private[engine] object BorderWall:
 
@@ -19,7 +16,7 @@ private[engine] object BorderWall:
       verticalHalfSize: Double,
       upperLeft: Vector2D,
       lowerRight: Vector2D,
-      borderType: BorderWallType
+      borderSide: BorderSide
   ): Either[EngineError, (Entity, Collision)] =
 
     val vertical   = verticalHalfSize
@@ -27,40 +24,40 @@ private[engine] object BorderWall:
     val position   = entity.position
 
     for
-      wall <- wallSelector(position, upperLeft, lowerRight, horizontal, vertical, borderType)
+      wall <- wallSelector(position, upperLeft, lowerRight, horizontal, vertical, borderSide)
 
       (normal, depth) = collisionVectorDepht(
         wall,
         upperLeft,
         lowerRight,
-        borderType
+        borderSide
       )
-      point = collisionPoint(entity, upperLeft, lowerRight, borderType)
+      point = collisionPoint(entity, upperLeft, lowerRight, borderSide)
     yield (wall, Collision(normal, depth, point))
 
   private def collisionVectorDepht(
       wall: Entity,
       upperLeft: Vector2D,
       lowerRight: Vector2D,
-      borderType: BorderWallType
+      borderSide: BorderSide
   ): (Vector2D, Double) =
-    borderType match
-      case BorderWallType.Left =>
+    borderSide match
+      case BorderSide.Left =>
         (
           Vector2D(1, 0),
           math.abs(wall.position.x - upperLeft.x)
         )
-      case BorderWallType.Right =>
+      case BorderSide.Right =>
         (
           Vector2D(-1, 0),
           math.abs(wall.position.x - lowerRight.x)
         )
-      case BorderWallType.Top =>
+      case BorderSide.Top =>
         (
           Vector2D(0, 1),
           math.abs(wall.position.y - upperLeft.y)
         )
-      case BorderWallType.Bottom =>
+      case BorderSide.Bottom =>
         (
           Vector2D(0, -1),
           math.abs(wall.position.y - lowerRight.y)
@@ -70,13 +67,13 @@ private[engine] object BorderWall:
       entity: Entity,
       upperLeft: Vector2D,
       lowerRight: Vector2D,
-      borderType: BorderWallType
+      borderSide: BorderSide
   ): Vector2D =
-    val supportDirection = borderType match
-      case BorderWallType.Left   => Vector2D(-1, 0)
-      case BorderWallType.Right  => Vector2D(1, 0)
-      case BorderWallType.Top    => Vector2D(0, -1)
-      case BorderWallType.Bottom => Vector2D(0, 1)
+    val supportDirection = borderSide match
+      case BorderSide.Left   => Vector2D(-1, 0)
+      case BorderSide.Right  => Vector2D(1, 0)
+      case BorderSide.Top    => Vector2D(0, -1)
+      case BorderSide.Bottom => Vector2D(0, 1)
 
     val supportCentre = entity.shape match
       case Shape2D.Circle(_) => entity.position
@@ -99,11 +96,11 @@ private[engine] object BorderWall:
 
         supportVertices.reduce(_ + _) * (1.0 / supportVertices.size)
 
-    borderType match
-      case BorderWallType.Left   => supportCentre.copy(x = upperLeft.x)
-      case BorderWallType.Right  => supportCentre.copy(x = lowerRight.x)
-      case BorderWallType.Top    => supportCentre.copy(y = upperLeft.y)
-      case BorderWallType.Bottom => supportCentre.copy(y = lowerRight.y)
+    borderSide match
+      case BorderSide.Left   => supportCentre.copy(x = upperLeft.x)
+      case BorderSide.Right  => supportCentre.copy(x = lowerRight.x)
+      case BorderSide.Top    => supportCentre.copy(y = upperLeft.y)
+      case BorderSide.Bottom => supportCentre.copy(y = lowerRight.y)
 
   private def moveWall(
       wall: Either[EngineError, Entity],
@@ -189,31 +186,31 @@ private[engine] object BorderWall:
       lowerRight: Vector2D,
       horizontal: Double,
       vertical: Double,
-      borderType: BorderWallType
+      borderSide: BorderSide
   ): Either[EngineError, Entity] =
-    borderType match
-      case BorderWallType.Left =>
+    borderSide match
+      case BorderSide.Left =>
         leftWall(
           position = position,
           upperLeft = upperLeft,
           horizontal = horizontal,
           vertical = vertical
         )
-      case BorderWallType.Right =>
+      case BorderSide.Right =>
         rightWall(
           position = position,
           lowerRight = lowerRight,
           horizontal = horizontal,
           vertical = vertical
         )
-      case BorderWallType.Top =>
+      case BorderSide.Top =>
         topWall(
           position = position,
           upperLeft = upperLeft,
           horizontal = horizontal,
           vertical = vertical
         )
-      case BorderWallType.Bottom =>
+      case BorderSide.Bottom =>
         bottomWall(
           position = position,
           lowerRight = lowerRight,
