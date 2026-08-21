@@ -2,10 +2,28 @@ package monad_core.engine.helper
 
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{BorderSide, Entity, Vector2D}
-import PhysicsConstantHelper.{DefaultRadius, DeltaTimeOneSecond}
+import PhysicsConstantHelper.DefaultRadius
 import DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.physics.utils.BorderWall
 import org.scalatest.EitherValues.convertEitherToValuable
+
+private[engine] case class SingleWallResult (
+    entity: Entity,
+    wall: Entity,
+    collision: Collision,
+    expectedPosition: Vector2D,
+    expectedSpeed: Vector2D
+  )
+
+private[engine] case class CornerWallResult (
+    entity: Entity,
+    wall1: Entity,
+    collision1: Collision,
+    wall2: Entity,
+    collision2: Collision,
+    expectedPosition: Vector2D,
+    expectedSpeed: Vector2D
+  )
 
 private[engine] object BorderContactHelper:
 
@@ -14,13 +32,7 @@ private[engine] object BorderContactHelper:
       upperLeft: Vector2D,
       lowerRight: Vector2D,
       entityId: String = "entity"
-  ): (
-      Entity,
-      Entity,
-      Collision,
-      Vector2D,
-      Vector2D
-  ) =
+  ): SingleWallResult =
     val values = borderSide match
       case BorderSide.Left =>
         (
@@ -66,22 +78,14 @@ private[engine] object BorderContactHelper:
       borderSide
     ).value
 
-    (entity, wallCollision._1, wallCollision._2, values._3, values._4)
+    SingleWallResult(entity, wallCollision._1, wallCollision._2, values._3, values._4)
 
   def generateCornerEntities(
       borderSideV: BorderSide,
       borderSideH: BorderSide,
       upperLeft: Vector2D,
       lowerRight: Vector2D
-  ): (
-      Entity,
-      Entity,
-      Collision,
-      Entity,
-      Collision,
-      Vector2D,
-      Vector2D
-  ) =
+  ): CornerWallResult =
 
     val values = (borderSideV, borderSideH) match
       case (BorderSide.Left, BorderSide.Top) =>
@@ -143,7 +147,7 @@ private[engine] object BorderContactHelper:
       borderSideH
     ).value
 
-    (
+    CornerWallResult(
       entity,
       verticalWall._1,
       verticalWall._2,

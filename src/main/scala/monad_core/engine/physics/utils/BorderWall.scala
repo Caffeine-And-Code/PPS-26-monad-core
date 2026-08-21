@@ -3,6 +3,11 @@ package monad_core.engine.physics.utils
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
 
+private[engine] case class BorderWallResult(
+    wall: Entity,
+    collision: Collision
+ )
+
 private[engine] object BorderWall:
 
   private val LeftWallId   = "left-wall"
@@ -17,7 +22,7 @@ private[engine] object BorderWall:
       upperLeft: Vector2D,
       lowerRight: Vector2D,
       borderSide: BorderSide
-  ): Either[EngineError, (Entity, Collision)] =
+  ): Either[EngineError, BorderWallResult] =
 
     val vertical   = verticalHalfSize
     val horizontal = horizontalHalfSize
@@ -33,7 +38,7 @@ private[engine] object BorderWall:
         borderSide
       )
       point = collisionPoint(entity, upperLeft, lowerRight, borderSide)
-    yield (wall, Collision(normal, depth, point))
+    yield BorderWallResult(wall, Collision(normal, depth, point))
 
   private def collisionVectorDepht(
       wall: Entity,

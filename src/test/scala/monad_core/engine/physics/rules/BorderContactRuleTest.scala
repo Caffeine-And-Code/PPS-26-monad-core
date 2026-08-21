@@ -41,16 +41,14 @@ class BorderContactRuleTest
       LowerRightBound
     )
 
-    val (entity, wall, collision, expectedPosition, expectedSpeed) = defaultValues
-
-    val scene = stateWithEntities(List(entity))
+    val scene = stateWithEntities(List(defaultValues.entity))
 
     given CollisionDetector = detectorWithCollisions(
       Map(
-        (entity.id.value, wall.id.value) -> (
-          collision.normalVector,
-          collision.penetrationDepth,
-          collision.collisionPoint
+        (defaultValues.entity.id.value, defaultValues.wall.id.value) -> (
+          defaultValues.collision.normalVector,
+          defaultValues.collision.penetrationDepth,
+          defaultValues.collision.collisionPoint
         )
       )
     )
@@ -58,12 +56,12 @@ class BorderContactRuleTest
     val outcome = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
     val result  = outcome.state
 
-    val resultEntity = result.allEntities.find(_.id == entity.id).get
+    val resultEntity = result.allEntities.find(_.id == defaultValues.entity.id).get
 
-    resultEntity.position shouldBe expectedPosition
-    resultEntity.speed shouldBe Some(expectedSpeed)
+    resultEntity.position shouldBe defaultValues.expectedPosition
+    resultEntity.speed shouldBe Some(defaultValues.expectedSpeed)
     outcome.events shouldBe Vector(
-      CollisionDetected(entity.id, CollisionTarget.Border(borderSide), collision)
+      CollisionDetected(defaultValues.entity.id, CollisionTarget.Border(borderSide), defaultValues.collision)
     )
 
   private def testCornerWall(borderSideV: BorderSide, borderSideH: BorderSide) =
@@ -202,18 +200,18 @@ class BorderContactRuleTest
       entityId = "entity2"
     )
 
-    val entity1    = data1._1
-    val wall1      = data1._2
-    val collision1 = data1._3
+    val entity1    = data1.entity
+    val wall1      = data1.wall
+    val collision1 = data1.collision
 
-    val entity2    = data2._1
-    val wall2      = data2._2
-    val collision2 = data2._3
+    val entity2    = data2.entity
+    val wall2      = data2.wall
+    val collision2 = data2.collision
 
-    val expectedPosition1 = data1._4
-    val expectedSpeed1    = data1._5
-    val expectedPosition2 = data2._4
-    val expectedSpeed2    = data2._5
+    val expectedPosition1 = data1.expectedPosition
+    val expectedSpeed1    = data1.expectedSpeed
+    val expectedPosition2 = data2.expectedPosition
+    val expectedSpeed2    = data2.expectedSpeed
 
     val scene = stateWithEntities(List(entity1, entity2))
 

@@ -123,7 +123,7 @@ private[physics] object BorderContactRule:
             upperLeft,
             lowerRight,
             borderSide
-          ).map { case (wall, collision) =>
+          ).map { case BorderWallResult(wall, collision) =>
             walls :+ (borderSide, wall, collision)
           }
       }
