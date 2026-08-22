@@ -11,45 +11,24 @@ private[physics] object BounceResponse:
       other: Entity,
       collision: Collision
   ): Either[PhysicsError, Entity] =
-    (entity.speed, entity.angularSpeed) match
-      case (Some(speed), None) =>
-        resolveBounce(entity, other, speed, collision)
-      case (Some(speed), Some(angularSpeed)) =>
-        resolveBounceAndRotation(entity, other, speed, angularSpeed, collision)
-      case (None, Some(angularSpeed)) =>
-        resolveRotation(entity, other, angularSpeed, collision)
-      case _ =>
+    (entity.speed, entity.angularSpeed, other.angularSpeed) match
+      case (None, None, _) =>
         Right(entity)
 
-  private def resolveBounce(
-      entity: Entity,
-      other: Entity,
-      entitySpeed: Vector2D,
-      collision: Collision
-  ): Either[PhysicsError, Entity] =
-    other.angularSpeed match
-      case None =>
-        val reflectedSpeed = resolveBasicBounce(
-          entity,
-          other,
-          entitySpeed,
-          collision
-        )
+      case (Some(speed), None, None) =>
+        resolveBasicBounce(entity, other, speed, collision)
 
-        reflectedSpeed.map(entity.withSpeed)
       case _ =>
         CollisionVelocityDelta(entity, other, collision)
-          .map:
-            case VelocityDelta(speedChange, _) =>
-              entity.withSpeed(entitySpeed + speedChange)
+          .map(applyVelocityDelta(entity, _))
 
   private def resolveBasicBounce(
       entity: Entity,
       other: Entity,
       entitySpeed: Vector2D,
       collision: Collision
-  ): Either[PhysicsError, Vector2D] =
-    other.speed match
+  ): Either[PhysicsError, Entity] =
+    val newSpeed = other.speed match
       case None =>
         Right(PhysicsUtil.reflectOnFixed(entitySpeed, collision.normalVector))
       case Some(otherSpeed) =>
@@ -61,27 +40,17 @@ private[physics] object BounceResponse:
           other.weight
         )
 
-  private def resolveBounceAndRotation(
-      entity: Entity,
-      other: Entity,
-      entitySpeed: Vector2D,
-      angularSpeed: Double,
-      collision: Collision
-  ): Either[PhysicsError, Entity] =
-    CollisionVelocityDelta(entity, other, collision)
-      .map:
-        case VelocityDelta(speedChange, angularSpeedChange) =>
-          entity
-            .withSpeed(entitySpeed + speedChange)
-            .withAngularSpeed(angularSpeed + angularSpeedChange)
+    newSpeed.map(entity.withSpeed)
 
-  private def resolveRotation(
+  private def applyVelocityDelta(
       entity: Entity,
-      other: Entity,
-      angularSpeed: Double,
-      collision: Collision
-  ): Either[PhysicsError, Entity] =
-    CollisionVelocityDelta(entity, other, collision)
-      .map:
-        case VelocityDelta(_, angularSpeedChange) =>
-          entity.withAngularSpeed(angularSpeed + angularSpeedChange)
+      delta: VelocityDelta
+  ): Entity =
+    val withLinearDelta =
+      entity.speed.fold(entity): speed =>
+        entity.withSpeed(speed + delta.speed)
+
+    entity.angularSpeed.fold(withLinearDelta): angularSpeed =>
+      withLinearDelta.withAngularSpeed(
+        angularSpeed + delta.angularSpeed
+      )
