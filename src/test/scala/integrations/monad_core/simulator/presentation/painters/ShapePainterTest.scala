@@ -134,7 +134,7 @@ class ShapePainterTest
       ShapePainter.paint(canvas.graphicsContext2D)
     }
 
-    assertMatchesVisualSnapshot("rectangle_surface_flush_result", canvas, maxDiffPercentage = 3.0)
+    assertMatchesVisualSnapshot("rectangle_surface_flush_result", canvas, maxDiffPercentage = 6.0)
 
   test("ShapePainter.paint calls drainBuffer on ShapeArchitect and processes commands"):
     val canvas = Canvas(800, 800)

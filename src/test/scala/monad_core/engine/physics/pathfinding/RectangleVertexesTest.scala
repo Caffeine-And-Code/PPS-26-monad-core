@@ -12,11 +12,11 @@ class RectangleVertexesTest extends AnyFunSuite with Matchers:
   private val Shape: Rectangle = Shape2D.rectangle(length = 4.0, height = 3.0).value
   private val Position         = Vector2D(4.0, 5.0)
   private val Rotation         = 30.0
-  private val Tolerance        = 1e-9
+  private val Epsilon          = 1e-9
 
   private def assertVector(actual: Vector2D, expected: Vector2D): Unit =
-    actual.x shouldBe expected.x +- Tolerance
-    actual.y shouldBe expected.y +- Tolerance
+    actual.x shouldBe expected.x +- Epsilon
+    actual.y shouldBe expected.y +- Epsilon
 
   test(
     "this extension should generate correct vertexes for a given rectangle, its center, and number of vertexes"
@@ -107,5 +107,5 @@ class RectangleVertexesTest extends AnyFunSuite with Matchers:
     val horizontalSize = Shape.horizontalSize(Position, rotation = 90.0)
     val verticalSize   = Shape.verticalSize(Position, rotation = 90.0)
 
-    horizontalSize shouldBe Shape.height +- Tolerance
-    verticalSize shouldBe Shape.length +- Tolerance
+    horizontalSize shouldBe Shape.height +- Epsilon
+    verticalSize shouldBe Shape.length +- Epsilon

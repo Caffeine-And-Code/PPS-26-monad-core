@@ -237,24 +237,53 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
       entity.rotation shouldBe rotation
 
-  test("cannot create or rotate an entity outside the valid degree interval"):
-    val entity            = ValidEntity.value
-    val negativeRotation  = -1
-    val excessiveRotation = 361
+  test("cannot create an entity with a rotation under 0 degrees"):
+    val entity           = ValidEntity.value
+    val negativeRotation = -1
 
     val creationResult = Entity.circle("entity", ValidPosition, 2, negativeRotation)
-    val rotationResult = entity.rotateTo(excessiveRotation)
 
     creationResult shouldBe Left(RotationMustBeAValidDegreeValue(negativeRotation))
+
+  test("cannot create an entity with a rotation over 360 degrees"):
+    val entity            = ValidEntity.value
+    val excessiveRotation = 361
+
+    val creationResult = Entity.circle("entity", ValidPosition, 2, excessiveRotation)
+
+    creationResult shouldBe Left(RotationMustBeAValidDegreeValue(excessiveRotation))
+
+  test("cannot rotate an entity with a rotation under 0 degrees"):
+    val entity           = ValidEntity.value
+    val negativeRotation = -1
+
+    val rotationResult = entity.rotateTo(negativeRotation)
+
+    rotationResult shouldBe Left(RotationMustBeAValidDegreeValue(negativeRotation))
+
+  test("cannot rotate an entity with a rotation over 360 degrees"):
+    val entity            = ValidEntity.value
+    val excessiveRotation = 361
+
+    val rotationResult = entity.rotateTo(excessiveRotation)
+
     rotationResult shouldBe Left(RotationMustBeAValidDegreeValue(excessiveRotation))
 
-  test("can add and remove angular speed from an entity"):
+  test("can set angular speed to an entity"):
     val entity       = ValidEntity.value
     val angularSpeed = -45
 
     val rotatingEntity = entity.withAngularSpeed(angularSpeed)
-    val fixedEntity    = rotatingEntity.withoutAngularSpeed
 
     rotatingEntity.angularSpeed shouldBe Some(angularSpeed)
     rotatingEntity.isFixed shouldBe false
-    fixedEntity.angularSpeed shouldBe None
+
+  test("can unset angular speed to an entity"):
+    val entity       = ValidEntity.value
+    val angularSpeed = -45
+
+    val rotatingEntity = entity.withAngularSpeed(angularSpeed)
+    val stoppedEntity  = entity.withoutAngularSpeed
+
+    stoppedEntity.angularSpeed shouldBe None
+    stoppedEntity.isFixed shouldBe true

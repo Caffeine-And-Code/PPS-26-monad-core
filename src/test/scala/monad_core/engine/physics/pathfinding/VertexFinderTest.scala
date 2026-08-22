@@ -2,8 +2,6 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{Entity, Shape2D, Vector2D, euclideanDistance}
-import CircleVertexes.vertexes
-import RectangleVertexes.vertexes
 import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
 import monad_core.engine.physics.pathfinding.CircleVertexes.vertexes
 import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
@@ -14,6 +12,7 @@ import org.scalatest.matchers.should.Matchers
 class VertexFinderTest extends AnyFunSuite with Matchers:
 
   private val CircleVertexesNumber = 16
+  private val Epsilon              = 1e-9
 
   test("the VertexFinder should return an empty map when the entities list is empty"):
     val entities = List.empty
@@ -66,5 +65,5 @@ class VertexFinderTest extends AnyFunSuite with Matchers:
     )
 
     expected.foreach { vertex =>
-      result.exists(_.euclideanDistance(vertex) <= 1e-9) shouldBe true
+      result.exists(_.euclideanDistance(vertex) <= Epsilon) shouldBe true
     }

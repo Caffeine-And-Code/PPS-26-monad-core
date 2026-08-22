@@ -2,7 +2,11 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeFixedEntityCircle,
+  makeMovingEntityCircle,
+  makeMovingEntityRectangle
+}
 import monad_core.engine.helper.DummySurfaceHelper.makeSurfaceCircle
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
@@ -330,3 +334,32 @@ class SurfaceDynamicsRuleTest
 
     result.angularSpeed.value shouldBe 67.5
     result.speed shouldBe None
+
+  test("surface friction should not reverse angular speed of an entity"):
+    val entity = makeFixedEntityCircle(id = "rotating")
+      .withAngularSpeed(10.0)
+
+    val surface = makeSurfaceCircle(position = Vector2D(0.0, 0.0), radius = 5.0)
+      .withFrictionIndex(1.0)
+      .value
+
+    val result = SurfaceDynamicsRule
+      .applySurfaceDynamics(entity, surface, DeltaTimeOneSecond)
+      .value
+
+    result.angularSpeed.value shouldBe 0.0
+
+  test("surface friction should not give an angular speed to a non-rotating entity"):
+    val entity = makeMovingEntityRectangle(
+      position = Vector2D(0.0, 0.0)
+    )
+
+    val surface = makeSurfaceCircle(position = Vector2D(0.0, 0.0), radius = 5.0)
+      .withFrictionIndex(1.0)
+      .value
+
+    val result = SurfaceDynamicsRule
+      .applySurfaceDynamics(entity, surface, DeltaTimeOneSecond)
+      .value
+
+    result.angularSpeed shouldBe None

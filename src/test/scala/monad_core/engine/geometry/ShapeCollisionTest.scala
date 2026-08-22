@@ -10,6 +10,8 @@ import org.scalatest.prop.TableDrivenPropertyChecks.*
 
 class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
+  private val Epsilon = 1e-9
+
   test("circle collides with another circle"):
     val cases = Table(
       (
@@ -61,7 +63,7 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     result shouldBe Some(Collision(Vector2D(1, 0), 0, Vector2D(2, 0)))
 
-  test("concentric circles return a usable collision normal"):
+  test("concentric circles returns a collision"):
     val first  = Placed(Vector2D(0, 0), Shape2D.circle(2).value)
     val second = Placed(Vector2D(0, 0), Shape2D.circle(1).value)
 
@@ -71,9 +73,8 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
     collision.penetrationDepth shouldBe 3.0
 
   test("circles separated by exactly epsilon use the fallback collision normal"):
-    val epsilon = 1e-9
-    val first   = Placed(Vector2D(0, 0), Shape2D.circle(2).value)
-    val second  = Placed(Vector2D(0, epsilon), Shape2D.circle(1).value)
+    val first  = Placed(Vector2D(0, 0), Shape2D.circle(2).value)
+    val second = Placed(Vector2D(0, Epsilon), Shape2D.circle(1).value)
 
     val collision = ShapeCollision.circleCollidesWithCircle.checkCollision(first, second).value
 
@@ -161,20 +162,20 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       .checkCollision(first, second)
       .value
 
-    collision.normalVector.x shouldBe 0.0 +- 1e-9
-    collision.normalVector.y shouldBe 1.0 +- 1e-9
-    collision.penetrationDepth shouldBe 1.0 +- 1e-9
-    collision.collisionPoint.x shouldBe 10.0 +- 1e-9
-    collision.collisionPoint.y shouldBe 11.5 +- 1e-9
+    collision.normalVector.x shouldBe 0.0 +- Epsilon
+    collision.normalVector.y shouldBe 1.0 +- Epsilon
+    collision.penetrationDepth shouldBe 1.0 +- Epsilon
+    collision.collisionPoint.x shouldBe 10.0 +- Epsilon
+    collision.collisionPoint.y shouldBe 11.5 +- Epsilon
 
   test("rectangle contact point should remain stable across tiny rotations"):
     val first = Placed(Vector2D(0, 0), Shape2D.rectangle(2, 4).value)
     val clockwise = Placed(
       Vector2D(0, 1.9),
       Shape2D.rectangle(2, 4).value,
-      -1e-6
+      -Epsilon
     )
-    val counterClockwise = clockwise.copy(rotation = 1e-6)
+    val counterClockwise = clockwise.copy(rotation = Epsilon)
 
     val firstPoint = ShapeCollision.rectangleCollidesWithRectangle
       .checkCollision(first, clockwise)
@@ -185,24 +186,23 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       .value
       .collisionPoint
 
-    math.hypot(firstPoint.x - secondPoint.x, firstPoint.y - secondPoint.y) should be < 1e-4
+    math.hypot(firstPoint.x - secondPoint.x, firstPoint.y - secondPoint.y) should be < Epsilon
 
   test("rectangle clipping includes vertices exactly at epsilon"):
-    val epsilon = 1e-9
     val first = Placed(
-      Vector2D(epsilon, 0.0),
-      Shape2D.rectangle(2.0 * epsilon, 2.0 * epsilon).value
+      Vector2D(Epsilon, 0.0),
+      Shape2D.rectangle(2.0 * Epsilon, 2.0 * Epsilon).value
     )
     val second = Placed(
       Vector2D(0.0, 0.0),
-      Shape2D.rectangle(2.0 * epsilon, 2.0 * epsilon).value
+      Shape2D.rectangle(2.0 * Epsilon, 2.0 * Epsilon).value
     )
 
     val collision = ShapeCollision.rectangleCollidesWithRectangle
       .checkCollision(first, second)
       .value
 
-    collision.collisionPoint.x shouldBe epsilon
+    collision.collisionPoint.x shouldBe Epsilon
     collision.collisionPoint.y shouldBe 0.0
 
   test("intersection center falls back to the midpoint when clipping is empty"):
@@ -266,11 +266,11 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
 
     val collision = ShapeCollision.circleCollidesWithRectangle.checkCollision(circle, rectangle).get
 
-    collision.normalVector.x shouldBe 0.0 +- 0.1
-    collision.normalVector.y shouldBe -1.0 +- 0.1
-    collision.penetrationDepth shouldBe 1.0 +- 0.1
-    collision.collisionPoint.x shouldBe 0.0 +- 0.1
-    collision.collisionPoint.y shouldBe 3.0 +- 0.1
+    collision.normalVector.x shouldBe 0.0 +- Epsilon
+    collision.normalVector.y shouldBe -1.0 +- Epsilon
+    collision.penetrationDepth shouldBe 1.0 +- Epsilon
+    collision.collisionPoint.x shouldBe 0.0 +- Epsilon
+    collision.collisionPoint.y shouldBe 3.0 +- Epsilon
 
   test("a circle touching a rectangle boundary collides with zero penetration"):
     val circle    = Placed(Vector2D(5, 0), Shape2D.circle(2).value)
@@ -368,11 +368,11 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       .checkCollision(second, first)
       .value
 
-    direct.normalVector.x shouldBe -reverse.normalVector.x +- 1e-9
-    direct.normalVector.y shouldBe -reverse.normalVector.y +- 1e-9
-    direct.penetrationDepth shouldBe reverse.penetrationDepth +- 1e-9
-    direct.collisionPoint.x shouldBe reverse.collisionPoint.x +- 1e-9
-    direct.collisionPoint.y shouldBe reverse.collisionPoint.y +- 1e-9
+    direct.normalVector.x shouldBe -reverse.normalVector.x +- Epsilon
+    direct.normalVector.y shouldBe -reverse.normalVector.y +- Epsilon
+    direct.penetrationDepth shouldBe reverse.penetrationDepth +- Epsilon
+    direct.collisionPoint.x shouldBe reverse.collisionPoint.x +- Epsilon
+    direct.collisionPoint.y shouldBe reverse.collisionPoint.y +- Epsilon
 
   test("the contact region center should follow a contained rotated rectangle"):
     val outer = Placed(Vector2D(0.0, 0.0), Shape2D.rectangle(10.0, 10.0).value)
@@ -382,13 +382,13 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       .checkCollision(outer, inner)
       .value
 
-    collision.collisionPoint.x shouldBe inner.center.x +- 1e-9
-    collision.collisionPoint.y shouldBe inner.center.y +- 1e-9
+    collision.collisionPoint.x shouldBe inner.center.x +- Epsilon
+    collision.collisionPoint.y shouldBe inner.center.y +- Epsilon
 
   test("rectangle contact point should remain finite for edge contact"):
     val first = Placed(Vector2D(0.0, 0.0), Shape2D.rectangle(4.0, 4.0).value, 45.0)
     val second = Placed(
-      Vector2D(4.0 * math.sqrt(2.0) - 1e-8, 0.0),
+      Vector2D(4.0 * math.sqrt(2.0) - Epsilon, 0.0),
       Shape2D.rectangle(4.0, 4.0).value,
       45.0
     )
@@ -413,11 +413,11 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       .checkCollision(circle, rectangle)
       .value
 
-    collision.normalVector.x shouldBe 0.0 +- 1e-9
-    collision.normalVector.y shouldBe -1.0 +- 1e-9
-    collision.penetrationDepth shouldBe 2.0 +- 1e-9
-    collision.collisionPoint.x shouldBe 10.0 +- 1e-9
-    collision.collisionPoint.y shouldBe 12.0 +- 1e-9
+    collision.normalVector.x shouldBe 0.0 +- Epsilon
+    collision.normalVector.y shouldBe -1.0 +- Epsilon
+    collision.penetrationDepth shouldBe 2.0 +- Epsilon
+    collision.collisionPoint.x shouldBe 10.0 +- Epsilon
+    collision.collisionPoint.y shouldBe 12.0 +- Epsilon
 
   test("a centered circle inside a rectangle should use a deterministic nearest edge"):
     val circle    = Placed(Vector2D(0.0, 0.0), Shape2D.circle(1.0).value)
@@ -438,9 +438,9 @@ class ShapeCollisionTest extends AnyFunSuite with Matchers:
       .checkCollision(circle, rectangle)
       .value
 
-    collision.penetrationDepth shouldBe 0.0 +- 1e-9
-    collision.normalVector.x shouldBe -1.0 / radius +- 1e-9
-    collision.normalVector.y shouldBe -1.0 / radius +- 1e-9
+    collision.penetrationDepth shouldBe 0.0 +- Epsilon
+    collision.normalVector.x shouldBe -1.0 / radius +- Epsilon
+    collision.normalVector.y shouldBe -1.0 / radius +- Epsilon
     collision.collisionPoint shouldBe Vector2D(3.0, 3.0)
 
   test("a circle outside a rectangle corner should not collide"):

@@ -252,6 +252,7 @@ class BorderContactRuleTest
       height = 10.0,
       speed = Vector2D(-1.0, 0.0)
     ).rotateTo(30.0).value.withWeight(1).value
+
     val scene             = stateWithEntities(List(entity))
     val expectedHalfWidth = SizeHelper.horizontalShapeSize(entity) / 2
 

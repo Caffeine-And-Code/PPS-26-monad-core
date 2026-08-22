@@ -16,6 +16,8 @@ import org.scalatest.matchers.should.Matchers
 
 class BounceResponseTest extends AnyFunSuite with Matchers:
 
+  private val Epsilon = 1e-9
+
   private val HorizontalCollision = Collision(
     normalVector = Vector2D(1.0, 0.0),
     penetrationDepth = 0.0,
@@ -67,17 +69,20 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       position = Vector2D(0.0, 0.0),
       speed = Vector2D(1.0, 0.0)
     ).withWeight(1).value
+
     val other = makeFixedEntityRectangle(
       id = "rotating",
       position = Vector2D(2.0, 0.0),
       width = 2.0,
       height = 2.0
     ).withWeight(1).value.withAngularSpeed(360.0)
+
     val collision = Collision(
       normalVector = Vector2D(-1.0, 0.0),
       penetrationDepth = 0.0,
       collisionPoint = Vector2D(1.0, 1.0)
     )
+
     val expectedChange = CollisionVelocityDelta(entity, other, collision).value._1
 
     val result = BounceResponse(entity, other, collision).value
@@ -91,12 +96,15 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       height = 2.0,
       speed = Vector2D(-1.0, 0.0)
     ).withWeight(1).value.withAngularSpeed(0.0)
+
     val wall = makeFixedEntityCircle(id = "wall")
+
     val collision = Collision(
       normalVector = Vector2D(1.0, 0.0),
       penetrationDepth = 0.0,
       collisionPoint = Vector2D(4.0, 7.0)
     )
+
     val expectedSpeeds =
       CollisionVelocityDelta(entity, wall, collision).value
     val linearChange  = expectedSpeeds.speed
@@ -112,13 +120,15 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       position = Vector2D(0.0, 0.0),
       speed = Vector2D(-2.0, 0.0)
     ).withWeight(1).value.withAngularSpeed(15.0)
-    val wall      = makeFixedEntityRectangle(id = "wall")
+
+    val wall = makeFixedEntityRectangle(id = "wall")
+
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(-1.0, 0.0))
 
     val result = BounceResponse(entity, wall, collision).value
 
-    result.speed.value.x shouldBe 2.0 +- 1e-9
-    result.angularSpeed.value shouldBe 15.0 +- 1e-9
+    result.speed.value.x shouldBe 2.0 +- Epsilon
+    result.angularSpeed.value shouldBe 15.0 +- Epsilon
 
   test("a rotation-only entity should change angular speed without acquiring linear speed"):
     val entity = makeFixedEntityRectangle(
@@ -126,31 +136,38 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       width = 2.0,
       height = 2.0
     ).withWeight(1).value.withAngularSpeed(0.0)
+
     val other = makeMovingEntityCircle(
       id = "other",
       position = Vector2D(-2.0, 0.0),
       speed = Vector2D(1.0, 0.0)
     ).withWeight(1).value
+
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, 1.0))
+
+    val expectedAngular = CollisionVelocityDelta(entity, other, collision).value.angularSpeed
 
     val result = BounceResponse(entity, other, collision).value
 
-    result.position shouldBe entity.position
     result.speed shouldBe None
-    result.angularSpeed.value should not be 0.0
+    result.angularSpeed.value shouldBe expectedAngular
 
   test("a rotation-only entity should remain unchanged when contact points are separating"):
     val entity = makeFixedEntityRectangle()
       .withWeight(1)
       .value
       .withAngularSpeed(0.0)
+
     val other = makeMovingEntityCircle(
       id = "other",
       speed = Vector2D(-1.0, 0.0)
     ).withWeight(1).value
+
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, 1.0))
 
-    BounceResponse(entity, other, collision).value shouldBe entity
+    val result = BounceResponse(entity, other, collision).value
+
+    result shouldBe entity
 
   test("a rotating entity should require a mass"):
     val entity = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0)).withAngularSpeed(0.0)
@@ -164,6 +181,7 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       speed = Vector2D(-1.0, 0.0),
       rotation = 25.0
     ).withWeight(2).value.withAngularSpeed(10.0)
+
     val wall = makeFixedEntityRectangle(id = "wall")
 
     val result = BounceResponse(entity, wall, HorizontalCollision).value

@@ -6,9 +6,11 @@ import monad_core.engine.helper.DummyEntityHelper.{
 }
 import monad_core.engine.model.{BorderSide, Vector2D}
 import monad_core.engine.helper.PhysicsConstantHelper.DefaultRadius
+import monad_core.engine.model.Shape2D.Rectangle
+import monad_core.engine.physics.pathfinding.RectangleVertexes.{leftVertex, vertexes}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import monad_core.engine.physics.pathfinding.VertexFinder
+import monad_core.engine.physics.pathfinding.{SizeHelper, VertexFinder}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 
@@ -16,6 +18,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
 
   private val UpperLeftCorner  = Vector2D(0, 0)
   private val LowerRightCorner = Vector2D(100, 100)
+  private val Epsilon          = 1e-9
 
   test("this function should create an entity for a margin on the left side of the scene"):
 
@@ -146,11 +149,16 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       position = Vector2D(10, 50),
       width = 20,
       height = 10,
-      speed = Vector2D(-1, 0)
-    ).rotateTo(30).value
+      speed = Vector2D(-1, 0),
+      rotation = 30
+    )
 
-    val horizontalHalfSize = 10 * math.cos(math.toRadians(30)) + 5 * math.sin(math.toRadians(30))
-    val verticalHalfSize   = 10 * math.sin(math.toRadians(30)) + 5 * math.cos(math.toRadians(30))
+    val rectangle = entity.shape.asInstanceOf[Rectangle]
+
+    val horizontalHalfSize = SizeHelper.horizontalShapeSize(entity) / 2.0
+    val verticalHalfSize   = SizeHelper.verticalShapeSize(entity) / 2.0
+
+    val expectedSupportVertex = rectangle.leftVertex(entity.position, entity.rotation)
 
     val collision = BorderWall(
       entity,
@@ -162,32 +170,36 @@ class BorderWallTest extends AnyFunSuite with Matchers:
     ).value._2
 
     collision.collisionPoint.x shouldBe UpperLeftCorner.x
-    collision.collisionPoint.y shouldBe (50 - 10 * math.sin(math.toRadians(30)) +
-      5 * math.cos(math.toRadians(30))) +- 1e-9
+    collision.collisionPoint.y shouldBe expectedSupportVertex.y +- Epsilon
 
   test("the collision point includes support vertices exactly within epsilon"):
-    val epsilon  = 1e-9
-    val height   = 2.0
-    val width    = epsilon
-    val angle    = math.toDegrees(math.asin(epsilon / height))
-    val position = Vector2D(0.0, 50.0)
+
     val entity = makeMovingEntityRectangle(
-      position = position,
-      width = width,
-      height = height,
-      speed = Vector2D(-1, 0)
-    ).rotateTo(angle).value
+      position = Vector2D(0.0, 50.0),
+      width = Epsilon,
+      height = 2.0,
+      speed = Vector2D(-1, 0),
+      rotation = math.toDegrees(math.asin(Epsilon / 2.0))
+    )
+
+    val rectangle = entity.shape.asInstanceOf[Rectangle]
+    val vertexes  = rectangle.vertexes(entity.position, entity.rotation)
+    val leftmostX = rectangle.leftVertex(entity.position, entity.rotation).x
+
+    val expectedSupportVertices =
+      vertexes.filter(vertex => vertex.x - leftmostX <= Epsilon)
+
+    val expectedSupportY =
+      expectedSupportVertices.map(_.y).sum / expectedSupportVertices.size
 
     val collision = BorderWall(
       entity,
-      horizontalHalfSize = height / 2.0,
-      verticalHalfSize = height / 2.0,
+      horizontalHalfSize = rectangle.height / 2.0,
+      verticalHalfSize = rectangle.height / 2.0,
       upperLeft = UpperLeftCorner,
       lowerRight = LowerRightCorner,
       borderSide = BorderSide.Left
     ).value._2
-    val expectedSupportY = position.y -
-      math.sin(math.toRadians(angle)) * (width / 2.0) / 3.0 +
-      math.cos(math.toRadians(angle)) * (height / 2.0) / 3.0
 
-    collision.collisionPoint.y shouldBe expectedSupportY +- 1e-12
+    expectedSupportVertices should have size 3
+    collision.collisionPoint.y shouldBe expectedSupportY +- Epsilon

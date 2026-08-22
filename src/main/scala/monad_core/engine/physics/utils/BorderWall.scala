@@ -37,17 +37,16 @@ private[engine] object BorderWall:
     val horizontal = horizontalHalfSize
     val position   = entity.position
 
-    for
-      wall <- wallSelector(position, upperLeft, lowerRight, horizontal, vertical, borderSide)
-
-      (normal, depth) = collisionVectorDepht(
+    for wall <- wallSelector(position, upperLeft, lowerRight, horizontal, vertical, borderSide)
+    yield
+      val (normal, depth) = collisionVectorDepht(
         wall,
         upperLeft,
         lowerRight,
         borderSide
       )
-      point = collisionPoint(entity, upperLeft, lowerRight, borderSide)
-    yield BorderWallResult(wall, Collision(normal, depth, point))
+      val point = collisionPoint(entity, upperLeft, lowerRight, borderSide)
+      BorderWallResult(wall, Collision(normal, depth, point))
 
   private def collisionVectorDepht(
       wall: Entity,
