@@ -6,6 +6,8 @@ La strategia di testing di **MonadCore2D** è stata costruita su più livelli, i
 
 Il framework di riferimento è **ScalaTest**, utilizzato prevalentemente tramite `AnyFunSuite`, `Matchers` e gli helper per ispezionare valori `Either` e `Option`. **ScalaMock** permette di isolare le dipendenze e di verificare il protocollo di interazione tra componenti: chiamate effettuate, argomenti ricevuti, ordine delle operazioni e metodi che non devono essere invocati. Per insiemi di casi omogenei vengono impiegati anche i test table-driven di ScalaTest, utili soprattutto per intervalli numerici, combinazioni di forme e varianti dei componenti grafici.
 
+**SWI-Prolog** viene utilizzato per generare alcuni insiemi combinatori di dati di test. I relativi task SBT sono registrati come `Test / sourceGenerators`, così i risultati prodotti da Prolog vengono trasformati in sorgenti Scala nella directory `Test / sourceManaged` prima della compilazione della suite.
+
 I test dell'interfaccia utilizzano direttamente **ScalaFX** e **JavaFX**, con helper dedicati all'inizializzazione del toolkit e all'esecuzione delle operazioni sul JavaFX Application Thread. Il progetto integra inoltre un sistema realizzato internamente per gli snapshot strutturali e visuali.
 
 La copertura viene misurata tramite il runner di **IntelliJ IDEA**, scelto dal gruppo come strumento di sviluppo e analisi. La qualità delle asserzioni dell'engine può essere valutata anche mediante **Stryker4s**, configurato nella build per il mutation testing. I test end-to-end dell'assistente utilizzano invece **LangChain4j** e un modello servito localmente da **Ollama**.
@@ -48,6 +50,12 @@ Sono stati classificati come **test di integrazione** anche alcuni test che, per
 La distinzione tra test unitari e test di integrazione è evidente nella collision detection. I primi sostituiscono le type class `Collides` e `Contains` con mock e verificano che `CollisionDetector` deleghi correttamente. I secondi utilizzano le implementazioni geometriche reali e controllano il risultato complessivo su entità e superfici concrete. In questo modo, un errore può essere ricondotto più facilmente all'orchestrazione del detector oppure agli algoritmi geometrici sottostanti.
 
 Per le regole fisiche vengono verificati sia i singoli calcoli sia la loro applicazione alla scena. Tra i casi più significativi rientrano il movimento con intervalli temporali diversi, la risoluzione delle collisioni tra corpi mobili e fissi, il contatto con i bordi, l'effetto delle superfici e l'attrazione verso il nemico più vicino. I test del game loop controllano inoltre la frequenza degli aggiornamenti, l'accumulatore temporale, la limitazione dei picchi di latenza e le transizioni tra modalità di modifica e simulazione.
+
+### Generazione logica dei casi di test con Prolog
+
+Due programmi Prolog descrivono dichiarativamente i domini finiti da combinare. Il primo genera le nove coppie ordinate ottenute dai tipi di notifica `Info`, `Error` e `Success`; il secondo produce le otto combinazioni di presenza o assenza dei campi geometrici `radius`, `width` e `height`. SBT invoca SWI-Prolog durante la generazione dei sorgenti e crea gli oggetti `GeneratedNotificationCombos` e `GeneratedShapeCombos`, contenenti tabelle direttamente utilizzabili da ScalaTest tramite `forAll`.
+
+Questa integrazione evita di duplicare manualmente i prodotti cartesiani nei test e separa la definizione logica delle combinazioni dalla loro verifica. La CI installa SWI-Prolog prima di eseguire `sbt test`, garantendo che i sorgenti gestiti vengano rigenerati anche partendo da un checkout pulito.
 
 ### Interfaccia grafica e snapshot testing
 
