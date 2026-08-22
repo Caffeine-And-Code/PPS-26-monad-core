@@ -22,6 +22,8 @@ class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
   private val weight          = 2
   private val speedX          = 1.5
   private val speedY          = 2.5
+  private val rotation        = 45.0
+  private val angularSpeed    = -30.0
   private val mapper          = Langchain4jToolCallMapper()
 
   test("can map Langchain4j tool requests"):
@@ -116,6 +118,161 @@ class Langchain4jToolCallMapperTest extends AnyFunSuite with Matchers:
     val expected  = ToolCall.CreateCircleEntity(circleId, x, y, radius)
 
     val result = mapper.from(request("createCircleEntity", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map circle entity rotation"):
+    val arguments =
+      s"""{"id":"$circleId","x":$x,"y":$y,"radius":$radius,"rotation":$rotation}"""
+    val expected = ToolCall.CreateCircleEntity(
+      circleId,
+      x,
+      y,
+      radius,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("createCircleEntity", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map rectangle entity rotation"):
+    val arguments =
+      s"""{"id":"$rectangleId","x":$x,"y":$y,"height":$height,"length":$rectangleLength,"rotation":$rotation}"""
+    val expected = ToolCall.CreateRectangleEntity(
+      rectangleId,
+      x,
+      y,
+      height,
+      rectangleLength,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("createRectangleEntity", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map rectangle entity angular speed"):
+    val arguments =
+      s"""{"id":"$rectangleId","x":$x,"y":$y,"height":$height,"length":$rectangleLength,"angularSpeed":$angularSpeed}"""
+    val expected = ToolCall.CreateRectangleEntity(
+      rectangleId,
+      x,
+      y,
+      height,
+      rectangleLength,
+      angularSpeed = Some(angularSpeed)
+    )
+
+    val result = mapper.from(request("createRectangleEntity", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map circle entity angular speed"):
+    val arguments =
+      s"""{"id":"$circleId","x":$x,"y":$y,"radius":$radius,"angularSpeed":$angularSpeed}"""
+    val expected = ToolCall.CreateCircleEntity(
+      circleId,
+      x,
+      y,
+      radius,
+      angularSpeed = Some(angularSpeed)
+    )
+
+    val result = mapper.from(request("createCircleEntity", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map circle entity rotation during an update"):
+    val arguments =
+      s"""{"id":"$circleId","x":$x,"y":$y,"radius":$radius,"rotation":$rotation}"""
+    val expected = ToolCall.UpdateCircleEntity(
+      circleId,
+      x,
+      y,
+      radius,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("updateCircleEntity", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map rectangle entity rotation during an update"):
+    val arguments =
+      s"""{"id":"$rectangleId","x":$x,"y":$y,"height":$height,"length":$rectangleLength,"rotation":$rotation}"""
+    val expected = ToolCall.UpdateRectangleEntity(
+      rectangleId,
+      x,
+      y,
+      height,
+      rectangleLength,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("updateRectangleEntity", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map circle surface rotation"):
+    val arguments =
+      s"""{"id":"$circleId","x":$x,"y":$y,"radius":$radius,"rotation":$rotation}"""
+    val expected = ToolCall.CreateCircleSurface(
+      circleId,
+      x,
+      y,
+      radius,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("createCircleSurface", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map rectangle surface rotation"):
+    val arguments =
+      s"""{"id":"$rectangleId","x":$x,"y":$y,"height":$height,"length":$rectangleLength,"rotation":$rotation}"""
+    val expected = ToolCall.CreateRectangleSurface(
+      rectangleId,
+      x,
+      y,
+      height,
+      rectangleLength,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("createRectangleSurface", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map rectangle surface rotation during an update"):
+    val arguments =
+      s"""{"id":"$rectangleId","x":$x,"y":$y,"height":$height,"length":$rectangleLength,"rotation":$rotation}"""
+    val expected = ToolCall.UpdateRectangleSurface(
+      rectangleId,
+      x,
+      y,
+      height,
+      rectangleLength,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("updateRectangleSurface", arguments))
+
+    result shouldBe Right(expected)
+
+  test("can map circle surface rotation during an update"):
+    val arguments =
+      s"""{"id":"$circleId","x":$x,"y":$y,"radius":$radius,"rotation":$rotation}"""
+    val expected = ToolCall.UpdateCircleSurface(
+      circleId,
+      x,
+      y,
+      radius,
+      rotation = rotation
+    )
+
+    val result = mapper.from(request("updateCircleSurface", arguments))
 
     result shouldBe Right(expected)
 
