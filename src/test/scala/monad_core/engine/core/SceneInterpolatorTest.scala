@@ -2,6 +2,7 @@ package monad_core.engine.core
 
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
+import monad_core.engine.simulator.SceneInterpolator
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite

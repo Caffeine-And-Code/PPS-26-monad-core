@@ -2,7 +2,27 @@
 ### Update the version in designated file
 In ```project/build.properties``` the ```release_version``` field must be changed to a higher version than the one in the last release on github.
 
-If the version is invalid the release will not be made and the github action for the release will fail.
+If the version is invalid the release will not be made and the GitHub action for the release will fail.
+
+## Prolog testing setup
+
+Tests occasionally utilizes prolog to generate utility classes, the generation is completely automatic upon test startup by running the following command:
+
+```bash
+swipl -q -g true -t halt <PROLOG_FILE_NAME>
+```
+
+The command above _**REQUIRES**_ the following dependency to be installed:
+##### Linux
+```bash
+sudo apt install swi-prolog
+```
+##### MacOs
+```bash
+brew install swi-prolog
+```
+##### Windows
+Visit and follow the instructions on the official site: https://www.swi-prolog.org/download/stable
 
 ## Project Formatter Settings
 

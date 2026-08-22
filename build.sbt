@@ -1,5 +1,6 @@
 import java.io.FileInputStream
 import java.util.Properties
+import scala.sys.process.*
 
 lazy val releaseVersion: String = {
   val props = new Properties()
@@ -15,7 +16,7 @@ scalaVersion := "3.8.4"
 lazy val osClassifier: String = {
   val osName = System.getProperty("os.name").toLowerCase
   val osArch = System.getProperty("os.arch").toLowerCase
-  val isArm = osArch.contains("aarch64") || osArch.contains("arm")
+  val isArm  = osArch.contains("aarch64") || osArch.contains("arm")
 
   if (osName.contains("mac"))
     if (isArm) "mac-aarch64" else "mac"
@@ -31,7 +32,7 @@ lazy val javaFXVersion = "23.0.1"
 lazy val javaFXModules = Seq("base", "controls", "fxml", "graphics", "media", "swing", "web")
 
 assembly / assemblyMergeStrategy := {
-  case "module-info.class" => MergeStrategy.discard
+  case "module-info.class"                             => MergeStrategy.discard
   case PathList("META-INF", "substrate", "config", _*) => MergeStrategy.discard
   case path =>
     val previous = (assembly / assemblyMergeStrategy).value
@@ -40,7 +41,7 @@ assembly / assemblyMergeStrategy := {
 
 // build dynamically the module-path of javaFx to resolve the warning upon application startup
 lazy val javaFXModulePath = Def.task {
-  val cp = (Test / dependencyClasspath).value
+  val cp        = (Test / dependencyClasspath).value
   val converter = fileConverter.value
   cp.map(af => converter.toPath(af.data))
     .filter(p => p.getFileName.toString.startsWith("javafx-"))
@@ -50,8 +51,10 @@ lazy val javaFXModulePath = Def.task {
 
 lazy val javaFXJavaOptions = Def.task {
   Seq(
-    "--module-path", javaFXModulePath.value,
-    "--add-modules", javaFXModules.map(m => s"javafx.$m").mkString(","),
+    "--module-path",
+    javaFXModulePath.value,
+    "--add-modules",
+    javaFXModules.map(m => s"javafx.$m").mkString(","),
     "-Dglass.win.uiScale=100%",
     "-Dprism.allowhidpi=false",
     "-Dprism.order=sw",
@@ -74,24 +77,23 @@ lazy val root = rootProject
     LlmIntegrationTest / resourceDirectory :=
       baseDirectory.value / "src" / "llmIntegrationTest" / "resources",
     LlmIntegrationTest / parallelExecution := false,
-    LlmIntegrationTest / fork := true,
+    LlmIntegrationTest / fork              := true,
     libraryDependencies ++= Seq(
-      "org.scalactic" %% "scalactic" % "3.2.20",
-      "org.scalatest" %% "scalatest" % "3.2.20" % "test,llmIntegrationTest",
-      "org.scalamock" %% "scalamock" % "7.5.5" % "test,llmIntegrationTest",
-      "org.testfx" % "testfx-core" % "4.0.18" % Test,
+      "org.scalactic"  %% "scalactic"          % "3.2.20",
+      "org.scalatest"  %% "scalatest"          % "3.2.20" % "test,llmIntegrationTest",
+      "org.scalamock"  %% "scalamock"          % "7.5.5"  % "test,llmIntegrationTest",
+      "org.testfx"      % "testfx-core"        % "4.0.18" % Test,
       "dev.langchain4j" % "langchain4j-ollama" % "1.17.2",
-      "dev.langchain4j" % "langchain4j" % "1.17.2",
-      "org.scalafx" %% "scalafx" % "23.0.1-R34"
+      "dev.langchain4j" % "langchain4j"        % "1.17.2",
+      "org.scalafx"    %% "scalafx"            % "23.0.1-R34"
     ) ++ javaFXModules.map(m =>
       ("org.openjfx" % s"javafx-$m" % javaFXVersion).classifier(osClassifier)
     ),
 
     // fork tests, a JVM foreach test class
-    Test / fork := true,
+    Test / fork               := true,
     Test / testForkedParallel := false,
     Test / javaOptions ++= javaFXJavaOptions.value,
-
     Test / testGrouping := Def.uncached {
       val jvmOpts = javaFXJavaOptions.value.toVector
       (Test / definedTests).value.map { suite =>
@@ -104,15 +106,54 @@ lazy val root = rootProject
         )
       }
     }
-  ).settings(
+  )
+  .settings(
     assembly / mainClass := Some("monad_core.Launcher"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
-      case PathList("META-INF", _*) => MergeStrategy.discard
-      case "module-info.class" => MergeStrategy.discard
-      case _ => MergeStrategy.first
+      case PathList("META-INF", _*)             => MergeStrategy.discard
+      case "module-info.class"                  => MergeStrategy.discard
+      case _                                    => MergeStrategy.first
     }
   )
+
+lazy val generateNotificationCombos =
+  taskKey[Seq[File]]("Generate notification type combos via Prolog")
+
+lazy val generateShapeCombos = taskKey[Seq[File]]("Generate shape field combos via Prolog")
+
+generateNotificationCombos := Def.uncached {
+  Seq(
+    generatePrologCombos(
+      scriptName = "notification_tuple_combos.pl",
+      packageName = "integrations.monad_core.simulator.presentation.components",
+      objectName = "GeneratedNotificationCombos",
+      headerTuple = """("firstMessageType", "secondMessageType")""",
+      outDir = (Test / sourceManaged).value,
+      baseDir = baseDirectory.value,
+      extraImports = Seq(
+        "java.lang.{Error => _}",
+        "monad_core.simulator.presentation.components.{Info, Error, Success, NotificationType}"
+      )
+    )
+  )
+}
+
+generateShapeCombos := Def.uncached {
+  Seq(
+    generatePrologCombos(
+      scriptName = "shape_combos.pl",
+      packageName = "monad_core.simulator.presentation.components.forms.base",
+      objectName = "GeneratedShapeCombos",
+      headerTuple = """("radius", "width", "height")""",
+      outDir = (Test / sourceManaged).value,
+      baseDir = baseDirectory.value
+    )
+  )
+}
+
+Test / sourceGenerators += generateNotificationCombos.taskValue
+Test / sourceGenerators += generateShapeCombos.taskValue
 
 ThisBuild / scalacOptions ++= Seq(
   "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
@@ -125,3 +166,40 @@ strykerMutate := Seq(
 strykerTestFilter := Seq(
   "monad_core.engine.*"
 )
+
+def generatePrologCombos(
+    scriptName: String,
+    packageName: String,
+    objectName: String,
+    headerTuple: String,
+    outDir: File,
+    baseDir: File,
+    extraImports: Seq[String] = Seq.empty
+): File = {
+  val importsBlock = extraImports.map(i => s"import $i").mkString("\n")
+
+  val genDir  = outDir / "generated"
+  val outFile = genDir / s"$objectName.scala"
+  IO.createDirectory(genDir)
+
+  val plScript = baseDir / "project" / "scripts" / scriptName
+  val lines    = Process(Seq("swipl", "-q", "-g", "true", "-t", "halt", plScript.getPath)).lazyLines
+  val body     = lines.mkString("\n")
+
+  val content =
+    s"""|package $packageName
+        |
+        |$importsBlock
+        |import org.scalatest.prop.Tables.Table
+        |
+        |object $objectName {
+        |  val cases = Table(
+        |    $headerTuple,
+        |$body
+        |  )
+        |}
+        |""".stripMargin
+
+  IO.write(outFile, content)
+  outFile
+}

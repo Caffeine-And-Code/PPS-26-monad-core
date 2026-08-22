@@ -23,6 +23,7 @@ import monad_core.simulator.presentation.panels.support.FormUtilities.{
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder
 import scalafx.animation.AnimationTimer
+import scalafx.beans.property.BooleanProperty
 import scalafx.scene.control.ContextMenu
 import scalafx.scene.layout.{Priority, VBox}
 
@@ -68,7 +69,7 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
 
       animationTimer
 
-  def build()(using
+  def build(isEngineRunning: BooleanProperty)(using
       gameEngineRuntime: GameEngineRuntime,
       world: World,
       architect: ShapeArchitect,
@@ -117,11 +118,13 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
                         onError = displayError,
                         entityToUpdate = Some(entity)
                       )
-                    )
+                    ),
+                  isDisabled = isEngineRunning
                 ),
                 MenuButtonItem(
                   s"Remove ${entity.id} Entity",
-                  () => viewModel.onRemoveEntity(entity)
+                  () => viewModel.onRemoveEntity(entity),
+                  isDisabled = isEngineRunning
                 )
               )
             case surface: Surface =>
@@ -137,14 +140,17 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
                         onError = displayError,
                         surfaceToUpdate = Some(surface)
                       )
-                    )
+                    ),
+                  isDisabled = isEngineRunning
                 ),
                 MenuButtonItem(
                   s"Remove ${surface.id} Surface",
-                  () => viewModel.onRemoveSurface(surface)
+                  () => viewModel.onRemoveSurface(surface),
+                  isDisabled = isEngineRunning
                 )
               )
-          }
+          },
+          isEngineRunning = isEngineRunning
         )
 
         viewModel.startRendering(_ => ShapePainter.paint(canvas.graphicsContext2D))
@@ -195,7 +201,8 @@ private object RightClickContextMenu:
   def attachTo(
       canvas: javafx.scene.canvas.Canvas,
       findElementAt: (Double, Double) => Option[Clickable],
-      buildMenuItems: Clickable => Seq[MenuButtonItem]
+      buildMenuItems: Clickable => Seq[MenuButtonItem],
+      isEngineRunning: BooleanProperty
   ): Unit =
 
     val contextMenu = new ContextMenu:
@@ -204,7 +211,7 @@ private object RightClickContextMenu:
     canvas.setOnMouseClicked((e: MouseEvent) =>
       contextMenu.hide()
 
-      if e.getButton == MouseButton.SECONDARY then
+      if e.getButton == MouseButton.SECONDARY && !isEngineRunning.value then
         val localX = e.getX
         val localY = e.getY
 

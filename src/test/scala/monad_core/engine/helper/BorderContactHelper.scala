@@ -1,16 +1,16 @@
 package monad_core.engine.helper
 
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.model.{BorderSide, Entity, Vector2D}
 import PhysicsConstantHelper.{DefaultRadius, DeltaTimeOneSecond}
 import DummyEntityHelper.makeMovingEntityCircle
-import monad_core.engine.physics.utils.{BorderWall, BorderWallType}
+import monad_core.engine.physics.utils.BorderWall
 import org.scalatest.EitherValues.convertEitherToValuable
 
 private[engine] object BorderContactHelper:
 
   def generateSingleWallEntities(
-      borderType: BorderWallType,
+      borderSide: BorderSide,
       upperLeft: Vector2D,
       lowerRight: Vector2D,
       entityId: String = "entity"
@@ -21,29 +21,29 @@ private[engine] object BorderContactHelper:
       Vector2D,
       Vector2D
   ) =
-    val values = borderType match
-      case BorderWallType.Left =>
+    val values = borderSide match
+      case BorderSide.Left =>
         (
           Vector2D(upperLeft.x - 10, upperLeft.y + DefaultRadius),
           Vector2D(-1, 0),
           Vector2D(upperLeft.x + DefaultRadius, upperLeft.y + DefaultRadius),
           Vector2D(1, 0)
         )
-      case BorderWallType.Right =>
+      case BorderSide.Right =>
         (
           Vector2D(lowerRight.x + 10, lowerRight.y - DefaultRadius),
           Vector2D(1, 0),
           Vector2D(lowerRight.x - DefaultRadius, lowerRight.y - DefaultRadius),
           Vector2D(-1, 0)
         )
-      case BorderWallType.Top =>
+      case BorderSide.Top =>
         (
           Vector2D(upperLeft.x + DefaultRadius, upperLeft.y - 10),
           Vector2D(0, -1),
           Vector2D(upperLeft.x + DefaultRadius, upperLeft.y + DefaultRadius),
           Vector2D(0, 1)
         )
-      case BorderWallType.Bottom =>
+      case BorderSide.Bottom =>
         (
           Vector2D(lowerRight.x - DefaultRadius, lowerRight.y + 10),
           Vector2D(0, 1),
@@ -63,14 +63,14 @@ private[engine] object BorderContactHelper:
       DefaultRadius,
       upperLeft,
       lowerRight,
-      borderType
+      borderSide
     ).value
 
     (entity, wallCollision._1, wallCollision._2, values._3, values._4)
 
   def generateCornerEntities(
-      borderTypeV: BorderWallType,
-      borderTypeH: BorderWallType,
+      borderSideV: BorderSide,
+      borderSideH: BorderSide,
       upperLeft: Vector2D,
       lowerRight: Vector2D
   ): (
@@ -83,29 +83,29 @@ private[engine] object BorderContactHelper:
       Vector2D
   ) =
 
-    val values = (borderTypeV, borderTypeH) match
-      case (BorderWallType.Left, BorderWallType.Top) =>
+    val values = (borderSideV, borderSideH) match
+      case (BorderSide.Left, BorderSide.Top) =>
         (
           Vector2D(upperLeft.x - 10, upperLeft.y - 10),
           Vector2D(-1, -1),
           Vector2D(upperLeft.x + DefaultRadius, upperLeft.y + DefaultRadius),
           Vector2D(1, 1)
         )
-      case (BorderWallType.Left, BorderWallType.Bottom) =>
+      case (BorderSide.Left, BorderSide.Bottom) =>
         (
           Vector2D(upperLeft.x - 10, lowerRight.y + 10),
           Vector2D(-1, 1),
           Vector2D(upperLeft.x + DefaultRadius, lowerRight.y - DefaultRadius),
           Vector2D(1, -1)
         )
-      case (BorderWallType.Right, BorderWallType.Top) =>
+      case (BorderSide.Right, BorderSide.Top) =>
         (
           Vector2D(lowerRight.x + 10, upperLeft.y - 10),
           Vector2D(1, -1),
           Vector2D(lowerRight.x - DefaultRadius, upperLeft.y + DefaultRadius),
           Vector2D(-1, 1)
         )
-      case (BorderWallType.Right, BorderWallType.Bottom) =>
+      case (BorderSide.Right, BorderSide.Bottom) =>
         (
           Vector2D(lowerRight.x + 10, lowerRight.y + 10),
           Vector2D(1, 1),
@@ -131,7 +131,7 @@ private[engine] object BorderContactHelper:
       DefaultRadius,
       upperLeft,
       lowerRight,
-      borderTypeV
+      borderSideV
     ).value
 
     val horizontalWall = BorderWall(
@@ -140,7 +140,7 @@ private[engine] object BorderContactHelper:
       DefaultRadius,
       upperLeft,
       lowerRight,
-      borderTypeH
+      borderSideH
     ).value
 
     (

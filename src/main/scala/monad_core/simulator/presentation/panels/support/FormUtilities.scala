@@ -9,8 +9,9 @@ object FormUtilities:
   def displayError(error: BaseError): Unit =
     NotificationManager.show(error.message, Error)
 
-  def onActionMakeSnapshot[T](submitResult: T, action: T => Unit)(using
+  def onActionMakeSnapshot[T](submitResult: T, action: T => Either[BaseError, Unit])(using
       gameEngineRuntime: GameEngineRuntime
   ): Unit =
-    action(submitResult)
-    gameEngineRuntime.createSnapshot()
+    action(submitResult) match
+      case Left(error) => displayError(error)
+      case Right(_)    => gameEngineRuntime.createSnapshot()

@@ -150,22 +150,8 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with Notificatio
 
     assertMatchesArchitecturalSnapshotOfStage("success_notification_snapshot", stage)
 
-  // TODO: this will probably make a good usage of Prolog
   test("Notification Stacks matches the architectural snapshot"):
-    val cases = Table(
-      ("firstMessageType", "secondMessageType"),
-      (Info, Info),
-      (Info, Error),
-      (Info, Success),
-      (Error, Info),
-      (Error, Error),
-      (Error, Success),
-      (Success, Info),
-      (Success, Error),
-      (Success, Success)
-    )
-
-    forAll(cases): (firstMessageType, secondMessageType) =>
+    forAll(GeneratedNotificationCombos.cases): (firstMessageType, secondMessageType) =>
       onFxThread {
         resetManagerAndScene()
 
@@ -179,22 +165,9 @@ class NotificationManagerTest extends AnyFunSuite with Matchers with Notificatio
         stage
       )
 
-  // TODO: this will probably make a good usage of Prolog
   test("Notification Stacks matches the visual snapshot"):
-    val cases = Table(
-      ("firstMessageType", "secondMessageType"),
-      (Info, Info),
-      (Info, Error),
-      (Info, Success),
-      (Error, Info),
-      (Error, Error),
-      (Error, Success),
-      (Success, Info),
-      (Success, Error),
-      (Success, Success)
-    )
 
-    forAll(cases): (firstMessageType, secondMessageType) =>
+    forAll(GeneratedNotificationCombos.cases): (firstMessageType, secondMessageType) =>
       def getDisplayValue(severity: NotificationType): String = severity.toString.toLowerCase
 
       onFxThread {

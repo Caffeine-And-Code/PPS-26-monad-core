@@ -1,7 +1,7 @@
 package monad_core.engine.physics.utils
 
 import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
-import monad_core.engine.model.Vector2D
+import monad_core.engine.model.{BorderSide, Vector2D}
 import monad_core.engine.helper.PhysicsConstantHelper.DefaultRadius
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -28,7 +28,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Left
+      BorderSide.Left
     ).value
 
     val wall             = leftWallCollision._1
@@ -58,7 +58,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Right
+      BorderSide.Right
     ).value
 
     val wall              = rightWallCollision._1
@@ -88,7 +88,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Top
+      BorderSide.Top
     ).value
 
     val wall            = topWallCollision._1
@@ -118,7 +118,7 @@ class BorderWallTest extends AnyFunSuite with Matchers:
       DefaultRadius,
       UpperLeftCorner,
       LowerRightCorner,
-      BorderWallType.Bottom
+      BorderSide.Bottom
     ).value
 
     val wall               = bottomWallCollision._1

@@ -11,7 +11,6 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.prop.Tables.Table
 
 class FormDialogTest extends AnyFunSuite with Matchers with MockFactory:
 
@@ -37,7 +36,6 @@ class FormDialogTest extends AnyFunSuite with Matchers with MockFactory:
 
     either.matchToResult(onError)(onSuccess)
 
-  // TODO: this will probably make a good usage of Prolog
   test("buildShapeFields should have the correct architecture foreach possible value"):
     val expectedTotalSize            = 2
     val expectedCircleFieldNumber    = 1
@@ -45,18 +43,8 @@ class FormDialogTest extends AnyFunSuite with Matchers with MockFactory:
     val radiusFieldIndex             = 0
     val widthFieldIndex              = 0
     val heightFieldIndex             = 1
-    val cases = Table(
-      ("radius", "width", "height"),
-      (None, None, None),
-      (Some("4"), None, None),
-      (Some("4"), Some("5"), None),
-      (Some("4"), Some("5"), Some("6")),
-      (None, Some("5"), Some("6")),
-      (None, None, Some("6")),
-      (None, Some("5"), None)
-    )
 
-    forAll(cases): (radius, width, height) =>
+    forAll(GeneratedShapeCombos.cases): (radius, width, height) =>
       val expectedRadiusField = TextFieldSpec(
         id = BaseFormParser.RadiusKey,
         label = "Radius",

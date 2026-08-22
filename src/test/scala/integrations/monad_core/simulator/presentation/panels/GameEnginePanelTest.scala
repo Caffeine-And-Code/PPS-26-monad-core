@@ -81,8 +81,13 @@ class GameEnginePanelTest
 
   def setupCorrectSceneRenderer(): Unit =
     (sceneRenderer
-      .build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
-      .expects(*, *, *, *)
+      .build(_: BooleanProperty)(using
+        _: GameEngineRuntime,
+        _: World,
+        _: ShapeArchitect,
+        _: Painter
+      ))
+      .expects(*, *, *, *, *)
       .returns(
         Right(
           new VBox {
@@ -93,14 +98,24 @@ class GameEnginePanelTest
 
   def setupInvalidSceneRenderer(): Unit =
     (sceneRenderer
-      .build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
-      .expects(*, *, *, *)
+      .build(_: BooleanProperty)(using
+        _: GameEngineRuntime,
+        _: World,
+        _: ShapeArchitect,
+        _: Painter
+      ))
+      .expects(*, *, *, *, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
   def setupNeverCalledSceneRenderer(): Unit =
     (sceneRenderer
-      .build()(using _: GameEngineRuntime, _: World, _: ShapeArchitect, _: Painter))
-      .expects(*, *, *, *)
+      .build(_: BooleanProperty)(using
+        _: GameEngineRuntime,
+        _: World,
+        _: ShapeArchitect,
+        _: Painter
+      ))
+      .expects(*, *, *, *, *)
       .never()
 
   test("A GameEnginePanel can be built"):
