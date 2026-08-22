@@ -1,6 +1,5 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsError, ZeroMassError}
 
@@ -8,6 +7,8 @@ private[physics] object PhysicsUtil:
 
   private val NanosecondsPerSecond = 1_000_000_000.0
   private val VectorZero: Vector2D = Vector2D(0.0, 0.0)
+
+  val inverseMass: Double => Double = mass => 1.0 / mass
 
   def timeLongToSeconds(deltaTime: Long): Either[PhysicsError, Double] =
     deltaTime match
@@ -54,13 +55,24 @@ private[physics] object PhysicsUtil:
     for seconds <- timeLongToSeconds(deltaTime)
     yield math.max(0.0, 1.0 - frictionIndex * seconds)
 
+  def incomingSpeedAlongNormal(
+      speed: Vector2D,
+      normal: Vector2D
+  ): Double =
+    math.min(speed dot normal, 0.0)
+
+  def computeImpulse(
+      incomingSpeedAlongNormal: Double,
+      totalInverseMass: Double
+  ): Double =
+    if totalInverseMass == 0.0 then 0.0
+    else -2.0 * incomingSpeedAlongNormal / totalInverseMass
+
   def reflectOnFixed(
       speed: Vector2D,
       normal: Vector2D
   ): Vector2D =
-    val speedAlongNormal              = speed dot normal
-    val incomingSpeedAlongNormal      = math.min(speedAlongNormal, 0.0)
-    val twiceIncomingSpeedAlongNormal = 2.0 * incomingSpeedAlongNormal
+    val twiceIncomingSpeedAlongNormal = 2.0 * incomingSpeedAlongNormal(speed, normal)
 
     speed - (normal * twiceIncomingSpeedAlongNormal)
 
@@ -71,7 +83,7 @@ private[physics] object PhysicsUtil:
   ): Vector2D =
     position + (normal * penetrationDepth)
 
-  private def actualDoubleWeight(weight: Option[Weight]): Either[PhysicsError, Double] =
+  def actualDoubleWeight(weight: Option[Weight]): Either[PhysicsError, Double] =
     weight match
       case None =>
         Left(ZeroMassError())
@@ -89,68 +101,16 @@ private[physics] object PhysicsUtil:
     for
       actualMass      <- actualDoubleWeight(mass)
       actualOtherMass <- actualDoubleWeight(massOther)
+    yield
+      val relativeVelocity = speed - otherSpeed
+      val totalInverseMass = inverseMass(actualMass) + inverseMass(actualOtherMass)
+      val incomingSpeed    = incomingSpeedAlongNormal(relativeVelocity, normal)
+      val impulse = computeImpulse(
+        incomingSpeed,
+        totalInverseMass
+      )
 
-      relativeVelocity = speed - otherSpeed
-
-      velocityAlongNormal         = relativeVelocity dot normal
-      incomingVelocityAlongNormal = math.min(velocityAlongNormal, 0.0)
-
-      impulse =
-        -2.0 * incomingVelocityAlongNormal / (1.0 / actualMass + 1.0 / actualOtherMass)
-
-      actualSpeed = speed + (normal * (impulse / actualMass))
-    yield actualSpeed
-
-  def speedAtPoint(entity: Entity, point: Vector2D): Vector2D =
-    val linearSpeed = entity.speed.getOrElse(VectorZero)
-    val rotationSpeed = entity.angularSpeed
-      .map: angularSpeed =>
-        val radius = point - entity.position
-        Vector2D(-radius.y, radius.x) * math.toRadians(angularSpeed)
-      .getOrElse(VectorZero)
-
-    linearSpeed + rotationSpeed
-
-  def collisionResponse(
-      entity: Entity,
-      other: Entity,
-      collision: Collision
-  ): Either[PhysicsError, (Vector2D, Double)] =
-    for
-      mass <- actualDoubleWeight(entity.weight)
-      otherMass = other.weight.map(_.value.toDouble).getOrElse(1.0)
-      relativeSpeed =
-        speedAtPoint(entity, collision.collisionPoint) -
-          speedAtPoint(other, collision.collisionPoint)
-      incomingSpeed = math.min(relativeSpeed dot collision.normalVector, 0.0)
-      radius        = collision.collisionPoint - entity.position
-      otherRadius   = collision.collisionPoint - other.position
-      inertia       = momentOfInertia(entity.shape, mass)
-      otherInertia  = momentOfInertia(other.shape, otherMass)
-      inverseMass =
-        (if entity.speed.isDefined then 1.0 / mass else 0.0) +
-          (if other.speed.isDefined then 1.0 / otherMass else 0.0) +
-          (if entity.angularSpeed.isDefined then
-             math.pow(radius cross collision.normalVector, 2.0) / inertia
-           else 0.0) +
-          (if other.angularSpeed.isDefined then
-             math.pow(otherRadius cross collision.normalVector, 2.0) / otherInertia
-           else 0.0)
-      impulse       = if inverseMass == 0.0 then 0.0 else -2.0 * incomingSpeed / inverseMass
-      impulseVector = collision.normalVector * impulse
-      speedChange =
-        if entity.speed.isDefined then impulseVector * (1.0 / mass)
-        else VectorZero
-      angularSpeedChange =
-        if entity.angularSpeed.isDefined then math.toDegrees((radius cross impulseVector) / inertia)
-        else 0.0
-    yield speedChange -> angularSpeedChange
-
-  private def momentOfInertia(shape: Shape2D, mass: Double): Double =
-    shape match
-      case Shape2D.Circle(radius) => mass * radius * radius / 2.0
-      case Shape2D.Rectangle(height, length) =>
-        mass * (height * height + length * length) / 12.0
+      speed + (normal * (impulse * inverseMass(actualMass)))
 
   def pushMobileOverlappingMobile(
       position: Vector2D,

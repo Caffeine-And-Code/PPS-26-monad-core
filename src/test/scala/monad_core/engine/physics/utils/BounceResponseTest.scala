@@ -78,7 +78,7 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       penetrationDepth = 0.0,
       collisionPoint = Vector2D(1.0, 1.0)
     )
-    val expectedChange = PhysicsUtil.collisionResponse(entity, other, collision).value._1
+    val expectedChange = CollisionVelocityDelta(entity, other, collision).value._1
 
     val result = BounceResponse(entity, other, collision).value
 
@@ -97,8 +97,10 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       penetrationDepth = 0.0,
       collisionPoint = Vector2D(4.0, 7.0)
     )
-    val (linearChange, angularChange) =
-      PhysicsUtil.collisionResponse(entity, wall, collision).value
+    val expectedSpeeds =
+      CollisionVelocityDelta(entity, wall, collision).value
+    val linearChange  = expectedSpeeds.speed
+    val angularChange = expectedSpeeds.angularSpeed
 
     val result = BounceResponse(entity, wall, collision).value
 

@@ -38,9 +38,10 @@ private[physics] object BounceResponse:
 
         reflectedSpeed.map(entity.withSpeed)
       case _ =>
-        PhysicsUtil
-          .collisionResponse(entity, other, collision)
-          .map((speedChange, _) => entity.withSpeed(entitySpeed + speedChange))
+        CollisionVelocityDelta(entity, other, collision)
+          .map:
+            case VelocityDelta(speedChange, _) =>
+              entity.withSpeed(entitySpeed + speedChange)
 
   private def resolveBasicBounce(
       entity: Entity,
@@ -67,10 +68,9 @@ private[physics] object BounceResponse:
       angularSpeed: Double,
       collision: Collision
   ): Either[PhysicsError, Entity] =
-    PhysicsUtil
-      .collisionResponse(entity, other, collision)
+    CollisionVelocityDelta(entity, other, collision)
       .map:
-        case (speedChange, angularSpeedChange) =>
+        case VelocityDelta(speedChange, angularSpeedChange) =>
           entity
             .withSpeed(entitySpeed + speedChange)
             .withAngularSpeed(angularSpeed + angularSpeedChange)
@@ -81,6 +81,7 @@ private[physics] object BounceResponse:
       angularSpeed: Double,
       collision: Collision
   ): Either[PhysicsError, Entity] =
-    PhysicsUtil
-      .collisionResponse(entity, other, collision)
-      .map((_, angularSpeedChange) => entity.withAngularSpeed(angularSpeed + angularSpeedChange))
+    CollisionVelocityDelta(entity, other, collision)
+      .map:
+        case VelocityDelta(_, angularSpeedChange) =>
+          entity.withAngularSpeed(angularSpeed + angularSpeedChange)
