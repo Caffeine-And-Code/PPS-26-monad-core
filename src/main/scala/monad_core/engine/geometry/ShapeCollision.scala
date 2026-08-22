@@ -160,8 +160,7 @@ object ShapeCollision:
             penetrationDepth,
             worldPoint(localClosestPoint, rectangle)
           )
-      else
-        Some(collisionFromCircleInsideRectangle(circle, rectangle, localCircle))
+      else Some(collisionFromCircleInsideRectangle(circle, rectangle, localCircle))
 
   given rectangleCollidesWithCircle: Collides[Rectangle, Circle] with
 

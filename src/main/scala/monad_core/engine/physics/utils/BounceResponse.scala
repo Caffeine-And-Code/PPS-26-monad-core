@@ -18,7 +18,7 @@ private[physics] object BounceResponse:
         resolveBounceAndRotation(entity, other, speed, angularSpeed, collision)
       case (None, Some(angularSpeed)) =>
         resolveRotation(entity, other, angularSpeed, collision)
-      case (None, None) =>
+      case _ =>
         Right(entity)
 
   private def resolveBounce(
@@ -28,10 +28,6 @@ private[physics] object BounceResponse:
       collision: Collision
   ): Either[PhysicsError, Entity] =
     other.angularSpeed match
-      case Some(_) =>
-        PhysicsUtil
-          .collisionResponse(entity, other, collision)
-          .map((speedChange, _) => entity.withSpeed(entitySpeed + speedChange))
       case None =>
         val reflectedSpeed = resolveBasicBounce(
           entity,
@@ -41,6 +37,10 @@ private[physics] object BounceResponse:
         )
 
         reflectedSpeed.map(entity.withSpeed)
+      case _ =>
+        PhysicsUtil
+          .collisionResponse(entity, other, collision)
+          .map((speedChange, _) => entity.withSpeed(entitySpeed + speedChange))
 
   private def resolveBasicBounce(
       entity: Entity,

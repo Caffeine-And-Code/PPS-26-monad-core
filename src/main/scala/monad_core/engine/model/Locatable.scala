@@ -24,13 +24,20 @@ object Locatable:
   )(build: (LocatableId, Vector2D, Shape2D, Double) => A): Either[EngineError, A] =
     for {
       locatableId <- LocatableId(id)
-      _           <- validatePosition(position)
-      _           <- validateRotation(rotation)
+      _           <- validate(position, rotation)
     } yield build(locatableId, position, shape, rotation)
 
-  def validatePosition(position: Vector2D): Either[EngineError, Unit] =
-    if position.x < 0 || position.y < 0 then Left(PositionIsValid(position))
-    else Right(())
+  private[model] def validateAndReturn[L <: Locatable](updated: L): Either[EngineError, L] =
+    validate(updated.position, updated.rotation).map(_ => updated)
+
+  private def validate(position: Vector2D, rotation: Double): Either[EngineError, Unit] =
+    for
+      _ <- validatePosition(position)
+      _ <- validateRotation(rotation)
+    yield ()
+
+  private def validatePosition(position: Vector2D): Either[EngineError, Unit] =
+    Either.cond(position.x >= 0 && position.y >= 0, (), PositionIsValid(position))
 
   def validateRotation(rotation: Double): Either[EngineError, Unit] =
     Either.cond(rotation >= 0 && rotation <= 360, (), RotationMustBeAValidDegreeValue(rotation))

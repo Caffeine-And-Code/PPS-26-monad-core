@@ -7,13 +7,16 @@ private[engine] object RectangleVertexes:
 
   extension (rectangle: Rectangle)
 
-    def vertexes(position: Vector2D, rotation: Double = 0.0): List[Vector2D] =
+    def vertexes(position: Vector2D, rotation: Double = 0.0): List[Vector2D] = {
+      val upperRight = Vector2D(-rectangle.halfLength, -rectangle.halfHeight)
+      val upperLeft  = Vector2D(rectangle.halfLength, -rectangle.halfHeight)
       List(
-        Vector2D(-rectangle.halfLength, -rectangle.halfHeight),
-        Vector2D(rectangle.halfLength, -rectangle.halfHeight),
-        Vector2D(rectangle.halfLength, rectangle.halfHeight),
-        Vector2D(-rectangle.halfLength, rectangle.halfHeight)
+        upperRight,
+        upperLeft,
+        upperRight.flip,
+        upperLeft.flip
       ).map(localVertex => position + localVertex.rotated(rotation))
+    }
 
     def upperVertex(position: Vector2D, rotation: Double = 0.0): Vector2D =
       vertexes(position, rotation).minBy(_.y)

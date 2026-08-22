@@ -30,10 +30,8 @@ private[physics] object PhysicsUtil:
       force: Vector2D,
       mass: Option[Weight]
   ): Either[PhysicsError, Vector2D] =
-    val actualMass = actualDoubleWeight(mass)
-    actualMass match
-      case Left(err) => Left(err)
-      case Right(m)  => Right(force * (1.0 / m))
+    for actualMass <- actualDoubleWeight(mass)
+    yield force * (1.0 / actualMass)
 
   def applyFriction(
       speed: Vector2D,
@@ -53,27 +51,18 @@ private[physics] object PhysicsUtil:
       frictionIndex: Double,
       deltaTime: Long
   ): Either[PhysicsError, Double] =
-    for
-      seconds <- timeLongToSeconds(deltaTime)
-      factor = math.max(0.0, 1.0 - frictionIndex * seconds)
-    yield factor
-
-  def squaredDistance(first: Vector2D, second: Vector2D): Double =
-    val dx = second.x - first.x
-    val dy = second.y - first.y
-    dx * dx + dy * dy
-
-  def distance(first: Vector2D, second: Vector2D): Double =
-    math.sqrt(squaredDistance(first, second))
+    for seconds <- timeLongToSeconds(deltaTime)
+    yield math.max(0.0, 1.0 - frictionIndex * seconds)
 
   def reflectOnFixed(
       speed: Vector2D,
       normal: Vector2D
   ): Vector2D =
-    val speedAlongNormal         = speed dot normal
-    val incomingSpeedAlongNormal = math.min(speedAlongNormal, 0.0)
+    val speedAlongNormal              = speed dot normal
+    val incomingSpeedAlongNormal      = math.min(speedAlongNormal, 0.0)
+    val twiceIncomingSpeedAlongNormal = 2.0 * incomingSpeedAlongNormal
 
-    speed - (normal * (2.0 * incomingSpeedAlongNormal))
+    speed - (normal * twiceIncomingSpeedAlongNormal)
 
   def pushMobileOverlappingFixed(
       position: Vector2D,
@@ -193,10 +182,5 @@ private[physics] object PhysicsUtil:
 
       enemy <- entities.iterator
         .filter(candidate => candidate.teamId.exists(team.enemies.contains))
-        .minByOption(candidate =>
-          PhysicsUtil.squaredDistance(
-            entity.position,
-            candidate.position
-          )
-        )
+        .minByOption(candidate => entity.position -->> candidate.position)
     yield enemy

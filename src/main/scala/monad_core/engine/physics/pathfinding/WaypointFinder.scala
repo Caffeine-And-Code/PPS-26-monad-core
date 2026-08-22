@@ -3,7 +3,6 @@ package monad_core.engine.physics.pathfinding
 import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
-import monad_core.engine.physics.utils.PhysicsUtil
 
 private[pathfinding] object WaypointFinder:
 
@@ -23,7 +22,7 @@ private[pathfinding] object WaypointFinder:
     val dx = start.position.x - target.position.x
     val dy = start.position.y - target.position.y
 
-    val dist = PhysicsUtil.distance(start.position, target.position)
+    val dist = start.position --> target.position
 
     val theta = math.atan2(dy, dx)
 

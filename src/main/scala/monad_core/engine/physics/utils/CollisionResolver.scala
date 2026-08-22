@@ -47,7 +47,7 @@ private[physics] object CollisionResolver:
     val newPosition = entity.speed match
       case None =>
         Right(entity.position)
-      case Some(_) =>
+      case _ =>
         other.speed match
           case None =>
             Right(
@@ -57,7 +57,7 @@ private[physics] object CollisionResolver:
                 collision.penetrationDepth
               )
             )
-          case Some(_) =>
+          case _ =>
             PhysicsUtil.pushMobileOverlappingMobile(
               entity.position,
               collision.normalVector,

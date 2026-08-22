@@ -155,30 +155,6 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
-  test("squaredDistance avoids an unnecessary square root"):
-    val vector1       = Vector2D(1.0, 2.0)
-    val vector2       = Vector2D(4.0, 6.0)
-    val expectedValue = math.pow(vector2.x - vector1.x, 2) + math.pow(vector2.y - vector1.y, 2)
-
-    val result = PhysicsUtil.squaredDistance(
-      first = vector1,
-      second = vector2
-    )
-
-    result shouldBe expectedValue
-
-  test("distance should compute the Euclidean distance between two vectors"):
-    val vector1       = Vector2D(1.0, 2.0)
-    val vector2       = Vector2D(4.0, 6.0)
-    val expectedValue = math.sqrt(PhysicsUtil.squaredDistance(vector1, vector2))
-
-    val result = PhysicsUtil.distance(
-      first = vector1,
-      second = vector2
-    )
-
-    result shouldBe expectedValue
-
   test("reflectOnFixed should return the same speed if the velocity is along the normal"):
     val speed  = Vector2D(1.0, 0.0)
     val normal = Vector2D(1.0, 0.0)

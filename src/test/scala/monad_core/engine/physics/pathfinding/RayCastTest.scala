@@ -34,10 +34,11 @@ class RayCastTest extends AnyFunSuite with Matchers:
     obstacle.shape match
       case _: Rectangle =>
         val localDirection = direction.rotated(-obstacle.rotation)
-        raw + Vector2D(
-          math.signum(localDirection.x) * clearance,
-          math.signum(localDirection.y) * clearance
-        ).rotated(obstacle.rotation)
+        val localInflation = Vector2D(
+          math.signum(localDirection.x),
+          math.signum(localDirection.y)
+        ) * clearance
+        raw + localInflation.rotated(obstacle.rotation)
       case _: Circle =>
         raw + direction.normalized * clearance
 
@@ -209,7 +210,7 @@ class RayCastTest extends AnyFunSuite with Matchers:
     )
     val originalVertexes = VertexFinder(List(obstacle))
 
-    val inflated = RayCast.inflateVertexes(
+    val inflated = RayCast.inflateAllVertexes(
       originalVertexes,
       List(obstacle),
       inflation = 3.0
@@ -229,7 +230,8 @@ class RayCastTest extends AnyFunSuite with Matchers:
     )
     val original = VertexFinder(List(obstacle))
 
-    val inflated = RayCast.inflateVertexes(original, List(obstacle), inflation = 1.0)(obstacle.id)
+    val inflated =
+      RayCast.inflateAllVertexes(original, List(obstacle), inflation = 1.0)(obstacle.id)
 
     inflated.foreach { vertex =>
       val local = (vertex - obstacle.position).rotated(-obstacle.rotation)

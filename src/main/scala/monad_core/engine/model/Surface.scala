@@ -1,5 +1,7 @@
 package monad_core.engine.model
 
+import monad_core.engine.model.Locatable.validateAndReturn
+
 final case class Surface private (
     id: LocatableId,
     position: Vector2D,
@@ -31,12 +33,6 @@ object Surface:
     Locatable.rectangle(id, position, height, length, rotation)((id, position, shape, rotation) =>
       Surface(id, position, shape, rotation)
     )
-
-  private def validateAndReturn(updated: Surface): Either[EngineError, Surface] =
-    for {
-      _ <- Locatable.validatePosition(updated.position)
-      _ <- Locatable.validateRotation(updated.rotation)
-    } yield updated
 
   extension (surface: Surface)
 

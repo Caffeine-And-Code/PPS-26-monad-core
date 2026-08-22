@@ -35,15 +35,6 @@ object Entity:
       Entity(id, position, shape, rotation)
     )
 
-  private def validateAndReturn(updated: Entity): Either[EngineError, Entity] =
-    Entity.validate(updated).map(_ => updated)
-
-  def validate(entity: Entity): Either[EngineError, Unit] =
-    for {
-      result <- Locatable.validatePosition(entity.position)
-      _      <- Locatable.validateRotation(entity.rotation)
-    } yield result
-
   extension (entity: Entity)
 
     def moveTo(newPosition: Vector2D): Entity =
