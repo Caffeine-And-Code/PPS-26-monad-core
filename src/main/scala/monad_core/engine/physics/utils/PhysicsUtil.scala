@@ -8,6 +8,8 @@ private[physics] object PhysicsUtil:
   private val NanosecondsPerSecond = 1_000_000_000.0
   private val VectorZero: Vector2D = Vector2D(0.0, 0.0)
 
+  val inverseMass: Double => Double = mass => 1.0 / mass
+
   def timeLongToSeconds(deltaTime: Long): Either[PhysicsError, Double] =
     deltaTime match
       case t if t < 0L => Left(NegativeDeltaTime(deltaTime))
@@ -20,9 +22,7 @@ private[physics] object PhysicsUtil:
   def nextPosition(
       position: Vector2D,
       speed: Vector2D,
-      deltaTime: Long,
-      upperLeftCorner: Vector2D,
-      lowerRightCorner: Vector2D
+      deltaTime: Long
   ): Either[PhysicsError, Vector2D] =
     for disp <- displacement(speed, deltaTime)
     yield position + disp
@@ -31,37 +31,50 @@ private[physics] object PhysicsUtil:
       force: Vector2D,
       mass: Option[Weight]
   ): Either[PhysicsError, Vector2D] =
-    val actualMass = actualDoubleWeight(mass)
-    actualMass match
-      case Left(err) => Left(err)
-      case Right(m)  => Right(force * (1.0 / m))
+    for actualMass <- actualDoubleWeight(mass)
+    yield force * inverseMass(actualMass)
 
   def applyFriction(
       speed: Vector2D,
       frictionIndex: Double,
       deltaTime: Long
   ): Either[PhysicsError, Vector2D] =
-    for
-      seconds <- timeLongToSeconds(deltaTime)
-      factor = math.max(0.0, 1.0 - frictionIndex * seconds)
-    yield speed * factor
+    frictionFactor(frictionIndex, deltaTime).map(speed * _)
 
-  def squaredDistance(first: Vector2D, second: Vector2D): Double =
-    val dx = second.x - first.x
-    val dy = second.y - first.y
-    dx * dx + dy * dy
+  def applyAngularFriction(
+      angularSpeed: Double,
+      frictionIndex: Double,
+      deltaTime: Long
+  ): Either[PhysicsError, Double] =
+    frictionFactor(frictionIndex, deltaTime).map(angularSpeed * _)
 
-  def distance(first: Vector2D, second: Vector2D): Double =
-    math.sqrt(squaredDistance(first, second))
+  private def frictionFactor(
+      frictionIndex: Double,
+      deltaTime: Long
+  ): Either[PhysicsError, Double] =
+    for seconds <- timeLongToSeconds(deltaTime)
+    yield math.max(0.0, 1.0 - frictionIndex * seconds)
+
+  def incomingSpeedAlongNormal(
+      speed: Vector2D,
+      normal: Vector2D
+  ): Double =
+    math.min(speed dot normal, 0.0)
+
+  def computeImpulse(
+      incomingSpeedAlongNormal: Double,
+      totalInverseMass: Double
+  ): Double =
+    if totalInverseMass == 0.0 then 0.0
+    else -2.0 * incomingSpeedAlongNormal / totalInverseMass
 
   def reflectOnFixed(
       speed: Vector2D,
       normal: Vector2D
   ): Vector2D =
-    val speedAlongNormal         = speed dot normal
-    val incomingSpeedAlongNormal = math.min(speedAlongNormal, 0.0)
+    val twiceIncomingSpeedAlongNormal = 2.0 * incomingSpeedAlongNormal(speed, normal)
 
-    speed - (normal * (2.0 * incomingSpeedAlongNormal))
+    speed - (normal * twiceIncomingSpeedAlongNormal)
 
   def pushMobileOverlappingFixed(
       position: Vector2D,
@@ -70,7 +83,7 @@ private[physics] object PhysicsUtil:
   ): Vector2D =
     position + (normal * penetrationDepth)
 
-  private def actualDoubleWeight(weight: Option[Weight]): Either[PhysicsError, Double] =
+  def actualDoubleWeight(weight: Option[Weight]): Either[PhysicsError, Double] =
     weight match
       case None =>
         Left(ZeroMassError())
@@ -88,15 +101,16 @@ private[physics] object PhysicsUtil:
     for
       actualMass      <- actualDoubleWeight(mass)
       actualOtherMass <- actualDoubleWeight(massOther)
+    yield
+      val relativeVelocity = speed - otherSpeed
+      val totalInverseMass = inverseMass(actualMass) + inverseMass(actualOtherMass)
+      val incomingSpeed    = incomingSpeedAlongNormal(relativeVelocity, normal)
+      val impulse = computeImpulse(
+        incomingSpeed,
+        totalInverseMass
+      )
 
-      relativeVelocity = speed - otherSpeed
-
-      velocityAlongNormal = relativeVelocity dot normal
-
-      impulse = -2.0 * velocityAlongNormal / (1.0 / actualMass + 1.0 / actualOtherMass)
-
-      actualSpeed = speed + (normal * (impulse / actualMass))
-    yield actualSpeed
+      speed + (normal * (impulse * inverseMass(actualMass)))
 
   def pushMobileOverlappingMobile(
       position: Vector2D,
@@ -110,7 +124,7 @@ private[physics] object PhysicsUtil:
       actualOtherMass <- actualDoubleWeight(massOther)
 
       totalWeight = actualMass + actualOtherMass
-      ratio       = actualMass / totalWeight
+      ratio       = actualOtherMass / totalWeight
 
       correction = normal * (penetrationDepth * ratio)
 
@@ -128,10 +142,5 @@ private[physics] object PhysicsUtil:
 
       enemy <- entities.iterator
         .filter(candidate => candidate.teamId.exists(team.enemies.contains))
-        .minByOption(candidate =>
-          PhysicsUtil.squaredDistance(
-            entity.position,
-            candidate.position
-          )
-        )
+        .minByOption(candidate => entity.position -->> candidate.position)
     yield enemy

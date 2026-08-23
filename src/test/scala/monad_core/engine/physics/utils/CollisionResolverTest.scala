@@ -2,8 +2,12 @@ package monad_core.engine.physics.utils
 
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRuleError, ZeroMassError}
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import monad_core.engine.physics.core.{PhysicsError, ZeroMassError}
+import monad_core.engine.helper.DummyEntityHelper.{
+  makeFixedEntityCircle,
+  makeFixedEntityRectangle,
+  makeMovingEntityCircle
+}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -67,7 +71,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val fixedEntity = makeFixedEntityCircle(id = "fixed")
     val otherEntity = makeMovingEntityCircle(id = "moving")
-    val collision   = Collision(Vector2D(1, 0), 1.0)
+    val collision   = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val collisions: CollisionMap = Map(fixedEntity -> List((otherEntity, collision)))
 
@@ -81,7 +85,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val entity1   = makeMovingEntityCircle(id = "entity1")
     val entity2   = makeMovingEntityCircle(id = "entity2").withWeight(1).value
-    val collision = Collision(Vector2D(1, 0), 1.0)
+    val collision = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val collisions: CollisionMap = Map(entity1 -> List((entity2, collision)))
 
@@ -95,7 +99,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val entity1   = makeMovingEntityCircle(id = "entity1")
     val entity2   = makeMovingEntityCircle(id = "entity2")
-    val collision = Collision(Vector2D(1, 0), 1.0)
+    val collision = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val collisions: CollisionMap = Map(entity1 -> List((entity2, collision)))
 
@@ -111,7 +115,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     val entity1   = makeMovingEntityCircle(id = "entity1", speed = speed)
     val entity2   = makeFixedEntityCircle(id = "entity2")
-    val collision = Collision(Vector2D(1, 0), 1.0)
+    val collision = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val expectedPosition = expectedPositionMobileFixed(entity1, collision)
 
@@ -125,6 +129,7 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
 
     resultEntity.position shouldBe expectedPosition
     resultEntity.speed shouldBe Some(expectedSpeed)
+    resultEntity.angularSpeed shouldBe None
 
   test(
     "the function should return a list containing all updated entities when resolving a collision with two mobile entities"
@@ -133,8 +138,8 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     val entity1 = makeMovingEntityCircle(id = "entity1", speed = Vector2D(1, 0)).withWeight(1).value
     val entity2 =
       makeMovingEntityCircle(id = "entity2", speed = Vector2D(-1, 0)).withWeight(1).value
-    val collision1 = Collision(Vector2D(1, 0), 1.0)
-    val collision2 = Collision(Vector2D(-1, 0), 1.0)
+    val collision1 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
+    val collision2 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
 
     val expectedPosition1 = expectedPositionMobileMobile(entity1, entity2, collision1).value
 
@@ -167,9 +172,9 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     val entity2 =
       makeMovingEntityCircle(id = "entity2", speed = Vector2D(-1, 0)).withWeight(1).value
     val entity3     = makeFixedEntityCircle(id = "entity3")
-    val collision12 = Collision(Vector2D(1, 0), 1.0)
-    val collision21 = Collision(Vector2D(-1, 0), 1.0)
-    val collision13 = Collision(Vector2D(0, 1), 1.0)
+    val collision12 = Collision(Vector2D(-1, 0), 1.0, Vector2D(0, 0))
+    val collision21 = Collision(Vector2D(1, 0), 1.0, Vector2D(0, 0))
+    val collision13 = Collision(Vector2D(0, 1), 1.0, Vector2D(0, 0))
 
     val expectedPositionAfter12 = expectedPositionMobileMobile(entity1, entity2, collision12).value
     val expectedSpeedAfter12    = expectedSpeedMobileMobile(entity1, entity2, collision12).value
@@ -196,9 +201,111 @@ class CollisionResolverTest extends AnyFunSuite with Matchers:
     resultEntity2.position shouldBe expectedPosition2
     resultEntity2.speed.value shouldBe expectedSpeed2
 
-  test("resolveMultipleBounces should report missing entity speed"):
-    val entity = makeFixedEntityCircle(id = "fixed-without-speed")
+  test("a rotation-only entity should not be translated while resolving overlap"):
+    val rotating = makeFixedEntityRectangle(id = "rotating")
+      .withWeight(1)
+      .value
+      .withAngularSpeed(0.0)
 
-    CollisionResolver.resolveMultipleBounces(entity, List.empty) shouldBe Left(
-      PhysicsRuleError("Entity has no speed to resolve bounce")
+    val wall = makeFixedEntityRectangle(id = "wall")
+
+    val collision = Collision(Vector2D(1.0, 0.0), 2.0, rotating.position)
+
+    val result = CollisionResolver(Map(rotating -> List(wall -> collision))).value.head
+
+    result.position shouldBe rotating.position
+
+  test("a mobile entity should resolve the full overlap against a rotation-only entity"):
+    val mobile = makeMovingEntityCircle(
+      id = "mobile",
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    ).withWeight(1).value
+
+    val rotating = makeFixedEntityRectangle(id = "rotating")
+      .withWeight(1)
+      .value
+      .withAngularSpeed(0.0)
+
+    val collision = Collision(Vector2D(-1.0, 0.0), 2.0, Vector2D(0.0, 0.0))
+
+    val result = CollisionResolver(Map(mobile -> List(rotating -> collision))).value.head
+
+    result.position shouldBe Vector2D(-2.0, 0.0)
+
+  test("mobile overlap correction should move a heavier entity less"):
+    val heavy = makeMovingEntityCircle(
+      id = "heavy",
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    ).withWeight(3).value
+
+    val light = makeMovingEntityCircle(
+      id = "light",
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    ).withWeight(1).value
+
+    val heavyCollision = Collision(Vector2D(-1.0, 0.0), 4.0, Vector2D(0.0, 0.0))
+    val lightCollision = heavyCollision.copy(normalVector = Vector2D(1.0, 0.0))
+
+    val collisions = Map(
+      heavy -> List(light -> heavyCollision),
+      light -> List(heavy -> lightCollision)
     )
+
+    val result       = CollisionResolver(collisions).value
+    val updatedHeavy = result.find(_.id == heavy.id).value
+    val updatedLight = result.find(_.id == light.id).value
+
+    updatedHeavy.position shouldBe Vector2D(-1.0, 0.0)
+    updatedLight.position shouldBe Vector2D(3.0, 0.0)
+
+  test("zero penetration should not change entity position"):
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(3.0, 4.0),
+      speed = Vector2D(1.0, 0.0)
+    )
+
+    val wall = makeFixedEntityRectangle(id = "wall")
+
+    val collision = Collision(Vector2D(1.0, 0.0), 0.0, Vector2D(3.0, 4.0))
+
+    val result = CollisionResolver(Map(entity -> List(wall -> collision))).value.head
+
+    result.position shouldBe entity.position
+
+  test("overlap correction should follow each collision normal"):
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(0.0, 0.0),
+      speed = Vector2D(0.0, 0.0)
+    )
+
+    val horizontalWall = makeFixedEntityRectangle(id = "horizontal")
+
+    val verticalWall = makeFixedEntityRectangle(id = "vertical")
+
+    val collisions = List(
+      horizontalWall -> Collision(Vector2D(1.0, 0.0), 2.0, Vector2D(0.0, 0.0)),
+      verticalWall   -> Collision(Vector2D(0.0, -1.0), 3.0, Vector2D(0.0, 0.0))
+    )
+
+    val result = CollisionResolver(Map(entity -> collisions)).value.head
+
+    result.position shouldBe Vector2D(2.0, -3.0)
+
+  test("collision resolution should preserve unrelated entity properties"):
+    val entity = makeMovingEntityCircle(speed = Vector2D(1.0, 0.0))
+      .withHealth(80)
+      .value
+      .withTeamId("team")
+      .value
+
+    val wall = makeFixedEntityRectangle(id = "wall")
+
+    val collision = Collision(Vector2D(1.0, 0.0), 1.0, Vector2D(0.0, 0.0))
+
+    val result = CollisionResolver(Map(entity -> List(wall -> collision))).value.head
+
+    result.health shouldBe entity.health
+    result.teamId shouldBe entity.teamId

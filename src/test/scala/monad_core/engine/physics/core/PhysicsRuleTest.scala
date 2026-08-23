@@ -44,7 +44,11 @@ class PhysicsRuleTest extends AnyFunSuite with Matchers:
     rule1 == rule2 shouldBe false
 
   test("a PhysicsRule should have an empty id by default"):
-    val rule = PhysicsRuleHelper.makeDummyRule("")
+    val rule: PhysicsRule = new PhysicsRule:
+      override def apply(scene: State, dt: Long)(using
+          detector: CollisionDetector
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(scene))
 
     rule.RuleId shouldBe ""
 

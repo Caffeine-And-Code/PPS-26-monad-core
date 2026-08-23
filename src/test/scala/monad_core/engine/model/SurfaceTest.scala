@@ -25,6 +25,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
         surface.id.value shouldBe ValidEntityId
         surface.position shouldBe ValidPosition
         surface.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
+        surface.rotation shouldBe 0
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
 

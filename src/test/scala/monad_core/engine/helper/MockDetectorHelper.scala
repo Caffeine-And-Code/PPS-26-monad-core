@@ -20,15 +20,15 @@ private[engine] trait MockDetectorHelper:
     detector
 
   def detectorWithCollisions(
-      collisions: Map[(String, String), (Vector2D, Double)]
+      collisions: Map[(String, String), (Vector2D, Double, Vector2D)]
   ): CollisionDetector =
     val detector = mock[CollisionDetector]
 
     detector.collision
       .expects(*, *)
       .onCall { (entity1, entity2) =>
-        collisions.get((entity1.id.value, entity2.id.value)).map { case (normal, depth) =>
-          Collision(normal, depth)
+        collisions.get((entity1.id.value, entity2.id.value)).map { case (normal, depth, point) =>
+          Collision(normal, depth, point)
         }
       }
       .anyNumberOfTimes()

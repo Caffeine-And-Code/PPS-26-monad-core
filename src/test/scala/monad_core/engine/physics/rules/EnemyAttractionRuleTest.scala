@@ -223,39 +223,6 @@ class EnemyAttractionRuleTest
       math.Pi
     ) shouldBe entity
 
-  test("applyAttractionToEntity should report the entity id when speed is missing"):
-    val entity = addTeam(
-      makeFixedEntityCircle(
-        id = "fixed-without-speed",
-        position = Vector2D(5.0, 5.0)
-      ),
-      "teamA"
-    )
-    val enemy = addTeam(
-      makeFixedEntityCircle(
-        id = "enemy",
-        position = Vector2D(10.0, 10.0)
-      ),
-      "teamB"
-    )
-    val entityTeam = makeTeam(entity.teamId.value.value, Set(enemy.teamId.value.value))
-    val enemyTeam  = makeTeam(enemy.teamId.value.value)
-    val entities   = List(entity, enemy)
-
-    EnemyAttractionRule.applyAttractionToEntity(
-      entity,
-      entities,
-      List(entityTeam, enemyTeam),
-      VertexFinder(entities),
-      UpperLeftBound,
-      LowerRightBound,
-      DeltaTimeOneSecond
-    ) shouldBe Left(
-      PhysicsRuleError(
-        s"Entity ${entity.id} has no speed to apply enemy attraction"
-      )
-    )
-
   test("the rule should not orient an entity whose speed magnitude is zero"):
     val entity = addTeam(
       makeMovingEntityCircle(

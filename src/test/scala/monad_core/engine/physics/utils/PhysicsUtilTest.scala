@@ -2,7 +2,7 @@ package monad_core.engine.physics.utils
 
 import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.helper.DummyTeamHelper.{addTeam, makeTeam}
-import monad_core.engine.helper.PhysicsConstantHelper.NegativeDt
+import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{NegativeDeltaTime, ZeroMassError}
 import monad_core.engine.physics.utils.PhysicsUtil
@@ -16,13 +16,17 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
   private val UpperLeftCorner  = Vector2D(0.0, 0.0)
   private val LowerRightCorner = Vector2D(10.0, 10.0)
 
-  test("deltaSeconds should convert nanoseconds to seconds"):
+  test("inverseMass should compute the inverse of a double mass"):
+    val massValue = 10.0
+    PhysicsUtil.inverseMass(massValue) shouldBe 1.0 / massValue
+
+  test("timeLongToSeconds should convert nanoseconds to seconds"):
     val nano            = 1_500_000_000L
     val expectedSeconds = 1.5
 
     PhysicsUtil.timeLongToSeconds(nano).value shouldBe expectedSeconds
 
-  test("deltaSeconds treats a negative delta time as zero"):
+  test("timeLongToSeconds treats a negative delta time as zero"):
 
     PhysicsUtil.timeLongToSeconds(NegativeDt) shouldBe Left(NegativeDeltaTime(NegativeDt))
 
@@ -56,13 +60,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val dtS                  = PhysicsUtil.timeLongToSeconds(dt).value
     val expectedNextPosition = Vector2D(position.x + speed.x * dtS, position.y + speed.y * dtS)
 
-    val result = PhysicsUtil.nextPosition(
-      position = position,
-      speed = speed,
-      deltaTime = dt,
-      upperLeftCorner = UpperLeftCorner,
-      lowerRightCorner = LowerRightCorner
-    )
+    val result = PhysicsUtil.nextPosition(position = position, speed = speed, deltaTime = dt)
 
     result.value shouldBe expectedNextPosition
 
@@ -70,13 +68,8 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val position = Vector2D(5.0, 2.0)
     val speed    = Vector2D(4.0, 6.0)
 
-    val result = PhysicsUtil.nextPosition(
-      position = position,
-      speed = speed,
-      deltaTime = NegativeDt,
-      upperLeftCorner = UpperLeftCorner,
-      lowerRightCorner = LowerRightCorner
-    )
+    val result =
+      PhysicsUtil.nextPosition(position = position, speed = speed, deltaTime = NegativeDt)
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
@@ -85,13 +78,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val speed    = Vector2D(-1.0, -1.0)
     val dt       = 500_000_000L
 
-    val result = PhysicsUtil.nextPosition(
-      position = position,
-      speed = speed,
-      deltaTime = dt,
-      upperLeftCorner = UpperLeftCorner,
-      lowerRightCorner = LowerRightCorner
-    )
+    val result = PhysicsUtil.nextPosition(position = position, speed = speed, deltaTime = dt)
 
     result.isRight shouldBe true
 
@@ -117,7 +104,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     resultMissingMass shouldBe Left(ZeroMassError())
 
-  test("friction should reduce speed proportionally to elapsed time"):
+  test("applyFriction should reduce speed proportionally to elapsed time"):
     val speed                  = Vector2D(10.0, 4.0)
     val frictionIndex          = 2.0
     val dt                     = 500_000_000L
@@ -134,7 +121,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result.value shouldBe expectedFrictionSpeed
 
-  test("friction should not reverse speed"):
+  test("applyFriction should not reverse speed"):
     val speed          = Vector2D(10.0, 4.0)
     val frictionIndex  = 2.0
     val dt             = 1_000_000_000L
@@ -148,7 +135,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result.value shouldBe expectedVector
 
-  test("friction should return an error for negative delta time"):
+  test("applyFriction should return an error for negative delta time"):
     val speed         = Vector2D(10.0, 4.0)
     val frictionIndex = 2.0
 
@@ -160,29 +147,41 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
-  test("squaredDistance avoids an unnecessary square root"):
-    val vector1       = Vector2D(1.0, 2.0)
-    val vector2       = Vector2D(4.0, 6.0)
-    val expectedValue = math.pow(vector2.x - vector1.x, 2) + math.pow(vector2.y - vector1.y, 2)
+  test("incomingSpeedAlongNormal should return the speed projected along the normal"):
+    val speed         = Vector2D(-3.0, 4.0)
+    val normal        = Vector2D(1.0, 0.0)
+    val expectedSpeed = -3.0
 
-    val result = PhysicsUtil.squaredDistance(
-      first = vector1,
-      second = vector2
-    )
+    val result = PhysicsUtil.incomingSpeedAlongNormal(speed, normal)
 
-    result shouldBe expectedValue
+    result shouldBe expectedSpeed
 
-  test("distance should compute the Euclidean distance between two vectors"):
-    val vector1       = Vector2D(1.0, 2.0)
-    val vector2       = Vector2D(4.0, 6.0)
-    val expectedValue = math.sqrt(PhysicsUtil.squaredDistance(vector1, vector2))
+  test("incomingSpeedAlongNormal should clamp a separating speed to zero"):
+    val speed         = Vector2D(3.0, 4.0)
+    val normal        = Vector2D(1.0, 0.0)
+    val expectedSpeed = 0.0
 
-    val result = PhysicsUtil.distance(
-      first = vector1,
-      second = vector2
-    )
+    val result = PhysicsUtil.incomingSpeedAlongNormal(speed, normal)
 
-    result shouldBe expectedValue
+    result shouldBe expectedSpeed
+
+  test("computeImpulse should scale the incoming speed by the total inverse mass"):
+    val incomingSpeed    = -4.0
+    val totalInverseMass = 2.0
+    val expectedImpulse  = 4.0
+
+    val result = PhysicsUtil.computeImpulse(incomingSpeed, totalInverseMass)
+
+    result shouldBe expectedImpulse
+
+  test("computeImpulse should return zero when the total inverse mass is zero"):
+    val incomingSpeed    = -4.0
+    val totalInverseMass = 0.0
+    val expectedImpulse  = 0.0
+
+    val result = PhysicsUtil.computeImpulse(incomingSpeed, totalInverseMass)
+
+    result shouldBe expectedImpulse
 
   test("reflectOnFixed should return the same speed if the velocity is along the normal"):
     val speed  = Vector2D(1.0, 0.0)
@@ -241,6 +240,21 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
 
     result shouldBe expectedPosition
 
+  test("actualDoubleWeight should convert a weight to a double"):
+    val weight         = Weight(3).value
+    val expectedWeight = 3.0
+
+    val result = PhysicsUtil.actualDoubleWeight(Some(weight))
+
+    result.value shouldBe expectedWeight
+
+  test("actualDoubleWeight should return an error for a missing weight"):
+    val missingWeight = None
+
+    val result = PhysicsUtil.actualDoubleWeight(missingWeight)
+
+    result shouldBe Left(ZeroMassError())
+
   test("reflectOnMobile should return an accelerated speed if the velocity is along the normal"):
     val speed      = Vector2D(1.0, 0.0)
     val otherSpeed = Vector2D(2.0, 0.0)
@@ -278,6 +292,20 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     )
 
     result.value shouldBe expectedSpeed
+
+  test("reflectOnMobile should preserve speed when the entities are separating"):
+    val speed      = Vector2D(2.0, 0.0)
+    val otherSpeed = Vector2D(1.0, 0.0)
+
+    val result = PhysicsUtil.reflectOnMobile(
+      speed = speed,
+      otherSpeed = otherSpeed,
+      normal = Vector2D(1.0, 0.0),
+      mass = Some(Weight(1).value),
+      massOther = Some(Weight(1).value)
+    )
+
+    result.value shouldBe speed
 
   test("reflectOnMobile should return a flipped speed for a force against the normal"):
     val speed      = Vector2D(-2.0, 0.0)
@@ -342,7 +370,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val mass             = Some(Weight(massValue.toInt).value)
     val massOther        = Some(Weight(massOtherValue.toInt).value)
     val expectedPosition =
-      position + (normal * penetrationDepth * (massValue / (massValue + massOtherValue)))
+      position + (normal * penetrationDepth * (massOtherValue / (massValue + massOtherValue)))
 
     val result = PhysicsUtil.pushMobileOverlappingMobile(
       position = position,
@@ -512,13 +540,7 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
     val position = Vector2D(9.0, 9.0)
     val speed    = Vector2D(1.0, 1.0)
 
-    PhysicsUtil.nextPosition(
-      position,
-      speed,
-      1_000_000_000L,
-      UpperLeftCorner,
-      LowerRightCorner
-    ) shouldBe Right(LowerRightCorner)
+    PhysicsUtil.nextPosition(position, speed, 1_000_000_000L) shouldBe Right(LowerRightCorner)
 
   test("nearestEnemy should ignore candidates without a team"):
     val entity = addTeam(
@@ -536,3 +558,72 @@ class PhysicsUtilTest extends AnyFunSuite with Matchers:
       List(entity, unassignedCandidate),
       List(team)
     ) shouldBe None
+
+  test("applyAngularFriction should reduce angular speed with the same friction factor"):
+    val result = PhysicsUtil.applyAngularFriction(
+      angularSpeed = 120.0,
+      frictionIndex = 0.25,
+      deltaTime = DeltaTimeOneSecond
+    )
+
+    result.value shouldBe 90.0
+
+  test("applyAngularFriction should preserve angular speed with zero delta time"):
+    PhysicsUtil.applyAngularFriction(45.0, 0.5, 0L).value shouldBe 45.0
+
+  test("applyAngularFriction should not reverse angular speed"):
+    PhysicsUtil
+      .applyAngularFriction(45.0, 2.0, DeltaTimeOneSecond)
+      .value shouldBe 0.0
+
+  test("applyAngularFriction should preserve the sign of a negative angular speed"):
+    PhysicsUtil
+      .applyAngularFriction(-120.0, 0.25, DeltaTimeOneSecond)
+      .value shouldBe -90.0
+
+  test("applyAngularFriction should reject a negative delta time"):
+    PhysicsUtil.applyAngularFriction(45.0, 0.5, NegativeDt) shouldBe Left(
+      NegativeDeltaTime(NegativeDt)
+    )
+
+  test("pushMobileOverlappingMobile should split overlap equally for equal masses"):
+    val result = PhysicsUtil.pushMobileOverlappingMobile(
+      Vector2D(0.0, 0.0),
+      Vector2D(1.0, 0.0),
+      4.0,
+      Some(Weight(2).value),
+      Some(Weight(2).value)
+    )
+
+    result.value shouldBe Vector2D(2.0, 0.0)
+
+  test("pushMobileOverlappingMobile should move a heavier entity less"):
+    val heavy = PhysicsUtil.pushMobileOverlappingMobile(
+      Vector2D(0.0, 0.0),
+      Vector2D(1.0, 0.0),
+      4.0,
+      Some(Weight(3).value),
+      Some(Weight(1).value)
+    )
+    val light = PhysicsUtil.pushMobileOverlappingMobile(
+      Vector2D(0.0, 0.0),
+      Vector2D(1.0, 0.0),
+      4.0,
+      Some(Weight(1).value),
+      Some(Weight(3).value)
+    )
+
+    heavy.value.x should be < light.value.x
+
+  test("pushMobileOverlappingMobile should preserve position for zero penetration"):
+    val position = Vector2D(3.0, 4.0)
+
+    PhysicsUtil
+      .pushMobileOverlappingMobile(
+        position,
+        Vector2D(1.0, 0.0),
+        0.0,
+        Some(Weight(1).value),
+        Some(Weight(1).value)
+      )
+      .value shouldBe position

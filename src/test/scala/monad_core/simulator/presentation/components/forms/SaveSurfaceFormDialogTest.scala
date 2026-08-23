@@ -106,6 +106,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         SurfaceFormParser.PositionXKey,
         SurfaceFormParser.PositionYKey,
         SurfaceFormParser.ShapeKey,
+        SurfaceFormParser.RotationKey,
         SurfaceFormParser.AppliedForceXKey,
         SurfaceFormParser.AppliedForceYKey,
         SurfaceFormParser.FrictionIndexKey

@@ -78,3 +78,46 @@ class Vector2DTest extends AnyFunSuite with Matchers:
     val result = vector.flip
 
     result shouldBe Vector2D(-1, -2)
+
+  test("can calculate the dot product"):
+    val firstPoint     = Vector2D(2, 3)
+    val secondPoint    = Vector2D(4, -1)
+    val expectedResult = 5
+
+    val result = firstPoint.dot(secondPoint)
+
+    result shouldBe expectedResult
+
+  test("can rotate a vector using degrees"):
+    val vector = Vector2D(2, 0)
+
+    val result = vector.rotated(90)
+
+    result.x shouldBe 0.0 +- 0.1
+    result.y shouldBe 2.0 +- 0.1
+
+  test("can cross two vectors"):
+    val firstVector    = Vector2D(4, 2)
+    val secondVector   = Vector2D(1, 3)
+    val expectedResult = 10
+
+    val result = firstVector cross secondVector
+
+    result shouldBe expectedResult
+
+  test("can calculate squared distance between two points"):
+    val firstVector    = Vector2D(1, 2)
+    val secondVector   = Vector2D(4, 6)
+    val expectedResult = 25
+
+    val result = firstVector -->> secondVector
+
+    result shouldBe expectedResult
+
+  test("can swap x and y of a vector"):
+    val vector         = Vector2D(1, 2)
+    val expectedResult = Vector2D(2, 1)
+
+    val result = vector.swap
+
+    result shouldBe expectedResult

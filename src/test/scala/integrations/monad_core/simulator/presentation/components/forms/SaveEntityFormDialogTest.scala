@@ -20,8 +20,8 @@ class SaveEntityFormDialogTest
     with DialogTesting
     with FormTesting:
   val RadiusFieldIndex: Int = 2
-  val WeightFieldIndex: Int = 5
-  val HealthFieldIndex: Int = 6
+  val WeightFieldIndex: Int = 7
+  val HealthFieldIndex: Int = 8
 
   val GenericEitherCircleEntity: Either[EngineError, Entity] =
     Entity.circle("id", Vector2D(0, 0), 6)

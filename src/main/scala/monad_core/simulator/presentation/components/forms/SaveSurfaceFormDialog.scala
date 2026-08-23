@@ -32,6 +32,7 @@ private case class SaveSurfaceFormDefaultValues(
     x: Option[String] = Option.apply(SurfaceFormDefaults.InitialX),
     y: Option[String] = Option.apply(SurfaceFormDefaults.InitialY),
     shape: Option[String] = Option.apply(SurfaceFormDefaults.InitialShape),
+    rotation: Option[String] = Some("0.0"),
     frictionIndex: Option[String] = None,
     appliedForceX: Option[String] = None,
     appliedForceY: Option[String] = None,
@@ -86,6 +87,7 @@ object SaveSurfaceFormDialog:
           radius = radius,
           height = height,
           length = length,
+          rotation = Some(surface.rotation.toString),
           appliedForceX = surface.appliedForce.flatMap(vector => Some(vector.x.toString)),
           appliedForceY = surface.appliedForce.flatMap(vector => Some(vector.y.toString)),
           frictionIndex = surface.frictionIndex.map(_.toString)
@@ -113,6 +115,11 @@ object SaveSurfaceFormDialog:
           widthDefaultValue = defaultValues.length
         ),
         defaultValue = defaultValues.shape
+      ),
+      TextFieldSpec(
+        id = SurfaceFormParser.RotationKey,
+        label = "Initial Rotation (degrees)",
+        defaultValue = defaultValues.rotation
       ),
       TextFieldSpec(
         id = SurfaceFormParser.AppliedForceXKey,

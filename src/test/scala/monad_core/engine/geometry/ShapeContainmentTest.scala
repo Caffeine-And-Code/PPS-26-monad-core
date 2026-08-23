@@ -61,3 +61,17 @@ class ShapeContainmentTest extends AnyFunSuite with Matchers:
     )
 
     result shouldBe false
+
+  test("rotated rectangle contains points considering his rotation"):
+    val rectangle    = Shape2D.rectangle(2, 8).value
+    val container    = Placed(Vector2D(5, 5), rectangle, 45)
+    val pointInside  = Vector2D(7, 7)
+    val pointOutside = Vector2D(2, 5)
+
+    val resultInside =
+      ShapeContainment.rectangleContainsPoint.checkIfContains(container, pointInside)
+    val resultOutside =
+      ShapeContainment.rectangleContainsPoint.checkIfContains(container, pointOutside)
+
+    resultInside shouldBe true
+    resultOutside shouldBe false

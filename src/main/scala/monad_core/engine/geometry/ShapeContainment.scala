@@ -14,20 +14,21 @@ object ShapeContainment:
   given rectangleContainsPoint: Contains[Rectangle] with
 
     override def checkIfContains(container: Placed[Rectangle], point: Vector2D): Boolean =
+      val localPoint = (point - container.center).rotated(-container.rotation)
       Interval(
-        container.center.x - container.shape.halfLength,
-        container.center.x + container.shape.halfLength
-      ).contains(point.x)
-        && Interval(
-          container.center.y - container.shape.halfHeight,
-          container.center.y + container.shape.halfHeight
-        ).contains(point.y)
+        -container.shape.halfLength,
+        container.shape.halfLength
+      ).contains(localPoint.x)
+      && Interval(
+        -container.shape.halfHeight,
+        container.shape.halfHeight
+      ).contains(localPoint.y)
 
   given shapeContainsPoint: Contains[Shape2D] with
 
     override def checkIfContains(container: Placed[Shape2D], point: Vector2D): Boolean =
       container.shape match
         case circle: Circle =>
-          Placed(container.center, circle) contains point
+          Placed(container.center, circle, container.rotation) contains point
         case rectangle: Rectangle =>
-          Placed(container.center, rectangle) contains point
+          Placed(container.center, rectangle, container.rotation) contains point

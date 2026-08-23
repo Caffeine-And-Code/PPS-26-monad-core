@@ -194,7 +194,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
         fixedEntity.id  -> fixedEntity
       )
     )
-    val collision = Collision(Vector2D(1, 0), 2)
+    val collision = Collision(Vector2D(1, 0), 2, Vector2D(11, 10))
     val collisionEvent =
       CollisionDetected(mobileEntity.id, CollisionTarget.Entity(fixedEntity.id), collision)
     val collisionRule = makeDummyRule(

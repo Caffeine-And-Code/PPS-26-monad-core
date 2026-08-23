@@ -86,19 +86,17 @@ private[physics] object EnemyAttractionRule:
           lowerRightCorner
         ).flatMap(
           _.fold(Right(entity): Either[PhysicsError, Entity]) { targetPosition =>
-            for
-              currentSpeed <- entity.speed.toRight(
-                PhysicsRuleError(
-                  s"Entity ${entity.id} has no speed to apply enemy attraction"
+            entity.speed match
+              case None =>
+                Right(entity)
+              case Some(currentSpeed) =>
+                for seconds <- PhysicsUtil.timeLongToSeconds(dt)
+                yield orientSpeed(
+                  entity,
+                  currentSpeed,
+                  targetPosition,
+                  MaxTurnRate * seconds
                 )
-              )
-              seconds <- PhysicsUtil.timeLongToSeconds(dt)
-            yield orientSpeed(
-              entity,
-              currentSpeed,
-              targetPosition,
-              MaxTurnRate * seconds
-            )
           }
         )
       }

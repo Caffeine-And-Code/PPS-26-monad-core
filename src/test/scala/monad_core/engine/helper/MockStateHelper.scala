@@ -15,16 +15,17 @@ private[engine] trait MockStateHelper:
 
   self: MockFactory =>
 
-  private def mockBounds(state: State): Unit =
+  private def mockBounds(state: State, bounds: WorldBounds): Unit =
     (() => state.bounds)
       .expects()
-      .returning(WorldBounds(100, 100).value)
+      .returning(bounds)
       .anyNumberOfTimes()
 
   private def stateWith(
       entities: List[Entity],
       teams: List[Team] = List.empty,
       surfaces: List[Surface] = List.empty,
+      bounds: WorldBounds = WorldBounds(100, 100).value,
       removeEntities: Boolean = true
   ): State =
     val state = mock[State]
@@ -53,6 +54,7 @@ private[engine] trait MockStateHelper:
               entities = entities,
               teams = teams,
               surfaces = surfaces,
+              bounds = bounds,
               removeEntities = false
             )
           )
@@ -64,6 +66,7 @@ private[engine] trait MockStateHelper:
               entities = updatedEntities,
               teams = teams,
               surfaces = surfaces,
+              bounds = bounds,
               removeEntities = removeEntities
             )
           )
@@ -82,13 +85,14 @@ private[engine] trait MockStateHelper:
               entities = entities :+ entity,
               teams = teams,
               surfaces = surfaces,
+              bounds = bounds,
               removeEntities = removeEntities
             )
           )
       }
       .anyNumberOfTimes()
 
-    mockBounds(state)
+    mockBounds(state, bounds)
     state
 
   def stateWithEntities(entities: List[Entity]): State =
@@ -116,4 +120,10 @@ private[engine] trait MockStateHelper:
     stateWith(
       entities = entities,
       surfaces = surfaces
+    )
+
+  def stateWithBounds(bounds: WorldBounds): State =
+    stateWith(
+      entities = List.empty,
+      bounds = bounds
     )

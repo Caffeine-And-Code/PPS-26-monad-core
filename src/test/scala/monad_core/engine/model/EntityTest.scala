@@ -10,9 +10,11 @@ import monad_core.engine.model.{
   Vector2D,
   WeightCannotBeNegativeOrZero
 }
+import org.scalatest.EitherValues.*
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.*
 
 class EntityTest extends AnyFunSuite with Inside with Matchers:
 
@@ -33,7 +35,9 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.id.value shouldBe ValidEntityId
         entity.position shouldBe ValidPosition
         entity.shape shouldBe Shape2D.circle(ValidRadius).toOption.get
+        entity.rotation shouldBe 0
         entity.speed shouldBe None
+        entity.angularSpeed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
         entity.teamId shouldBe None
@@ -219,3 +223,67 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     inside(withoutSpeedEntity):
       case Right(entity) => entity.isFixed shouldBe true
+
+  test("can create and rotate an entity within the valid degree interval"):
+    val rotations = Table(
+      "rotation",
+      0,
+      90,
+      360
+    )
+
+    forAll(rotations): rotation =>
+      val entity = Entity.rectangle("entity", ValidPosition, 2, 4, rotation).value
+
+      entity.rotation shouldBe rotation
+
+  test("cannot create an entity with a rotation under 0 degrees"):
+    val entity           = ValidEntity.value
+    val negativeRotation = -1
+
+    val creationResult = Entity.circle("entity", ValidPosition, 2, negativeRotation)
+
+    creationResult shouldBe Left(RotationMustBeAValidDegreeValue(negativeRotation))
+
+  test("cannot create an entity with a rotation over 360 degrees"):
+    val entity            = ValidEntity.value
+    val excessiveRotation = 361
+
+    val creationResult = Entity.circle("entity", ValidPosition, 2, excessiveRotation)
+
+    creationResult shouldBe Left(RotationMustBeAValidDegreeValue(excessiveRotation))
+
+  test("cannot rotate an entity with a rotation under 0 degrees"):
+    val entity           = ValidEntity.value
+    val negativeRotation = -1
+
+    val rotationResult = entity.rotateTo(negativeRotation)
+
+    rotationResult shouldBe Left(RotationMustBeAValidDegreeValue(negativeRotation))
+
+  test("cannot rotate an entity with a rotation over 360 degrees"):
+    val entity            = ValidEntity.value
+    val excessiveRotation = 361
+
+    val rotationResult = entity.rotateTo(excessiveRotation)
+
+    rotationResult shouldBe Left(RotationMustBeAValidDegreeValue(excessiveRotation))
+
+  test("can set angular speed to an entity"):
+    val entity       = ValidEntity.value
+    val angularSpeed = -45
+
+    val rotatingEntity = entity.withAngularSpeed(angularSpeed)
+
+    rotatingEntity.angularSpeed shouldBe Some(angularSpeed)
+    rotatingEntity.isFixed shouldBe false
+
+  test("can unset angular speed to an entity"):
+    val entity       = ValidEntity.value
+    val angularSpeed = -45
+
+    val rotatingEntity = entity.withAngularSpeed(angularSpeed)
+    val stoppedEntity  = entity.withoutAngularSpeed
+
+    stoppedEntity.angularSpeed shouldBe None
+    stoppedEntity.isFixed shouldBe true
