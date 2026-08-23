@@ -1,6 +1,7 @@
 package monad_core.simulator.application.engine
 
 import monad_core.engine.simulator.Painter
+import monad_core.engine.simulator.EngineFacade.PhysicsRuleStatus
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
 
@@ -16,3 +17,5 @@ trait GameEngineRuntime extends EngineControl:
   ): Either[BaseError, Unit]
 
   def getError: Option[BaseError]
+  def physicsRules: Vector[PhysicsRuleStatus]
+  def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit

@@ -21,6 +21,8 @@ object EngineFacade:
       alpha: Double
   )
 
+  final case class PhysicsRuleStatus(id: String, isEnabled: Boolean)
+
   def default: Session =
     GameLoop.default()
 
@@ -41,6 +43,18 @@ object EngineFacade:
 
   def isRunning(session: Session): Boolean =
     session.isRunning
+
+  def physicsRules(physics: PhysicsManager): Vector[PhysicsRuleStatus] =
+    physics.rules.toVector.map(rule => PhysicsRuleStatus(rule.RuleId, physics.isEnabled(rule)))
+
+  def setPhysicsRuleEnabled(
+      physics: PhysicsManager,
+      ruleId: String,
+      isEnabled: Boolean
+  ): PhysicsManager =
+    physics.rules
+      .find(_.RuleId == ruleId)
+      .fold(physics)(rule => if isEnabled then physics.enable(rule) else physics.disable(rule))
 
   def tick(
       session: Session,

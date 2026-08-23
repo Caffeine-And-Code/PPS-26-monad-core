@@ -3,10 +3,16 @@ package integrations.monad_core.simulator.presentation.components
 import integrations.monad_core.simulator.presentation.support.DialogTesting
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import javafx.event.Event
+import javafx.scene.control.CheckMenuItem as JfxCheckMenuItem
 import javafx.scene.input.{MouseButton, MouseEvent}
 import monad_core.simulator.CannotBuildButton
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
-import monad_core.simulator.presentation.components.{MenuButton, MenuButtonItem, MenuButtonProps}
+import monad_core.simulator.presentation.components.{
+  CheckMenuButtonItem,
+  MenuButton,
+  MenuButtonItem,
+  MenuButtonProps
+}
 import monad_core.simulator.presentation.resources.{BaseImageConfig, Image}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.Inside
@@ -73,6 +79,35 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
       item.toMenuItem.fire()
 
       selected should be(true)
+    }
+
+  test("a checked menu item should report its toggled selection"):
+    onFxThread {
+      var selected = Option.empty[Boolean]
+      val item = CheckMenuButtonItem(
+        label = "Rule",
+        isSelected = true,
+        onToggle = isSelected => selected = Some(isSelected)
+      )
+      val menuItem = item.toMenuItem.asInstanceOf[JfxCheckMenuItem]
+      menuItem.setSelected(false)
+
+      menuItem.fire()
+
+      selected shouldBe Some(false)
+    }
+
+  test("a checked menu item should reflect its initial selection"):
+    onFxThread {
+      val item = CheckMenuButtonItem(
+        label = "Rule",
+        isSelected = true,
+        onToggle = _ => ()
+      )
+
+      val menuItem = item.toMenuItem.asInstanceOf[JfxCheckMenuItem]
+
+      menuItem.isSelected shouldBe true
     }
 
   test("toMenuItem should reflect the initial isDisabled value"):

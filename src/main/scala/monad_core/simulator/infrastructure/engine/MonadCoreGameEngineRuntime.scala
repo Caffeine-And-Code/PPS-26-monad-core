@@ -21,7 +21,7 @@ final class MonadCoreGameEngineRuntime(
   private var error: Option[BaseError]                    = None
   private var currentDimensions: Option[(Double, Double)] = None
 
-  given physics: PhysicsManager = PhysicsManager.default()
+  private var physics: PhysicsManager = PhysicsManager.default()
 
   override def start(): Unit =
     lock.synchronized:
@@ -102,6 +102,13 @@ final class MonadCoreGameEngineRuntime(
         currentWorld = Some(world)
 
   override def getError: Option[BaseError] = lock.synchronized(error)
+
+  override def physicsRules: Vector[EngineFacade.PhysicsRuleStatus] =
+    lock.synchronized(EngineFacade.physicsRules(physics))
+
+  override def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit =
+    lock.synchronized:
+      physics = EngineFacade.setPhysicsRuleEnabled(physics, ruleId, isEnabled)
 
   override def resize(width: Double, height: Double): Either[BaseError, Unit] =
     lock.synchronized:

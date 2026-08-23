@@ -8,7 +8,7 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.beans.value.ObservableValue
 import scalafx.geometry.Side
 import scalafx.scene.Node
-import scalafx.scene.control.{ContextMenu, MenuItem}
+import scalafx.scene.control.{CheckMenuItem, ContextMenu, MenuItem}
 
 final case class MenuButtonItem(
     label: String,
@@ -16,10 +16,19 @@ final case class MenuButtonItem(
     isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
 )
 
+final case class CheckMenuButtonItem(
+    label: String,
+    isSelected: Boolean,
+    onToggle: Boolean => Unit,
+    isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
+)
+
+type MenuButtonEntry = MenuButtonItem | CheckMenuButtonItem
+
 final case class MenuButtonProps(
     imageConfig: ImageConfigRecord,
     defaultImage: Image,
-    items: Seq[MenuButtonItem],
+    items: Seq[MenuButtonEntry],
     activeImage: Option[Image] = None,
     side: Side = Side.Bottom,
     isDisabled: ObservableValue[Boolean, java.lang.Boolean] = BooleanProperty(false)
@@ -27,12 +36,19 @@ final case class MenuButtonProps(
 
 object MenuButton:
 
-  extension (item: MenuButtonItem)
+  extension (item: MenuButtonEntry)
 
     def toMenuItem: MenuItem =
-      new MenuItem(item.label):
-        disable <== item.isDisabled
-        onAction = _ => item.onSelect()
+      item match
+        case action: MenuButtonItem =>
+          new MenuItem(action.label):
+            disable <== action.isDisabled
+            onAction = _ => action.onSelect()
+        case toggle: CheckMenuButtonItem =>
+          new CheckMenuItem(toggle.label):
+            selected = toggle.isSelected
+            disable <== toggle.isDisabled
+            onAction = _ => toggle.onToggle(selected.value)
 
   private val StylesheetPath: String =
     getClass.getResource("/stylesheets/menu-button.css").toExternalForm

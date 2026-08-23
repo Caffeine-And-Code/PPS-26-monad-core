@@ -18,7 +18,13 @@ import monad_core.simulator.presentation.panels.support.FormUtilities.{
 }
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
-import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon, ToolsIcon}
+import monad_core.simulator.presentation.resources.Image.{
+  PauseIcon,
+  PhysicsIcon,
+  PlayIcon,
+  StopIcon,
+  ToolsIcon
+}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.beans.property.BooleanProperty
 import scalafx.geometry.Pos
@@ -74,6 +80,9 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
         teamId,
         id => viewModel.refreshTeamsAfter(viewModel.world.removeTeam(id.value))
       )
+
+    private def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit =
+      viewModel.gameEngineRuntime.setPhysicsRuleEnabled(ruleId, isEnabled)
 
   def build(
       imageConfig: ImageConfigRecord,
@@ -208,6 +217,23 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
         )
         .left
         .map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
+
+      physicsMenuBtn <- MenuButton
+        .build(
+          MenuButtonProps(
+            imageConfig = imageConfig,
+            defaultImage = PhysicsIcon(),
+            items = gameEngineRuntime.physicsRules.map { rule =>
+              CheckMenuButtonItem(
+                label = rule.id,
+                isSelected = rule.isEnabled,
+                onToggle = isEnabled => viewModel.setPhysicsRuleEnabled(rule.id, isEnabled)
+              )
+            }
+          )
+        )
+        .left
+        .map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
     yield
       val spacer = new Region()
       HBox.setHgrow(spacer, Priority.Always)
@@ -218,6 +244,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
           alignment = Pos.CenterRight
           children = Seq(
             menuBtn,
+            physicsMenuBtn,
             spacer,
             playPauseBtn,
             stopBtn

@@ -101,6 +101,14 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     updatedEntity.position.x should be > movingEntity.position.x
     receivedEvents.get() shouldBe Vector(EntityUpdated(movingEntity, updatedEntity))
 
+  test("a physics rule can be disabled through the runtime"):
+    val engine = MonadCoreGameEngineRuntime()
+    val rule   = engine.physicsRules.head
+
+    engine.setPhysicsRuleEnabled(rule.id, isEnabled = false)
+
+    engine.physicsRules.find(_.id == rule.id).map(_.isEnabled) shouldBe Some(false)
+
   test("starting the runtime prevents edits on its world"):
     val entity = getOrFail(Entity.circle("new", Vector2D(0, 0), 1))
     val world  = MonadCoreWorld(Scene())

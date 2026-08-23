@@ -39,3 +39,10 @@ object Image:
         width = 28,
         height = 28
       )
+
+  case class PhysicsIcon()
+      extends Image(
+        fileName = "physics.png",
+        width = 28,
+        height = 28
+      )
