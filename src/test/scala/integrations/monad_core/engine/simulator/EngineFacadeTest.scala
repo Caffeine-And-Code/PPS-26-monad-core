@@ -145,6 +145,24 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
 
     result.state shouldBe updatedScene
 
+  test("a successful tick exposes the state preceding the latest fixed update"):
+    val initialScene = Scene()
+    val firstScene = initialScene
+      .addEntity(Entity.circle("first", Vector2D(0, 0), 1).value)
+      .value
+    val secondScene  = firstScene.addEntity(Entity.circle("second", Vector2D(2, 0), 1).value).value
+    val physics = physicsReturning { (state, _) =>
+      if state == initialScene then Right(firstScene) else Right(secondScene)
+    }
+    val session = EngineFacade.start(EngineFacade.default)
+
+    val result = EngineFacade
+      .tick(session, initialScene, DefaultTickTime * 2, physics)
+      .value
+
+    result.previousState shouldBe firstScene
+    result.state shouldBe secondScene
+
   test("a successful tick returns the events produced by physics"):
     val initialScene = Scene()
     val entity       = Entity.circle("entity", Vector2D(0, 0), 1).value
