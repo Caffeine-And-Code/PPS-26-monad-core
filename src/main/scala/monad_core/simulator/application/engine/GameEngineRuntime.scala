@@ -9,5 +9,10 @@ trait GameEngineRuntime extends EngineControl:
   def tick(currentTime: Long)(renderer: World => Unit)(using Painter): Unit
   def createSnapshot(): Unit
   def resetToSnapshot(): Unit
-  def initializeWorld(world: World, withDefaultEntity: Boolean = true): Either[BaseError, Unit]
+
+  def initializeWorld(
+      world: World,
+      withDefaultEntity: Boolean = true
+  ): Either[BaseError, Unit]
+
   def getError: Option[BaseError]

@@ -56,8 +56,7 @@ object Launcher:
     given GameEngineRuntime = runtime
 
     given World = MonadCoreWorld(
-      onEvents = logEvents,
-      currentMode = () => runtime.mode
+      onEvents = logEvents
     )
 
     given painter: Painter = PaintArchitect

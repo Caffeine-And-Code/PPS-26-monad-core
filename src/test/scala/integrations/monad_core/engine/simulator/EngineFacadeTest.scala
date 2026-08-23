@@ -150,7 +150,7 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
     val firstScene = initialScene
       .addEntity(Entity.circle("first", Vector2D(0, 0), 1).value)
       .value
-    val secondScene  = firstScene.addEntity(Entity.circle("second", Vector2D(2, 0), 1).value).value
+    val secondScene = firstScene.addEntity(Entity.circle("second", Vector2D(2, 0), 1).value).value
     val physics = physicsReturning { (state, _) =>
       if state == initialScene then Right(firstScene) else Right(secondScene)
     }

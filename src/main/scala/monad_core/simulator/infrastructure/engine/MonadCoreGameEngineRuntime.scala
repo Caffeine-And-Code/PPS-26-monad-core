@@ -25,18 +25,20 @@ final class MonadCoreGameEngineRuntime(
 
   override def start(): Unit =
     lock.synchronized:
+      currentWorld.foreach(_.enterSimulationMode())
       engineSession = EngineFacade.start(engineSession)
 
   override def stop(): Unit =
     lock.synchronized:
       engineSession = EngineFacade.stop(engineSession)
+      currentWorld.foreach(_.enterEditMode())
 
   override def tick(currentTime: Long)(renderer: World => Unit)(using painter: Painter): Unit =
     lock.synchronized:
       currentWorld.foreach { world =>
-        EngineFacade.tick(engineSession, world.scene, currentTime, physics) match
+        val currentScene = world.scene
+        EngineFacade.tick(engineSession, currentScene, currentTime, physics) match
           case Right(tickResult) =>
-            
             val processedScene = for
               interpolatedScene <- StateInterpolator(
                 previousScene = tickResult.previousState,
@@ -48,11 +50,7 @@ final class MonadCoreGameEngineRuntime(
 
             processedScene match
               case Right(scene: Scene) =>
-                world match
-                  case monadCoreWorld: MonadCoreWorld =>
-                    monadCoreWorld.currentScene = scene
-                  case _ => ()
-
+                world.replaceScene(scene)
                 engineSession = tickResult.nextSession
                 onEvents(tickResult.events)
                 renderer(world)
@@ -76,51 +74,32 @@ final class MonadCoreGameEngineRuntime(
   override def isRunning: Boolean =
     lock.synchronized(EngineFacade.isRunning(engineSession))
 
-  def mode: LoopMode =
-    lock.synchronized(EngineFacade.mode(engineSession))
-
   override def createSnapshot(): Unit =
     lock.synchronized:
       currentSnapshot = currentWorld.map(_.scene)
 
   override def resetToSnapshot(): Unit =
     lock.synchronized:
-      (currentWorld, currentSnapshot) match
-        case (Some(monadCoreWorld: MonadCoreWorld), Some(scene)) =>
-          monadCoreWorld.currentScene = scene
-        case _ => ()
+      for
+        world <- currentWorld
+        scene <- currentSnapshot
+      do world.replaceScene(scene)
       engineSession = EngineFacade.default
+      currentWorld.foreach(_.enterEditMode())
 
   override def initializeWorld(
       world: World,
       withDefaultEntity: Boolean = true
   ): Either[BaseError, Unit] =
-    val setCurrentWorld: () => Unit = () =>
-      lock.synchronized:
+    lock.synchronized:
+      for
+        _ <- currentDimensions match
+          case Some((width, height)) => world.resize(width, height)
+          case None                  => Right(())
+        _ <- addDefaultEntity(world, withDefaultEntity)
+      yield
+        synchronizeMode(world)
         currentWorld = Some(world)
-
-    val resizeResult = lock.synchronized:
-      currentDimensions match
-        case Some((width, height)) => world.resize(width, height)
-        case None                  => Right(())
-
-    resizeResult.flatMap { _ =>
-      if withDefaultEntity then
-        Entity.circle(id = "starter", position = Vector2D(15, 15), radius = 15) match
-          case Right(entity) =>
-            world.createEntity(
-              SaveEntityCommand(entity)
-            )
-
-            setCurrentWorld()
-
-            Right(())
-          case Left(error) => Left(error.adaptError())
-      else {
-        setCurrentWorld()
-        Right(())
-      }
-    }
 
   override def getError: Option[BaseError] = lock.synchronized(error)
 
@@ -138,6 +117,22 @@ final class MonadCoreGameEngineRuntime(
       }
 
       resizeResult
+
+  private def addDefaultEntity(
+      world: World,
+      withDefaultEntity: Boolean
+  ): Either[BaseError, Unit] =
+    if withDefaultEntity then
+      Entity
+        .circle(id = "starter", position = Vector2D(15, 15), radius = 15)
+        .adaptError()
+        .flatMap(entity => world.createEntity(SaveEntityCommand(entity)))
+    else Right(())
+
+  private def synchronizeMode(world: World): Unit =
+    EngineFacade.mode(engineSession) match
+      case LoopMode.EditMode       => world.enterEditMode()
+      case LoopMode.SimulationMode => world.enterSimulationMode()
 
 object MonadCoreGameEngineRuntime:
 
