@@ -1,6 +1,8 @@
 <component name="ProjectCodeStyleConfiguration">
   <code_scheme name="Project" version="173">
+    <option name="AUTODETECT_INDENTS" value="false" />
     <ScalaCodeStyleSettings>
+      <option name="SCALAFMT_REFORMAT_ON_FILES_SAVE" value="true" />
       <option name="FORMATTER" value="1" />
     </ScalaCodeStyleSettings>
   </code_scheme>

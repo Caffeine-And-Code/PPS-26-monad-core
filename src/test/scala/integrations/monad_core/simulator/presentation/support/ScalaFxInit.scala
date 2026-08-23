@@ -2,8 +2,8 @@ package integrations.monad_core.simulator.presentation.support
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import javafx.application.Platform
-import javafx.scene.{Node, Parent}
 import javafx.scene.control.ContextMenu as JfxContextMenu
+import javafx.scene.{Node, Parent}
 import javafx.stage.{Stage, Window}
 import monad_core.engine.model.EngineError
 import monad_core.simulator.errors.BaseError

@@ -1,7 +1,9 @@
 package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.traits.{PhysicsEngine, State}
+import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.core.events.EngineEvent.EntityUpdated
+import monad_core.engine.core.traits.{PhysicsEngine, PhysicsStep, State}
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
 import monad_core.engine.physics.combinators.RuleCombinator
@@ -13,11 +15,14 @@ final case class PhysicsManager private (
 )(using detector: CollisionDetector)
     extends PhysicsEngine:
 
-  override def step(scene: State, deltaTime: Long): Either[PhysicsError, State] =
-    val activeRules  = rules.filter(enabledRules.contains)
-    val updatedScene = RuleCombinator.sequence(activeRules)(scene, deltaTime)(using detector)
-
-    updatedScene.left.map(err => err)
+  override def step(scene: State, deltaTime: Long): Either[PhysicsError, PhysicsStep] =
+    val activeRules = rules.filter(enabledRules.contains)
+    RuleCombinator.sequence(activeRules)(scene, deltaTime)(using detector).map { result =>
+      PhysicsStep(
+        state = result.state,
+        events = result.events ++ detectEntityUpdateEvents(scene, result.state)
+      )
+    }
 
   def enable(rule: PhysicsRule): PhysicsManager =
     copy(enabledRules = enabledRules + rule)
@@ -34,6 +39,17 @@ final case class PhysicsManager private (
   def isEnabled(rule: PhysicsRule): Boolean =
     enabledRules.contains(rule)
 
+  private def detectEntityUpdateEvents(before: State, after: State): Vector[EngineEvent] =
+    val previousEntities = before.allEntities.map(entity => entity.id -> entity).toMap
+    val currentEntities  = after.allEntities.map(entity => entity.id -> entity).toMap
+
+    (previousEntities.keySet intersect currentEntities.keySet).toVector
+      .sortBy(_.value)
+      .collect {
+        case id if previousEntities(id) != currentEntities(id) =>
+          EntityUpdated(previousEntities(id), currentEntities(id))
+      }
+
 object PhysicsManager:
 
   def apply(
@@ -47,8 +63,8 @@ object PhysicsManager:
   def default(): PhysicsManager =
     apply(
       Vector(
-        EnemyAttractionRule.enemyAttractionRule,
         SurfaceDynamicsRule.surfaceDynamicsRule,
+        EnemyAttractionRule.enemyAttractionRule,
         CollisionResolutionRule.collisionResolutionRule,
         BorderContactRule.borderContactRule,
         KinematicsRule.kinematicsRule

@@ -1,8 +1,8 @@
 package monad_core.simulator.infrastructure.ai
 
 import monad_core.engine.model.*
-import monad_core.simulator.errors.BaseError
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
+import monad_core.simulator.errors.BaseError
 
 object Langchain4jToolResponse:
 
@@ -45,7 +45,9 @@ object Langchain4jToolResponse:
       s"id: ${entity.id.value}",
       s"position: ${renderVector(entity.position)}",
       s"shape: ${renderShape(entity.shape)}",
+      s"rotation: ${entity.rotation}",
       s"speed: ${entity.speed.fold("none")(renderVector)}",
+      s"angularSpeed: ${entity.angularSpeed.fold("none")(_.toString)}",
       s"weight: ${entity.weight.fold("none")(_.toString)}",
       s"health: ${entity.health.fold("none")(_.value.toString)}",
       s"team: ${entity.teamId.fold("none")(_.value)}"
@@ -56,6 +58,7 @@ object Langchain4jToolResponse:
       s"id: ${surface.id.value}",
       s"position: ${renderVector(surface.position)}",
       s"shape: ${renderShape(surface.shape)}",
+      s"rotation: ${surface.rotation}",
       s"frictionIndex: ${surface.frictionIndex.fold("none")(_.toString)}",
       s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}"
     ).mkString("\n")
@@ -85,7 +88,8 @@ object Langchain4jToolResponse:
       teamId: String,
       weight: Integer,
       speedX: java.lang.Double,
-      speedY: java.lang.Double
+      speedY: java.lang.Double,
+      angularSpeed: java.lang.Double
   ): Either[BaseError, Entity] =
     for
       entityWithTeam <- Option(teamId)
@@ -109,4 +113,7 @@ object Langchain4jToolResponse:
           case _ =>
             Left(IncompleteEntitySpeed())
       ): Either[BaseError, Entity]
-    yield completeEntity
+    yield withOptionalAngularSpeed(completeEntity, angularSpeed)
+
+  def withOptionalAngularSpeed(entity: Entity, angularSpeed: java.lang.Double): Entity =
+    Option(angularSpeed).fold(entity)(value => entity.withAngularSpeed(value.doubleValue()))

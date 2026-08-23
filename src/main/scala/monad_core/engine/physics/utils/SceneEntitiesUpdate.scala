@@ -10,8 +10,7 @@ private[physics] object SceneEntitiesUpdate:
       scene: State,
       updatedEntities: List[Entity]
   ): Either[PhysicsError, State] =
-    if updatedEntities.isEmpty then Right(scene)
-    else updateSceneWithEntities(scene, updatedEntities)
+    updateSceneWithEntities(scene, updatedEntities)
 
   private def updateSceneWithEntities(
       scene: State,

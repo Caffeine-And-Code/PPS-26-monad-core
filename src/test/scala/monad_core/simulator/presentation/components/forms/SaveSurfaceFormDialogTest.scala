@@ -106,6 +106,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         SurfaceFormParser.PositionXKey,
         SurfaceFormParser.PositionYKey,
         SurfaceFormParser.ShapeKey,
+        SurfaceFormParser.RotationKey,
         SurfaceFormParser.AppliedForceXKey,
         SurfaceFormParser.AppliedForceYKey,
         SurfaceFormParser.FrictionIndexKey
@@ -152,7 +153,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
         rectangleFields.map(_.id) should be(
-          Seq(BaseFormParser.HeightKey, BaseFormParser.LengthKey)
+          Seq(BaseFormParser.LengthKey, BaseFormParser.HeightKey)
         )
 
   test("buildFields should propagate shape-specific default values into dependent fields"):

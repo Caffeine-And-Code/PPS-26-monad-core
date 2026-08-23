@@ -50,3 +50,6 @@ build/
 ### Quarkdown ### 
 **/output/**
 **/quarkdown-output/**
+
+### Metals ###
+**/.metals/**

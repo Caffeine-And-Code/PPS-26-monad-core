@@ -1,13 +1,7 @@
 package monad_core.simulator.presentation.chat
 
 import monad_core.simulator.application.ai.{AiAgent, AskAgentCommand, CleanHistoryCommand}
-import monad_core.simulator.domain.ai.{
-  AgentResponse,
-  AgentResponseError,
-  ConversationId,
-  ConversationNotFoundError,
-  UserPrompt
-}
+import monad_core.simulator.domain.ai.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.*
 import org.scalatest.funsuite.AnyFunSuite

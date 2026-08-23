@@ -1,33 +1,30 @@
 package monad_core
 
 import monad_core.engine.simulator.Painter
-import monad_core.simulator.application.ai.AiAgent
+import monad_core.engine.core.events.EngineEvent
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
-import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.errors.BaseError
+import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
+import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
 import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jOllamaConfig}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
-import monad_core.simulator.application.logging.Logger
-import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
-import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
-import monad_core.simulator.infrastructure.ai.{
-  Langchain4jAgentFactory,
-  Langchain4jAssistantFactory,
-  Langchain4jOllamaConfig
+import monad_core.simulator.infrastructure.logging.{
+  ConsoleLogger,
+  EventLogEntry,
+  EventLogLevel,
+  formatEvents
 }
-import monad_core.simulator.infrastructure.engine.MonadCoreWorld
-import monad_core.simulator.infrastructure.logging.ConsoleLogger
 import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluationArguments,
   AgentEvaluationRuntime,
   AgentEvaluatorConsolePrinter,
   AgentEvaluatorPrinter
 }
-import monad_core.simulator.presentation.routes.RouteType.{All, Route}
-import monad_core.simulator.presentation.routes.{ArgumentRoutingRoute, RouteResponse, Router}
+import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.panels.{
   AiModelChatPanel,
   GameEngineModePanel,
@@ -44,9 +41,24 @@ import scala.Console.{GREEN, RESET}
 object Launcher:
 
   private def guiApplication(): Either[BaseError, Unit] =
-    given World = MonadCoreWorld()
+    given Logger = ConsoleLogger
 
-    given GameEngineRuntime = MonadCoreGameEngineRuntime()
+    val logger = summon[Logger]
+    val logEvents: Vector[EngineEvent] => Unit = events =>
+      formatEvents(events).foreach:
+        case EventLogEntry(EventLogLevel.Info, message)  => logger.info(message)
+        case EventLogEntry(EventLogLevel.Trace, message) => logger.trace(message)
+
+    val runtime = MonadCoreGameEngineRuntime(
+      onError = error => NotificationManager.show(error.message, Error),
+      onEvents = logEvents
+    )
+    given GameEngineRuntime = runtime
+
+    given World = MonadCoreWorld(
+      onEvents = logEvents,
+      currentMode = () => runtime.mode
+    )
 
     given painter: Painter = PaintArchitect
 

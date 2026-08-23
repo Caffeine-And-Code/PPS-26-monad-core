@@ -2,7 +2,7 @@ package monad_core.engine.physics.combinators
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
 
 private[physics] object RuleCombinator:
 
@@ -10,9 +10,17 @@ private[physics] object RuleCombinator:
     new PhysicsRule:
       override def apply(scene: State, dt: Long)(using
           detector: CollisionDetector
-      ): Either[PhysicsError, State] =
-        rules.foldLeft[Either[PhysicsError, State]](Right(scene)): (currentSceneResult, rule) =>
-          currentSceneResult.flatMap(currentScene => rule(currentScene, dt))
+      ): Either[PhysicsError, PhysicsRuleResult] =
+        rules.foldLeft[Either[PhysicsError, PhysicsRuleResult]](Right(PhysicsRuleResult(scene))):
+          (currentResult, rule) =>
+            currentResult.flatMap { accumulated =>
+              rule(accumulated.state, dt).map { next =>
+                PhysicsRuleResult(
+                  state = next.state,
+                  events = accumulated.events ++ next.events
+                )
+              }
+            }
 
   extension (self: PhysicsRule)
 

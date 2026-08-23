@@ -1,10 +1,12 @@
 package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
+import monad_core.engine.core.events.EngineEvent.CollisionDetected
+import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
 import monad_core.engine.physics.utils.{
   CollisionMap,
   CollisionResolver,
@@ -16,44 +18,67 @@ private[physics] object CollisionResolutionRule:
   private val Id              = "collision-resolution"
   private val CombinationSize = 2
 
+  final private case class DetectedCollision(
+      first: Entity,
+      second: Entity,
+      collision: Collision
+  )
+
   given collisionResolutionRule: PhysicsRule with
 
     override val RuleId: String = CollisionResolutionRule.Id
 
     override def apply(scene: State, dt: Long)(using
         detector: CollisionDetector
-    ): Either[PhysicsError, State] =
+    ): Either[PhysicsError, PhysicsRuleResult] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities
 
-        activeCollisions = findCollisions(entities)
+        detectedCollisions = findCollisions(entities)
+        activeCollisions   = toCollisionMap(detectedCollisions)
 
         updatedEntities <- CollisionResolver(activeCollisions)
 
         updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
-      yield updatedScene
+      yield PhysicsRuleResult(
+        state = updatedScene,
+        events = detectedCollisions.map(toEvent)
+      )
 
     private def findCollisions(
         entities: List[Entity]
-    )(using detector: CollisionDetector): CollisionMap =
+    )(using detector: CollisionDetector): Vector[DetectedCollision] =
       entities
         .combinations(CollisionResolutionRule.CombinationSize)
         .collect {
           case Seq(e1, e2) if !(e1.isFixed && e2.isFixed) =>
-            collisionBetween(e1, e2)
+            detector
+              .collision(e1, e2)
+              .map(DetectedCollision(e1, e2, _))
         }
         .flatten
-        .toList
-        .groupMap(_._1)(_._2)
+        .toVector
 
-    private def collisionBetween(
-        e1: Entity,
-        e2: Entity
-    )(using detector: CollisionDetector): List[(Entity, (Entity, Collision))] =
-      detector.collision(e1, e2).toList.flatMap { collision =>
-        List(
-          e1 -> (e2, collision),
-          e2 -> (e1, collision.copy(normalVector = collision.normalVector.flip))
-        )
-      }
+    private def toCollisionMap(collisions: Vector[DetectedCollision]): CollisionMap =
+      collisions
+        .flatMap { detected =>
+          Vector(
+            detected.second -> (detected.first, detected.collision),
+            detected.first -> (
+              detected.second,
+              detected.collision.copy(normalVector = detected.collision.normalVector.flip)
+            )
+          )
+        }
+        .groupMap(_._1)(_._2)
+        .view
+        .mapValues(_.toList)
+        .toMap
+
+    private def toEvent(detected: DetectedCollision): CollisionDetected =
+      CollisionDetected(
+        entityId = detected.first.id,
+        target = CollisionTarget.Entity(detected.second.id),
+        collision = detected.collision
+      )

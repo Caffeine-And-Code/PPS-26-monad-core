@@ -2,12 +2,9 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.physics.pathfinding.PathRectangle.vertexes
-import monad_core.engine.physics.utils.PhysicsUtil
+import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
 
 private[pathfinding] object WaypointFinder:
-
-  private val WaypointsNumber = 2
 
   def apply(start: Entity, target: Entity): List[Vector2D] =
     target.shape match
@@ -25,7 +22,7 @@ private[pathfinding] object WaypointFinder:
     val dx = start.position.x - target.position.x
     val dy = start.position.y - target.position.y
 
-    val dist = PhysicsUtil.distance(start.position, target.position)
+    val dist = start.position --> target.position
 
     val theta = math.atan2(dy, dx)
 
@@ -39,8 +36,9 @@ private[pathfinding] object WaypointFinder:
       PointOnCircle(target.position, circle.radius, angle2)
     )
 
-  private def angleScore(a: Vector2D, b: Vector2D): Double =
-    (a dot b) / (a.magnitude * b.magnitude)
+  private def signedAngle(from: Vector2D, to: Vector2D): Double =
+    val cross = from.x * to.y - from.y * to.x
+    math.atan2(cross, from dot to)
 
   private def findRectangleWaypoints(
       start: Entity,
@@ -48,14 +46,16 @@ private[pathfinding] object WaypointFinder:
       rectangle: Rectangle
   ): List[Vector2D] =
 
-    val vertexes = rectangle.vertexes(target.position)
+    val vertexes = rectangle.vertexes(target.position, target.rotation)
 
     val centerDirection = target.position - start.position
 
-    vertexes
+    val vertexesByAngle = vertexes
       .map { vertex =>
-        vertex -> angleScore(centerDirection, vertex - start.position)
+        vertex -> signedAngle(centerDirection, vertex - start.position)
       }
-      .sortBy(_._2)
-      .take(WaypointsNumber)
-      .map(_._1)
+
+    List(
+      vertexesByAngle.minBy(_._2)._1,
+      vertexesByAngle.maxBy(_._2)._1
+    )

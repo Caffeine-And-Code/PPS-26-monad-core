@@ -1,6 +1,6 @@
 package monad_core.simulator.infrastructure.engine.painters
 
-import monad_core.engine.model.{Entity, Shape2D, TeamId, Vector2D}
+import monad_core.engine.model.*
 import monad_core.simulator.application.engine.DrawCommand
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -9,7 +9,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import org.scalatest.{BeforeAndAfterEach, Inside}
-import scalafx.scene.paint.Color
 
 import scala.util.Random
 
@@ -21,6 +20,7 @@ class PaintArchitectTest
     with BeforeAndAfterEach:
   val CircleEntity: Entity    = Entity.circle("CircleId", Vector2D(0, 0), 1).value
   val RectangleEntity: Entity = Entity.rectangle("RectangleId", Vector2D(0, 0), 10, 10).value
+  val ArchitectEntityBaseColor: EngineColor = PaintArchitect.baseEntityColor.value
 
   override def beforeEach(): Unit =
     PaintArchitect.drainBuffer()
@@ -38,18 +38,18 @@ class PaintArchitectTest
           CircleEntity.position.x,
           CircleEntity.position.y,
           r,
-          PaintArchitect.baseColor
+          ArchitectEntityBaseColor
         )
       case _ => fail("CircleEntity is not a Circle")
 
-    PaintArchitect.drawCircle(CircleEntity, PaintArchitect.baseColor)
+    PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
 
     val commands = PaintArchitect.drainBuffer()
     commands.length should be(1)
     commands.head should be(expectedCommandInList)
 
   test("DrawCircle, provided with a Rectangle Locatable, does nothing"):
-    PaintArchitect.drawCircle(RectangleEntity, PaintArchitect.baseColor)
+    PaintArchitect.drawCircle(RectangleEntity, ArchitectEntityBaseColor)
 
     PaintArchitect.drainBuffer().length should be(0)
 
@@ -59,31 +59,39 @@ class PaintArchitectTest
         DrawCommand.Rectangle(
           RectangleEntity.position.x,
           RectangleEntity.position.y,
-          w,
           h,
-          PaintArchitect.baseColor
+          w,
+          RectangleEntity.rotation,
+          ArchitectEntityBaseColor
         )
       case _ => fail("RectangleEntity is not a Rectangle")
 
-    PaintArchitect.drawRectangle(RectangleEntity, PaintArchitect.baseColor)
+    PaintArchitect.drawRectangle(RectangleEntity, ArchitectEntityBaseColor)
 
     val commands = PaintArchitect.drainBuffer()
     commands.length should be(1)
     commands.head should be(expectedCommandInList)
 
   test("DrawRectangle, provided with a Circle Locatable, does nothing"):
-    PaintArchitect.drawRectangle(CircleEntity, PaintArchitect.baseColor)
+    PaintArchitect.drawRectangle(CircleEntity, ArchitectEntityBaseColor)
 
     PaintArchitect.drainBuffer().length should be(0)
 
+  test("DrawRectangle preserves the locatable rotation in the draw command"):
+    val rotated = RectangleEntity.rotateTo(45.0).value
+
+    PaintArchitect.drawRectangle(rotated, ArchitectEntityBaseColor)
+
+    inside(PaintArchitect.drainBuffer().head):
+      case DrawCommand.Rectangle(_, _, _, _, rotation, _) => rotation shouldBe 45.0
+
   test("drainBuffer returns accumulated commands and clears internal state"):
-    PaintArchitect.drawCircle(CircleEntity, PaintArchitect.baseColor)
-    PaintArchitect.drawRectangle(RectangleEntity, PaintArchitect.baseColor)
+    PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
+    PaintArchitect.drawRectangle(RectangleEntity, ArchitectEntityBaseColor)
 
     val extractedCommands = PaintArchitect.drainBuffer()
     extractedCommands.length should be(2)
 
-    // Un'ulteriore chiamata a drainBuffer deve restituire una lista vuota
     PaintArchitect.drainBuffer().length should be(0)
 
   test("A PaintArchitect can generate a random color given a TeamId"):
@@ -99,9 +107,10 @@ class PaintArchitectTest
     )
 
     forAll(teamIds): teamId =>
-      val color = PaintArchitect.teamIdColorRelation(teamId)
+      val result = PaintArchitect.teamIdColorRelation(teamId)
 
-      color shouldBe a[Color]
+      inside(result):
+        case Right(color) => color shouldBe a[EngineColor]
 
   test("teamIdColorRelation is deterministic"):
     val teamId = generateRandomTeamId()

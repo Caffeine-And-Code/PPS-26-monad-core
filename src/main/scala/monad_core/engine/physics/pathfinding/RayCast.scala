@@ -9,7 +9,8 @@ import monad_core.engine.physics.core.{
 
 private[physics] object RayCast:
 
-  private def WayPointDisplacement = 0.1
+  private val WayPointDisplacement = 5.0
+  private val HunterMargin         = 1.0
 
   def apply(
       to: Entity,
@@ -20,24 +21,28 @@ private[physics] object RayCast:
       lowerRightSceneCorner: Vector2D
   ): Either[PhysicsError, Option[Vector2D]] =
     val entitiesVertexesWithoutFrom = entitiesVertexes.filterNot(_._1 == from.id)
+    val inflatedVertexes = inflateAllVertexes(
+      entitiesVertexesWithoutFrom,
+      entities,
+      hunterRadius(from) + HunterMargin
+    )
 
     val rayDirection = (to.position - from.position).normalized
-
-    val firstObject = RayIntersection(
+    val firstObject = RayIntersection.withDistance(
       from.position,
       rayDirection,
-      entitiesVertexesWithoutFrom
+      inflatedVertexes
     )
 
     firstObject match
-      case Some(first) =>
+      case Some((first, _)) =>
         if first == to.id then Right(Some(to.position))
         else
           findEncounteredEntityWayPoint(
             first,
+            to,
             from,
             entities,
-            entitiesVertexesWithoutFrom,
             upperLeftSceneCorner,
             lowerRightSceneCorner
           )
@@ -45,9 +50,9 @@ private[physics] object RayCast:
 
   private def findEncounteredEntityWayPoint(
       firstEncounteredEntity: LocatableId,
+      originalTarget: Entity,
       from: Entity,
       entities: List[Entity],
-      entitiesVertexes: Map[LocatableId, List[Vector2D]],
       upperLeftSceneCorner: Vector2D,
       lowerRightSceneCorner: Vector2D
   ): Either[PhysicsError, Option[Vector2D]] =
@@ -60,6 +65,7 @@ private[physics] object RayCast:
 
         val bestWaypoint = findBestWaypoint(
           target,
+          originalTarget,
           from,
           waypoints,
           upperLeftSceneCorner,
@@ -69,29 +75,72 @@ private[physics] object RayCast:
         Right(bestWaypoint)
       case None => Left(RayIntersectedAMissingEntity(firstEncounteredEntity.value))
 
-  private def actualWaypoint(
+  private[pathfinding] def hunterRadius(hunter: Entity): Double =
+    hunter.shape match
+      case circle: Shape2D.Circle => circle.radius
+      case rectangle: Shape2D.Rectangle =>
+        Vector2D(rectangle.halfLength, rectangle.halfHeight).magnitude
+
+  private[pathfinding] def inflateAllVertexes(
+      vertexes: Map[LocatableId, List[Vector2D]],
+      entities: List[Entity],
+      inflation: Double
+  ): Map[LocatableId, List[Vector2D]] =
+    val entitiesById = entities.map(entity => entity.id -> entity).toMap
+
+    vertexes.map { case (id, originalVertexes) =>
+      id -> entitiesById.get(id).fold(originalVertexes) { entity =>
+        inflateVertexes(originalVertexes, entity, inflation)
+      }
+    }
+
+  private def inflateVertexes(
+      originalVertexes: List[Vector2D],
+      entity: Entity,
+      inflation: Double
+  ): List[Vector2D] =
+    originalVertexes.map { vertex =>
+      inflateSingleVertex(
+        originalVertex = vertex,
+        entity = entity,
+        inflation = inflation
+      )
+    }
+
+  private def inflateSingleVertex(
+      originalVertex: Vector2D,
+      entity: Entity,
+      inflation: Double
+  ): Vector2D = {
+    val direction = originalVertex - entity.position
+
+    entity.shape match
+      case _: Shape2D.Circle =>
+        originalVertex + direction.normalized * inflation
+      case _: Shape2D.Rectangle =>
+        val localDirection = direction.rotated(-entity.rotation)
+        val localInflation = Vector2D(
+          math.signum(localDirection.x),
+          math.signum(localDirection.y)
+        ) * inflation
+        originalVertex + localInflation.rotated(entity.rotation)
+  }
+
+  private[pathfinding] def actualWaypoint(
       to: Entity,
       from: Entity,
       waypoint: Vector2D
   ): Vector2D =
 
-    val direction = (waypoint - to.position).normalized
+    val clearance = hunterRadius(from) + WayPointDisplacement
 
-    val module = (waypoint - to.position).magnitude
-
-    val horizontal = SizeHelper.horizontalShapeSize(from) / 2 + WayPointDisplacement
-    val vertical   = SizeHelper.verticalShapeSize(from) / 2 + WayPointDisplacement
-
-    val entityDisplacement = Vector2D(
-      if direction.x > 0 then horizontal else -horizontal,
-      if direction.y > 0 then vertical else -vertical
+    inflateSingleVertex(
+      originalVertex = waypoint,
+      entity = to,
+      inflation = clearance
     )
 
-    val totalDisplacement = direction * entityDisplacement.magnitude
-
-    waypoint + totalDisplacement
-
-  private def isValidWayPoint(
+  private[pathfinding] def isValidWayPoint(
       to: Entity,
       from: Entity,
       waypoint: Vector2D,
@@ -109,6 +158,7 @@ private[physics] object RayCast:
 
   private def findBestWaypoint(
       to: Entity,
+      originalTarget: Entity,
       from: Entity,
       waypoints: List[Vector2D],
       upperLeftSceneCorner: Vector2D,
@@ -128,4 +178,4 @@ private[physics] object RayCast:
       )
 
     if validWaypoints.isEmpty then None
-    else Some(validWaypoints.minBy(_.euclideanDistance(from.position)))
+    else Some(validWaypoints.minBy(_.euclideanDistance(originalTarget.position)))

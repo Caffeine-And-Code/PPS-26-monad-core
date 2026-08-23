@@ -1,7 +1,7 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.domain.ai.AgentInfo
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite

@@ -1,30 +1,38 @@
 package monad_core.engine.model
 
+import monad_core.engine.model.Locatable.validateAndReturn
+
 final case class Surface private (
     id: LocatableId,
     position: Vector2D,
     shape: Shape2D,
+    rotation: Double,
     frictionIndex: Option[Double] = None,
     appliedForce: Option[Vector2D] = None
 ) extends Locatable
 
 object Surface:
 
-  def circle(id: String, position: Vector2D, radius: Double): Either[EngineError, Surface] =
-    Locatable.circle(id, position, radius)((id, position, shape) => Surface(id, position, shape))
+  def circle(
+      id: String,
+      position: Vector2D,
+      radius: Double,
+      rotation: Double = 0
+  ): Either[EngineError, Surface] =
+    Locatable.circle(id, position, radius, rotation)((id, position, shape, rotation) =>
+      Surface(id, position, shape, rotation)
+    )
 
   def rectangle(
       id: String,
       position: Vector2D,
       height: Double,
-      length: Double
+      length: Double,
+      rotation: Double = 0
   ): Either[EngineError, Surface] =
-    Locatable.rectangle(id, position, height, length)((id, position, shape) =>
-      Surface(id, position, shape)
+    Locatable.rectangle(id, position, height, length, rotation)((id, position, shape, rotation) =>
+      Surface(id, position, shape, rotation)
     )
-
-  private def validateAndReturn(updated: Surface): Either[EngineError, Surface] =
-    Locatable.validate(updated.position).map(_ => updated)
 
   extension (surface: Surface)
 

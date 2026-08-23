@@ -12,7 +12,9 @@ enum ToolCall:
       teamId: Option[String] = None,
       weight: Option[Int] = None,
       speedX: Option[Double] = None,
-      speedY: Option[Double] = None
+      speedY: Option[Double] = None,
+      rotation: Double = 0.0,
+      angularSpeed: Option[Double] = None
   )
 
   case CreateRectangleEntity(
@@ -24,19 +26,67 @@ enum ToolCall:
       teamId: Option[String] = None,
       weight: Option[Int] = None,
       speedX: Option[Double] = None,
-      speedY: Option[Double] = None
+      speedY: Option[Double] = None,
+      rotation: Double = 0.0,
+      angularSpeed: Option[Double] = None
   )
 
-  case UpdateCircleEntity(id: String, x: Double, y: Double, radius: Double)
-  case UpdateRectangleEntity(id: String, x: Double, y: Double, height: Double, length: Double)
+  case UpdateCircleEntity(
+      id: String,
+      x: Double,
+      y: Double,
+      radius: Double,
+      rotation: Double = 0.0
+  )
+
+  case UpdateRectangleEntity(
+      id: String,
+      x: Double,
+      y: Double,
+      height: Double,
+      length: Double,
+      rotation: Double = 0.0
+  )
+
   case RemoveEntity(id: String)
 
   case GetAllSurfaces
   case GetSurface(id: String)
-  case CreateCircleSurface(id: String, x: Double, y: Double, radius: Double)
-  case CreateRectangleSurface(id: String, x: Double, y: Double, height: Double, length: Double)
-  case UpdateCircleSurface(id: String, x: Double, y: Double, radius: Double)
-  case UpdateRectangleSurface(id: String, x: Double, y: Double, height: Double, length: Double)
+
+  case CreateCircleSurface(
+      id: String,
+      x: Double,
+      y: Double,
+      radius: Double,
+      rotation: Double = 0.0
+  )
+
+  case CreateRectangleSurface(
+      id: String,
+      x: Double,
+      y: Double,
+      height: Double,
+      length: Double,
+      rotation: Double = 0.0
+  )
+
+  case UpdateCircleSurface(
+      id: String,
+      x: Double,
+      y: Double,
+      radius: Double,
+      rotation: Double = 0.0
+  )
+
+  case UpdateRectangleSurface(
+      id: String,
+      x: Double,
+      y: Double,
+      height: Double,
+      length: Double,
+      rotation: Double = 0.0
+  )
+
   case RemoveSurface(id: String)
 
   case GetAllTeams

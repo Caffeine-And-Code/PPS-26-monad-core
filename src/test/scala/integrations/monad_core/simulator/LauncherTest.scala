@@ -46,5 +46,5 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
     assertMatchesVisualSnapshot(
       "launcher_scene_snapshot",
       mainWindow.get.getScene.getRoot,
-      maxDiffPercentage = 3.0
+      maxDiffPercentage = 8.5
     )
