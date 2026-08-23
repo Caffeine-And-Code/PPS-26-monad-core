@@ -89,9 +89,9 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
         isSelected = true,
         onToggle = isSelected => selected = Some(isSelected)
       )
-      val menuItem = item.toMenuItem.asInstanceOf[JfxCheckMenuItem]
-      menuItem.setSelected(false)
+      val menuItem = item.toMenuItem.delegate.asInstanceOf[JfxCheckMenuItem]
 
+      menuItem.setSelected(false)
       menuItem.fire()
 
       selected shouldBe Some(false)
@@ -105,7 +105,7 @@ class MenuButtonTest extends AnyFunSuite with Matchers with Inside with DialogTe
         onToggle = _ => ()
       )
 
-      val menuItem = item.toMenuItem.asInstanceOf[JfxCheckMenuItem]
+      val menuItem = item.toMenuItem.delegate.asInstanceOf[JfxCheckMenuItem]
 
       menuItem.isSelected shouldBe true
     }
