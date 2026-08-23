@@ -2,6 +2,7 @@ package integrations.monad_core.simulator.presentation.components.forms.base
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
+import monad_core.simulator.CannotBuildDialog
 import monad_core.simulator.presentation.components.forms.base.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -49,6 +50,19 @@ class FormDialogTest
       inside(buildResult):
         case Right(_) => ()
     }
+
+  test("FormDialog wraps a JavaFX thread violation in CannotBuildDialog"):
+    val props = FormDialogProps(
+      title = "Invalid Thread Dialog",
+      fields = defaultFields,
+      onSubmit = _ => ()
+    )
+
+    val result = FormDialog.show(props)
+
+    inside(result):
+      case Left(error: CannotBuildDialog) =>
+        error.dialogId should be("FormDialog")
 
   test("FormDialog onSubmit function is called upon submitting the form"):
     var submittedValues: Map[String, String] = Map.empty

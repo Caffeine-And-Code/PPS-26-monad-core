@@ -6,7 +6,7 @@ import monad_core.engine.core.events.EngineEvent.EntityUpdated
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, GameLoop}
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.simulator.Painter
-import monad_core.simulator.application.engine.DrawCommand
+import monad_core.simulator.application.engine.{DrawCommand, GameEngineRuntime}
 import monad_core.simulator.application.engine.errors.EngineErrorAdapted
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
@@ -51,6 +51,14 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     assert(firstFrame.await(AwaitTimeout, TimeUnit.SECONDS), "onFrame was never called after init")
     received.get().getAllEntities.length should be(1)
+
+  test("the runtime port adds the default entity when the option is omitted"):
+    val world                     = MonadCoreWorld(Scene())
+    val engine: GameEngineRuntime = MonadCoreGameEngineRuntime()
+
+    getOrFail(engine.initializeWorld(world))
+
+    world.getAllEntities.map(_.id.value) should contain("starter")
 
   test("play and pause do not break the frame loop"):
     val frames = new CountDownLatch(3)
