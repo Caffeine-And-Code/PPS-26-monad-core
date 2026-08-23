@@ -32,7 +32,7 @@ private[physics] object PhysicsUtil:
       mass: Option[Weight]
   ): Either[PhysicsError, Vector2D] =
     for actualMass <- actualDoubleWeight(mass)
-    yield force * (1.0 / actualMass)
+    yield force * inverseMass(actualMass)
 
   def applyFriction(
       speed: Vector2D,
