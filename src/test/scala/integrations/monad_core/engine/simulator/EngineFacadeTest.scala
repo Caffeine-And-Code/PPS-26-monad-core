@@ -127,7 +127,7 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
     physicsEvaluated shouldBe false
 
   test("physicsRules should expose the enabled state of an engine rule"):
-    val physics = PhysicsManager.default()
+    val physics        = PhysicsManager.default()
     val expectedRuleId = physics.rules.head.RuleId
 
     val result = EngineFacade.physicsRules(physics)
@@ -137,10 +137,11 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
     )
 
   test("setPhysicsRuleEnabled should return physics with the selected rule disabled"):
-    val physics = PhysicsManager.default()
+    val physics        = PhysicsManager.default()
     val expectedRuleId = physics.rules.head.RuleId
 
-    val updatedPhysics = EngineFacade.setPhysicsRuleEnabled(physics, expectedRuleId, isEnabled = false)
+    val updatedPhysics =
+      EngineFacade.setPhysicsRuleEnabled(physics, expectedRuleId, isEnabled = false)
 
     val result = EngineFacade.physicsRules(updatedPhysics).find(_.id == expectedRuleId)
 
@@ -148,7 +149,7 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
 
   test("setPhysicsRuleEnabled should return physics with the selected rule enabled"):
     val manager = PhysicsManager.default()
-    val ruleId = manager.rules.head.RuleId
+    val ruleId  = manager.rules.head.RuleId
     val physics = EngineFacade.setPhysicsRuleEnabled(
       manager,
       ruleId,
@@ -158,7 +159,7 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
     val updatedPhysics = EngineFacade.setPhysicsRuleEnabled(physics, ruleId, isEnabled = true)
 
     val result = EngineFacade.physicsRules(updatedPhysics).find(_.id == ruleId)
-    
+
     result.map(_.isEnabled) shouldBe Some(true)
 
   test("tick uses the default physics manager when none is supplied"):
