@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms
 import monad_core.engine.model.*
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
   LocatableFormShapes,
   SurfaceFormParser
 }
@@ -105,6 +106,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         SurfaceFormParser.PositionXKey,
         SurfaceFormParser.PositionYKey,
         SurfaceFormParser.ShapeKey,
+        SurfaceFormParser.RotationKey,
         SurfaceFormParser.AppliedForceXKey,
         SurfaceFormParser.AppliedForceYKey,
         SurfaceFormParser.FrictionIndexKey
@@ -147,11 +149,11 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         select.options should be(SaveSurfaceFormDialog.Shapes)
 
         val circleFields = select.dependentFields(LocatableFormShapes.CircleLabel)
-        circleFields.map(_.id) should be(Seq(SurfaceFormParser.RadiusKey))
+        circleFields.map(_.id) should be(Seq(BaseFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
         rectangleFields.map(_.id) should be(
-          Seq(SurfaceFormParser.HeightKey, SurfaceFormParser.LengthKey)
+          Seq(BaseFormParser.LengthKey, BaseFormParser.HeightKey)
         )
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
@@ -174,7 +176,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(
           select
             .dependentFields(LocatableFormShapes.RectangleLabel)
-            .find(_.id == SurfaceFormParser.HeightKey)
+            .find(_.id == BaseFormParser.HeightKey)
             .value
         ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
@@ -182,7 +184,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(
           select
             .dependentFields(LocatableFormShapes.RectangleLabel)
-            .find(_.id == SurfaceFormParser.LengthKey)
+            .find(_.id == BaseFormParser.LengthKey)
             .value
         ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("7.0"))

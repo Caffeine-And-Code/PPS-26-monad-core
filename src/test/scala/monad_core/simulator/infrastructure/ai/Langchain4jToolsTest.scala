@@ -1,8 +1,7 @@
 package monad_core.simulator.infrastructure.ai
 
-import monad_core.engine.core.Scene
-import monad_core.engine.model.{Entity, LocatableId, Surface, Team, TeamId, Vector2D}
-import monad_core.engine.public_api.Painter
+import monad_core.engine.model.*
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.*
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
@@ -31,6 +30,9 @@ class Langchain4jToolsTest
   private val radius          = 3.0
   private val height          = 4.0
   private val rectangleLength = 5.0
+  private val defaultRotation = 0.0
+  private val rotation        = 45.0
+  private val angularSpeed    = -30.0
   private val invalidId       = ""
 
   private var world: World                         = uninitialized
@@ -65,7 +67,9 @@ class Langchain4jToolsTest
          |id: circle
          |position: ($posX, $posY)
          |shape: circle, radius: $radius
+         |rotation: $defaultRotation
          |speed: none
+         |angularSpeed: none
          |weight: none
          |health: none
          |team: none
@@ -74,14 +78,16 @@ class Langchain4jToolsTest
          |id: rectangle
          |position: ($posX, $posY)
          |shape: rectangle, height: $height, length: $rectangleLength
+         |rotation: $defaultRotation
          |speed: none
+         |angularSpeed: none
          |weight: none
          |health: none
          |team: none""".stripMargin
 
   test("when get entity is called returns the formatted entity"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
-    world.getEntity.expects(LocatableId(entityId).value).returning(Right(entity)).once()
+    world.getEntity.expects(LocatableId(entityId).value.value).returning(Right(entity)).once()
 
     val result = tools.getEntity(entityId)
 
@@ -90,7 +96,9 @@ class Langchain4jToolsTest
          |id: $entityId
          |position: ($posX, $posY)
          |shape: circle, radius: $radius
+         |rotation: $defaultRotation
          |speed: none
+         |angularSpeed: none
          |weight: none
          |health: none
          |team: none""".stripMargin
@@ -179,6 +187,87 @@ class Langchain4jToolsTest
 
     result shouldBe s"Success: Entity '$entityId' created."
 
+  test("when create rectangle entity receives a rotation it is saved"):
+    val entity =
+      Entity.rectangle(entityId, Vector2D(posX, posY), height, rectangleLength, rotation).value
+    world.createEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createRectangleEntity(
+      entityId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' created."
+
+  test("when create circle entity receives a rotation it is saved"):
+    val entity = Entity.circle(entityId, Vector2D(posX, posY), radius, rotation).value
+    world.createEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createCircleEntity(
+      entityId,
+      posX,
+      posY,
+      radius,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' created."
+
+  test("when create circle entity receives an angular speed it is saved"):
+    val entity = Entity
+      .circle(entityId, Vector2D(posX, posY), radius)
+      .map(_.withAngularSpeed(angularSpeed))
+      .value
+    world.createEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createCircleEntity(
+      entityId,
+      posX,
+      posY,
+      radius,
+      angularSpeed = java.lang.Double.valueOf(angularSpeed)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' created."
+
+  test("when create rectangle entity receives an angular speed it is saved"):
+    val entity = Entity
+      .rectangle(entityId, Vector2D(posX, posY), height, rectangleLength)
+      .map(_.withAngularSpeed(angularSpeed))
+      .value
+    world.createEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createRectangleEntity(
+      entityId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      angularSpeed = java.lang.Double.valueOf(angularSpeed)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' created."
+
   test("when update circle entity is called returns a success message"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
     world.updateEntity
@@ -205,9 +294,90 @@ class Langchain4jToolsTest
 
     result shouldBe s"Success: Entity '$entityId' updated."
 
+  test("when update rectangle entity receives a rotation it is saved"):
+    val entity =
+      Entity.rectangle(entityId, Vector2D(posX, posY), height, rectangleLength, rotation).value
+    world.updateEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateRectangleEntity(
+      entityId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' updated."
+
+  test("when update circle entity receives a rotation it is saved"):
+    val entity = Entity.circle(entityId, Vector2D(posX, posY), radius, rotation).value
+    world.updateEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateCircleEntity(
+      entityId,
+      posX,
+      posY,
+      radius,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' updated."
+
+  test("when update circle entity receives an angular speed it is saved"):
+    val entity = Entity
+      .circle(entityId, Vector2D(posX, posY), radius)
+      .map(_.withAngularSpeed(angularSpeed))
+      .value
+    world.updateEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateCircleEntity(
+      entityId,
+      posX,
+      posY,
+      radius,
+      angularSpeed = java.lang.Double.valueOf(angularSpeed)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' updated."
+
+  test("when update rectangle entity receives an angular speed it is saved"):
+    val entity = Entity
+      .rectangle(entityId, Vector2D(posX, posY), height, rectangleLength)
+      .map(_.withAngularSpeed(angularSpeed))
+      .value
+    world.updateEntity
+      .expects(SaveEntityCommand(entity))
+      .returning(Right(Scene(entities = Map(entity.id -> entity))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateRectangleEntity(
+      entityId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      angularSpeed = java.lang.Double.valueOf(angularSpeed)
+    )
+
+    result shouldBe s"Success: Entity '$entityId' updated."
+
   test("when remove entity is called returns a success message"):
     val id = LocatableId(entityId).value
-    world.removeEntity.expects(id).returning(Right(Scene())).once()
+    world.removeEntity.expects(id.value).returning(Right(Scene())).once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
 
@@ -234,12 +404,13 @@ class Langchain4jToolsTest
          |id: $surfaceId
          |position: ($posX, $posY)
          |shape: circle, radius: $radius
+         |rotation: $defaultRotation
          |frictionIndex: none
          |appliedForce: none""".stripMargin
 
   test("when get surface is called returns the formatted surface"):
     val surface = Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
-    world.getSurface.expects(LocatableId(surfaceId).value).returning(Right(surface)).once()
+    world.getSurface.expects(LocatableId(surfaceId).value.value).returning(Right(surface)).once()
 
     val result = tools.getSurface(surfaceId)
 
@@ -248,6 +419,7 @@ class Langchain4jToolsTest
          |id: $surfaceId
          |position: ($posX, $posY)
          |shape: rectangle, height: $height, length: $rectangleLength
+         |rotation: $defaultRotation
          |frictionIndex: none
          |appliedForce: none""".stripMargin
 
@@ -303,9 +475,85 @@ class Langchain4jToolsTest
 
     result shouldBe s"Success: Surface '$surfaceId' updated."
 
+  test("when update rectangle surface receives a rotation it is saved"):
+    val surface =
+      Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength, rotation).value
+    world.updateSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateRectangleSurface(
+      surfaceId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Surface '$surfaceId' updated."
+
+  test("when update circle surface receives a rotation it is saved"):
+    val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius, rotation).value
+    world.updateSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateCircleSurface(
+      surfaceId,
+      posX,
+      posY,
+      radius,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Surface '$surfaceId' updated."
+
+  test("when create circle surface receives a rotation it is saved"):
+    val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius, rotation).value
+    world.createSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createCircleSurface(
+      surfaceId,
+      posX,
+      posY,
+      radius,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Surface '$surfaceId' created."
+
+  test("when create rectangle surface receives a rotation it is saved"):
+    val surface =
+      Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength, rotation).value
+    world.createSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createRectangleSurface(
+      surfaceId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      rotation = java.lang.Double.valueOf(rotation)
+    )
+
+    result shouldBe s"Success: Surface '$surfaceId' created."
+
   test("when remove surface is called delegates returns a success message"):
     val id = LocatableId(surfaceId).value
-    world.removeSurface.expects(id).returning(Right(Scene())).once()
+    world.removeSurface.expects(id.value).returning(Right(Scene())).once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
 
@@ -334,7 +582,7 @@ class Langchain4jToolsTest
 
   test("when get team is called returns the formatted team"):
     val team = Team.create("blue", Set("red")).value
-    world.getTeam.expects(TeamId("blue").value).returning(Right(team)).once()
+    world.getTeam.expects(TeamId("blue").value.value).returning(Right(team)).once()
 
     val result = tools.getTeam("blue")
 
@@ -371,7 +619,7 @@ class Langchain4jToolsTest
 
   test("when remove team is called returns a success message"):
     val id = TeamId("blue").value
-    world.removeTeam.expects(id).returning(Right(Scene())).once()
+    world.removeTeam.expects(id.value).returning(Right(Scene())).once()
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
 

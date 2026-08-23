@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.Surface
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
@@ -18,7 +18,7 @@ import scalafx.scene.Node
 final case class SaveSurfaceFormDialogProps(
     title: String,
     onSubmit: Surface => Unit,
-    onError: EngineError => Unit,
+    onError: BaseError => Unit,
     anchorNode: Option[Node] = None,
     surfaceToUpdate: Option[Surface] = None
 )
@@ -32,6 +32,7 @@ private case class SaveSurfaceFormDefaultValues(
     x: Option[String] = Option.apply(SurfaceFormDefaults.InitialX),
     y: Option[String] = Option.apply(SurfaceFormDefaults.InitialY),
     shape: Option[String] = Option.apply(SurfaceFormDefaults.InitialShape),
+    rotation: Option[String] = Some("0.0"),
     frictionIndex: Option[String] = None,
     appliedForceX: Option[String] = None,
     appliedForceY: Option[String] = None,
@@ -45,22 +46,28 @@ object SaveSurfaceFormDialog:
   private[forms] val Shapes =
     Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
-  def show(props: SaveSurfaceFormDialogProps): Either[EngineError, Unit] = {
+  private case class SaveSurfaceViewModel(surfaceToUpdate: Option[Surface])
+
+  extension (viewModel: SaveSurfaceViewModel)
+
+    // Decide se costruire una nuova Surface o aggiornarne una esistente
+    // (mantenendone l'id), in base ai valori raccolti dal form.
+    private def resolveSurface(values: Map[String, String]): Either[BaseError, Surface] =
+      viewModel.surfaceToUpdate match
+        case Some(surface) => SurfaceFormParser.buildSurface(values, () => surface.id.value)
+        case None          => SurfaceFormParser.buildSurface(values)
+
+  def show(props: SaveSurfaceFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.surfaceToUpdate)
+    val viewModel     = SaveSurfaceViewModel(props.surfaceToUpdate)
 
     FormDialog.show(
       FormDialogProps(
         title = props.title,
         fields = buildFields(defaultValues),
         owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
-        onSubmit = values =>
-          val result = props.surfaceToUpdate match
-            case Some(surface) =>
-              SurfaceFormParser.buildSurface(values, () => surface.id.value)
-            case None =>
-              SurfaceFormParser.buildSurface(values)
-
-          result.matchToResult(props.onError)(props.onSubmit)
+        onSubmit =
+          values => viewModel.resolveSurface(values).matchToResult(props.onError)(props.onSubmit)
       )
     )
   }
@@ -80,6 +87,7 @@ object SaveSurfaceFormDialog:
           radius = radius,
           height = height,
           length = length,
+          rotation = Some(surface.rotation.toString),
           appliedForceX = surface.appliedForce.flatMap(vector => Some(vector.x.toString)),
           appliedForceY = surface.appliedForce.flatMap(vector => Some(vector.y.toString)),
           frictionIndex = surface.frictionIndex.map(_.toString)
@@ -101,28 +109,17 @@ object SaveSurfaceFormDialog:
         id = SurfaceFormParser.ShapeKey,
         label = "Shape",
         options = Shapes,
-        dependentFields = Map(
-          LocatableFormShapes.CircleLabel -> Seq(
-            TextFieldSpec(
-              id = SurfaceFormParser.RadiusKey,
-              label = "Radius",
-              defaultValue = defaultValues.radius
-            )
-          ),
-          LocatableFormShapes.RectangleLabel -> Seq(
-            TextFieldSpec(
-              id = SurfaceFormParser.HeightKey,
-              label = "Width",
-              defaultValue = defaultValues.height
-            ),
-            TextFieldSpec(
-              id = SurfaceFormParser.LengthKey,
-              label = "Height",
-              defaultValue = defaultValues.length
-            )
-          )
+        dependentFields = FormDialog.buildShapeFields(
+          radiusDefaultValue = defaultValues.radius,
+          heightDefaultValue = defaultValues.height,
+          widthDefaultValue = defaultValues.length
         ),
         defaultValue = defaultValues.shape
+      ),
+      TextFieldSpec(
+        id = SurfaceFormParser.RotationKey,
+        label = "Initial Rotation (degrees)",
+        defaultValue = defaultValues.rotation
       ),
       TextFieldSpec(
         id = SurfaceFormParser.AppliedForceXKey,

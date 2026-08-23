@@ -1,24 +1,30 @@
 package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.agent.tool.{P, Tool}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
 import monad_core.simulator.application.engine.EngineControl
+import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{
   SaveEntityCommand,
   SaveSurfaceCommand,
   SaveTeamCommand,
   World
 }
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.Langchain4jToolResponse.*
 
 case class IncompleteEntitySpeed()
-    extends EngineError("Both speedX and speedY must be provided together")
+    extends BaseError("Both speedX and speedY must be provided together")
 
 case class Langchain4jTools()(using
     world: World,
     gameEngineRuntime: EngineControl
 ):
+
+  private val defaultRotation = 0.0
+
+  private val rotationOrDefault: java.lang.Double => Double =
+    rotation => Option(rotation).fold(defaultRotation)(_.doubleValue())
 
   @Tool(Array("Lists all entities in the world."))
   def getAllEntities: String =
@@ -28,7 +34,7 @@ case class Langchain4jTools()(using
   def getEntity(
       @P("Entity identifier") id: String
   ): String =
-    render(LocatableId(id).flatMap(world.getEntity))(renderEntity)
+    render(LocatableId(id).adaptError().flatMap(id => world.getEntity(id.value)))(renderEntity)
 
   @Tool(Array("Creates a circular entity."))
   def createCircleEntity(
@@ -43,13 +49,20 @@ case class Langchain4jTools()(using
       @P(value = "Optional horizontal speed; provide together with speedY", required = false)
       speedX: java.lang.Double = null,
       @P(value = "Optional vertical speed; provide together with speedX", required = false)
-      speedY: java.lang.Double = null
+      speedY: java.lang.Double = null,
+      @P(value = "Optional initial rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null,
+      @P(value = "Optional angular speed in degrees per second", required = false)
+      angularSpeed: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val initialRotation = rotationOrDefault(rotation)
+
       save(
         Entity
-          .circle(id, Vector2D(x, y), radius)
-          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
+          .circle(id, Vector2D(x, y), radius, initialRotation)
+          .adaptError()
+          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY, angularSpeed))
           .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
         s"Entity '$id' created."
       )
@@ -69,13 +82,20 @@ case class Langchain4jTools()(using
       @P(value = "Optional horizontal speed; provide together with speedY", required = false)
       speedX: java.lang.Double = null,
       @P(value = "Optional vertical speed; provide together with speedX", required = false)
-      speedY: java.lang.Double = null
+      speedY: java.lang.Double = null,
+      @P(value = "Optional initial rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null,
+      @P(value = "Optional angular speed in degrees per second", required = false)
+      angularSpeed: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val initialRotation = rotationOrDefault(rotation)
+
       save(
         Entity
-          .rectangle(id, Vector2D(x, y), height, length)
-          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY))
+          .rectangle(id, Vector2D(x, y), height, length, initialRotation)
+          .adaptError()
+          .flatMap(withOptionalEntityFields(_, teamId, weight, speedX, speedY, angularSpeed))
           .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
         s"Entity '$id' created."
       )
@@ -86,12 +106,20 @@ case class Langchain4jTools()(using
       @P("Identifier of the entity to update") id: String,
       @P("New X coordinate") x: Double,
       @P("New Y coordinate") y: Double,
-      @P("New circle radius, greater than zero") radius: Double
+      @P("New circle radius, greater than zero") radius: Double,
+      @P(value = "Optional new rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null,
+      @P(value = "Optional new angular speed in degrees per second", required = false)
+      angularSpeed: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val updatedRotation = rotationOrDefault(rotation)
+
       save(
         Entity
-          .circle(id, Vector2D(x, y), radius)
+          .circle(id, Vector2D(x, y), radius, updatedRotation)
+          .adaptError()
+          .map(withOptionalAngularSpeed(_, angularSpeed))
           .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
         s"Entity '$id' updated."
       )
@@ -103,12 +131,20 @@ case class Langchain4jTools()(using
       @P("New X coordinate") x: Double,
       @P("New Y coordinate") y: Double,
       @P("New rectangle height, greater than zero") height: Double,
-      @P("New rectangle length, greater than zero") length: Double
+      @P("New rectangle length, greater than zero") length: Double,
+      @P(value = "Optional new rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null,
+      @P(value = "Optional new angular speed in degrees per second", required = false)
+      angularSpeed: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val updatedRotation = rotationOrDefault(rotation)
+
       save(
         Entity
-          .rectangle(id, Vector2D(x, y), height, length)
+          .rectangle(id, Vector2D(x, y), height, length, updatedRotation)
+          .adaptError()
+          .map(withOptionalAngularSpeed(_, angularSpeed))
           .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
         s"Entity '$id' updated."
       )
@@ -120,7 +156,7 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        LocatableId(id).flatMap(world.removeEntity),
+        LocatableId(id).adaptError().flatMap(id => world.removeEntity(id.value)),
         s"Entity '$id' removed."
       )
     }
@@ -133,19 +169,24 @@ case class Langchain4jTools()(using
   def getSurface(
       @P("Surface identifier") id: String
   ): String =
-    render(LocatableId(id).flatMap(world.getSurface))(renderSurface)
+    render(LocatableId(id).adaptError().flatMap(id => world.getSurface(id.value)))(renderSurface)
 
   @Tool(Array("Creates a circular surface."))
   def createCircleSurface(
       @P("Unique surface identifier") id: String,
       @P("X coordinate") x: Double,
       @P("Y coordinate") y: Double,
-      @P("Circle radius, greater than zero") radius: Double
+      @P("Circle radius, greater than zero") radius: Double,
+      @P(value = "Optional initial rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val initialRotation = rotationOrDefault(rotation)
+
       save(
         Surface
-          .circle(id, Vector2D(x, y), radius)
+          .circle(id, Vector2D(x, y), radius, initialRotation)
+          .adaptError()
           .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' created."
       )
@@ -157,12 +198,17 @@ case class Langchain4jTools()(using
       @P("X coordinate") x: Double,
       @P("Y coordinate") y: Double,
       @P("Rectangle height, greater than zero") height: Double,
-      @P("Rectangle length, greater than zero") length: Double
+      @P("Rectangle length, greater than zero") length: Double,
+      @P(value = "Optional initial rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val initialRotation = rotationOrDefault(rotation)
+
       save(
         Surface
-          .rectangle(id, Vector2D(x, y), height, length)
+          .rectangle(id, Vector2D(x, y), height, length, initialRotation)
+          .adaptError()
           .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' created."
       )
@@ -173,12 +219,17 @@ case class Langchain4jTools()(using
       @P("Identifier of the surface to update") id: String,
       @P("New X coordinate") x: Double,
       @P("New Y coordinate") y: Double,
-      @P("New circle radius, greater than zero") radius: Double
+      @P("New circle radius, greater than zero") radius: Double,
+      @P(value = "Optional new rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val updatedRotation = rotationOrDefault(rotation)
+
       save(
         Surface
-          .circle(id, Vector2D(x, y), radius)
+          .circle(id, Vector2D(x, y), radius, updatedRotation)
+          .adaptError()
           .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' updated."
       )
@@ -190,12 +241,17 @@ case class Langchain4jTools()(using
       @P("New X coordinate") x: Double,
       @P("New Y coordinate") y: Double,
       @P("New rectangle height, greater than zero") height: Double,
-      @P("New rectangle length, greater than zero") length: Double
+      @P("New rectangle length, greater than zero") length: Double,
+      @P(value = "Optional new rotation in degrees, between 0 and 360", required = false)
+      rotation: java.lang.Double = null
   ): String =
     whileEngineStopped {
+      val updatedRotation = rotationOrDefault(rotation)
+
       save(
         Surface
-          .rectangle(id, Vector2D(x, y), height, length)
+          .rectangle(id, Vector2D(x, y), height, length, updatedRotation)
+          .adaptError()
           .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
         s"Surface '$id' updated."
       )
@@ -207,7 +263,7 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        LocatableId(id).flatMap(world.removeSurface),
+        LocatableId(id).adaptError().flatMap(id => world.removeSurface(id.value)),
         s"Surface '$id' removed."
       )
     }
@@ -220,7 +276,7 @@ case class Langchain4jTools()(using
   def getTeam(
       @P("Team identifier") id: String
   ): String =
-    render(TeamId(id).flatMap(world.getTeam))(renderTeam)
+    render(TeamId(id).adaptError().flatMap(id => world.getTeam(id.value)))(renderTeam)
 
   @Tool(Array("Creates a team and optionally assigns enemy teams."))
   def createTeam(
@@ -231,6 +287,7 @@ case class Langchain4jTools()(using
       save(
         Team
           .create(id, parseIds(enemies))
+          .adaptError()
           .flatMap(team => world.createTeam(SaveTeamCommand(team))),
         s"Team '$id' created."
       )
@@ -245,6 +302,7 @@ case class Langchain4jTools()(using
       save(
         Team
           .create(id, parseIds(enemies))
+          .adaptError()
           .flatMap(team => world.updateTeam(SaveTeamCommand(team))),
         s"Team '$id' updated."
       )
@@ -256,7 +314,7 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        TeamId(id).flatMap(world.removeTeam),
+        TeamId(id).adaptError().flatMap(id => world.removeTeam(id.value)),
         s"Team '$id' removed."
       )
     }

@@ -1,6 +1,6 @@
 package integrations.monad_core.simulator.presentation.components
 
-import helpers.{MockImage, MockImageConfig}
+import helpers.mocks.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import javafx.scene.image.ImageView
 import monad_core.simulator.presentation.components.{IconButton, IconButtonBaseProps}

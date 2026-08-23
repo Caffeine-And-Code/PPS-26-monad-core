@@ -1,7 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
-
 enum Shape2D:
   case Circle private[model] (radius: Double)
   case Rectangle private[model] (height: Double, length: Double)

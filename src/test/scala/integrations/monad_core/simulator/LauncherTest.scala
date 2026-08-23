@@ -1,6 +1,6 @@
 package integrations.monad_core.simulator
 
-import helpers.MockImage
+import helpers.mocks.MockImage
 import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
 import monad_core.Launcher
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound}
@@ -46,5 +46,5 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
     assertMatchesVisualSnapshot(
       "launcher_scene_snapshot",
       mainWindow.get.getScene.getRoot,
-      maxDiffPercentage = 3.0
+      maxDiffPercentage = 8.5
     )

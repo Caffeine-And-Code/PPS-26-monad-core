@@ -1,7 +1,6 @@
 package monad_core.engine.core
 
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{LocatableId, TeamId}
+import monad_core.engine.model.{EngineError, LocatableId, TeamId}
 
 case class EntityNotFound(entityId: LocatableId) extends EngineError(s"Entity $entityId Not Found")
 
@@ -33,3 +32,6 @@ case class CannotRemoveSurface(genericError: CannotRemoveNonPresentElementFromMa
 
 case class CannotRemoveNonPresentElementFromMap[Key](key: Key)
     extends EngineError(s"Element with key $key not present of type ${key.getClass}")
+
+case class InvalidInterpolationAlpha(alpha: Double)
+    extends EngineError(s"Interpolation alpha must be between 0 and 1: $alpha")

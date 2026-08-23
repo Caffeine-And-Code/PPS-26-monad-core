@@ -2,8 +2,8 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -20,8 +20,8 @@ class SaveEntityFormDialogTest
     with DialogTesting
     with FormTesting:
   val RadiusFieldIndex: Int = 2
-  val WeightFieldIndex: Int = 5
-  val HealthFieldIndex: Int = 6
+  val WeightFieldIndex: Int = 7
+  val HealthFieldIndex: Int = 8
 
   val GenericEitherCircleEntity: Either[EngineError, Entity] =
     Entity.circle("id", Vector2D(0, 0), 6)
@@ -143,7 +143,7 @@ class SaveEntityFormDialogTest
       case Shape2D.Circle(radius) => radius should be(expectedRadius)
 
   test("SaveEntityFormDialog invokes onError when form values are invalid"):
-    var capturedError: Option[EngineError] = None
+    var capturedError: Option[BaseError] = None
 
     val props = SaveEntityFormDialogProps(
       title = "Invalid Entity Test",

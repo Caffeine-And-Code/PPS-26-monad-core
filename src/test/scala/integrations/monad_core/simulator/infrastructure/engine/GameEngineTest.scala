@@ -1,20 +1,23 @@
 package integrations.monad_core.simulator.infrastructure.engine
 
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import monad_core.engine.core.Scene
-import monad_core.engine.model.{Entity, Vector2D}
-import monad_core.engine.public_api.Painter
+import monad_core.engine.core.GameLoop
+import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.core.events.EngineEvent.EntityUpdated
+import monad_core.engine.model.{Entity, Scene, Vector2D}
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.infrastructure.engine.{MonadCodeGameEngineRuntime, MonadCoreWorld}
-import monad_core.simulator.presentation.painters.Drawer
+import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
+import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import org.scalatest.funsuite.AnyFunSuite
+import scalafx.animation.AnimationTimer
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
-  given Painter = Drawer
+  given painter: Painter = PaintArchitect
 
   private val AwaitTimeout = 5L
 
@@ -31,24 +34,32 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val firstFrame = new CountDownLatch(1)
     val received   = new AtomicReference[World]()
 
-    val engine = MonadCodeGameEngineRuntime()
+    val engine = MonadCoreGameEngineRuntime()
 
-    engine.reset(MonadCoreWorld(Scene()))
-    engine.attach { world =>
-      received.set(world)
-      firstFrame.countDown()
+    getOrFail(engine.initializeWorld(MonadCoreWorld(Scene())))
+    engine.createSnapshot()
+    val animationTimer = AnimationTimer { currentTime =>
+      engine.tick(currentTime) { world =>
+        received.set(world)
+        firstFrame.countDown()
+      }
     }
+    animationTimer.start()
 
     assert(firstFrame.await(AwaitTimeout, TimeUnit.SECONDS), "onFrame was never called after init")
-    assert(received.get().getAllEntities.isEmpty)
+    received.get().getAllEntities.length should be(1)
 
   test("play and pause do not break the frame loop"):
     val frames = new CountDownLatch(3)
 
-    val engine = MonadCodeGameEngineRuntime()
+    val engine = MonadCoreGameEngineRuntime()
 
-    engine.reset(MonadCoreWorld(Scene()))
-    engine.attach(_ => frames.countDown())
+    getOrFail(engine.initializeWorld(MonadCoreWorld(Scene())))
+    engine.createSnapshot()
+    val animationTimer = AnimationTimer { currentTime =>
+      engine.tick(currentTime)(_ => frames.countDown())
+    }
+    animationTimer.start()
     engine.start()
     engine.stop()
     engine.start()
@@ -57,6 +68,27 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
       frames.await(AwaitTimeout, TimeUnit.SECONDS),
       "engine stopped delivering frames after play/pause"
     )
+
+  test("a simulation tick commits the final state and publishes emitted events"):
+    val movingEntity = getOrFail(
+      Entity
+        .circle("moving", Vector2D(10, 10), 1)
+        .map(_.withSpeed(Vector2D(1, 0)))
+    )
+    val initialScene   = getOrFail(Scene().addEntity(movingEntity))
+    val world          = MonadCoreWorld(initialScene)
+    val receivedEvents = new AtomicReference(Vector.empty[EngineEvent])
+    val engine = MonadCoreGameEngineRuntime(
+      onEvents = events => receivedEvents.set(events)
+    )
+
+    getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
+    engine.start()
+    engine.tick(GameLoop.DefaultTickTime)(_ => ())
+
+    val updatedEntity = getOrFail(world.getEntity(movingEntity.id.value))
+    updatedEntity.position.x should be > movingEntity.position.x
+    receivedEvents.get() shouldBe Vector(EntityUpdated(movingEntity, updatedEntity))
 
   test(
     "reset replaces the world; frames observed afterwards reflect the new world, not the old one"
@@ -68,26 +100,34 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val frameAfterReset  = new CountDownLatch(1)
     val received         = new AtomicReference[World]()
 
-    val engine = MonadCodeGameEngineRuntime()
+    val engine = MonadCoreGameEngineRuntime()
 
-    engine.attach { world =>
-      if world.getAllEntities == worldAfterReset.getAllEntities then
-        received.set(world)
-        frameAfterReset.countDown()
-      else sawPreResetFrame.countDown()
+    getOrFail(engine.initializeWorld(worldBeforeReset, false))
+    engine.createSnapshot()
+
+    val animationTimer = AnimationTimer { currentTime =>
+      engine.tick(currentTime) { world =>
+        if world.getAllEntities == worldAfterReset.getAllEntities then
+          received.set(world)
+          frameAfterReset.countDown()
+        else sawPreResetFrame.countDown()
+      }
     }
+    animationTimer.start()
 
-    engine.reset(worldBeforeReset)
+    engine.resetToSnapshot()
     engine.start()
 
     val hasWaitedForAtLeastOneFrameBeforeReset =
       sawPreResetFrame.await(AwaitTimeout, TimeUnit.SECONDS)
     hasWaitedForAtLeastOneFrameBeforeReset should be(true)
 
-    engine.reset(worldAfterReset)
+    getOrFail(engine.initializeWorld(worldAfterReset, false))
+    engine.createSnapshot()
+    engine.resetToSnapshot()
 
     val hasWaitedForAtLeastOneFrameAfterReset =
       frameAfterReset.await(AwaitTimeout, TimeUnit.SECONDS)
     hasWaitedForAtLeastOneFrameAfterReset should be(true)
 
-    assert(received.get().getAllEntities == worldAfterReset.getAllEntities)
+    received.get().getAllEntities should be(worldAfterReset.getAllEntities)

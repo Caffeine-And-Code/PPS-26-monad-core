@@ -1,12 +1,10 @@
 package monad_core.simulator.presentation.panels
 
-import monad_core.engine.core.Scene
-import monad_core.engine.errors.EngineError
-import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.CannotBuildPanel
-import monad_core.simulator.application.engine.GameEngineRuntime
-import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
-import monad_core.simulator.infrastructure.engine.MonadCoreWorld
+import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.panels.traits.{
   GameEngineModePanelBuilder,
   GameEnginePanelBuilder,
@@ -22,41 +20,54 @@ final class GameEnginePanel(
     imageConfig: ImageConfigRecord
 )(using
     world: World,
-    gameEngineRuntime: GameEngineRuntime
-) extends GameEnginePanelBuilder {
+    gameEngineRuntime: GameEngineRuntime,
+    architect: ShapeArchitect,
+    painter: Painter
+) extends GameEnginePanelBuilder:
 
   private val TopPanelHeightRatio    = 0.07
   private val BottomPanelHeightRatio = 0.93
   private val SpacingRatio           = 0.02
   private val TopPanelMinHeight      = 80.0
 
-  def build(): Either[EngineError, VBox] = {
-    buildInitialWorld(world)
-    val worldSnapshot: Option[Scene] = Some(world.scene)
-    val isEngineRunning              = BooleanProperty(gameEngineRuntime.isRunning)
+  private case class GameEnginePanelViewModel(gameEngineRuntime: GameEngineRuntime):
+    val isEngineRunning: BooleanProperty = BooleanProperty(gameEngineRuntime.isRunning)
+
+  extension (viewModel: GameEnginePanelViewModel)
+
+    private def onModeChange(isButtonActive: Boolean): Unit =
+      if isButtonActive then viewModel.gameEngineRuntime.start()
+      else viewModel.gameEngineRuntime.stop()
+      viewModel.isEngineRunning.value = viewModel.gameEngineRuntime.isRunning
+
+    private def onStopClick(): Unit =
+      viewModel.gameEngineRuntime.resetToSnapshot()
+
+  def build(): Either[BaseError, VBox] =
+    gameEngineRuntime.initializeWorld(world)
+    gameEngineRuntime.createSnapshot()
+
+    val viewModel = GameEnginePanelViewModel(gameEngineRuntime)
 
     for
       sceneRendererPanel <- rendererPanel
-        .build()
+        .build(viewModel.isEngineRunning)
         .left
         .map(error => CannotBuildPanel(error, this.toString))
 
-      onModeChange = (isButtonActive: Boolean) =>
-        if isButtonActive then gameEngineRuntime.start()
-        else gameEngineRuntime.stop()
-        isEngineRunning.value = gameEngineRuntime.isRunning
-
-      onStopClick = () => gameEngineRuntime.reset(MonadCoreWorld(worldSnapshot.get))
-
       gameEngineModePanel <- modePanel
-        .build(imageConfig, onModeChange, onStopClick, isEngineRunning)
+        .build(
+          imageConfig,
+          viewModel.onModeChange,
+          viewModel.onStopClick,
+          viewModel.isEngineRunning
+        )
         .left
         .map(error => CannotBuildPanel(error, this.toString))
     yield
       val container = new VBox {
         children = Seq(gameEngineModePanel, sceneRendererPanel)
       }
-
       container.spacing <== container.height * SpacingRatio
 
       gameEngineModePanel.prefHeight <== container.height * TopPanelHeightRatio
@@ -65,11 +76,3 @@ final class GameEnginePanel(
       sceneRendererPanel.prefHeight <== container.height * BottomPanelHeightRatio
 
       container
-  }
-
-  private[panels] def buildInitialWorld(world: World): Either[EngineError, Unit] =
-    Entity
-      .circle("starter", Vector2D(15, 15), 15)
-      .flatMap(entity => world.createEntity(SaveEntityCommand(entity)))
-
-}

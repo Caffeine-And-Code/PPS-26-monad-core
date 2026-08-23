@@ -1,7 +1,7 @@
 package integrations.monad_core.simulator.presentation.components
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
-import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
+import integrations.monad_core.simulator.presentation.support.NotificationTest
 import monad_core.simulator.presentation.components.{
   Error,
   Info,
@@ -9,48 +9,14 @@ import monad_core.simulator.presentation.components.{
   NotificationType,
   Success
 }
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import scalafx.scene.control.Label
 import scalafx.scene.layout.StackPane
-import scalafx.stage.Stage
 
-import scala.compiletime.uninitialized
-
-class NotificationManagerTest
-    extends AnyFunSuite
-    with Matchers
-    with ScalaFxInit
-    with SnapshotTesting
-    with BeforeAndAfterEach:
-
-  private var root: StackPane = uninitialized
-  private var stage: Stage    = uninitialized
-
-  override def beforeEach(): Unit =
-    onFxThread {
-      root = new StackPane() {
-        prefWidth = 300
-        prefHeight = 300
-      }
-
-      stage = new Stage() {
-        scene = new scalafx.scene.Scene(root)
-      }
-
-      NotificationManager.attach(root)
-      NotificationManager.animationsEnabled = true
-    }
-    super.beforeEach()
-
-  override def afterEach(): Unit =
-    onFxThread {
-      NotificationManager.detach()
-    }
-    super.afterEach()
+class NotificationManagerTest extends AnyFunSuite with Matchers with NotificationTest:
 
   private def resetManagerAndScene(): Unit =
     NotificationManager.detach()
@@ -184,22 +150,8 @@ class NotificationManagerTest
 
     assertMatchesArchitecturalSnapshotOfStage("success_notification_snapshot", stage)
 
-  // TODO: this will probably make a good usage of Prolog
   test("Notification Stacks matches the architectural snapshot"):
-    val cases = Table(
-      ("firstMessageType", "secondMessageType"),
-      (Info, Info),
-      (Info, Error),
-      (Info, Success),
-      (Error, Info),
-      (Error, Error),
-      (Error, Success),
-      (Success, Info),
-      (Success, Error),
-      (Success, Success)
-    )
-
-    forAll(cases): (firstMessageType, secondMessageType) =>
+    forAll(GeneratedNotificationCombos.cases): (firstMessageType, secondMessageType) =>
       onFxThread {
         resetManagerAndScene()
 
@@ -213,22 +165,9 @@ class NotificationManagerTest
         stage
       )
 
-  // TODO: this will probably make a good usage of Prolog
   test("Notification Stacks matches the visual snapshot"):
-    val cases = Table(
-      ("firstMessageType", "secondMessageType"),
-      (Info, Info),
-      (Info, Error),
-      (Info, Success),
-      (Error, Info),
-      (Error, Error),
-      (Error, Success),
-      (Success, Info),
-      (Success, Error),
-      (Success, Success)
-    )
 
-    forAll(cases): (firstMessageType, secondMessageType) =>
+    forAll(GeneratedNotificationCombos.cases): (firstMessageType, secondMessageType) =>
       def getDisplayValue(severity: NotificationType): String = severity.toString.toLowerCase
 
       onFxThread {

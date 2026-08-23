@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Entity, Team}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
@@ -18,7 +18,7 @@ import scalafx.scene.Node
 final case class SaveEntityFormDialogProps(
     title: String,
     onSubmit: Entity => Unit,
-    onError: EngineError => Unit,
+    onError: BaseError => Unit,
     teams: Seq[Team],
     anchorNode: Option[Node] = None,
     entityToUpdate: Option[Entity] = None
@@ -35,6 +35,8 @@ private case class SaveEntityFormDefaultValues(
     shape: Option[String] = Option.apply(EntityFormDefaults.InitialShape),
     speedX: Option[String] = None,
     speedY: Option[String] = None,
+    rotation: Option[String] = Some("0.0"),
+    angularSpeed: Option[String] = None,
     weight: Option[String] = None,
     health: Option[String] = None,
     teamId: Option[String] = None,
@@ -48,22 +50,26 @@ object SaveEntityFormDialog:
   private[forms] val Shapes =
     Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
-  def show(props: SaveEntityFormDialogProps): Either[EngineError, Unit] = {
+  private case class SaveEntityViewModel(entityToUpdate: Option[Entity])
+
+  extension (viewModel: SaveEntityViewModel)
+
+    private def resolveEntity(values: Map[String, String]): Either[BaseError, Entity] =
+      viewModel.entityToUpdate match
+        case Some(entity) => EntityFormParser.buildEntity(values, () => entity.id.value)
+        case None         => EntityFormParser.buildEntity(values)
+
+  def show(props: SaveEntityFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.entityToUpdate)
+    val viewModel     = SaveEntityViewModel(props.entityToUpdate)
 
     FormDialog.show(
       FormDialogProps(
         title = props.title,
         fields = buildFields(props.teams, defaultValues),
         owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
-        onSubmit = values =>
-          val result = props.entityToUpdate match
-            case Some(entity) =>
-              EntityFormParser.buildEntity(values, () => entity.id.value)
-            case None =>
-              EntityFormParser.buildEntity(values)
-
-          result.matchToResult(props.onError)(props.onSubmit)
+        onSubmit =
+          values => viewModel.resolveEntity(values).matchToResult(props.onError)(props.onSubmit)
       )
     )
   }
@@ -87,7 +93,9 @@ object SaveEntityFormDialog:
           weight = entity.weight.map(_.toString),
           health = entity.health.map(_.toString),
           speedX = entity.speed.map(_.x.toString),
-          speedY = entity.speed.map(_.y.toString)
+          speedY = entity.speed.map(_.y.toString),
+          rotation = Some(entity.rotation.toString),
+          angularSpeed = entity.angularSpeed.map(_.toString)
         )
 
   private[forms] def buildFields(
@@ -109,26 +117,10 @@ object SaveEntityFormDialog:
         id = EntityFormParser.ShapeKey,
         label = "Shape",
         options = Shapes,
-        dependentFields = Map(
-          LocatableFormShapes.CircleLabel -> Seq(
-            TextFieldSpec(
-              id = EntityFormParser.RadiusKey,
-              label = "Radius",
-              defaultValue = defaultValues.radius
-            )
-          ),
-          LocatableFormShapes.RectangleLabel -> Seq(
-            TextFieldSpec(
-              id = EntityFormParser.HeightKey,
-              label = "Width",
-              defaultValue = defaultValues.height
-            ),
-            TextFieldSpec(
-              id = EntityFormParser.LengthKey,
-              label = "Height",
-              defaultValue = defaultValues.length
-            )
-          )
+        dependentFields = FormDialog.buildShapeFields(
+          radiusDefaultValue = defaultValues.radius,
+          heightDefaultValue = defaultValues.height,
+          widthDefaultValue = defaultValues.length
         ),
         defaultValue = defaultValues.shape
       ),
@@ -141,6 +133,16 @@ object SaveEntityFormDialog:
         id = EntityFormParser.SpeedYKey,
         label = "Initial Speed Y",
         defaultValue = defaultValues.speedY
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.RotationKey,
+        label = "Initial Rotation (degrees)",
+        defaultValue = defaultValues.rotation
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.AngularSpeedKey,
+        label = "Angular Speed (degrees/s)",
+        defaultValue = defaultValues.angularSpeed
       ),
       TextFieldSpec(
         id = EntityFormParser.WeightKey,

@@ -1,13 +1,17 @@
 package monad_core.simulator.presentation.panels.traits
 
-import monad_core.engine.errors.EngineError
-import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.errors.BaseError
+import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
 trait SceneRendererPanelBuilder:
 
-  def build()(using
+  def build(isEngineRunning: BooleanProperty)(using
       gameEngineRuntime: GameEngineRuntime,
-      world: World
-  ): Either[EngineError, VBox]
+      world: World,
+      architect: ShapeArchitect,
+      painter: Painter
+  ): Either[BaseError, VBox]

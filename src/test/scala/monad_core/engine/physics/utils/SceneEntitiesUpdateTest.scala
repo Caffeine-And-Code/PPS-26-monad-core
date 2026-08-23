@@ -8,8 +8,8 @@ import monad_core.engine.core.{
 }
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.PhysicsDomainError
-import monad_core.engine.physics.helper.PhysicsEntityHelper.makeMovingEntityCircle
-import monad_core.engine.physics.helper.PhysicsSceneHelper
+import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
+import monad_core.engine.helper.MockStateHelper
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -20,7 +20,7 @@ class SceneEntitiesUpdateTest
     extends AnyFunSuite
     with Matchers
     with MockFactory
-    with PhysicsSceneHelper:
+    with MockStateHelper:
 
   private val Entity1 = makeMovingEntityCircle(
     id = "entity1",
@@ -35,7 +35,7 @@ class SceneEntitiesUpdateTest
   )
 
   test("this function should return the same scene if the list of updated entities is empty"):
-    val initialScene = sceneWithEntities(List(Entity1))
+    val initialScene = stateWithEntities(List(Entity1))
 
     val result = SceneEntitiesUpdate(initialScene, List()).value
 
@@ -50,7 +50,7 @@ class SceneEntitiesUpdateTest
 
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
-    val initialScene = sceneWithEntities(List(Entity1))
+    val initialScene = stateWithEntities(List(Entity1))
 
     val result = SceneEntitiesUpdate(initialScene, List(updatedEntity)).value
 
@@ -64,7 +64,7 @@ class SceneEntitiesUpdateTest
 
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
-    val initialScene = sceneWithEntities(List(Entity1, Entity2))
+    val initialScene = stateWithEntities(List(Entity1, Entity2))
 
     val result = SceneEntitiesUpdate(initialScene, List(updatedEntity)).value
 
@@ -84,7 +84,7 @@ class SceneEntitiesUpdateTest
     val updatedEntity1 = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
     val updatedEntity2 = Entity2.moveTo(Vector2D(21, 21)).withSpeed(Vector2D(3, 3))
 
-    val initialScene = sceneWithEntities(List(Entity1, Entity2))
+    val initialScene = stateWithEntities(List(Entity1, Entity2))
 
     val result = SceneEntitiesUpdate(initialScene, List(updatedEntity1, updatedEntity2)).value
 
@@ -103,7 +103,7 @@ class SceneEntitiesUpdateTest
 
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
-    val initialScene = sceneWithEntities(List(Entity2))
+    val initialScene = stateWithEntities(List(Entity2))
 
     val result = SceneEntitiesUpdate(initialScene, List(updatedEntity))
 
@@ -121,7 +121,7 @@ class SceneEntitiesUpdateTest
 
     val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
 
-    val initialScene = sceneWithEntitiesNotRemoving(List(Entity1))
+    val initialScene = stateWithEntitiesNotRemoving(List(Entity1))
 
     val result = SceneEntitiesUpdate(initialScene, List(updatedEntity))
 

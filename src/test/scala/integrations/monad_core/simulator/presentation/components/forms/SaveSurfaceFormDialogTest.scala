@@ -2,8 +2,8 @@ package integrations.monad_core.simulator.presentation.components.forms
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.*
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.*
 import org.scalamock.scalatest.proxy.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -122,7 +122,7 @@ class SaveSurfaceFormDialogTest
       case Shape2D.Circle(radius) => radius should be(expectedRadius)
 
   test("SaveSurfaceFormDialog invokes onError when form values are invalid"):
-    var capturedError: Option[EngineError] = None
+    var capturedError: Option[BaseError] = None
 
     val props = SaveSurfaceFormDialogProps(
       title = "Invalid Surface Test",

@@ -1,8 +1,7 @@
 package monad_core.simulator.presentation.stages.traits
 
-import dev.langchain4j.service.AiServices
-import monad_core.engine.errors.EngineError
 import monad_core.simulator.application.ai.AiAgent
+import monad_core.simulator.errors.BaseError
 import scalafx.beans.property.ReadOnlyDoubleProperty
 import scalafx.scene.layout.HBox
 
@@ -16,4 +15,4 @@ trait MainStageBuilder:
   )(using
       aiAgent: AiAgent,
       executionContext: ExecutionContext
-  ): Either[EngineError, HBox]
+  ): Either[BaseError, HBox]

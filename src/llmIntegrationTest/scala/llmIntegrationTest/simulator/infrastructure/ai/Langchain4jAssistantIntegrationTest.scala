@@ -1,20 +1,25 @@
 package llmIntegrationTest.simulator.infrastructure.ai
 
 import llmIntegrationTest.langchain4j.judge.LlmJudgeAssistant
+import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
+import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
+import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
 import monad_core.engine.model.{Entity, LocatableId, Vector2D}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.domain.ai.ConversationId
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import monad_core.simulator.infrastructure.ai.{
+  Langchain4jAgentFactory,
+  Langchain4jAssistant,
+  Langchain4jOllamaConfig
+}
 import org.scalactic.Prettifier.default
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.EitherValues.*
-import llmIntegrationTest.langchain4j.matchers.ToolExecutionMatchers.*
-import llmIntegrationTest.langchain4j.matchers.AssistantResponseMatchers.*
-import llmIntegrationTest.langchain4j.matchers.LLMAsAJudgeMatchers.*
-import monad_core.simulator.infrastructure.ai.{Langchain4jAgentFactory, Langchain4jAssistant, Langchain4jOllamaConfig}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+
 import scala.compiletime.uninitialized
 
 class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with MockFactory with BeforeAndAfterEach:
@@ -106,7 +111,7 @@ class Langchain4jAssistantIntegrationTest extends AnyFunSuite with Matchers with
     val assistant = getAssistant
 
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
-    world.getEntity.expects(LocatableId("my_circle").value).returning(Right(circle)).once()
+    world.getEntity.expects(LocatableId("my_circle").value.value).returning(Right(circle)).once()
     world.updateEntity.expects(SaveEntityCommand(updatedEntity)).returning(Right(())).once()
 
     val firstResponse = assistant.chat(memoryId, firstMessage)

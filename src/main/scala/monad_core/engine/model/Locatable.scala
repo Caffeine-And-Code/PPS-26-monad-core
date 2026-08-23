@@ -1,7 +1,5 @@
 package monad_core.engine.model
 
-import monad_core.engine.errors.EngineError
-
 trait Locatable:
   def id: LocatableId
 
@@ -9,30 +7,48 @@ trait Locatable:
 
   def shape: Shape2D
 
+  def rotation: Double
+
 object Locatable:
 
-  def circle[A](id: String, position: Vector2D, radius: Double)(
-      build: (LocatableId, Vector2D, Shape2D) => A
+  def circle[A](id: String, position: Vector2D, radius: Double, rotation: Double = 0)(
+      build: (LocatableId, Vector2D, Shape2D, Double) => A
   ): Either[EngineError, A] =
-    Shape2D.circle(radius).flatMap(circle => createGeneric(id, position, circle)(build))
+    Shape2D.circle(radius).flatMap(circle => createGeneric(id, position, circle, rotation)(build))
 
   private def createGeneric[A](
       id: String,
       position: Vector2D,
-      shape: Shape2D
-  )(build: (LocatableId, Vector2D, Shape2D) => A): Either[EngineError, A] =
+      shape: Shape2D,
+      rotation: Double
+  )(build: (LocatableId, Vector2D, Shape2D, Double) => A): Either[EngineError, A] =
     for {
       locatableId <- LocatableId(id)
-      _           <- validate(position)
-    } yield build(locatableId, position, shape)
+      _           <- validate(position, rotation)
+    } yield build(locatableId, position, shape, rotation)
 
-  def validate(position: Vector2D): Either[EngineError, Unit] =
-    if position.x < 0 || position.y < 0 then Left(PositionIsValid(position))
-    else Right(())
+  private[model] def validateAndReturn[L <: Locatable](updated: L): Either[EngineError, L] =
+    validate(updated.position, updated.rotation).map(_ => updated)
 
-  def rectangle[A](id: String, position: Vector2D, height: Double, length: Double)(
-      build: (LocatableId, Vector2D, Shape2D) => A
-  ): Either[EngineError, A] =
+  private def validate(position: Vector2D, rotation: Double): Either[EngineError, Unit] =
+    for
+      _ <- validatePosition(position)
+      _ <- validateRotation(rotation)
+    yield ()
+
+  private def validatePosition(position: Vector2D): Either[EngineError, Unit] =
+    Either.cond(position.x >= 0 && position.y >= 0, (), PositionIsValid(position))
+
+  def validateRotation(rotation: Double): Either[EngineError, Unit] =
+    Either.cond(rotation >= 0 && rotation <= 360, (), RotationMustBeAValidDegreeValue(rotation))
+
+  def rectangle[A](
+      id: String,
+      position: Vector2D,
+      height: Double,
+      length: Double,
+      rotation: Double = 0
+  )(build: (LocatableId, Vector2D, Shape2D, Double) => A): Either[EngineError, A] =
     Shape2D
       .rectangle(height, length)
-      .flatMap(rectangle => createGeneric(id, position, rectangle)(build))
+      .flatMap(rectangle => createGeneric(id, position, rectangle, rotation)(build))

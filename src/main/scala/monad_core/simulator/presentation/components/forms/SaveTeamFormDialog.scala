@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms
 
-import monad_core.engine.errors.EngineError
 import monad_core.engine.model.{Team, TeamId}
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.forms.base.*
 import monad_core.simulator.presentation.components.forms.base.FormDialog.matchToResult
 import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
@@ -11,14 +11,14 @@ import scalafx.scene.Node
 final case class SaveTeamFormDialogProps(
     title: String,
     onSubmit: Team => Unit,
-    onError: EngineError => Unit,
+    onError: BaseError => Unit,
     possibleEnemies: Seq[Team],
     anchorNode: Option[Node] = None,
     teamToUpdate: Option[Team] = None
 )
 
 final case class SaveTeamFormDefaultValues(
-    teamName: Option[String] = Option.empty,
+    teamName: Option[TeamId] = Option.empty,
     enemies: Seq[TeamId] = Seq.empty
 )
 
@@ -29,34 +29,44 @@ final private[forms] case class BuildSaveTeamFormFieldsRecord(
 
 object SaveTeamFormDialog:
 
-  def show(props: SaveTeamFormDialogProps): Either[EngineError, Unit] = {
+  private case class SaveTeamViewModel(teamToUpdate: Option[Team])
+
+  extension (viewModel: SaveTeamViewModel)
+
+    private def resolveTeam(values: Map[String, String]): Either[BaseError, Team] =
+      viewModel.teamToUpdate match
+        case None          => TeamFormParser.buildTeam(values)
+        case Some(oldTeam) => TeamFormParser.buildUpdatedTeam(values, oldTeam)
+
+    private def resolveFields(record: BuildSaveTeamFormFieldsRecord): Seq[FormFieldSpec] =
+      viewModel.teamToUpdate match
+        case Some(_) => buildTeamEditFields(record)
+        case None    => buildTeamCreationFields(record)
+
+  def show(props: SaveTeamFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues     = buildDefaultValues(props.teamToUpdate)
     val buildFieldsRecord = BuildSaveTeamFormFieldsRecord(props.possibleEnemies, defaultValues)
+    val viewModel         = SaveTeamViewModel(props.teamToUpdate)
 
     FormDialog.show(
       FormDialogProps(
         title = props.title,
-        fields = props.teamToUpdate match
-          case Some(team) => buildTeamEditFields(buildFieldsRecord)
-          case None       => buildTeamCreationFields(buildFieldsRecord)
-        ,
+        fields = viewModel.resolveFields(buildFieldsRecord),
         owner = ScalaFxUtils.ownerWindowOfOption(props.anchorNode),
-        onSubmit = values =>
-          val newTeam = props.teamToUpdate match
-            case None          => TeamFormParser.buildTeam(values)
-            case Some(oldTeam) => TeamFormParser.buildUpdatedTeam(values, oldTeam)
-
-          newTeam.matchToResult(props.onError)(props.onSubmit)
+        onSubmit =
+          values => viewModel.resolveTeam(values).matchToResult(props.onError)(props.onSubmit)
       )
     )
   }
 
-  private[forms] def buildDefaultValues(teamToUpdate: Option[Team]): SaveTeamFormDefaultValues =
+  private[forms] def buildDefaultValues(
+      teamToUpdate: Option[Team]
+  ): SaveTeamFormDefaultValues =
     teamToUpdate match
       case None => SaveTeamFormDefaultValues()
       case Some(team) =>
         SaveTeamFormDefaultValues(
-          teamName = Some(team.id.value),
+          teamName = Some(team.id),
           enemies = Seq.from(team.enemies)
         )
 
@@ -67,7 +77,7 @@ object SaveTeamFormDialog:
       TextFieldSpec(
         id = TeamFormParser.TeamIdKey,
         label = "Name",
-        defaultValue = record.defaultValues.teamName
+        defaultValue = record.defaultValues.teamName.map(_.value)
       )
     ).appendedAll(
       buildTeamEditFields(record)

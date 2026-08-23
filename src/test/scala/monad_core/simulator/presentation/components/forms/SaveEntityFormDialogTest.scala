@@ -3,6 +3,7 @@ package monad_core.simulator.presentation.components.forms
 import monad_core.engine.model.*
 import monad_core.simulator.presentation.components.forms.base.{SelectFieldSpec, TextFieldSpec}
 import monad_core.simulator.presentation.components.forms.parsers.{
+  BaseFormParser,
   EntityFormParser,
   LocatableFormShapes
 }
@@ -16,15 +17,17 @@ import org.scalatest.prop.Tables.Table
 
 class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val EntityId       = "id"
-  private val EntityPosition = Vector2D(1, 2)
-  private val EntityRadius   = 5.0
-  private val EntityHeight   = 6.0
-  private val EntityLength   = 7.0
-  private val EntitySpeed    = Vector2D(3, 4)
-  private val EntityWeight   = 10
-  private val EntityHealth   = 20
-  private val EntityTeamId   = TeamId("teamIdValue").value
+  private val EntityId           = "id"
+  private val EntityPosition     = Vector2D(1, 2)
+  private val EntityRadius       = 5.0
+  private val EntityHeight       = 6.0
+  private val EntityLength       = 7.0
+  private val EntitySpeed        = Vector2D(3, 4)
+  private val EntityWeight       = 10
+  private val EntityHealth       = 20
+  private val EntityTeamId       = TeamId("teamIdValue").value
+  private val EntityRotation     = 30.0
+  private val EntityAngularSpeed = -45.0
 
   private def circleEntity: Entity = Entity.circle(EntityId, EntityPosition, EntityRadius).value
 
@@ -37,7 +40,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
       withHealth <- withSpeed.withHealth(EntityHealth)
       withWeight <- withHealth.withWeight(EntityWeight)
       withTeam   <- withWeight.withTeamId(EntityTeamId.value)
-    yield withTeam
+      rotated    <- withTeam.rotateTo(EntityRotation)
+    yield rotated.withAngularSpeed(EntityAngularSpeed)
     either.value
 
   test("buildDefaultValues should return empty defaults when no entity is provided"):
@@ -79,6 +83,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
     result.health should be(None)
     result.speedX should be(None)
     result.speedY should be(None)
+    result.rotation should be(Some("0.0"))
+    result.angularSpeed should be(None)
 
   test("buildDefaultValues should map optional fields when entity has them set"):
     val cases = Table(
@@ -97,6 +103,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
       result.health should be(Some(EntityHealth.toString))
       result.speedX should be(Some(EntitySpeed.x.toString))
       result.speedY should be(Some(EntitySpeed.y.toString))
+      result.rotation should be(Some(EntityRotation.toString))
+      result.angularSpeed should be(Some(EntityAngularSpeed.toString))
 
   private val teams: Seq[Team] = Seq(
     Team(TeamId("RedTeam").value, Set.empty).value,
@@ -115,6 +123,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         EntityFormParser.ShapeKey,
         EntityFormParser.SpeedXKey,
         EntityFormParser.SpeedYKey,
+        EntityFormParser.RotationKey,
+        EntityFormParser.AngularSpeedKey,
         EntityFormParser.WeightKey,
         EntityFormParser.HealthKey,
         EntityFormParser.TeamIdKey
@@ -127,6 +137,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
       y = Some("2.0"),
       speedX = Some("3.0"),
       speedY = Some("4.0"),
+      rotation = Some("30.0"),
+      angularSpeed = Some("-45.0"),
       weight = Some("5.0"),
       health = Some("6.0")
     )
@@ -145,6 +157,12 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
     inside(fields.find(_.id == EntityFormParser.SpeedYKey).value):
       case tf: TextFieldSpec => tf.defaultValue should be(Some("4.0"))
 
+    inside(fields.find(_.id == EntityFormParser.RotationKey).value):
+      case tf: TextFieldSpec => tf.defaultValue should be(Some("30.0"))
+
+    inside(fields.find(_.id == EntityFormParser.AngularSpeedKey).value):
+      case tf: TextFieldSpec => tf.defaultValue should be(Some("-45.0"))
+
     inside(fields.find(_.id == EntityFormParser.WeightKey).value):
       case tf: TextFieldSpec => tf.defaultValue should be(Some("5.0"))
 
@@ -161,11 +179,11 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         select.options should be(SaveEntityFormDialog.Shapes)
 
         val circleFields = select.dependentFields(LocatableFormShapes.CircleLabel)
-        circleFields.map(_.id) should be(Seq(EntityFormParser.RadiusKey))
+        circleFields.map(_.id) should be(Seq(BaseFormParser.RadiusKey))
 
         val rectangleFields = select.dependentFields(LocatableFormShapes.RectangleLabel)
         rectangleFields.map(_.id) should be(
-          Seq(EntityFormParser.HeightKey, EntityFormParser.LengthKey)
+          Seq(BaseFormParser.LengthKey, BaseFormParser.HeightKey)
         )
 
   test("buildFields should propagate shape-specific default values into dependent fields"):
@@ -188,7 +206,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(
           select
             .dependentFields(LocatableFormShapes.RectangleLabel)
-            .find(_.id == EntityFormParser.HeightKey)
+            .find(_.id == BaseFormParser.HeightKey)
             .value
         ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
@@ -196,7 +214,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         inside(
           select
             .dependentFields(LocatableFormShapes.RectangleLabel)
-            .find(_.id == EntityFormParser.LengthKey)
+            .find(_.id == BaseFormParser.LengthKey)
             .value
         ):
           case tf: TextFieldSpec => tf.defaultValue should be(Some("7.0"))
