@@ -14,7 +14,6 @@ import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
 import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.physics.core.{PhysicsError, PhysicsManager, PhysicsRuleError}
-import monad_core.engine.physics.rules.KinematicsRule
 import monad_core.engine.simulator.EngineFacade
 import monad_core.engine.simulator.EngineFacade.DefaultTickTime
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -129,36 +128,38 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
 
   test("physicsRules should expose the enabled state of an engine rule"):
     val physics = PhysicsManager.default()
+    val expectedRuleId = physics.rules.head.RuleId
 
     val result = EngineFacade.physicsRules(physics)
 
     result should contain(
-      EngineFacade.PhysicsRuleStatus(KinematicsRule.kinematicsRule.RuleId, isEnabled = true)
+      EngineFacade.PhysicsRuleStatus(expectedRuleId, isEnabled = true)
     )
 
   test("setPhysicsRuleEnabled should return physics with the selected rule disabled"):
     val physics = PhysicsManager.default()
-    val ruleId  = KinematicsRule.kinematicsRule.RuleId
+    val expectedRuleId = physics.rules.head.RuleId
 
-    val updatedPhysics = EngineFacade.setPhysicsRuleEnabled(physics, ruleId, isEnabled = false)
+    val updatedPhysics = EngineFacade.setPhysicsRuleEnabled(physics, expectedRuleId, isEnabled = false)
 
-    EngineFacade.physicsRules(updatedPhysics).find(_.id == ruleId).map(_.isEnabled) shouldBe Some(
-      false
-    )
+    val result = EngineFacade.physicsRules(updatedPhysics).find(_.id == expectedRuleId)
+
+    result.map(_.isEnabled) shouldBe Some(false)
 
   test("setPhysicsRuleEnabled should return physics with the selected rule enabled"):
-    val ruleId = KinematicsRule.kinematicsRule.RuleId
+    val manager = PhysicsManager.default()
+    val ruleId = manager.rules.head.RuleId
     val physics = EngineFacade.setPhysicsRuleEnabled(
-      PhysicsManager.default(),
+      manager,
       ruleId,
       isEnabled = false
     )
 
     val updatedPhysics = EngineFacade.setPhysicsRuleEnabled(physics, ruleId, isEnabled = true)
 
-    EngineFacade.physicsRules(updatedPhysics).find(_.id == ruleId).map(_.isEnabled) shouldBe Some(
-      true
-    )
+    val result = EngineFacade.physicsRules(updatedPhysics).find(_.id == ruleId)
+    
+    result.map(_.isEnabled) shouldBe Some(true)
 
   test("tick uses the default physics manager when none is supplied"):
     val initialScene = Scene()
