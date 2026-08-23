@@ -11,6 +11,7 @@ trait Image(
 object Image:
 
   private val iconSize: Double = 32.0
+  private val menuToolSize: Double = 28.0
 
   case class PlayIcon()
       extends Image(
@@ -36,13 +37,13 @@ object Image:
   case class ToolsIcon()
       extends Image(
         fileName = "tools.png",
-        width = 28,
-        height = 28
+        width = menuToolSize,
+        height = menuToolSize
       )
 
   case class PhysicsIcon()
       extends Image(
         fileName = "physics.png",
-        width = 28,
-        height = 28
+        width = menuToolSize,
+        height = menuToolSize
       )

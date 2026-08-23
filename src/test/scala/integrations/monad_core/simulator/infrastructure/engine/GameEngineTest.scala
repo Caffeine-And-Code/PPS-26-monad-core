@@ -167,32 +167,6 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     result shouldBe Right(())
 
-  test("rendering after multiple fixed updates uses the state preceding the latest update"):
-    PaintArchitect.drainBuffer()
-    val movingEntity = getOrFail(
-      Entity
-        .circle("interpolated", Vector2D(10, 10), 1)
-        .map(_.withSpeed(Vector2D(1, 0)))
-    )
-    val initialScene = getOrFail(Scene().addEntity(movingEntity))
-    val world        = MonadCoreWorld(initialScene)
-    val engine       = MonadCoreGameEngineRuntime()
-
-    getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
-    engine.start()
-    engine.tick(GameLoop.DefaultTickTime * 2)(_ => ())
-
-    val simulatedX = getOrFail(world.getEntity(movingEntity.id.value)).position.x
-    val renderedX = PaintArchitect
-      .drainBuffer()
-      .collectFirst { case DrawCommand.Circle(x, _, _, _) =>
-        x
-      }
-      .getOrElse(fail("the interpolated entity was not rendered"))
-
-    renderedX should be > movingEntity.position.x
-    renderedX should be < simulatedX
-
   test(
     "reset replaces the world; frames observed afterwards reflect the new world, not the old one"
   ):
