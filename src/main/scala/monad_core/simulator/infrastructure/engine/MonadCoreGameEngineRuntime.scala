@@ -2,9 +2,9 @@ package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.core.LoopMode
 import monad_core.engine.core.events.EngineEvent
-import monad_core.engine.model.{Entity, Scene, Vector2D}
+import monad_core.engine.model.{Entity, Scene, UnhandledStateType, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.{EngineFacade, Painter, RendererManager, SceneInterpolator}
+import monad_core.engine.simulator.{EngineFacade, Painter, RendererManager, StateInterpolator}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
@@ -21,47 +21,45 @@ final class MonadCoreGameEngineRuntime(
   private var error: Option[BaseError]                    = None
   private var currentDimensions: Option[(Double, Double)] = None
 
-  given physics: PhysicsManager = PhysicsManager.default()
+  private var physics: PhysicsManager = PhysicsManager.default()
 
   override def start(): Unit =
     lock.synchronized:
+      currentWorld.foreach(_.enterSimulationMode())
       engineSession = EngineFacade.start(engineSession)
 
   override def stop(): Unit =
     lock.synchronized:
       engineSession = EngineFacade.stop(engineSession)
+      currentWorld.foreach(_.enterEditMode())
 
   override def tick(currentTime: Long)(renderer: World => Unit)(using painter: Painter): Unit =
     lock.synchronized:
       currentWorld.foreach { world =>
-        EngineFacade.tick(engineSession, world.scene, currentTime, physics) match
+        val currentScene = world.scene
+        EngineFacade.tick(engineSession, currentScene, currentTime, physics) match
           case Right(tickResult) =>
-            tickResult.state match
-              case scene: Scene =>
-                val processedScene = for
-                  interpolatedScene <- SceneInterpolator(
-                    previousScene = world.scene,
-                    nextScene = scene,
-                    interpolationAlpha = tickResult.alpha
-                  )
-                  _ <- RendererManager.render(interpolatedScene)
-                yield scene
+            val processedScene = for
+              interpolatedScene <- StateInterpolator(
+                previousScene = tickResult.previousState,
+                nextScene = tickResult.state,
+                interpolationAlpha = tickResult.alpha
+              )
+              _ <- RendererManager.render(interpolatedScene)
+            yield tickResult.state
 
-                processedScene match
-                  case Right(scene) =>
-                    world match
-                      case monadCoreWorld: MonadCoreWorld =>
-                        monadCoreWorld.currentScene = scene
-                      case _ => ()
+            processedScene match
+              case Right(scene: Scene) =>
+                world.replaceScene(scene)
+                engineSession = tickResult.nextSession
+                onEvents(tickResult.events)
+                renderer(world)
 
-                    engineSession = tickResult.nextSession
-                    onEvents(tickResult.events)
-                    renderer(world)
+              case Left(engineError) =>
+                handleError(engineError)
 
-                  case Left(engineError) =>
-                    handleError(engineError)
-
-              case _ => ()
+              case _ =>
+                handleError(UnhandledStateType())
 
           case Left(engineError) =>
             handleError(engineError)
@@ -76,53 +74,41 @@ final class MonadCoreGameEngineRuntime(
   override def isRunning: Boolean =
     lock.synchronized(EngineFacade.isRunning(engineSession))
 
-  def mode: LoopMode =
-    lock.synchronized(EngineFacade.mode(engineSession))
-
   override def createSnapshot(): Unit =
     lock.synchronized:
       currentSnapshot = currentWorld.map(_.scene)
 
   override def resetToSnapshot(): Unit =
     lock.synchronized:
-      (currentWorld, currentSnapshot) match
-        case (Some(monadCoreWorld: MonadCoreWorld), Some(scene)) =>
-          monadCoreWorld.currentScene = scene
-        case _ => ()
+      for
+        world <- currentWorld
+        scene <- currentSnapshot
+      do world.replaceScene(scene)
       engineSession = EngineFacade.default
+      currentWorld.foreach(_.enterEditMode())
 
   override def initializeWorld(
       world: World,
       withDefaultEntity: Boolean = true
   ): Either[BaseError, Unit] =
-    val setCurrentWorld: () => Unit = () =>
-      lock.synchronized:
+    lock.synchronized:
+      for
+        _ <- currentDimensions match
+          case Some((width, height)) => world.resize(width, height)
+          case None                  => Right(())
+        _ <- addDefaultEntity(world, withDefaultEntity)
+      yield
+        synchronizeMode(world)
         currentWorld = Some(world)
 
-    val resizeResult = lock.synchronized:
-      currentDimensions match
-        case Some((width, height)) => world.resize(width, height)
-        case None                  => Right(())
-
-    resizeResult.flatMap { _ =>
-      if withDefaultEntity then
-        Entity.circle(id = "starter", position = Vector2D(15, 15), radius = 15) match
-          case Right(entity) =>
-            world.createEntity(
-              SaveEntityCommand(entity)
-            )
-
-            setCurrentWorld()
-
-            Right(())
-          case Left(error) => Left(error.adaptError())
-      else {
-        setCurrentWorld()
-        Right(())
-      }
-    }
-
   override def getError: Option[BaseError] = lock.synchronized(error)
+
+  override def physicsRules: Vector[EngineFacade.PhysicsRuleStatus] =
+    lock.synchronized(EngineFacade.physicsRules(physics))
+
+  override def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit =
+    lock.synchronized:
+      physics = EngineFacade.setPhysicsRuleEnabled(physics, ruleId, isEnabled)
 
   override def resize(width: Double, height: Double): Either[BaseError, Unit] =
     lock.synchronized:
@@ -138,6 +124,22 @@ final class MonadCoreGameEngineRuntime(
       }
 
       resizeResult
+
+  private def addDefaultEntity(
+      world: World,
+      withDefaultEntity: Boolean
+  ): Either[BaseError, Unit] =
+    if withDefaultEntity then
+      Entity
+        .circle(id = "starter", position = Vector2D(15, 15), radius = 15)
+        .adaptError()
+        .flatMap(entity => world.createEntity(SaveEntityCommand(entity)))
+    else Right(())
+
+  private def synchronizeMode(world: World): Unit =
+    EngineFacade.mode(engineSession) match
+      case LoopMode.EditMode       => world.enterEditMode()
+      case LoopMode.SimulationMode => world.enterSimulationMode()
 
 object MonadCoreGameEngineRuntime:
 

@@ -1,12 +1,7 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
-import monad_core.engine.model.{Shape2D, Vector2D}
-import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
+import monad_core.engine.model.Vector2D
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.presentation.components.forms.parsers.LocatableFormShapes.{
-  CircleLabel,
-  RectangleLabel
-}
 import monad_core.simulator.{InvalidNumericFormFieldError, MissingKeyInFormError}
 
 object BaseFormParser:
@@ -49,24 +44,6 @@ object BaseFormParser:
     getSafeVector2D(values, xKey, yKey) match
       case Right(vector) => Some(vector)
       case Left(_)       => None
-
-  private[forms] def getShape(
-      formShape: String,
-      values: Map[String, String]
-  ): Either[BaseError, Shape2D] =
-    formShape match
-      case CircleLabel =>
-        for
-          radius <- parseDouble(values, RadiusKey)
-          circle <- Shape2D.circle(radius).adaptError()
-        yield circle
-
-      case RectangleLabel =>
-        for
-          height    <- parseDouble(values, HeightKey)
-          length    <- parseDouble(values, LengthKey)
-          rectangle <- Shape2D.rectangle(height, length).adaptError()
-        yield rectangle
 
   extension (map: Map[String, String])
 

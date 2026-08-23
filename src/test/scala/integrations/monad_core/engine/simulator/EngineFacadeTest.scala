@@ -126,6 +126,42 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
 
     physicsEvaluated shouldBe false
 
+  test("physicsRules should expose the enabled state of an engine rule"):
+    val physics        = PhysicsManager.default()
+    val expectedRuleId = physics.rules.head.RuleId
+
+    val result = EngineFacade.physicsRules(physics)
+
+    result should contain(
+      EngineFacade.PhysicsRuleStatus(expectedRuleId, isEnabled = true)
+    )
+
+  test("setPhysicsRuleEnabled should return physics with the selected rule disabled"):
+    val physics        = PhysicsManager.default()
+    val expectedRuleId = physics.rules.head.RuleId
+
+    val updatedPhysics =
+      EngineFacade.setPhysicsRuleEnabled(physics, expectedRuleId, isEnabled = false)
+
+    val result = EngineFacade.physicsRules(updatedPhysics).find(_.id == expectedRuleId)
+
+    result.map(_.isEnabled) shouldBe Some(false)
+
+  test("setPhysicsRuleEnabled should return physics with the selected rule enabled"):
+    val manager = PhysicsManager.default()
+    val ruleId  = manager.rules.head.RuleId
+    val physics = EngineFacade.setPhysicsRuleEnabled(
+      manager,
+      ruleId,
+      isEnabled = false
+    )
+
+    val updatedPhysics = EngineFacade.setPhysicsRuleEnabled(physics, ruleId, isEnabled = true)
+
+    val result = EngineFacade.physicsRules(updatedPhysics).find(_.id == ruleId)
+
+    result.map(_.isEnabled) shouldBe Some(true)
+
   test("tick uses the default physics manager when none is supplied"):
     val initialScene = Scene()
     val session      = EngineFacade.start(EngineFacade.default)
@@ -144,6 +180,24 @@ class EngineFacadeTest extends AnyFunSuite with Matchers:
     val result = EngineFacade.tick(session, initialScene, DefaultTickTime, physics).value
 
     result.state shouldBe updatedScene
+
+  test("a successful tick exposes the state preceding the latest fixed update"):
+    val initialScene = Scene()
+    val firstScene = initialScene
+      .addEntity(Entity.circle("first", Vector2D(0, 0), 1).value)
+      .value
+    val secondScene = firstScene.addEntity(Entity.circle("second", Vector2D(2, 0), 1).value).value
+    val physics = physicsReturning { (state, _) =>
+      if state == initialScene then Right(firstScene) else Right(secondScene)
+    }
+    val session = EngineFacade.start(EngineFacade.default)
+
+    val result = EngineFacade
+      .tick(session, initialScene, DefaultTickTime * 2, physics)
+      .value
+
+    result.previousState shouldBe firstScene
+    result.state shouldBe secondScene
 
   test("a successful tick returns the events produced by physics"):
     val initialScene = Scene()

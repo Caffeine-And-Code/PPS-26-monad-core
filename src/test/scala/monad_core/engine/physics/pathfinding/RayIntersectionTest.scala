@@ -24,8 +24,15 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
     width = 1.0
   )
 
-  test("RayIntersection should return None if vertexes are empty"):
+  test("RayIntersection should return None if the vertex map is empty"):
     val vertexMap = Map.empty[LocatableId, List[Vector2D]]
+
+    val result = RayIntersection(RayStart, RayDirection, vertexMap)
+
+    result shouldBe None
+
+  test("RayIntersection should return None if an element has no vertexes"):
+    val vertexMap = Map(IntersectedCircleEntity.id -> List.empty[Vector2D])
 
     val result = RayIntersection(RayStart, RayDirection, vertexMap)
 

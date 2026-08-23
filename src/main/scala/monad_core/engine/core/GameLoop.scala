@@ -6,6 +6,7 @@ import monad_core.engine.model.EngineError
 
 final case class GameLoopTickResult(
     state: State,
+    previousState: State,
     loop: GameLoop,
     events: Vector[EngineEvent],
     alpha: Double

@@ -5,7 +5,7 @@ import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
 import monad_core.engine.physics.utils.Rotation
 
-object SceneInterpolator:
+object StateInterpolator:
 
   def apply(
       previousScene: State,

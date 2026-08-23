@@ -17,23 +17,26 @@ import monad_core.simulator.infrastructure.engine.world.{WorldEdit, WorldEditor}
 final class MonadCoreWorld(
     initialScene: Scene,
     onEvents: Vector[EngineEvent] => Unit,
-    currentMode: () => LoopMode
+    initialMode: LoopMode
 ) extends World:
 
-  var currentScene: Scene = initialScene
+  private val lock         = new Object
+  private var currentScene = initialScene
+  private var currentMode  = initialMode
 
   override def resize(width: Double, height: Double): Either[BaseError, Unit] =
-    currentScene.resize(width, height).adaptError().map { scene =>
-      currentScene = scene
-    }
+    lock.synchronized:
+      currentScene.resize(width, height).adaptError().map { scene =>
+        currentScene = scene
+      }
 
   override def getAllEntities: List[Entity] =
-    currentScene.entities.values.toList
+    scene.entities.values.toList
 
   override def getEntity(entityId: String): Either[BaseError, Entity] =
     for
       id     <- LocatableId(entityId).adaptError()
-      entity <- currentScene.getEntity(id).adaptError()
+      entity <- scene.getEntity(id).adaptError()
     yield entity
 
   override def createEntity(command: SaveEntityCommand): Either[BaseError, Unit] =
@@ -46,12 +49,12 @@ final class MonadCoreWorld(
     applyEdit(UpdateEntity(command.entity))
 
   override def getAllSurfaces: List[Surface] =
-    currentScene.surfaces.values.toList
+    scene.surfaces.values.toList
 
   override def getSurface(id: String): Either[BaseError, Surface] =
     for
       id      <- LocatableId(id).adaptError()
-      surface <- currentScene.getSurface(id).adaptError()
+      surface <- scene.getSurface(id).adaptError()
     yield surface
 
   override def createSurface(command: SaveSurfaceCommand): Either[BaseError, Unit] =
@@ -64,12 +67,12 @@ final class MonadCoreWorld(
     applyEdit(UpdateSurface(command.surface))
 
   override def getAllTeams: List[Team] =
-    currentScene.teams.values.toList
+    scene.teams.values.toList
 
   override def getTeam(id: String): Either[BaseError, Team] =
     for
       id   <- TeamId(id).adaptError()
-      team <- currentScene.getTeam(id).adaptError()
+      team <- scene.getTeam(id).adaptError()
     yield team
 
   override def createTeam(command: SaveTeamCommand): Either[BaseError, Unit] =
@@ -81,19 +84,38 @@ final class MonadCoreWorld(
   override def updateTeam(command: SaveTeamCommand): Either[BaseError, Unit] =
     applyEdit(UpdateTeam(command.team))
 
-  override def scene: Scene = currentScene
+  override def scene: Scene =
+    lock.synchronized(currentScene)
+
+  override def replaceScene(scene: Scene): Unit =
+    lock.synchronized:
+      currentScene = scene
+
+  override def enterEditMode(): Unit =
+    lock.synchronized:
+      currentMode = LoopMode.EditMode
+
+  override def enterSimulationMode(): Unit =
+    lock.synchronized:
+      currentMode = LoopMode.SimulationMode
 
   private def applyEdit(edit: WorldEdit): Either[BaseError, Unit] =
-    WorldEditor(currentMode(), currentScene, edit).map { result =>
-      currentScene = result.scene
-      if result.events.nonEmpty then onEvents(result.events)
+    val editResult = lock.synchronized:
+      WorldEditor(currentMode, currentScene, edit).map { result =>
+        currentScene = result.scene
+        result.events
+      }
+
+    editResult.foreach { events =>
+      if events.nonEmpty then onEvents(events)
     }
+    editResult.map(_ => ())
 
 object MonadCoreWorld:
 
   def apply(
       initialScene: Scene = Scene(),
       onEvents: Vector[EngineEvent] => Unit = _ => (),
-      currentMode: () => LoopMode = () => LoopMode.EditMode
+      initialMode: LoopMode = LoopMode.EditMode
   ): MonadCoreWorld =
-    new MonadCoreWorld(initialScene, onEvents, currentMode)
+    new MonadCoreWorld(initialScene, onEvents, initialMode)

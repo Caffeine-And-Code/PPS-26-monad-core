@@ -1,13 +1,16 @@
 package integrations.monad_core.simulator.infrastructure.engine
 
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import monad_core.engine.core.GameLoop
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.events.EngineEvent.EntityUpdated
+import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, GameLoop}
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.simulator.Painter
-import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.engine.{DrawCommand, GameEngineRuntime}
+import monad_core.simulator.application.engine.errors.EngineErrorAdapted
+import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
+import monad_core.simulator.infrastructure.engine.world.SceneEditingNotAllowed
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import org.scalatest.funsuite.AnyFunSuite
 import scalafx.animation.AnimationTimer
@@ -49,6 +52,14 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     assert(firstFrame.await(AwaitTimeout, TimeUnit.SECONDS), "onFrame was never called after init")
     received.get().getAllEntities.length should be(1)
 
+  test("the runtime port adds the default entity when the option is omitted"):
+    val world                     = MonadCoreWorld(Scene())
+    val engine: GameEngineRuntime = MonadCoreGameEngineRuntime()
+
+    getOrFail(engine.initializeWorld(world))
+
+    world.getAllEntities.map(_.id.value) should contain("starter")
+
   test("play and pause do not break the frame loop"):
     val frames = new CountDownLatch(3)
 
@@ -89,6 +100,72 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val updatedEntity = getOrFail(world.getEntity(movingEntity.id.value))
     updatedEntity.position.x should be > movingEntity.position.x
     receivedEvents.get() shouldBe Vector(EntityUpdated(movingEntity, updatedEntity))
+
+  test("a physics rule can be disabled through the runtime"):
+    val engine = MonadCoreGameEngineRuntime()
+    val rule   = engine.physicsRules.head
+
+    engine.setPhysicsRuleEnabled(rule.id, isEnabled = false)
+
+    engine.physicsRules.find(_.id == rule.id).map(_.isEnabled) shouldBe Some(false)
+
+  test("starting the runtime prevents edits on its world"):
+    val entity = getOrFail(Entity.circle("new", Vector2D(0, 0), 1))
+    val world  = MonadCoreWorld(Scene())
+    val engine = MonadCoreGameEngineRuntime()
+
+    getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
+    engine.start()
+    val result = world.createEntity(SaveEntityCommand(entity))
+
+    result shouldBe Left(SceneEditingNotAllowed)
+
+  test("stopping the runtime enables edits on its world"):
+    val entity = getOrFail(Entity.circle("new", Vector2D(0, 0), 1))
+    val world  = MonadCoreWorld(Scene())
+    val engine = MonadCoreGameEngineRuntime()
+
+    getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
+    engine.start()
+    engine.stop()
+    val result = world.createEntity(SaveEntityCommand(entity))
+
+    result shouldBe Right(())
+
+  test("a world initialized while the runtime is running rejects edits"):
+    val entity = getOrFail(Entity.circle("new", Vector2D(0, 0), 1))
+    val world  = MonadCoreWorld(Scene())
+    val engine = MonadCoreGameEngineRuntime()
+
+    engine.start()
+    getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
+    val result = world.createEntity(SaveEntityCommand(entity))
+
+    result shouldBe Left(SceneEditingNotAllowed)
+
+  test("world initialization propagates an error from the default entity creation"):
+    val starter = getOrFail(Entity.circle("starter", Vector2D(15, 15), 15))
+    val scene   = getOrFail(Scene().addEntity(starter))
+    val engine  = MonadCoreGameEngineRuntime()
+
+    val result = engine.initializeWorld(MonadCoreWorld(scene))
+
+    result shouldBe Left(
+      EngineErrorAdapted(CannotAddEntity(CannotAddAlreadyPresentElementInMap(starter.id)))
+    )
+
+  test("resetting the runtime enables edits on its world"):
+    val entity = getOrFail(Entity.circle("new", Vector2D(0, 0), 1))
+    val world  = MonadCoreWorld(Scene())
+    val engine = MonadCoreGameEngineRuntime()
+
+    getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
+    engine.createSnapshot()
+    engine.start()
+    engine.resetToSnapshot()
+    val result = world.createEntity(SaveEntityCommand(entity))
+
+    result shouldBe Right(())
 
   test(
     "reset replaces the world; frames observed afterwards reflect the new world, not the old one"

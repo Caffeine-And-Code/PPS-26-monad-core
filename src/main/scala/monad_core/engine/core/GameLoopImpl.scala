@@ -8,6 +8,7 @@ import monad_core.engine.model.EngineError
 import scala.annotation.tailrec
 
 private case class FixedUpdateResult(
+    previousState: State,
     updatedState: State,
     accumulator: Long,
     accumulatedEvents: Vector[EngineEvent]
@@ -39,6 +40,7 @@ private case class GameLoopImpl(
     if !isRunning || mode == LoopMode.EditMode then
       Right(
         GameLoopTickResult(
+          previousState = state,
           state = state,
           loop = this.copy(lastTime = currentTime),
           events = Vector.empty,
@@ -49,12 +51,12 @@ private case class GameLoopImpl(
       val elapsedTime   = currentTime - lastTime
       val clampedTime   = Math.min(elapsedTime, maxFrameTime)
       val remainingTime = accumulator + clampedTime
-      val previousState = state
 
       for
-        res <- runFixedUpdate(remainingTime, state, Vector.empty)
+        res <- runFixedUpdate(remainingTime, state, state, Vector.empty)
         alpha = res.accumulator.toDouble / tickTime.toDouble
       yield GameLoopTickResult(
+        previousState = res.previousState,
         state = res.updatedState,
         loop = this.copy(lastTime = currentTime, accumulator = res.accumulator),
         events = res.accumulatedEvents,
@@ -64,23 +66,26 @@ private case class GameLoopImpl(
   @tailrec
   private def runFixedUpdate(
       remainingTime: Long,
-      currentScene: State,
+      previousState: State,
+      currentState: State,
       accumulatedEvents: Vector[EngineEvent]
   )(using physics: PhysicsEngine): Either[EngineError, FixedUpdateResult] =
     if remainingTime < tickTime then
       Right(
         FixedUpdateResult(
-          currentScene,
-          remainingTime,
-          accumulatedEvents
+          previousState = previousState,
+          updatedState = currentState,
+          accumulator = remainingTime,
+          accumulatedEvents = accumulatedEvents
         )
       )
     else
-      physics.step(currentScene, tickTime) match
+      physics.step(currentState, tickTime) match
         case Left(err) => Left(err)
         case Right(step) =>
           runFixedUpdate(
             remainingTime - tickTime,
+            currentState,
             step.state,
             accumulatedEvents ++ step.events
           )

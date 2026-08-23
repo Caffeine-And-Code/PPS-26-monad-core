@@ -1,6 +1,12 @@
 package integrations.monad_core.simulator.presentation.resources
 
-import monad_core.simulator.presentation.resources.Image.{PauseIcon, PlayIcon, StopIcon}
+import monad_core.simulator.presentation.resources.Image.{
+  PauseIcon,
+  PhysicsIcon,
+  PlayIcon,
+  StopIcon,
+  ToolsIcon
+}
 import monad_core.simulator.presentation.resources.{BaseImageConfig, ImageLoader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -19,7 +25,9 @@ class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFac
       "image",
       PlayIcon(),
       StopIcon(),
-      PauseIcon()
+      PauseIcon(),
+      ToolsIcon(),
+      PhysicsIcon()
     )
 
     forAll(cases): image =>

@@ -8,6 +8,7 @@ import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
+import monad_core.simulator.infrastructure.engine.MonadCoreGameEngineRuntime
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import org.scalamock.scalatest.MockFactory
@@ -27,12 +28,13 @@ class GameEngineModePanelTest
     with MockFactory
     with ScalaFxInit:
   given mockWorld: World                     = mock[World]
-  given mockEngineRuntime: GameEngineRuntime = mock[GameEngineRuntime]
+  given gameEngineRuntime: GameEngineRuntime = MonadCoreGameEngineRuntime()
 
   val ToolsButtonIndex   = 0
-  val SpacingRegionIndex = 1
-  val ModeButtonIndex    = 2
-  val StopButtonIndex    = 3
+  val PhysicsButtonIndex = 1
+  val SpacingRegionIndex = 2
+  val ModeButtonIndex    = 3
+  val StopButtonIndex    = 4
 
   def freshSceneCanBeUpdated: BooleanProperty = BooleanProperty(false)
 
@@ -53,6 +55,24 @@ class GameEngineModePanelTest
     inside(builderResult):
       case Right(scene) =>
         scene.children.getFirst shouldBe a[HBox]
+
+  test("A GameEngineModePanel should contain the physics rules menu button"):
+    val imageConfigRecord = MockImageConfig()
+    val onModeChange      = mockFunction[Boolean, Unit]
+    val onStopClick       = mockFunction[Unit]
+
+    val builderResult = getOrFail(
+      GameEngineModePanel.build(
+        imageConfigRecord,
+        onModeChange,
+        onStopClick,
+        freshSceneCanBeUpdated
+      )
+    )
+
+    inside(builderResult.children.head):
+      case buttonsRow: HBox =>
+        buttonsRow.children.get(PhysicsButtonIndex) shouldBe a[Button]
 
   test("A GameEngineModePanel cannot be built when an invalid image config record is passed"):
     val imageConfigRecord: ImageConfigRecord = mock[ImageConfigRecord]
