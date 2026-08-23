@@ -10,7 +10,7 @@ trait Image(
 
 object Image:
 
-  private val iconSize: Double = 32.0
+  private val iconSize: Double     = 32.0
   private val menuToolSize: Double = 28.0
 
   case class PlayIcon()
