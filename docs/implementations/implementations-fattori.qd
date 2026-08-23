@@ -1,0 +1,371 @@
+## Fabio Fattori
+
+Mi sono occupato principalmente del modello e della gestione della scena, della progettazione dell'API pubblica e dell'integrazione tra engine e applicazione, dell'interfaccia grafica ScalaFX, del sistema di eventi e di alcune infrastrutture di test; nello specifico possiamo individuare i seguenti gruppi di sorgenti:
+
+- `engine/model/Scene.scala`, `engine/core/traits/State.scala`, `EngineFacade.scala`, `RendererManager.scala`, `EngineColor.scala` e l'astrazione `Painter`;
+- gli adapter `MonadCoreWorld`, `MonadCoreGameEngineRuntime` e `PaintArchitect`, insieme all'ADT `WorldEdit`, al relativo interprete `WorldEditor` e alle operazioni applicative su entità, superfici e team;
+- gli stage e i pannelli ScalaFX del motore, i componenti `IconButton`, `MenuButton`, `ResizableCanvas` e `NotificationManager`, il sistema di form e i relativi parser;
+- l'ADT `EngineEvent`, la propagazione degli eventi attraverso il sottosistema fisico e il game loop e `EventLogFormatter`;
+- le utility per gli snapshot strutturali e visivi, i test architetturali e numerosi test unitari e di integrazione relativi ai componenti precedenti.
+
+Diverse parti sono state realizzate in collaborazione con tutto il team, come ad esempio gli adapter citati sopra. Tonelli ha realizzato il nucleo del fixed update, dell'interpolazione e della pipeline fisica; io ne ho curato l'esposizione attraverso la facade, l'integrazione applicativa e l'estensione per il trasporto degli eventi. Con Senni ho progettato l'organizzazione a layer del simulator, l'insieme delle porte applicative di base e i corrispondenti adapter di integrazione, inclusi `World` con `MonadCoreWorld` e `GameEngineRuntime` con `MonadCoreGameEngineRuntime`. All'interno di questa architettura condivisa ho collocato il sottosistema grafico e implementato i relativi controlli architetturali.
+
+### Modello funzionale della scena
+
+Ho implementato `Scene` come aggregato immutabile contenente tre mappe: due indicizzate tramite `LocatableId`, rispettivamente per entità e superfici, e una indicizzata tramite `TeamId`, destinata ai team. Le operazioni di lettura restituiscono un valore, mentre quelle di inserimento e rimozione producono una nuova scena; in entrambi i casi, il risultato è rappresentato tramite `Either[EngineError, A]`. Gli errori di dominio rimangono quindi valori espliciti e componibili, senza ricorrere a eccezioni o valori sentinella.
+
+Per evitare di duplicare la stessa logica nelle tre mappe ho adottato il **Lens pattern**, un'ottica funzionale che consente di leggere e sostituire una parte di una struttura immutabile. Ho implementato una versione minimale di `Lens[S, A]`, composta da una funzione `get` e da una funzione `set`. Le tre istanze per entità, superfici e team sono fornite come `given`; le funzioni generiche `getFromMap`, `addToMap` e `removeFromMap` operano sulla lens ricevuta. Questa soluzione concentra in un unico punto il controllo della presenza delle chiavi e la costruzione degli errori specifici, preservando la tipizzazione delle API pubbliche. Le operazioni più articolate sono concatenate tramite for-comprehension, sfruttando l'interruzione anticipata di `Either`.
+
+Il trait `State` espone al game loop e al sottosistema fisico soltanto le operazioni necessarie sullo stato del mondo. `Scene` ne costituisce l'implementazione concreta; insieme a Tonelli ho integrato la gestione dei limiti del mondo e l'interpolazione senza alterare la semantica immutabile dell'aggregato.
+
+### API pubblica e integrazione applicativa
+
+L'engine è stato progettato come pacchetto installabile e riutilizzabile anche da applicazioni diverse dal simulator incluso nel progetto. A tale scopo ho applicato il **Facade Pattern** attraverso `EngineFacade`, che costituisce il punto di ingresso pubblico al ciclo di vita del game loop. La facade espone le operazioni `default`, `create`, `start`, `stop`, `mode`, `isRunning` e `tick`, ma nasconde la rappresentazione concreta del loop dietro l'opaque type `Session`. Un client esterno può quindi creare ed evolvere una sessione senza dipendere direttamente da `GameLoop` e `GameLoopTickResult`.
+
+Ho adattato il pattern alla natura funzionale dell'engine, evitando di trasformare la facade in un servizio globale dotato di stato mutabile. Le operazioni di transizione `start`, `stop` e `tick` ricevono una `Session` e restituiscono una nuova sessione, direttamente oppure all'interno del risultato del tick. Quest'ultimo può essere interpretato come una trasformazione `Session × State × Time × PhysicsManager → Either[EngineError, TickResult]`. Il risultato pubblico contiene il nuovo `State`, la sessione successiva `nextSession`, gli eventi e il coefficiente di interpolazione `alpha`. La facade nasconde quindi i dettagli di orchestrazione, mantenendo esplicite l'evoluzione dello stato e la gestione degli errori.
+
+La facade è focalizzata sul caso d'uso temporale e non nasconde tutti i tipi del dominio: `State`, `EngineError`, `EngineEvent` e `PhysicsManager` rimangono intenzionalmente visibili come contratti di scambio e configurazione dell'engine installabile. Questa scelta definisce un confine stabile rispetto all'implementazione del game loop senza sacrificare componibilità, sostituibilità e trasparenza delle trasformazioni.
+
+#### Casi d'uso dell'API
+
+Dal punto di vista di un'applicazione client, l'API consente di gestire il ciclo di vita della simulazione senza conoscere la rappresentazione del game loop. I casi d'uso sono suddivisi tra gestione della sessione e avanzamento del mondo: la configurazione personalizzata dei tempi estende la creazione, mentre il risultato viene elaborato dopo ogni tick completato con successo.
+
+.mermaid
+    flowchart LR
+        Client["«actor»<br/>Applicazione client"]
+
+        subgraph FacadeBoundary[EngineFacade]
+            direction LR
+
+            subgraph Lifecycle[Ciclo di vita della sessione]
+                direction TB
+                Create([Creare una sessione<br/>default oppure create])
+                Configure([Configurare tick time<br/>e max frame time])
+                Control([Avviare o arrestare<br/>start e stop])
+                Inspect([Interrogare sessione<br/>mode e isRunning])
+            end
+
+            subgraph Advancement[Avanzamento della simulazione]
+                direction TB
+                Tick([Avanzare lo State<br/>tick])
+                Physics([Usare la fisica<br/>predefinita o configurata])
+                Result([Ottenere State, eventi,<br/>alpha e nextSession])
+            end
+        end
+
+        Client --> Create
+        Client --> Control
+        Client --> Inspect
+        Client --> Tick
+        Client --> Result
+        Configure -.->|«extend»| Create
+        Tick -.->|«include»| Physics
+        Tick -.->|«include»| Result
+
+#### Struttura e flusso operativo della facade
+
+La vista strutturale evidenzia il confine di astrazione: il client conosce `Session` e `TickResult`, mentre `GameLoop` rimane un dettaglio nascosto. `TickResult` rende espliciti tutti i valori che il client deve propagare al passo successivo, evitando aggiornamenti impliciti all'interno della facade.
+
+.mermaid
+    classDiagram
+        direction LR
+
+        class ClientApplication {
+            <<external application>>
+        }
+
+        class EngineFacade {
+            <<functional facade>>
+            +default() Session
+            +create(tickTime, maxFrameTime) Either
+            +start(session) Session
+            +stop(session) Session
+            +mode(session) LoopMode
+            +isRunning(session) Boolean
+            +tick(session, state, currentTime, physics) Either
+        }
+
+        class Session {
+            <<opaque type>>
+        }
+
+        class GameLoop {
+            <<hidden representation>>
+        }
+
+        class TickResult {
+            +state State
+            +nextSession Session
+            +events Vector~EngineEvent~
+            +alpha Double
+        }
+
+        class State {
+            <<trait>>
+        }
+
+        class PhysicsManager
+        class EngineEvent
+
+        ClientApplication --> EngineFacade : usa
+        EngineFacade ..> Session : crea ed evolve
+        Session ..> GameLoop : rappresentazione opaca
+        EngineFacade ..> GameLoop : delega internamente
+        EngineFacade ..> State : riceve
+        EngineFacade ..> PhysicsManager : riceve
+        EngineFacade --> TickResult : restituisce
+        TickResult --> State : nuovo stato
+        TickResult --> Session : prossima sessione
+        TickResult ..> EngineEvent : eventi
+
+Il diagramma di sequenza mostra invece che la facade non conserva lo stato del client. Anche dopo `start` e `tick`, le istanze ricevute non vengono mutate: è l'applicazione a decidere quando adottare la nuova `Session` e il nuovo `State` restituiti.
+
+.mermaid
+    sequenceDiagram
+        actor Client as Applicazione client
+        participant Facade as EngineFacade
+        participant CoreLoop as GameLoop interno
+        participant Physics as PhysicsManager
+
+        Client->>Facade: create(tickTime, maxFrameTime)
+        alt configurazione non valida
+            Facade-->>Client: Left(EngineError)
+        else sessione valida
+            Facade-->>Client: Session in EditMode
+            Client->>Facade: start(session)
+            Facade->>CoreLoop: start()
+            CoreLoop-->>Facade: nuovo GameLoop
+            Facade-->>Client: nuova Session in SimulationMode
+
+            Client->>Facade: tick(session, state, currentTime, physics)
+            Facade->>CoreLoop: tick(state, currentTime)
+            CoreLoop->>Physics: zero o più fixed update
+            Physics-->>CoreLoop: State oppure EngineError ed eventi
+
+            alt errore nel tick
+                CoreLoop-->>Facade: Left(EngineError)
+                Facade-->>Client: Left(EngineError)
+            else tick completato
+                CoreLoop-->>Facade: GameLoopTickResult
+                Facade-->>Client: Right(TickResult)
+                Note over Client: adotta state e nextSession<br/>e consuma eventi e alpha
+                Client->>Facade: stop(nextSession)
+                Facade->>CoreLoop: stop()
+                Facade-->>Client: nuova Session in EditMode
+            end
+        end
+
+#### Integrazione nel simulator
+
+Nel simulator ho progettato con Senni la porta applicativa `World` e il relativo adapter `MonadCoreWorld`. Su questo confine condiviso ho poi progettato autonomamente `WorldEditor`, l'interprete che governa le modifiche rappresentate dall'ADT `WorldEdit`. L'interprete è una funzione pura che mappa `LoopMode`, `Scene` e `WorldEdit` in `Either[BaseError, WorldEditResult]`: in `EditMode` produce una nuova scena immutabile e gli eventuali eventi, mentre in `SimulationMode` termina immediatamente con `SceneEditingNotAllowed`. Le nove operazioni di creazione, modifica e rimozione di entità, superfici e team rimangono atomiche. Anche le modifiche composte, realizzate tramite lettura, rimozione e inserimento, non pubblicano alcuno stato intermedio.
+
+`MonadCoreWorld` costituisce il guscio imperativo di questo nucleo funzionale: legge la modalità corrente tramite una funzione ricevuta in fase di costruzione, invoca `WorldEditor` e, soltanto in caso di `Right`, sostituisce la scena e pubblica gli eventi. Ho centralizzato in `ErrorsAdapter` le conversioni tra `EngineError` e `BaseError`, affinché i layer esterni non dipendano dalla gerarchia di errore interna al motore. Il risultato è un'architettura **functional core–imperative shell**, nella quale decisioni, transizioni ed errori sono valori puri, mentre la mutazione necessaria all'esecuzione è confinata negli adapter.
+
+La porta `GameEngineRuntime` e il relativo adapter `MonadCoreGameEngineRuntime`, anch'essi progettati con Senni e integrati con i componenti dell'engine sviluppati da Tonelli, definiscono il confine di esecuzione del motore. L'adapter conserva un'istanza di `EngineFacade.Session` e orchestra l'esecuzione esclusivamente tramite la facade. Sincronizza l'accesso allo stato, gestisce l'avvio, la pausa, lo snapshot, il ripristino e il ridimensionamento del mondo e aggiorna la sessione e la scena soltanto dopo il completamento corretto del tick, dell'interpolazione e del rendering. Il `PhysicsManager` predefinito è confinato al runtime e passato esplicitamente alla facade, mentre il `Painter` necessario al rendering viene ricevuto come dipendenza contestuale.
+
+Il package diagram seguente mostra soltanto i tipi coinvolti e la loro collocazione. La porta `World` rimane nel layer application; `MonadCoreWorld` e il runtime concreto appartengono al package infrastructure dell'engine; l'ADT e il suo interprete puro sono raccolti nel sottopackage `world`. Le dipendenze rappresentate sono limitate a quelle necessarie per comprendere la delega delle modifiche.
+
+.mermaid
+    flowchart LR
+        subgraph Application["package monad_core.simulator.application.engine"]
+            direction TB
+            RuntimePort["«port»<br/>GameEngineRuntime"]
+
+            subgraph ApplicationWorld["package world"]
+                WorldPort["«port»<br/>World"]
+            end
+        end
+
+        subgraph Infrastructure["package monad_core.simulator.infrastructure.engine"]
+            direction TB
+            RuntimeAdapter["MonadCoreGameEngineRuntime"]
+            WorldAdapter["MonadCoreWorld"]
+
+            subgraph InfrastructureWorld["package world"]
+                direction TB
+                Edit["«ADT» WorldEdit"]
+                Editor["WorldEditor"]
+                Outcome{"Either"}
+                Result["WorldEditResult"]
+                EditingError["SceneEditingNotAllowed"]
+            end
+        end
+
+        RuntimeAdapter -.->|implementa| RuntimePort
+        WorldAdapter -.->|implementa| WorldPort
+        WorldAdapter -->|delega| Editor
+        Editor -->|interpreta| Edit
+        Editor -->|restituisce| Outcome
+        Outcome -->|Right| Result
+        Outcome -->|Left| EditingError
+
+### Renderer sostituibile
+
+Ho progettato `RendererManager` affinché dipenda unicamente da `State` e dal contratto `Painter`, senza dipendenze da ScalaFX o da una specifica libreria grafica. Il manager visita gli elementi della scena, seleziona l'operazione in base alla variante di `Shape2D` e risolve i colori di superfici, entità e team. Tutti gli effetti di disegno sono delegati al `Painter` ricevuto come parametro contestuale tramite `using`.
+
+Il simulator fornisce `PaintArchitect`, che implementa `Painter` traducendo le richieste in una sequenza di `DrawCommand`; `ShapePainter` esegue poi questi comandi tramite il `GraphicsContext` di ScalaFX. Questo adapter è soltanto l'implementazione fornita dal progetto: chi installa il pacchetto engine può definire un proprio `CustomPainter`, per esempio basato su un altro framework grafico o su un renderer headless, e passarlo a `RendererManager` senza modificare né ricompilare il core.
+
+.mermaid
+    classDiagram
+        direction LR
+
+        class ClientApplication {
+            <<external application>>
+            +renderState()
+        }
+
+        class State
+
+        class RendererManager {
+            +render(State)(using Painter)
+        }
+
+        class Painter {
+            <<trait>>
+            +baseEntityColor()
+            +baseSurfaceColor()
+            +teamIdColorRelation()
+            +drawCircle()
+            +drawRectangle()
+        }
+
+        class PaintArchitect {
+            <<provided adapter>>
+        }
+
+        class CustomPainter {
+            <<external implementation>>
+        }
+
+        ClientApplication --> RendererManager : renderizza lo State
+        RendererManager ..> State : legge
+        RendererManager ..> Painter : richiede via using
+        Painter <|.. PaintArchitect : implementazione fornita
+        Painter <|.. CustomPainter : implementazione sostituibile
+        ClientApplication ..> CustomPainter : fornisce come given
+
+### Interfaccia grafica e form dichiarativi
+
+Ho implementato la maggior parte del sottosistema ScalaFX: la composizione dello stage principale, il pannello di controllo del motore, il canvas ridimensionabile, il rendering della scena e le operazioni di creazione, modifica e rimozione. I pannelli ricevono collaboratori astratti tramite iniezione delle dipendenze e mantengono lo stato dell'interazione in piccoli view model locali. `GameEnginePanel` crea un'unica `BooleanProperty` reattiva, `isEngineRunning`, e la condivide con il pannello dei controlli e con quello di rendering. La proprietà mantiene coerenti i comandi di riproduzione, pausa e arresto e, durante la simulazione, disabilita sia il menu degli strumenti sia le azioni di modifica e rimozione del menu contestuale; inoltre, il clic secondario sul canvas non apre il menu mentre il motore è attivo.
+
+Il blocco nella GUI migliora l'esperienza d'uso, ma non costituisce il vincolo di correttezza. Nel composition root collego `MonadCoreWorld` alla modalità effettiva del runtime tramite `currentMode = () => runtime.mode`; qualsiasi comando che raggiunga l'adapter, anche se proveniente da un client diverso dalla GUI, deve quindi attraversare `WorldEditor`. La modifica viene accettata solo in `EditMode`; in caso contrario viene restituito `Left(SceneEditingNotAllowed)`, senza modificare la scena né pubblicare eventi. Ho così implementato una difesa su due livelli: prevenzione reattiva nella presentazione e validazione autorevole nell'infrastruttura.
+
+In `SceneRendererPanel` ho collegato un `AnimationTimer` al runtime, sincronizzato i limiti del mondo con le dimensioni del canvas e implementato la selezione degli elementi tramite hit detection sulle due varianti di `Shape2D`. Il menu contestuale viene costruito in base al tipo unione `Entity | Surface`; il pattern matching seleziona quindi, a tempo di compilazione, le azioni ammesse per l'elemento scelto. Dopo ogni mutazione completata con successo creo uno snapshot della scena; in caso di `Left`, mostro invece l'errore e non modifico la baseline. Il comando di arresto può così eliminare gli effetti della simulazione e ripristinare esattamente l'ultimo stato di editing valido.
+
+.mermaid
+    flowchart LR
+        Controls[Controlli play, pausa e stop] --> Property[isEngineRunning<br/>BooleanProperty condivisa]
+        Property --> Tools[Menu degli strumenti<br/>disabilitato]
+        Property --> Context[Menu contestuale<br/>non aperto e azioni disabilitate]
+
+        Tools --> Command[Comando World]
+        Context --> Command
+        Command --> Adapter[MonadCoreWorld]
+        Runtime[Modalità effettiva del runtime] -->|currentMode| Adapter
+        Adapter --> Editor[WorldEditor]
+        Editor -->|SimulationMode| Rejected[Left SceneEditingNotAllowed]
+        Editor -->|EditMode| Result[Right WorldEditResult]
+        Result --> Commit[Commit scena, eventi e snapshot]
+
+Per i dialoghi ho evitato la creazione di schermate indipendenti e duplicate. `FormFieldSpec` è un ADT composto da campi testuali, selezioni singole e selezioni multiple. `FormFieldControlFactory` interpreta la specifica e produce sia il nodo grafico sia una funzione `() => String` per leggerne il valore. `FormFieldsState` conserva in modo immutabile queste funzioni e i nodi dinamici; quando, per esempio, cambia la forma selezionata, i campi dipendenti relativi al raggio oppure all'altezza e alla larghezza vengono sostituiti e lo stato viene copiato senza mantenere riferimenti obsoleti.
+
+Ho inoltre separato i parser di entità, superfici e team, che trasformano la mappa dei valori del form in oggetti di dominio mediante pattern matching e for-comprehension. La validazione resta affidata ai costruttori dell'engine e ogni fallimento viene rappresentato come `Either[BaseError, A]`. Lo stesso dialogo può così operare sia in modalità di creazione sia in modalità di modifica: nel secondo caso, i valori predefiniti sono ricavati dall'oggetto esistente e il relativo identificatore viene preservato.
+
+Per mostrare gli errori che raggiungono il layer di presentazione ho realizzato `NotificationManager`. Il componente mantiene una coda immutabile di notifiche, assegna uno stile in base al tipo algebrico `NotificationType` e compone transizioni di ingresso, attesa e dissolvenza. La gestione centralizzata evita che pannelli e form duplichino la logica di visualizzazione degli errori.
+
+### Eventi del motore e logging
+
+Ho modellato il sistema di eventi tramite un ADT `sealed`: `EntityCreated`, `EntityRemoved`, `EntityUpdated` e `CollisionDetected`. Anche il bersaglio di una collisione è tipizzato tramite l'enum `CollisionTarget`, che distingue entità, superficie e lato del bordo. In questo modo, i consumer possono effettuare pattern matching esaustivi senza dover interpretare stringhe o payload non strutturati.
+
+Per la propagazione ho adottato uno schema analogo a un writer, senza introdurre dipendenze esterne. Ogni `PhysicsRule` restituisce un `PhysicsRuleResult` composto dal nuovo stato e da un `Vector[EngineEvent]`; `RuleCombinator.sequence` concatena gli eventi mentre compone le regole tramite `foldLeft` e `flatMap`, preservando l'interruzione anticipata in caso di `PhysicsError`. Le regole di collisione producono eventi completi di normale di collisione e profondità di penetrazione, mentre `PhysicsManager` confronta lo stato iniziale e quello finale per ricavare gli aggiornamenti delle entità.
+
+Nel game loop, lavorando sulla base sviluppata con Tonelli, ho introdotto `GameLoopTickResult`: oltre al nuovo stato e al loop aggiornato, il risultato trasporta il coefficiente di interpolazione `alpha` e tutti gli eventi accumulati nei fixed update eseguiti durante un frame. `EngineFacade` adatta questo tipo interno nel proprio `TickResult`, sostituendo il loop concreto con la sessione opaca `nextSession`. Ho spostato il rendering all'esterno del loop e l'ho affidato al runtime; il core temporale rimane quindi indipendente dagli effetti grafici e gli eventi non vengono persi quando un frame richiede più aggiornamenti fisici.
+
+Le mutazioni esplicite delle entità effettuate tramite `MonadCoreWorld` pubblicano gli eventi di creazione, rimozione e aggiornamento, mentre `MonadCoreGameEngineRuntime` inoltra quelli prodotti dal sottosistema fisico. Nel composition root ho collegato entrambi allo stesso callback. `EventLogFormatter` trasforma infine ciascun caso dell'ADT in un `EventLogEntry` strutturato, con livello `Info` o `Trace`, consumato attraverso la porta applicativa `Logger`. Engine, formattazione e destinazione del log restano pertanto disaccoppiati.
+
+.mermaid
+    flowchart TD
+        subgraph Engine[Pacchetto engine]
+            direction LR
+
+            Rule[PhysicsRule]
+            RuleResult[PhysicsRuleResult<br/>State + Vector di EngineEvent]
+            Combinator[RuleCombinator.sequence]
+            Physics[PhysicsManager]
+            Step[PhysicsStep]
+            Loop[GameLoop<br/>fixed update]
+            InternalResult[GameLoopTickResult<br/>State + Loop + Eventi + Alpha]
+            Facade[EngineFacade]
+            TickResult[EngineFacade.TickResult<br/>State + Session + Eventi + Alpha]
+
+            Rule --> RuleResult
+            RuleResult --> Combinator
+            Combinator --> Physics
+            Physics --> Step
+            Step --> Loop
+            Loop --> InternalResult
+            InternalResult --> Facade
+            Facade --> TickResult
+        end
+
+        subgraph Simulator[Applicazione simulator]
+            direction LR
+
+            World[MonadCoreWorld<br/>create, remove, update]
+            Runtime[MonadCoreGameEngineRuntime]
+            Callback[Callback condiviso<br/>Vector di EngineEvent]
+            Formatter[EventLogFormatter]
+            LogEntry[EventLogEntry<br/>Info oppure Trace]
+            Logger[Logger]
+
+            World -->|eventi applicativi| Callback
+            Runtime -->|eventi fisici| Callback
+            Callback --> Formatter
+            Formatter --> LogEntry
+            LogEntry --> Logger
+        end
+
+        Engine -->|EngineFacade.TickResult restituito al GameEngineRuntime| Simulator
+
+### Continuous Integration e Continuous Delivery
+
+Mi sono occupato in autonomia della progettazione e della manutenzione dell'intera pipeline CI/CD, composta da workflow GitHub Actions distinti per la verifica, il rilascio e la pubblicazione della documentazione. Ho mantenuto separate le responsabilità dei job, in modo che un errore di formattazione, un test fallito o una versione non valida interrompano la pipeline prima della produzione degli artefatti.
+
+La Continuous Integration esegue la suite Scala su ogni branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX e, in seguito all'integrazione dei generatori logici, installa SWI-Prolog prima di eseguire `sbt test`. Un workflow separato applica alle pull request il criterio di formattazione tramite `sbt scalafmtCheckAll`; la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
+
+La Continuous Delivery viene avviata da un push su `main`. Il primo job legge `release_version` da `project/build.properties`, recupera l'ultima release tramite GitHub CLI e accetta soltanto una versione strettamente maggiore. La build utilizza quindi una matrice di runner Linux, Windows e macOS: ogni piattaforma esegue `sbt assembly`, rinomina il fat JAR includendo la versione e il sistema operativo e pubblica l'artefatto intermedio. Questa distinzione è necessaria perché la distribuzione include i moduli JavaFX specifici di ciascuna piattaforma.
+
+Soltanto dopo il completamento della matrice, il job di release genera con Quarkdown il PDF della relazione, scarica i tre JAR e crea una GitHub Release dotata di tag versionato, note automatiche e tutti gli artefatti richiesti per la consegna. In parallelo, un workflow dedicato compila la stessa relazione in HTML e la distribuisce tramite GitHub Pages. Ho configurato esplicitamente anche i permessi necessari alla scrittura delle release e al deployment tramite token OIDC, limitandoli ai soli job che ne richiedono l'utilizzo.
+
+.mermaid
+    flowchart TD
+        Push[Push su un branch] --> Tests[Test Scala<br/>Java 21 + Xvfb + SWI-Prolog]
+        PR[Pull request verso<br/>main o development] --> Tests
+        PR --> Format[scalafmtCheckAll]
+
+        Main[Push su main] --> Version[Verifica incremento<br/>release_version]
+        Version --> Matrix[Assembly su matrice<br/>Linux, Windows, macOS]
+        Matrix --> Artifacts[Fat JAR versionati]
+        Artifacts --> Pdf[Relazione PDF<br/>con Quarkdown]
+        Pdf --> Release[GitHub Release]
+
+        Main --> Html[Relazione HTML<br/>con Quarkdown]
+        Html --> Pages[GitHub Pages]
+
+#### Possibile deploy in un ambiente di produzione containerizzato
+
+La pipeline attuale distribuisce i JAR tramite GitHub Releases e pubblica la documentazione su GitHub Pages; non effettua quindi il deploy dell'applicazione su una macchina di produzione. Se fosse disponibile un ambiente di produzione basato su Docker, estenderei il workflow con un job eseguito dopo la build e i test. Il job scaricherebbe il JAR Linux già prodotto, costruirebbe un'immagine contenente Java 21 e tutte le dipendenze di runtime e la pubblicherebbe su GitHub Container Registry. L'immagine sarebbe identificata sia dal numero di versione sia dal commit, evitando di dipendere esclusivamente da un tag mutabile come `latest`.
+
+La macchina di produzione conserverebbe soltanto la configurazione esterna e i segreti necessari all'esecuzione. Il rilascio richiederebbe quindi due operazioni: `docker compose pull` per scaricare la nuova immagine e `docker compose up -d` per ricreare il container. In questo modo l'ambiente non compilerebbe il progetto e non installerebbe manualmente Java o le dipendenze applicative: ogni versione verrebbe eseguita nello stesso ambiente descritto dall'immagine.
+
+Un eventuale rollback consisterebbe nel ripristinare nel file Compose il tag della versione precedente e ricreare il container. Poiché MonadCore2D utilizza JavaFX, una postazione grafica containerizzata dovrebbe inoltre esporre al container il display del sistema host; questa configurazione farebbe parte dell'ambiente di produzione e non dell'immagine applicativa.
+
+### Infrastrutture di verifica implementate
+
+Oltre ai test delle funzionalità di mia competenza, ho realizzato diversi supporti riutilizzabili. Il primo è il sistema di snapshot della GUI: `SceneGraphSerializer` converte ricorsivamente il scene graph JavaFX in una rappresentazione JSON stabile, mentre `SnapshotTesting` confronta sia questa struttura sia le immagini PNG. Il confronto visivo normalizza le dimensioni dipendenti dal sistema operativo, ammette una tolleranza esplicita per canale rispetto alle differenze di antialiasing e misura la percentuale di pixel difformi.
+
+***Nota sulla riproducibilità degli snapshot visivi.*** In un contesto aziendale, le baseline vengono spesso generate e verificate in ambienti uguali o quanto più possibile simili a quelli di produzione o di rilascio, così da massimizzarne la stabilità e la significatività. Anche in questo progetto sarebbe stato possibile predisporre tre workflow GitHub Actions distinti, uno per ciascun sistema operativo supportato, mantenendo verifiche e baseline specifiche per Linux, Windows e macOS. Ho preferito intenzionalmente una soluzione più semplice e accessibile: tutti i componenti del gruppo possono eseguire i test e generare localmente gli snapshot senza dipendere da una pipeline dedicata. La normalizzazione delle dimensioni e le tolleranze sull'antialiasing compensano le differenze grafiche minori tra piattaforme. La scelta privilegia quindi la riproducibilità locale e la semplicità operativa rispetto alla corrispondenza pixel-perfect con un singolo ambiente di rilascio.
+
+Il secondo supporto rende eseguibili i vincoli architetturali. `ArchitectureChecker` analizza gli import tra i package e fornisce matcher ScalaTest con cui verifico l'indipendenza dell'engine, la direzione delle dipendenze tra domain, application, infrastructure e presentation e il confinamento di ScalaFX e JavaFX nel layer grafico. Questi controlli hanno guidato anche il refactoring dei miei componenti verso la struttura a layer condivisa con Senni.
+
+Infine, ho realizzato due generatori Prolog che producono, durante la build, tabelle ScalaTest per le combinazioni di tipi di notifica e di campi geometrici opzionali. I task SBT invocano SWI-Prolog e scrivono i sorgenti Scala nella directory gestita dei test; la pipeline CI installa quindi anche il runtime Prolog prima di eseguire la suite. Questa integrazione evita di mantenere manualmente i prodotti cartesiani dei casi e collega la generazione logica dei dati ai test automatizzati.

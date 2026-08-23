@@ -3,3 +3,4 @@
 ## Tonelli
 
 .include {implementations/implementations-tonelli.qd}
+.include {implementations/implementations-fattori.qd}
