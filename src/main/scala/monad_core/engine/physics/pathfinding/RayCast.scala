@@ -21,7 +21,7 @@ private[physics] object RayCast:
       lowerRightSceneCorner: Vector2D
   ): Either[PhysicsError, Option[Vector2D]] =
     val entitiesVertexesWithoutFrom = entitiesVertexes.filterNot(_._1 == from.id)
-    val inflatedVertexes = inflateVertexes(
+    val inflatedVertexes = inflateAllVertexes(
       entitiesVertexesWithoutFrom,
       entities,
       hunterRadius(from) + HunterMargin
@@ -78,12 +78,10 @@ private[physics] object RayCast:
   private[pathfinding] def hunterRadius(hunter: Entity): Double =
     hunter.shape match
       case circle: Shape2D.Circle => circle.radius
-      case _: Shape2D.Rectangle =>
-        val halfWidth  = SizeHelper.horizontalShapeSize(hunter) / 2
-        val halfHeight = SizeHelper.verticalShapeSize(hunter) / 2
-        Vector2D(halfWidth, halfHeight).magnitude
+      case rectangle: Shape2D.Rectangle =>
+        Vector2D(rectangle.halfLength, rectangle.halfHeight).magnitude
 
-  private[pathfinding] def inflateVertexes(
+  private[pathfinding] def inflateAllVertexes(
       vertexes: Map[LocatableId, List[Vector2D]],
       entities: List[Entity],
       inflation: Double
@@ -91,24 +89,42 @@ private[physics] object RayCast:
     val entitiesById = entities.map(entity => entity.id -> entity).toMap
 
     vertexes.map { case (id, originalVertexes) =>
-      val inflated = entitiesById.get(id).fold(originalVertexes) { entity =>
-        entity.shape match
-          case _: Shape2D.Circle =>
-            originalVertexes.map { vertex =>
-              vertex + (vertex - entity.position).normalized * inflation
-            }
-          case _: Shape2D.Rectangle =>
-            originalVertexes.map { vertex =>
-              val direction = vertex - entity.position
-              Vector2D(
-                vertex.x + math.signum(direction.x) * inflation,
-                vertex.y + math.signum(direction.y) * inflation
-              )
-            }
+      id -> entitiesById.get(id).fold(originalVertexes) { entity =>
+        inflateVertexes(originalVertexes, entity, inflation)
       }
-
-      id -> inflated
     }
+
+  private def inflateVertexes(
+      originalVertexes: List[Vector2D],
+      entity: Entity,
+      inflation: Double
+  ): List[Vector2D] =
+    originalVertexes.map { vertex =>
+      inflateSingleVertex(
+        originalVertex = vertex,
+        entity = entity,
+        inflation = inflation
+      )
+    }
+
+  private def inflateSingleVertex(
+      originalVertex: Vector2D,
+      entity: Entity,
+      inflation: Double
+  ): Vector2D = {
+    val direction = originalVertex - entity.position
+
+    entity.shape match
+      case _: Shape2D.Circle =>
+        originalVertex + direction.normalized * inflation
+      case _: Shape2D.Rectangle =>
+        val localDirection = direction.rotated(-entity.rotation)
+        val localInflation = Vector2D(
+          math.signum(localDirection.x),
+          math.signum(localDirection.y)
+        ) * inflation
+        originalVertex + localInflation.rotated(entity.rotation)
+  }
 
   private[pathfinding] def actualWaypoint(
       to: Entity,
@@ -116,21 +132,13 @@ private[physics] object RayCast:
       waypoint: Vector2D
   ): Vector2D =
 
-    val displace: Double => Double = _ / 2.0 + WayPointDisplacement
-    val horizontal                 = displace(SizeHelper.horizontalShapeSize(from))
-    val vertical                   = displace(SizeHelper.verticalShapeSize(from))
+    val clearance = hunterRadius(from) + WayPointDisplacement
 
-    to.shape match
-      case _: Shape2D.Rectangle =>
-        val cornerDirection = waypoint - to.position
-        waypoint + Vector2D(
-          math.signum(cornerDirection.x) * horizontal,
-          math.signum(cornerDirection.y) * vertical
-        )
-      case _: Shape2D.Circle =>
-        val direction             = (waypoint - to.position).normalized
-        val displacementMagnitude = Vector2D(horizontal, vertical).magnitude
-        waypoint + direction * displacementMagnitude
+    inflateSingleVertex(
+      originalVertex = waypoint,
+      entity = to,
+      inflation = clearance
+    )
 
   private[pathfinding] def isValidWayPoint(
       to: Entity,

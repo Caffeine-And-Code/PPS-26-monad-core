@@ -359,6 +359,82 @@
         {
           "type": "Label",
           "styleClass": ["label", "form-field-label"],
+          "text": "Initial Rotation (degrees)",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        },
+        {
+          "type": "TextField",
+          "id": "rotation",
+          "styleClass": ["text-input", "text-field", "form-field-input"],
+          "children": [
+            {
+              "type": "Pane",
+              "children": [
+                {
+                  "type": "Path"
+                },
+                {
+                  "type": "Text",
+                  "styleClass": ["text"]
+                },
+                {
+                  "type": "Group",
+                  "children": [
+                    {
+                      "type": "Path"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "styleClass": ["label", "form-field-label"],
+          "text": "Angular Speed (degrees/s)",
+          "children": [
+            {
+              "type": "LabeledText",
+              "styleClass": ["text"]
+            }
+          ]
+        },
+        {
+          "type": "TextField",
+          "id": "angularSpeed",
+          "styleClass": ["text-input", "text-field", "form-field-input"],
+          "children": [
+            {
+              "type": "Pane",
+              "children": [
+                {
+                  "type": "Path"
+                },
+                {
+                  "type": "Text",
+                  "styleClass": ["text"]
+                },
+                {
+                  "type": "Group",
+                  "children": [
+                    {
+                      "type": "Path"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "styleClass": ["label", "form-field-label"],
           "text": "Weight",
           "children": [
             {

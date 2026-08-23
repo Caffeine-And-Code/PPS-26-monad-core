@@ -12,6 +12,8 @@ Tests occasionally utilizes prolog to generate utility classes, the generation i
 swipl -q -g true -t halt <PROLOG_FILE_NAME>
 ```
 
+### Prolog Installation Setup
+
 The command above _**REQUIRES**_ the following dependency to be installed:
 ##### Linux
 ```bash
@@ -23,6 +25,8 @@ brew install swi-prolog
 ```
 ##### Windows
 Visit and follow the instructions on the official site: https://www.swi-prolog.org/download/stable
+
+> After the OS-specific installation step it is **Required** to run a ``sbt test`` command to generate the actual files, any other way to test the project (like the configurations of IntelliJ) will not work cause the generated files are missing.  
 
 ## Project Formatter Settings
 

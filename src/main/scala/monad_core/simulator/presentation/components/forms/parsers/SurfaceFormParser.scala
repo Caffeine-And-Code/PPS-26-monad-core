@@ -17,6 +17,7 @@ object SurfaceFormParser {
   val PositionXKey     = "x"
   val PositionYKey     = "y"
   val ShapeKey         = "shape"
+  val RotationKey      = "rotation"
   val FrictionIndexKey = "friction"
   val AppliedForceXKey = "appliedForceX"
   val AppliedForceYKey = "appliedForceY"
@@ -29,7 +30,8 @@ object SurfaceFormParser {
       position         <- BaseFormParser.getSafeVector2D(values, PositionXKey, PositionYKey)
       shapeValueEither <- values.getValueSafe(ShapeKey)
       shapeValue       <- shapeValueEither.getEnumValue
-      surface          <- buildByShape(shapeValue, generateId(), position, values)
+      rotation         <- BaseFormParser.parseOptionalDouble(values, RotationKey)
+      surface <- buildByShape(shapeValue, generateId(), position, values, rotation.getOrElse(0.0))
 
       frictionIndex = values.get(FrictionIndexKey).flatMap(_.toDoubleOption)
       surfaceWithFriction <- frictionIndex match
@@ -46,20 +48,21 @@ object SurfaceFormParser {
       shape: LocatableFormShapes,
       id: String,
       position: Vector2D,
-      values: Map[String, String]
+      values: Map[String, String],
+      rotation: Double = 0.0
   ): Either[BaseError, Surface] =
     shape match
       case Circle =>
         for
           radius  <- BaseFormParser.parseDouble(values, BaseFormParser.RadiusKey)
-          surface <- Surface.circle(id, position, radius).adaptError()
+          surface <- Surface.circle(id, position, radius, rotation).adaptError()
         yield surface
 
       case Rectangle =>
         for
           height  <- BaseFormParser.parseDouble(values, BaseFormParser.HeightKey)
           length  <- BaseFormParser.parseDouble(values, BaseFormParser.LengthKey)
-          surface <- Surface.rectangle(id, position, height, length).adaptError()
+          surface <- Surface.rectangle(id, position, height, length, rotation).adaptError()
         yield surface
 
 }

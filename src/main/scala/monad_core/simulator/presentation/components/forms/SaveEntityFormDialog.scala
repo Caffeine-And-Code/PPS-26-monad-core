@@ -35,6 +35,8 @@ private case class SaveEntityFormDefaultValues(
     shape: Option[String] = Option.apply(EntityFormDefaults.InitialShape),
     speedX: Option[String] = None,
     speedY: Option[String] = None,
+    rotation: Option[String] = Some("0.0"),
+    angularSpeed: Option[String] = None,
     weight: Option[String] = None,
     health: Option[String] = None,
     teamId: Option[String] = None,
@@ -91,7 +93,9 @@ object SaveEntityFormDialog:
           weight = entity.weight.map(_.toString),
           health = entity.health.map(_.toString),
           speedX = entity.speed.map(_.x.toString),
-          speedY = entity.speed.map(_.y.toString)
+          speedY = entity.speed.map(_.y.toString),
+          rotation = Some(entity.rotation.toString),
+          angularSpeed = entity.angularSpeed.map(_.toString)
         )
 
   private[forms] def buildFields(
@@ -129,6 +133,16 @@ object SaveEntityFormDialog:
         id = EntityFormParser.SpeedYKey,
         label = "Initial Speed Y",
         defaultValue = defaultValues.speedY
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.RotationKey,
+        label = "Initial Rotation (degrees)",
+        defaultValue = defaultValues.rotation
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.AngularSpeedKey,
+        label = "Angular Speed (degrees/s)",
+        defaultValue = defaultValues.angularSpeed
       ),
       TextFieldSpec(
         id = EntityFormParser.WeightKey,

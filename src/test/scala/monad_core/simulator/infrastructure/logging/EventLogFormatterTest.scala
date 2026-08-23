@@ -35,7 +35,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
     )
 
   test("formats an entity collision target"):
-    val collision = Collision(Vector2D(0, 1), 2.5)
+    val collision = Collision(Vector2D(0, 1), 2.5, Vector2D(1, 1))
 
     formatEvent(
       CollisionDetected(entity.id, CollisionTarget.Entity(entity.id), collision)
@@ -46,7 +46,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
     )
 
   test("formats a surface collision target"):
-    val collision = Collision(Vector2D(1, 0), 1.5)
+    val collision = Collision(Vector2D(1, 0), 1.5, Vector2D(30, 40))
 
     formatEvent(
       CollisionDetected(entity.id, CollisionTarget.Surface(surface.id), collision)
@@ -57,7 +57,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
     )
 
   test("formats a border collision target"):
-    val collision = Collision(Vector2D(1, 0), 1.5)
+    val collision = Collision(Vector2D(1, 0), 1.5, Vector2D(0, 0))
 
     formatEvent(
       CollisionDetected(entity.id, CollisionTarget.Border(BorderSide.Left), collision)

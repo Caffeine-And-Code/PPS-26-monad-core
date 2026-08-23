@@ -4,7 +4,7 @@ import monad_core.engine.model.Shape2D.Circle
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.pathfinding.PointOnCircle
 
-private[physics] object PathCircle:
+private[pathfinding] object CircleVertexes:
 
   extension (circle: Circle)
 

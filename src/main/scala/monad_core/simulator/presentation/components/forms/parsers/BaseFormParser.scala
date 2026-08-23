@@ -22,6 +22,15 @@ object BaseFormParser:
       valueStr.toDoubleOption.toRight(InvalidNumericFormFieldError(key))
     }
 
+  private[forms] def parseOptionalDouble(
+      values: Map[String, String],
+      key: String
+  ): Either[BaseError, Option[Double]] =
+    values.get(key).filter(_.nonEmpty) match
+      case Some(value) =>
+        value.toDoubleOption.map(Some.apply).toRight(InvalidNumericFormFieldError(key))
+      case None => Right(None)
+
   private[forms] def getSafeVector2D(
       values: Map[String, String],
       xKey: String,

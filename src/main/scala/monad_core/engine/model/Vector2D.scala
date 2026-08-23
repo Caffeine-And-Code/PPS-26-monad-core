@@ -23,8 +23,14 @@ extension (v: Vector2D)
   infix def dot(toDot: Vector2D): Double =
     v.x * toDot.x + v.y * toDot.y
 
+  infix def cross(toCross: Vector2D): Double =
+    v.x * toCross.y - v.y * toCross.x
+
+  infix def squaredDistance(other: Vector2D): Double =
+    ((v.x - other.x) ** 2) + ((v.y - other.y) ** 2)
+
   infix def euclideanDistance(other: Vector2D): Double =
-    math.sqrt(((v.x - other.x) ** 2) + ((v.y - other.y) ** 2))
+    math.sqrt(squaredDistance(other))
 
   def magnitude: Double =
     math.sqrt((v.x ** 2) + (v.y ** 2))
@@ -38,12 +44,27 @@ extension (v: Vector2D)
   def flip: Vector2D =
     v.copy(-v.x, -v.y)
 
+  def swap: Vector2D =
+    v.copy(v.y, v.x)
+
+  private infix def rotatedX(cosSin: Vector2D): Double =
+    v.x * cosSin.x - v.y * cosSin.y
+
+  def rotated(angle: Double): Vector2D =
+    val radians = math.toRadians(angle)
+    val cosSin  = Vector2D(math.cos(radians), math.sin(radians))
+    val sinCos  = cosSin.swap
+    Vector2D(
+      v rotatedX cosSin,
+      v dot sinCos
+    )
+
   def +(toAdd: Vector2D): Vector2D = v add toAdd
 
   def -(toSub: Vector2D): Vector2D = v sub toSub
 
   def *(scalar: Double): Vector2D = v times scalar
 
-  def o(toDot: Vector2D): Double = v dot toDot
+  def -->>(other: Vector2D): Double = v squaredDistance other
 
   def -->(other: Vector2D): Double = v euclideanDistance other

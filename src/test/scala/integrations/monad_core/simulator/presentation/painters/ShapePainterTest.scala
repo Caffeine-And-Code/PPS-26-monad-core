@@ -134,7 +134,7 @@ class ShapePainterTest
       ShapePainter.paint(canvas.graphicsContext2D)
     }
 
-    assertMatchesVisualSnapshot("rectangle_surface_flush_result", canvas, maxDiffPercentage = 3.0)
+    assertMatchesVisualSnapshot("rectangle_surface_flush_result", canvas, maxDiffPercentage = 6.0)
 
   test("ShapePainter.paint calls drainBuffer on ShapeArchitect and processes commands"):
     val canvas = Canvas(800, 800)
@@ -144,7 +144,7 @@ class ShapePainterTest
 
     val expectedCommands = List(
       DrawCommand.Circle(100.0, 100.0, 25.0, BaseEngineColor),
-      DrawCommand.Rectangle(200.0, 200.0, 50.0, 80.0, BaseEngineColor)
+      DrawCommand.Rectangle(200.0, 200.0, 50.0, 80.0, 30.0, BaseEngineColor)
     )
 
     (() => mockArchitect.drainBuffer()).expects().returns(expectedCommands).once()

@@ -13,6 +13,8 @@ case class InvalidToolCall(toolName: String, reason: String)
 
 case class Langchain4jToolCallMapper():
 
+  private val defaultRotation = 0.0
+
   def from(request: ToolExecutionRequest): Either[BaseError, ToolCall] =
     request.name() match
       case "getAllEntities" => Right(ToolCall.GetAllEntities)
@@ -83,45 +85,74 @@ case class Langchain4jToolCallMapper():
 
   private def createCircleEntity(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      radius <- double(arguments, "radius")
-      teamId <- optionalString(arguments, "teamId")
-      weight <- optionalInt(arguments, "weight")
-      speedX <- optionalDouble(arguments, "speedX")
-      speedY <- optionalDouble(arguments, "speedY")
-    yield ToolCall.CreateCircleEntity(id, x, y, radius, teamId, weight, speedX, speedY)
+      id           <- string(arguments, "id")
+      x            <- double(arguments, "x")
+      y            <- double(arguments, "y")
+      radius       <- double(arguments, "radius")
+      teamId       <- optionalString(arguments, "teamId")
+      weight       <- optionalInt(arguments, "weight")
+      speedX       <- optionalDouble(arguments, "speedX")
+      speedY       <- optionalDouble(arguments, "speedY")
+      rotation     <- rotationOrDefault(arguments)
+      angularSpeed <- optionalDouble(arguments, "angularSpeed")
+    yield ToolCall.CreateCircleEntity(
+      id,
+      x,
+      y,
+      radius,
+      teamId,
+      weight,
+      speedX,
+      speedY,
+      rotation,
+      angularSpeed
+    )
 
   private def createRectangleEntity(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      height <- double(arguments, "height")
-      length <- double(arguments, "length")
-      teamId <- optionalString(arguments, "teamId")
-      weight <- optionalInt(arguments, "weight")
-      speedX <- optionalDouble(arguments, "speedX")
-      speedY <- optionalDouble(arguments, "speedY")
-    yield ToolCall.CreateRectangleEntity(id, x, y, height, length, teamId, weight, speedX, speedY)
+      id           <- string(arguments, "id")
+      x            <- double(arguments, "x")
+      y            <- double(arguments, "y")
+      height       <- double(arguments, "height")
+      length       <- double(arguments, "length")
+      teamId       <- optionalString(arguments, "teamId")
+      weight       <- optionalInt(arguments, "weight")
+      speedX       <- optionalDouble(arguments, "speedX")
+      speedY       <- optionalDouble(arguments, "speedY")
+      rotation     <- rotationOrDefault(arguments)
+      angularSpeed <- optionalDouble(arguments, "angularSpeed")
+    yield ToolCall.CreateRectangleEntity(
+      id,
+      x,
+      y,
+      height,
+      length,
+      teamId,
+      weight,
+      speedX,
+      speedY,
+      rotation,
+      angularSpeed
+    )
 
   private def updateCircleEntity(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      radius <- double(arguments, "radius")
-    yield ToolCall.UpdateCircleEntity(id, x, y, radius)
+      id       <- string(arguments, "id")
+      x        <- double(arguments, "x")
+      y        <- double(arguments, "y")
+      radius   <- double(arguments, "radius")
+      rotation <- rotationOrDefault(arguments)
+    yield ToolCall.UpdateCircleEntity(id, x, y, radius, rotation)
 
   private def updateRectangleEntity(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      height <- double(arguments, "height")
-      length <- double(arguments, "length")
-    yield ToolCall.UpdateRectangleEntity(id, x, y, height, length)
+      id       <- string(arguments, "id")
+      x        <- double(arguments, "x")
+      y        <- double(arguments, "y")
+      height   <- double(arguments, "height")
+      length   <- double(arguments, "length")
+      rotation <- rotationOrDefault(arguments)
+    yield ToolCall.UpdateRectangleEntity(id, x, y, height, length, rotation)
 
   private def removeEntity(arguments: Arguments): Either[BaseError, ToolCall] =
     string(arguments, "id").map(ToolCall.RemoveEntity.apply)
@@ -131,37 +162,41 @@ case class Langchain4jToolCallMapper():
 
   private def createCircleSurface(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      radius <- double(arguments, "radius")
-    yield ToolCall.CreateCircleSurface(id, x, y, radius)
+      id       <- string(arguments, "id")
+      x        <- double(arguments, "x")
+      y        <- double(arguments, "y")
+      radius   <- double(arguments, "radius")
+      rotation <- rotationOrDefault(arguments)
+    yield ToolCall.CreateCircleSurface(id, x, y, radius, rotation)
 
   private def createRectangleSurface(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      height <- double(arguments, "height")
-      length <- double(arguments, "length")
-    yield ToolCall.CreateRectangleSurface(id, x, y, height, length)
+      id       <- string(arguments, "id")
+      x        <- double(arguments, "x")
+      y        <- double(arguments, "y")
+      height   <- double(arguments, "height")
+      length   <- double(arguments, "length")
+      rotation <- rotationOrDefault(arguments)
+    yield ToolCall.CreateRectangleSurface(id, x, y, height, length, rotation)
 
   private def updateCircleSurface(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      radius <- double(arguments, "radius")
-    yield ToolCall.UpdateCircleSurface(id, x, y, radius)
+      id       <- string(arguments, "id")
+      x        <- double(arguments, "x")
+      y        <- double(arguments, "y")
+      radius   <- double(arguments, "radius")
+      rotation <- rotationOrDefault(arguments)
+    yield ToolCall.UpdateCircleSurface(id, x, y, radius, rotation)
 
   private def updateRectangleSurface(arguments: Arguments): Either[BaseError, ToolCall] =
     for
-      id     <- string(arguments, "id")
-      x      <- double(arguments, "x")
-      y      <- double(arguments, "y")
-      height <- double(arguments, "height")
-      length <- double(arguments, "length")
-    yield ToolCall.UpdateRectangleSurface(id, x, y, height, length)
+      id       <- string(arguments, "id")
+      x        <- double(arguments, "x")
+      y        <- double(arguments, "y")
+      height   <- double(arguments, "height")
+      length   <- double(arguments, "length")
+      rotation <- rotationOrDefault(arguments)
+    yield ToolCall.UpdateRectangleSurface(id, x, y, height, length, rotation)
 
   private def removeSurface(arguments: Arguments): Either[BaseError, ToolCall] =
     string(arguments, "id").map(ToolCall.RemoveSurface.apply)
@@ -217,3 +252,6 @@ case class Langchain4jToolCallMapper():
       case None | Some(null)   => Right(None)
       case Some(value: Number) => Right(Some(value.doubleValue()))
       case _                   => Left(InvalidToolCall("arguments", s"invalid '$name'"))
+
+  private def rotationOrDefault(arguments: Arguments): Either[BaseError, Double] =
+    optionalDouble(arguments, "rotation").map(_.getOrElse(defaultRotation))

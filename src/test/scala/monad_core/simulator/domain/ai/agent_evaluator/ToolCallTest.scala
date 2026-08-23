@@ -22,6 +22,8 @@ class ToolCallTest extends AnyFunSuite with Matchers:
   private val weight          = Some(2)
   private val speedX          = Some(1.5)
   private val speedY          = Some(2.5)
+  private val rotation        = 45.0
+  private val angularSpeed    = Some(-30.0)
 
   test("can create entity query ToolCalls"):
     ToolCall.GetAllEntities shouldBe ToolCall.GetAllEntities
@@ -38,7 +40,9 @@ class ToolCallTest extends AnyFunSuite with Matchers:
       optionalTeamId,
       weight,
       speedX,
-      speedY
+      speedY,
+      rotation,
+      angularSpeed
     )
 
     inside(result):
@@ -50,7 +54,9 @@ class ToolCallTest extends AnyFunSuite with Matchers:
             resultTeamId,
             resultWeight,
             resultSpeedX,
-            resultSpeedY
+            resultSpeedY,
+            resultRotation,
+            resultAngularSpeed
           ) =>
         id shouldBe circleId
         resultX shouldBe x
@@ -60,6 +66,8 @@ class ToolCallTest extends AnyFunSuite with Matchers:
         resultWeight shouldBe weight
         resultSpeedX shouldBe speedX
         resultSpeedY shouldBe speedY
+        resultRotation shouldBe rotation
+        resultAngularSpeed shouldBe angularSpeed
 
   test("can create a CreateRectangleEntity ToolCall"):
     val result = ToolCall.CreateRectangleEntity(
@@ -71,7 +79,9 @@ class ToolCallTest extends AnyFunSuite with Matchers:
       optionalTeamId,
       weight,
       speedX,
-      speedY
+      speedY,
+      rotation,
+      angularSpeed
     )
 
     inside(result):
@@ -84,7 +94,9 @@ class ToolCallTest extends AnyFunSuite with Matchers:
             resultTeamId,
             resultWeight,
             resultSpeedX,
-            resultSpeedY
+            resultSpeedY,
+            resultRotation,
+            resultAngularSpeed
           ) =>
         id shouldBe rectangleId
         resultX shouldBe x
@@ -95,20 +107,36 @@ class ToolCallTest extends AnyFunSuite with Matchers:
         resultWeight shouldBe weight
         resultSpeedX shouldBe speedX
         resultSpeedY shouldBe speedY
+        resultRotation shouldBe rotation
+        resultAngularSpeed shouldBe angularSpeed
 
   test("can create entity update ToolCalls"):
-    inside(ToolCall.UpdateCircleEntity(circleId, x, y, radius)):
-      case ToolCall.UpdateCircleEntity(id, resultX, resultY, resultRadius) =>
-        (id, resultX, resultY, resultRadius) shouldBe (circleId, x, y, radius)
+    inside(ToolCall.UpdateCircleEntity(circleId, x, y, radius, rotation)):
+      case ToolCall.UpdateCircleEntity(id, resultX, resultY, resultRadius, resultRotation) =>
+        (id, resultX, resultY, resultRadius, resultRotation) shouldBe (
+          circleId,
+          x,
+          y,
+          radius,
+          rotation
+        )
 
-    inside(ToolCall.UpdateRectangleEntity(rectangleId, x, y, height, rectangleLength)):
-      case ToolCall.UpdateRectangleEntity(id, resultX, resultY, resultHeight, resultLength) =>
-        (id, resultX, resultY, resultHeight, resultLength) shouldBe (
+    inside(ToolCall.UpdateRectangleEntity(rectangleId, x, y, height, rectangleLength, rotation)):
+      case ToolCall.UpdateRectangleEntity(
+            id,
+            resultX,
+            resultY,
+            resultHeight,
+            resultLength,
+            resultRotation
+          ) =>
+        (id, resultX, resultY, resultHeight, resultLength, resultRotation) shouldBe (
           rectangleId,
           x,
           y,
           height,
-          rectangleLength
+          rectangleLength,
+          rotation
         )
 
   test("can create a RemoveEntity ToolCall"):
@@ -122,33 +150,61 @@ class ToolCallTest extends AnyFunSuite with Matchers:
       case ToolCall.GetSurface(id) => id shouldBe surfaceId
 
   test("can create surface creation ToolCalls"):
-    inside(ToolCall.CreateCircleSurface(circleId, x, y, radius)):
-      case ToolCall.CreateCircleSurface(id, resultX, resultY, resultRadius) =>
-        (id, resultX, resultY, resultRadius) shouldBe (circleId, x, y, radius)
+    inside(ToolCall.CreateCircleSurface(circleId, x, y, radius, rotation)):
+      case ToolCall.CreateCircleSurface(id, resultX, resultY, resultRadius, resultRotation) =>
+        (id, resultX, resultY, resultRadius, resultRotation) shouldBe (
+          circleId,
+          x,
+          y,
+          radius,
+          rotation
+        )
 
-    inside(ToolCall.CreateRectangleSurface(rectangleId, x, y, height, rectangleLength)):
-      case ToolCall.CreateRectangleSurface(id, resultX, resultY, resultHeight, resultLength) =>
-        (id, resultX, resultY, resultHeight, resultLength) shouldBe (
+    inside(ToolCall.CreateRectangleSurface(rectangleId, x, y, height, rectangleLength, rotation)):
+      case ToolCall.CreateRectangleSurface(
+            id,
+            resultX,
+            resultY,
+            resultHeight,
+            resultLength,
+            resultRotation
+          ) =>
+        (id, resultX, resultY, resultHeight, resultLength, resultRotation) shouldBe (
           rectangleId,
           x,
           y,
           height,
-          rectangleLength
+          rectangleLength,
+          rotation
         )
 
   test("can create surface update ToolCalls"):
-    inside(ToolCall.UpdateCircleSurface(circleId, x, y, radius)):
-      case ToolCall.UpdateCircleSurface(id, resultX, resultY, resultRadius) =>
-        (id, resultX, resultY, resultRadius) shouldBe (circleId, x, y, radius)
+    inside(ToolCall.UpdateCircleSurface(circleId, x, y, radius, rotation)):
+      case ToolCall.UpdateCircleSurface(id, resultX, resultY, resultRadius, resultRotation) =>
+        (id, resultX, resultY, resultRadius, resultRotation) shouldBe (
+          circleId,
+          x,
+          y,
+          radius,
+          rotation
+        )
 
-    inside(ToolCall.UpdateRectangleSurface(rectangleId, x, y, height, rectangleLength)):
-      case ToolCall.UpdateRectangleSurface(id, resultX, resultY, resultHeight, resultLength) =>
-        (id, resultX, resultY, resultHeight, resultLength) shouldBe (
+    inside(ToolCall.UpdateRectangleSurface(rectangleId, x, y, height, rectangleLength, rotation)):
+      case ToolCall.UpdateRectangleSurface(
+            id,
+            resultX,
+            resultY,
+            resultHeight,
+            resultLength,
+            resultRotation
+          ) =>
+        (id, resultX, resultY, resultHeight, resultLength, resultRotation) shouldBe (
           rectangleId,
           x,
           y,
           height,
-          rectangleLength
+          rectangleLength,
+          rotation
         )
 
   test("can create a RemoveSurface ToolCall"):

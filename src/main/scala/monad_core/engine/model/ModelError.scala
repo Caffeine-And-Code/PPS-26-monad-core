@@ -14,6 +14,9 @@ case class PositionIsValid(position: Vector2D)
       s"Position is invalid, x and y should be greater then 0, x = ${position.x}, y = ${position.y}"
     )
 
+case class RotationMustBeAValidDegreeValue(rotation: Double)
+    extends EngineError(s"Rotation must be between 0 and 360 degrees, rotation = $rotation")
+
 case class LocatableIdCannotBeEmpty() extends EngineError("LocatableId cannot be empty")
 
 case class RGBValueCannotExceedRange()
