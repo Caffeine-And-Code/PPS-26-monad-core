@@ -2,9 +2,9 @@ package monad_core.simulator.infrastructure.engine
 
 import monad_core.engine.core.LoopMode
 import monad_core.engine.core.events.EngineEvent
-import monad_core.engine.model.{Entity, Scene, Vector2D}
+import monad_core.engine.model.{Entity, Scene, UnhandledStateType, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.{EngineFacade, Painter, RendererManager, SceneInterpolator}
+import monad_core.engine.simulator.{EngineFacade, Painter, RendererManager, StateInterpolator}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
@@ -36,32 +36,32 @@ final class MonadCoreGameEngineRuntime(
       currentWorld.foreach { world =>
         EngineFacade.tick(engineSession, world.scene, currentTime, physics) match
           case Right(tickResult) =>
-            tickResult.state match
-              case scene: Scene =>
-                val processedScene = for
-                  interpolatedScene <- SceneInterpolator(
-                    previousScene = world.scene,
-                    nextScene = scene,
-                    interpolationAlpha = tickResult.alpha
-                  )
-                  _ <- RendererManager.render(interpolatedScene)
-                yield scene
+            
+            val processedScene = for
+              interpolatedScene <- StateInterpolator(
+                previousScene = tickResult.previousState,
+                nextScene = tickResult.state,
+                interpolationAlpha = tickResult.alpha
+              )
+              _ <- RendererManager.render(interpolatedScene)
+            yield tickResult.state
 
-                processedScene match
-                  case Right(scene) =>
-                    world match
-                      case monadCoreWorld: MonadCoreWorld =>
-                        monadCoreWorld.currentScene = scene
-                      case _ => ()
+            processedScene match
+              case Right(scene: Scene) =>
+                world match
+                  case monadCoreWorld: MonadCoreWorld =>
+                    monadCoreWorld.currentScene = scene
+                  case _ => ()
 
-                    engineSession = tickResult.nextSession
-                    onEvents(tickResult.events)
-                    renderer(world)
+                engineSession = tickResult.nextSession
+                onEvents(tickResult.events)
+                renderer(world)
 
-                  case Left(engineError) =>
-                    handleError(engineError)
+              case Left(engineError) =>
+                handleError(engineError)
 
-              case _ => ()
+              case _ =>
+                handleError(UnhandledStateType())
 
           case Left(engineError) =>
             handleError(engineError)

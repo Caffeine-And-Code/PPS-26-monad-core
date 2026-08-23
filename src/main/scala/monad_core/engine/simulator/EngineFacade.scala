@@ -15,6 +15,7 @@ object EngineFacade:
 
   final case class TickResult(
       state: State,
+      previousState: State,
       nextSession: Session,
       events: Vector[EngineEvent],
       alpha: Double
@@ -52,6 +53,7 @@ object EngineFacade:
     session.tick(state, currentTime).map { result =>
       TickResult(
         state = result.state,
+        previousState = result.previousState,
         nextSession = result.loop,
         events = result.events,
         alpha = result.alpha
