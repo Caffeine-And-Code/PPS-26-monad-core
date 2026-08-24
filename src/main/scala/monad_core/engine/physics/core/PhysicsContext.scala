@@ -6,7 +6,7 @@ import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, LocatableId, Surface}
 
 /**
- * Record class representing the collision between two entities 
+ * Record class representing the collision between two entities
  *
  * @see [[Collision]] and [[PhysicsContext.detect]]
  * @param firstId first entity id
@@ -21,7 +21,7 @@ final case class EntityCollisionContact(
 
 /**
  * Record class representing the collision between a surface and a entity
- * 
+ *
  * @see [[PhysicsContext.detect]]
  * @param entityId entity id
  * @param surfaceId surface id
@@ -32,9 +32,9 @@ final case class SurfaceContact(
 )
 
 /**
- * Record class representing a specific moment in the simulation by collecting all the collisions, 
- * useful for the physic system to not recalculate them each time 
- * 
+ * Record class representing a specific moment in the simulation by collecting all the collisions,
+ * useful for the physic system to not recalculate them each time
+ *
  * @see [[PhysicsContext.detect]]
  * @param entityContacts all the collisions between entities
  * @param surfaceContacts all the collisions between an entity and a surface
@@ -45,12 +45,12 @@ final case class CollisionSnapshot(
 )
 
 /**
- * Record class used as input to each rule execution 
- * 
+ * Record class used as input to each rule execution
+ *
  * @see [[CollisionSnapshot]], [[State]] and [[PhysicsRule]]
  * @param state the state before the rule execution
  * @param dt the delta time, representing the time difference between a prior tick and the current tick
- * @param collisions the collision snapshot 
+ * @param collisions the collision snapshot
  */
 final case class PhysicsContext(
     state: State,
@@ -80,9 +80,9 @@ object PhysicsContext:
     context.state.allSurfaces.map(surface => surface.id -> surface).toMap
 
   /**
-   * Detect all the collisions via the appliance of the [[CollisionDetector]] and produces the 
+   * Detect all the collisions via the appliance of the [[CollisionDetector]] and produces the
    * initial [[PhysicsContext]] for the first rule to be executed
-   * 
+   *
    * @see [[RuleCombinator]]
    * @param state the state record BEFORE the physics rule appliance
    * @param dt the delta time, representing the time difference between a prior tick and the current tick

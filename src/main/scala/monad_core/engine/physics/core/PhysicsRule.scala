@@ -5,7 +5,7 @@ import monad_core.engine.core.traits.State
 
 /**
  * The record class returned by each rule application
- * 
+ *
  * @param state the new state produced by the rule
  * @param events the events produced by the rule
  */

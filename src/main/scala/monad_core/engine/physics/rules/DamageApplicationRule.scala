@@ -34,11 +34,11 @@ private[physics] object DamageApplicationRule:
    * Damage applier orchestrator, it will iterate each collision and execute the application-specific logic
    * to the entity/entities depending on the collision nature.
    * @see [[applyEntityDamage]] [[applySurfaceDamage]]
-   * 
+   *
    * @param context the execution context of the rule
-   * @return Left(PhysicsError) if the specific damage application returns it, 
-   *         
-   *         Right(state), which will have all the updates/removal of entities, otherwise  
+   * @return Left(PhysicsError) if the specific damage application returns it,
+   *
+   *         Right(state), which will have all the updates/removal of entities, otherwise
    */
   private def orchestrateDamageApplication(context: PhysicsContext): Either[PhysicsError, State] =
     val originalById = PhysicsContext.getEntityMapById(context)
@@ -58,13 +58,13 @@ private[physics] object DamageApplicationRule:
 
   /**
    * Applies the damage to both the entities involved in the contact provided.
-   * 
+   *
    * @see [[applyDamage]]
    * @param entities all the entities in the state
    * @param contact the collision between two entities in the state
    * @return Left(PhysicsError) only when the application of the damage generates one,
-   *         
-   *         Right(Map[LocatableId, Entity]), which represents the new entities map for the new state, otherwise 
+   *
+   *         Right(Map[LocatableId, Entity]), which represents the new entities map for the new state, otherwise
    */
   private def applyEntityDamage(
       entities: Either[PhysicsError, Map[LocatableId, Entity]],
@@ -86,13 +86,13 @@ private[physics] object DamageApplicationRule:
 
   /**
    * Applies the damage over time (DOT) of the surface to the entity which is colliding to it
-   * 
+   *
    * @see [[applyDamage]]
    * @param entities the state entities map
-   * @param surfacesById the state surface map 
+   * @param surfacesById the state surface map
    * @param contact the collision between the entity and the surface
    * @return Left(PhysicsError) only when the application of the damage generates one,
-   *         
+   *
    *         Right(Map[LocatableId, Entity]), which represents the new entities map for the new state, otherwise
    */
   private def applySurfaceDamage(
@@ -110,14 +110,14 @@ private[physics] object DamageApplicationRule:
 
   /**
    * propagates and wraps the damage application to the entity method, which will actually apply the damage to the entity and return a copy.
-   * 
+   *
    * @see [[Entity.applyDamage]]
    * @param entity the entity which the damage will be applied to
    * @param damage the inflicted damage
    * @return Left(PhysicsError) when the applyDamage on the entity returns once, EXCEPT the
    *              HealthCannotBeNegativeOrZero which needs to be handled to signal the removal of the entity itself.
-   *              
-   *         Right(Option[Entity]) when the damage is applied correctly, if the entity is present the entity needs 
+   *
+   *         Right(Option[Entity]) when the damage is applied correctly, if the entity is present the entity needs
    *         to be updated marking it as "survived", if the Option is None the entity is dead and needs to be removed.
    */
   private def applyDamage(
@@ -134,8 +134,8 @@ private[physics] object DamageApplicationRule:
 
   /**
    * It updates the entities map by providing a copy of it.
-   * 
-   * @param entities old map which needs to be updated 
+   *
+   * @param entities old map which needs to be updated
    * @param entityId the entity id that has been updated
    * @param updated the entity that has been updated
    * @return
@@ -149,7 +149,7 @@ private[physics] object DamageApplicationRule:
 
   /**
    * It will generate the updated version of the state that then will be returned by [[orchestrateDamageApplication]].
-   * 
+   *
    * @see [[SceneEntitiesUpdate]] and [[State.removeEntity]]
    * @param state old state
    * @param originalById state map of the entities before each damage update - which will be the map of the state given to [[orchestrateDamageApplication]]
