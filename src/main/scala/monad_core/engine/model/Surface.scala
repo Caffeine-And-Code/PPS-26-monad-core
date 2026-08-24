@@ -8,7 +8,8 @@ final case class Surface private (
     shape: Shape2D,
     rotation: Double,
     frictionIndex: Option[Double] = None,
-    appliedForce: Option[Vector2D] = None
+    appliedForce: Option[Vector2D] = None,
+    damageOverTime: Option[Damage] = None
 ) extends Locatable
 
 object Surface:
@@ -41,3 +42,6 @@ object Surface:
 
     def withAppliedForce(appliedForce: Vector2D): Either[EngineError, Surface] =
       validateAndReturn(surface.copy(appliedForce = Some(appliedForce)))
+
+    def withDamageOverTime(damage: Int): Either[EngineError, Surface] =
+      Damage(damage).map(value => surface.copy(damageOverTime = Some(value)))
