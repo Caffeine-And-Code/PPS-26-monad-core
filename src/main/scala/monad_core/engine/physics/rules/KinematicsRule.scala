@@ -22,7 +22,6 @@ private[physics] object KinematicsRule:
         detector: CollisionDetector
     ): Either[PhysicsError, PhysicsRuleResult] =
       for
-        _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
 
         updatedEntities <- applyKinematics(scene, entities, dt)

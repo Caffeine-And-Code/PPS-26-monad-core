@@ -2,16 +2,8 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.model.{+, Entity, Surface}
-import monad_core.engine.physics.core.{
-  PhysicsDomainError,
-  PhysicsError,
-  PhysicsRule,
-  PhysicsRuleResult,
-  PhysicsRuleError
-}
 import monad_core.engine.model.{+, Entity, Surface, Vector2D}
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule}
+import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object SurfaceDynamicsRule:
@@ -26,7 +18,6 @@ private[physics] object SurfaceDynamicsRule:
         collisionDetector: CollisionDetector
     ): Either[PhysicsError, PhysicsRuleResult] =
       for
-        _ <- PhysicsUtil.timeLongToSeconds(dt)
         entities = scene.allEntities.filterNot(_.isFixed)
         surfaces = scene.allSurfaces
 

@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
 import monad_core.engine.model.{Shape2D, TeamId, Vector2D}
-import monad_core.simulator.MissingKeyInFormError
+import monad_core.simulator.{InvalidNumericFormFieldError, MissingKeyInFormError}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.{convertEitherToValuable, convertLeftProjectionToValuable}
 import org.scalatest.Inside
@@ -18,6 +18,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
   val EntitySpeed: Vector2D      = Vector2D(12, 13)
   val EntityWeight: Double       = 14
   val EntityHealth: Int          = 15
+  val EntityDamage: Int          = 4
   val EntityTeamId: String       = "teamIdValue"
   val EntityRotation: Double     = 30.0
   val EntityAngularSpeed: Double = -45.0
@@ -46,6 +47,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       + (EntityFormParser.SpeedYKey       -> EntitySpeed.y.toString)
       + (EntityFormParser.WeightKey       -> EntityWeight.toString)
       + (EntityFormParser.HealthKey       -> EntityHealth.toString)
+      + (EntityFormParser.DamageKey       -> EntityDamage.toString)
       + (EntityFormParser.RotationKey     -> EntityRotation.toString)
       + (EntityFormParser.AngularSpeedKey -> EntityAngularSpeed.toString)
 
@@ -59,6 +61,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       case Right(entity) =>
         entity.position should be(EntityPosition)
         entity.health should be(None)
+        entity.damage should be(None)
         entity.speed should be(None)
         entity.teamId should be(None)
         entity.shape should be(expectedCircle)
@@ -75,6 +78,7 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
       case Right(entity) =>
         entity.position should be(EntityPosition)
         entity.health should be(None)
+        entity.damage should be(None)
         entity.speed should be(None)
         entity.teamId should be(None)
         entity.shape should be(expectedRectangle)
@@ -162,10 +166,25 @@ class EntityFormParserTest extends AnyFunSuite with Inside with Matchers with Mo
         case Right(entity) =>
           entity.teamId should be(Some(TeamId(EntityTeamId).value))
           entity.health should be(Some(EntityHealth))
+          entity.damage.map(_.value) should be(Some(EntityDamage))
           entity.weight should be(Some(EntityWeight))
           entity.speed should be(Some(EntitySpeed))
           entity.rotation should be(EntityRotation)
           entity.angularSpeed should be(Some(EntityAngularSpeed))
+
+  test("An entity with negative damage cannot be parsed"):
+    val formValues = circleFormValues + (EntityFormParser.DamageKey -> "-1")
+
+    val parseResult = EntityFormParser.buildEntity(formValues)
+
+    parseResult.left.value.message should be("Damage cannot be negative")
+
+  test("An entity with non-integer damage cannot be parsed"):
+    val formValues = circleFormValues + (EntityFormParser.DamageKey -> "1.5")
+
+    val parseResult = EntityFormParser.buildEntity(formValues)
+
+    parseResult.left.value should be(InvalidNumericFormFieldError(EntityFormParser.DamageKey))
 
   test("buildByShape should correctly construct entities based on shape type"):
     val testCases = Table(

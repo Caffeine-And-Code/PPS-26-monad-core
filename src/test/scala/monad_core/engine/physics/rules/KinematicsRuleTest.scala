@@ -8,9 +8,9 @@ import monad_core.engine.helper.DummyEntityHelper.{
   makeMovingEntityRectangle
 }
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
-import monad_core.engine.model.{Entity, LocatableId, Vector2D}
-import monad_core.engine.physics.core.*
 import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
+import monad_core.engine.model.{Entity, Vector2D}
+import monad_core.engine.physics.core.*
 import monad_core.engine.physics.utils.PhysicsUtil
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues
@@ -28,52 +28,54 @@ class KinematicsRuleTest
 
   private val Rule = KinematicsRule.kinematicsRule
 
-  private val MockScene   = mock[State]
   given CollisionDetector = mock[CollisionDetector]
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
+    val entity = makeMovingEntityCircle()
 
-    val result = Rule.apply(MockScene, NegativeDt)(using summon[CollisionDetector])
+    val state = stateWithEntities(List(entity))
+
+    val result = Rule.apply(state, NegativeDt)(using summon[CollisionDetector])
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
-  test("the rule should return the unchanged scene when the entities map is empty"):
-    val scene = stateWithEntities(List())
+  test("the rule should return the unchanged state when the entities map is empty"):
+    val state = stateWithEntities(List())
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
-    result.value.state shouldBe scene
+    result.value.state shouldBe state
 
-  test("the rule should not update the scene if the entity has no speed (fixed entity)"):
+  test("the rule should not update the state if the entity has no speed (fixed entity)"):
     val fixedEntity = makeFixedEntityCircle()
 
-    val scene = stateWithEntities(List(fixedEntity))
+    val state = stateWithEntities(List(fixedEntity))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
     val resultEntity = result.value.state.allEntities.find(_.id == fixedEntity.id).value
 
     resultEntity.position shouldBe fixedEntity.position
 
-  test("the rule should move an entity with speed successfully and update the scene"):
+  test("the rule should move an entity with speed successfully and update the state"):
 
     val movingEntity = makeMovingEntityCircle(
       id = "moving"
     )
 
-    val scene = stateWithEntities(List(movingEntity))
+    val state = stateWithEntities(List(movingEntity))
 
     val expectedPosition = PhysicsUtil
       .nextPosition(movingEntity.position, movingEntity.speed.value, DeltaTimeOneSecond)
       .value
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
     val resultEntity = result.value.state.allEntities.find(_.id == movingEntity.id).value
 
     resultEntity.position shouldBe expectedPosition
 
-  test("the rule should move multiple entities with speed successfully and update the scene"):
+  test("the rule should move multiple entities with speed successfully and update the state"):
 
     val entity1 = makeMovingEntityCircle(
       id = "entity1",
@@ -87,7 +89,7 @@ class KinematicsRuleTest
       speed = Vector2D(0, 1)
     )
 
-    val scene = stateWithEntities(List(entity1, entity2))
+    val state = stateWithEntities(List(entity1, entity2))
 
     val expectedPosition1 = PhysicsUtil
       .nextPosition(entity1.position, entity1.speed.value, DeltaTimeOneSecond)
@@ -97,7 +99,7 @@ class KinematicsRuleTest
       .nextPosition(entity2.position, entity2.speed.value, DeltaTimeOneSecond)
       .value
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
 
     val resultEntity1 = result.value.state.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.value.state.allEntities.find(_.id == entity2.id).value
@@ -108,9 +110,9 @@ class KinematicsRuleTest
   test("the rule should rotate an entity using angular speed"):
     val rotatingEntity = makeFixedEntityCircle(id = "rotating")
       .withAngularSpeed(90.0)
-    val scene = stateWithEntities(List(rotatingEntity))
+    val state = stateWithEntities(List(rotatingEntity))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 90.0
 
@@ -124,8 +126,8 @@ class KinematicsRuleTest
       rotation = 350.0
     ).withAngularSpeed(20.0)
 
-    val scene = stateWithEntities(List(rotatingEntity))
+    val state = stateWithEntities(List(rotatingEntity))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
 
     result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 10.0

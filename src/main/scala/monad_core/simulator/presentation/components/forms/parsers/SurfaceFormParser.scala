@@ -14,13 +14,14 @@ import scala.util.Random
 
 object SurfaceFormParser {
 
-  val PositionXKey     = "x"
-  val PositionYKey     = "y"
-  val ShapeKey         = "shape"
-  val RotationKey      = "rotation"
-  val FrictionIndexKey = "friction"
-  val AppliedForceXKey = "appliedForceX"
-  val AppliedForceYKey = "appliedForceY"
+  val PositionXKey      = "x"
+  val PositionYKey      = "y"
+  val ShapeKey          = "shape"
+  val RotationKey       = "rotation"
+  val FrictionIndexKey  = "friction"
+  val AppliedForceXKey  = "appliedForceX"
+  val AppliedForceYKey  = "appliedForceY"
+  val DamageOverTimeKey = "damageOverTime"
 
   def buildSurface(
       values: Map[String, String],
@@ -39,9 +40,14 @@ object SurfaceFormParser {
         case None           => Right(surface)
 
       appliedForce = BaseFormParser.getOptionalVector2D(values, AppliedForceXKey, AppliedForceYKey)
-      completeSurface <- appliedForce match
+      surfaceWithAppliedForce <- appliedForce match
         case Some(force) => surfaceWithFriction.withAppliedForce(force).adaptError()
         case None        => Right(surfaceWithFriction)
+
+      damageOverTime <- BaseFormParser.parseOptionalInt(values, DamageOverTimeKey)
+      completeSurface <- damageOverTime match
+        case Some(damage) => surfaceWithAppliedForce.withDamageOverTime(damage).adaptError()
+        case None         => Right(surfaceWithAppliedForce)
     yield completeSurface
 
   private[forms] def buildByShape(
