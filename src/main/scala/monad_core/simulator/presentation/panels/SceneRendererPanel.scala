@@ -43,22 +43,22 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
     private def onSaveEntity(entity: Entity): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveEntityCommand(entity), viewModel.world.updateEntity)
+      onActionMakeSnapshot(SaveEntityCommand(entity))(viewModel.world.updateEntity)
 
     private def onRemoveEntity(entity: Entity): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(entity.id, id => viewModel.world.removeEntity(id.value))
+      onActionMakeSnapshot(entity.id)(id => viewModel.world.removeEntity(id.value))
 
     private def onSaveSurface(surface: Surface): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveSurfaceCommand(surface), viewModel.world.updateSurface)
+      onActionMakeSnapshot(SaveSurfaceCommand(surface))(viewModel.world.updateSurface)
 
     private def onRemoveSurface(surface: Surface): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(surface.id, id => viewModel.world.removeSurface(id.value))
+      onActionMakeSnapshot(surface.id)(id => viewModel.world.removeSurface(id.value))
 
     private def startRendering(onFrame: World => Unit)(using Painter): AnimationTimer =
       viewModel.gameEngineRuntime.resetToSnapshot()

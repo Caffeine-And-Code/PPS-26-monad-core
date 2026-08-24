@@ -1,5 +1,8 @@
 package monad_core.simulator.presentation.resources
 
+/**
+ * Trait representing how an image resource is viewed by the system. 
+ */
 trait Image(
     val fileName: String,
     val width: Double,
@@ -8,6 +11,11 @@ trait Image(
     val smooth: Boolean = true
 )
 
+/**
+ * Image Singleton Object which provides all the static attributes of the resources usable by the Gui Application.
+ * 
+ * @see [[ImageLoader]]
+ */
 object Image:
 
   private val iconSize: Double     = 32.0

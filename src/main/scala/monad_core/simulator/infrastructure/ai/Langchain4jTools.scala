@@ -34,6 +34,14 @@ case class Langchain4jTools()(using
   ): String =
     render(LocatableId(id).adaptError().flatMap(id => world.getEntity(id.value)))(renderEntity)
 
+  /**
+   * Completes an entity initialization by adapting construction errors and applying its optional fields.
+   *
+   * @see [[monad_core.simulator.application.engine.errors.EngineErrorAdapted]]
+   * @param previousResult the entity construction result
+   * @param optionalFields the optional properties to apply
+   * @return `Left(BaseError)` on failure, `Right(Entity)` with the initialized entity otherwise
+   */
   private def initializeEntity(
       previousResult: Either[EngineError, Entity],
       optionalFields: EntityOptionalFields
@@ -42,6 +50,18 @@ case class Langchain4jTools()(using
       .adaptError()
       .flatMap(applyTo(_, optionalFields))
 
+  /**
+   * Initializes a rectangular entity, using the default rotation when none is provided.
+   *
+   * @param id the unique identifier of the entity
+   * @param x the horizontal position
+   * @param y the vertical position
+   * @param height the rectangle height
+   * @param length the rectangle length
+   * @param optionalFields the optional properties to apply
+   * @param rotation the initial rotation, or `null` to use the default
+   * @return `Left(BaseError)` on failure, `Right(Entity)` with the initialized entity otherwise
+   */
   private def initializeRectangleEntity(
       id: String,
       x: Double,
@@ -59,6 +79,17 @@ case class Langchain4jTools()(using
       optionalFields
     )
 
+  /**
+   * Initializes a circular entity, using the default rotation when none is provided.
+   *
+   * @param id the unique identifier of the entity
+   * @param x the horizontal position
+   * @param y the vertical position
+   * @param radius the circle radius
+   * @param optionalFields the optional properties to apply
+   * @param rotation the initial rotation, or `null` to use the default
+   * @return `Left(BaseError)` on failure, `Right(Entity)` with the initialized entity otherwise
+   */
   private def initializeCircleEntity(
       id: String,
       x: Double,
@@ -75,6 +106,14 @@ case class Langchain4jTools()(using
       optionalFields
     )
 
+  /**
+   * Completes a surface initialization by adapting construction errors and applying its optional fields.
+   *
+   * @see [[monad_core.simulator.application.engine.errors.EngineErrorAdapted]]
+   * @param previousResult the surface construction result
+   * @param optionalFields the optional properties to apply
+   * @return `Left(BaseError)` on failure, `Right(Surface)` with the initialized surface otherwise
+   */
   private def initializeSurface(
       previousResult: Either[EngineError, Surface],
       optionalFields: SurfaceOptionalFields
@@ -83,6 +122,18 @@ case class Langchain4jTools()(using
       .adaptError()
       .flatMap(applyTo(_, optionalFields))
 
+  /**
+   * Initializes a rectangular surface, using the default rotation when none is provided.
+   *
+   * @param id the unique identifier of the surface
+   * @param x the horizontal position
+   * @param y the vertical position
+   * @param height the rectangle height
+   * @param length the rectangle length
+   * @param optionalFields the optional properties to apply
+   * @param rotation the initial rotation, or `null` to use the default
+   * @return `Left(BaseError)` on failure, `Right(Surface)` with the initialized surface otherwise
+   */
   private def initializeRectangleSurface(
       id: String,
       x: Double,
@@ -97,6 +148,17 @@ case class Langchain4jTools()(using
       optionalFields
     )
 
+  /**
+   * Initializes a circular surface, using the default rotation when none is provided.
+   *
+   * @param id the unique identifier of the surface
+   * @param x the horizontal position
+   * @param y the vertical position
+   * @param radius the circle radius
+   * @param optionalFields the optional properties to apply
+   * @param rotation the initial rotation, or `null` to use the default
+   * @return `Left(BaseError)` on failure, `Right(Surface)` with the initialized surface otherwise
+   */
   private def initializeCircleSurface(
       id: String,
       x: Double,

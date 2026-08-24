@@ -16,7 +16,7 @@ import monad_core.simulator.infrastructure.logging.{
   ConsoleLogger,
   EventLogEntry,
   EventLogLevel,
-  formatEvents
+  mapEventsToLogEntries
 }
 import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluationArguments,
@@ -45,7 +45,7 @@ object Launcher:
 
     val logger = summon[Logger]
     val logEvents: Vector[EngineEvent] => Unit = events =>
-      formatEvents(events).foreach:
+      mapEventsToLogEntries(events).foreach:
         case EventLogEntry(EventLogLevel.Info, message)  => logger.info(message)
         case EventLogEntry(EventLogLevel.Trace, message) => logger.trace(message)
 

@@ -53,32 +53,30 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
     private def addEntity(entity: Entity): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveEntityCommand(entity), viewModel.world.createEntity)
+      onActionMakeSnapshot(SaveEntityCommand(entity))(viewModel.world.createEntity)
 
     private def addSurface(surface: Surface): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveSurfaceCommand(surface), viewModel.world.createSurface)
+      onActionMakeSnapshot(SaveSurfaceCommand(surface))(viewModel.world.createSurface)
 
     private def addTeam(team: Team): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(
-        SaveTeamCommand(team),
-        command => viewModel.refreshTeamsAfter(viewModel.world.createTeam(command))
+      onActionMakeSnapshot(SaveTeamCommand(team))(command =>
+        viewModel.refreshTeamsAfter(viewModel.world.createTeam(command))
       )
 
     private def updateTeam(team: Team): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveTeamCommand(team), command => viewModel.world.updateTeam(command))
+      onActionMakeSnapshot(SaveTeamCommand(team))(command => viewModel.world.updateTeam(command))
 
     private def deleteTeam(teamId: TeamId): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(
-        teamId,
-        id => viewModel.refreshTeamsAfter(viewModel.world.removeTeam(id.value))
+      onActionMakeSnapshot(teamId)(id =>
+        viewModel.refreshTeamsAfter(viewModel.world.removeTeam(id.value))
       )
 
     private def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit =
