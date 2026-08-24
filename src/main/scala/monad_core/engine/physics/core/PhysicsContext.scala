@@ -8,10 +8,11 @@ import monad_core.engine.model.{Entity, LocatableId, Surface}
 /**
  * Record class representing the collision between two entities
  *
- * @see [[Collision]] and [[PhysicsContext.detect]]
+ * @see [[monad_core.engine.geometry.Collision Collision]] and [[PhysicsContext.detect]]
  * @param firstId first entity id
  * @param secondId second entity id
- * @param collision collision record produced by the collision system ([[CollisionDetector]])
+ * @param collision collision record produced by the collision system
+ *                  ([[monad_core.engine.collision_detection.CollisionDetector CollisionDetector]])
  */
 final case class EntityCollisionContact(
     firstId: LocatableId,
@@ -47,7 +48,7 @@ final case class CollisionSnapshot(
 /**
  * Record class used as input to each rule execution
  *
- * @see [[CollisionSnapshot]], [[State]] and [[PhysicsRule]]
+ * @see [[CollisionSnapshot]], [[monad_core.engine.core.traits.State State]] and [[PhysicsRule]]
  * @param state the state before the rule execution
  * @param dt the delta time, representing the time difference between a prior tick and the current tick
  * @param collisions the collision snapshot
@@ -80,10 +81,11 @@ object PhysicsContext:
     context.state.allSurfaces.map(surface => surface.id -> surface).toMap
 
   /**
-   * Detect all the collisions via the appliance of the [[CollisionDetector]] and produces the
+   * Detect all the collisions via the appliance of the
+   * [[monad_core.engine.collision_detection.CollisionDetector CollisionDetector]] and produces the
    * initial [[PhysicsContext]] for the first rule to be executed
    *
-   * @see [[RuleCombinator]]
+   * @see `RuleCombinator`
    * @param state the state record BEFORE the physics rule appliance
    * @param dt the delta time, representing the time difference between a prior tick and the current tick
    * @param detector the collision detector

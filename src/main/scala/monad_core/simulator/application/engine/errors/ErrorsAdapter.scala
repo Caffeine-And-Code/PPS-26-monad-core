@@ -4,22 +4,24 @@ import monad_core.engine.model.EngineError
 import monad_core.simulator.errors.BaseError
 
 /**
- * The [[BaseError]] used as a wrapper to all the [[EngineError]] 
+ * The [[monad_core.simulator.errors.BaseError BaseError]] used as a wrapper to all the
+ * [[monad_core.engine.model.EngineError EngineError]]
  * @param engineError error to wrap
  */
 case class EngineErrorAdapted(engineError: EngineError) extends BaseError(engineError.message)
 
 /**
- * Adapter class from [[EngineError]] to [[BaseError]]
+ * Adapter class from [[monad_core.engine.model.EngineError EngineError]] to
+ * [[monad_core.simulator.errors.BaseError BaseError]]
  */
 object ErrorsAdapter:
 
   extension (coreError: EngineError)
 
     /**
-     * wrap an [[EngineError]] with a [[EngineErrorAdapted]] to obfuscate the usage of 
+     * wrap an [[monad_core.engine.model.EngineError EngineError]] with a [[EngineErrorAdapted]] to obfuscate the usage of
      * EngineError from the simulator package
-     * @return the [[BaseError]]
+     * @return the [[monad_core.simulator.errors.BaseError BaseError]]
      */
     def adaptError(): BaseError =
       EngineErrorAdapted(coreError)

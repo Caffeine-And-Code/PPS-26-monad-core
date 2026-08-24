@@ -20,7 +20,9 @@ import scala.concurrent.ExecutionContext
  * 1. `GameEnginePanelBuilder` is placed to the left of the window
  * 2. `AiModelChatPanelBuilder` is placed to the right of the window
  *
- * @see [[GameEnginePanelBuilder]], [[AiModelChatPanelBuilder]] and [[MainStageBuilder]]
+ * @see [[monad_core.simulator.presentation.panels.traits.GameEnginePanelBuilder GameEnginePanelBuilder]],
+ *      [[monad_core.simulator.presentation.panels.traits.AiModelChatPanelBuilder AiModelChatPanelBuilder]] and
+ *      [[monad_core.simulator.presentation.stages.traits.MainStageBuilder MainStageBuilder]]
  * @param gamePanel the build of the game engine panel
  * @param chatPanel the build of the ai chat panel
  */
@@ -42,14 +44,16 @@ final class MainStage(
 
   /**
    * Build the Main stage setting its width and height to the provided values.
-   * It calls the two builders provided in the class constructor and displays them in a [[HBox]] spaced around by 
+   * It calls the two builders provided in the class constructor and displays them in an `HBox` spaced around by
    * a calculated responsive padding.
    * 
    * @see [[bindResponsivePadding]] and [[assignPanelsSize]]
    * @param stageWidth the desired width of the stage 
    * @param stageHeight the desired height of the stage
-   * @param aiAgent the agent required by the [[AiModelChatPanelBuilder]] 
-   * @param executionContext the context of execution also required by the [[AiModelChatPanelBuilder]]
+   * @param aiAgent the agent required by the
+   *                [[monad_core.simulator.presentation.panels.traits.AiModelChatPanelBuilder AiModelChatPanelBuilder]]
+   * @param executionContext the context of execution also required by the
+   *                         [[monad_core.simulator.presentation.panels.traits.AiModelChatPanelBuilder AiModelChatPanelBuilder]]
    * @return
    */
   def buildRootContent(

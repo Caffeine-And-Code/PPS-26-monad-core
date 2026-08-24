@@ -10,9 +10,11 @@ import monad_core.simulator.presentation.components.{Error, NotificationManager}
 object FormUtilities:
 
   /**
-   * Utilizes the [[NotificationManager]] to display the provided error to the user.
+   * Utilizes the
+   * [[monad_core.simulator.presentation.components.NotificationManager NotificationManager]] to display the provided
+   * error to the user.
    *
-   * @see [[NotificationManager]]
+   * @see [[monad_core.simulator.presentation.components.NotificationManager NotificationManager]]
    * @param error the error that needs to be displayed by the snackbar
    */
   def displayError(error: BaseError): Unit =
@@ -21,11 +23,15 @@ object FormUtilities:
   /**
    * Makes a snapshot upon action success, otherwise call the [[displayError()]] function to notify the user.
    *
-   * The provided input is provided to the action, if Right is returned [[GameEngineRuntime.createSnapshot()]] is called.
+   * The provided input is provided to the action, if Right is returned
+   * [[monad_core.simulator.application.engine.GameEngineRuntime.createSnapshot GameEngineRuntime.createSnapshot()]] is
+   * called.
    *
    * @param actionInput the input for the action function
    * @param action the action that after which a snapshot needs to be created
-   * @param gameEngineRuntime the [[GameEngineRuntime]] utilized by the Gui application
+   * @param gameEngineRuntime the
+   *                          [[monad_core.simulator.application.engine.GameEngineRuntime GameEngineRuntime]] utilized by
+   *                          the Gui application
    * @tparam T the input type to the action
    */
   def onActionMakeSnapshot[T](

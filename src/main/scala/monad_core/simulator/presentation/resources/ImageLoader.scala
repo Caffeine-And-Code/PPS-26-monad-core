@@ -25,7 +25,7 @@ object ImageLoader:
 
   /**
    * Tries to load the image stream from the path interpolated by [[getPath]], if found the stream is provided 
-   * to the [[ScalaFxImage]] class and the image loaded.
+   * to the ScalaFX `Image` class and the image loaded.
    * 
    * @param image the [[Image]] that needs to be load
    * @param imageConfig [[ImageConfigRecord]] system configuration
