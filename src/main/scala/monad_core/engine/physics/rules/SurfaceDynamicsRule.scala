@@ -1,9 +1,7 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.traits.State
-import monad_core.engine.model.{+, Entity, Surface, Vector2D}
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
+import monad_core.engine.model.{+, Entity, LocatableId, Surface, Vector2D}
+import monad_core.engine.physics.core.{PhysicsContext, PhysicsError, PhysicsRule, PhysicsRuleResult}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
 private[physics] object SurfaceDynamicsRule:
@@ -14,40 +12,33 @@ private[physics] object SurfaceDynamicsRule:
 
     override val RuleId: String = SurfaceDynamicsRule.Id
 
-    override def apply(scene: State, dt: Long)(using
-        collisionDetector: CollisionDetector
-    ): Either[PhysicsError, PhysicsRuleResult] =
+    override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
-        entities = scene.allEntities.filterNot(_.isFixed)
-        surfaces = scene.allSurfaces
+        updatedEntities <- applySurfacesToEntities(context)
 
-        entitiesInsideSurfaces = findEntitiesInsideSurfaces(entities, surfaces)
-
-        updatedEntities <- applySurfacesToEntities(entitiesInsideSurfaces, dt)
-
-        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)
       yield PhysicsRuleResult(updatedScene)
 
-  private def findEntitiesInsideSurfaces(entities: List[Entity], surfaces: List[Surface])(using
-      collisionDetector: CollisionDetector
-  ): Seq[(Entity, Surface)] =
-    for
-      entity  <- entities
-      surface <- surfaces
-      if collisionDetector.isInside(entity, surface)
-    yield (entity, surface)
-
   private def applySurfacesToEntities(
-      containing: Seq[(Entity, Surface)],
-      dt: Long
+      context: PhysicsContext
   ): Either[PhysicsError, List[Entity]] =
-    containing.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
-      case (Left(err), _) => Left(err)
-      case (Right(updatedEntities), (entity, surface)) =>
-        applySurfaceDynamics(entity, surface, dt).map { updatedEntity =>
-          updatedEntities :+ updatedEntity
-        }
-    }
+    val originalById = PhysicsContext.getEntityMapById(context)
+    val surfacesById = PhysicsContext.getSurfaceMapById(context)
+
+    context.collisions.surfaceContacts
+      .foldLeft(Right(originalById): Either[PhysicsError, Map[LocatableId, Entity]]) {
+        (result, contact) =>
+          result.flatMap { currentById =>
+            (currentById.get(contact.entityId), surfacesById.get(contact.surfaceId)) match
+              case (Some(entity), Some(surface)) =>
+                applySurfaceDynamics(entity, surface, context.dt)
+                  .map(updated => currentById.updated(updated.id, updated))
+              case _ => Right(currentById)
+          }
+      }
+      .map { updatedById =>
+        updatedById.values.filter(entity => originalById(entity.id) != entity).toList
+      }
 
   private[physics] def applySurfaceDynamics(
       entity: Entity,

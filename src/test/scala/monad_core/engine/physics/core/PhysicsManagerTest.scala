@@ -1,7 +1,7 @@
 package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.events.EngineEvent.{CollisionDetected, EntityUpdated}
+import monad_core.engine.core.events.EngineEvent.{CollisionDetected, EntityRemoved, EntityUpdated}
 import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
@@ -18,7 +18,7 @@ import org.scalatest.matchers.should.Matchers
 class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with MockStateHelper:
 
   private val MockAction       = mockFunction[State, Long, Either[PhysicsError, State]]
-  private val DefaultRuleCount = 5
+  private val DefaultRuleCount = 6
 
   private val Rule1Id = "rule1"
   private val Rule2Id = "rule2"
@@ -47,6 +47,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
     DefaultManager.isEnabled(SurfaceDynamicsRule.surfaceDynamicsRule) shouldBe true
     DefaultManager.isEnabled(CollisionResolutionRule.collisionResolutionRule) shouldBe true
     DefaultManager.isEnabled(BorderContactRule.borderContactRule) shouldBe true
+    DefaultManager.isEnabled(DamageApplicationRule.damageApplicationRule) shouldBe true
     DefaultManager.isEnabled(KinematicsRule.kinematicsRule) shouldBe true
 
   test("isEnabled should return true if the rule is active, false otherwise"):
@@ -65,14 +66,15 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
     updatedManager.isEnabled(Rule1) shouldBe false
     updatedManager.isEnabled(Rule2) shouldBe true
 
-  test("disable should correctly deactivate a specific default rule"):
-    val updatedManager = DefaultManager.disable(KinematicsRule.kinematicsRule)
+  test("disable should correctly deactivate the damage rule without affecting other default rules"):
+    val updatedManager = DefaultManager.disable(DamageApplicationRule.damageApplicationRule)
 
-    updatedManager.isEnabled(KinematicsRule.kinematicsRule) shouldBe false
+    updatedManager.isEnabled(DamageApplicationRule.damageApplicationRule) shouldBe false
     DefaultManager.isEnabled(EnemyAttractionRule.enemyAttractionRule) shouldBe true
     DefaultManager.isEnabled(SurfaceDynamicsRule.surfaceDynamicsRule) shouldBe true
     DefaultManager.isEnabled(CollisionResolutionRule.collisionResolutionRule) shouldBe true
     DefaultManager.isEnabled(BorderContactRule.borderContactRule) shouldBe true
+    DefaultManager.isEnabled(KinematicsRule.kinematicsRule) shouldBe true
 
   test("enable should add a specific rule to the enabled set"):
     val initialManager = PhysicsManager(Vector(Rule1)).disable(Rule1)
@@ -144,6 +146,35 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
     result.state shouldBe finalScene
     result.events shouldBe empty
 
+  test("step should detect collisions only once when multiple rules are active"):
+    val mobileEntity = Entity
+      .circle("mobile", Vector2D(10, 10), 2)
+      .value
+      .withSpeed(Vector2D(1, 0))
+    val fixedEntity = Entity.circle("fixed", Vector2D(12, 10), 2).value
+    val scene = Scene(
+      entities = Map(
+        mobileEntity.id -> mobileEntity,
+        fixedEntity.id  -> fixedEntity
+      )
+    )
+    val detector            = mock[CollisionDetector]
+    given CollisionDetector = detector
+    val firstAction         = mockFunction[State, Long, Either[PhysicsError, State]]
+    val secondAction        = mockFunction[State, Long, Either[PhysicsError, State]]
+    val manager = PhysicsManager(
+      Vector(
+        makeDummyRule(Rule1Id, firstAction),
+        makeDummyRule(Rule2Id, secondAction)
+      )
+    )
+
+    detector.collision.expects(mobileEntity, fixedEntity).returning(None).once()
+    firstAction.expects(scene, DeltaTimeOneSecond).returning(Right(scene)).once()
+    secondAction.expects(scene, DeltaTimeOneSecond).returning(Right(scene)).once()
+
+    manager.step(scene, DeltaTimeOneSecond).value.state shouldBe scene
+
   test("step should short-circuit execution and return the error if a rule fails"):
     val action1 = MockAction
     val action2 = MockAction
@@ -182,6 +213,23 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
     result.state shouldBe updatedScene
     result.events shouldBe Vector(EntityUpdated(initialEntity, updatedEntity))
 
+  test("step should emit an EntityRemoved event when a rule removes an entity"):
+    val entity       = Entity.circle("entity", Vector2D(10, 10), 1).value
+    val initialScene = Scene(entities = Map(entity.id -> entity))
+    val updatedScene = Scene()
+    val rule         = makeDummyRule(Rule1Id, MockAction)
+    val manager      = PhysicsManager(Vector(rule))
+
+    MockAction
+      .expects(initialScene, DeltaTimeOneSecond)
+      .returning(Right(updatedScene))
+      .once()
+
+    val result = manager.step(initialScene, DeltaTimeOneSecond).value
+
+    result.state shouldBe updatedScene
+    result.events shouldBe Vector(EntityRemoved(entity))
+
   test("step should emit a collision event before entity state events"):
     val mobileEntity = Entity
       .circle("a-mobile", Vector2D(10, 10), 2)
@@ -204,6 +252,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
     )
     val manager = PhysicsManager(Vector(collisionRule))
 
+    MockDetector.collision.expects(mobileEntity, fixedEntity).returning(None).once()
     MockAction.expects(scene, DeltaTimeOneSecond).returning(Right(scene)).once()
 
     val result = manager.step(scene, DeltaTimeOneSecond).value

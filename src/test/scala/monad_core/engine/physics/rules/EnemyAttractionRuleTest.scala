@@ -54,14 +54,14 @@ class EnemyAttractionRuleTest
 
     val state = stateWithEntities(List.empty)
 
-    val result = Rule.apply(state, NegativeDt)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(state, NegativeDt))
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged state when there are no entities"):
     val state = stateWithTeams(List(), List())
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     result shouldBe state
 
@@ -79,7 +79,7 @@ class EnemyAttractionRuleTest
 
     val state = stateWithTeams(List(entity), List(entityTeam))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -107,7 +107,7 @@ class EnemyAttractionRuleTest
 
     val state = stateWithTeams(List(fixedEntity, enemy), List(fixedEntityTeam, enemyTeam))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == fixedEntity.id).value
 
@@ -141,7 +141,7 @@ class EnemyAttractionRuleTest
 
     val state = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result       = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
     resultEntity.speed.value.x shouldBe expectedSpeed.x +- Epsilon
@@ -184,7 +184,7 @@ class EnemyAttractionRuleTest
 
     val state = stateWithTeams(List(entity1, entity2, enemy), List(entityTeam, enemyTeam))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result        = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value
 
@@ -243,6 +243,6 @@ class EnemyAttractionRuleTest
     val enemyTeam  = makeTeam(enemy.teamId.value.value)
     val state      = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value
 
     result.state.allEntities.find(_.id == entity.id).value.speed shouldBe entity.speed

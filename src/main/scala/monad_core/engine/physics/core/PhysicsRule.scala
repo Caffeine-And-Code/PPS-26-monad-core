@@ -1,6 +1,5 @@
 package monad_core.engine.physics.core
 
-import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.State
 
@@ -12,9 +11,7 @@ final case class PhysicsRuleResult(
 trait PhysicsRule:
   val RuleId = ""
 
-  def apply(scene: State, dt: Long)(using
-      detector: CollisionDetector
-  ): Either[PhysicsError, PhysicsRuleResult]
+  def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult]
 
   override def equals(obj: Any): Boolean =
     obj match

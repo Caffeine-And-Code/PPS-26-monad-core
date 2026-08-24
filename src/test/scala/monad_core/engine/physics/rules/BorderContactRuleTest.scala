@@ -12,7 +12,7 @@ import monad_core.engine.helper.DummyEntityHelper.{
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockStateHelper}
 import monad_core.engine.model.{BorderSide, Vector2D}
-import monad_core.engine.physics.core.NegativeDeltaTime
+import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsContext}
 import monad_core.engine.physics.pathfinding.SizeHelper
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -53,7 +53,7 @@ class BorderContactRuleTest
       )
     )
 
-    val outcome = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val outcome = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value
     val result  = outcome.state
 
     val resultEntity = result.allEntities.find(_.id == defaultValues.entity.id).get
@@ -101,7 +101,7 @@ class BorderContactRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).get
 
@@ -112,14 +112,14 @@ class BorderContactRuleTest
 
     val mockScene = stateWithEntities(List.empty)
 
-    val result = Rule.apply(mockScene, NegativeDt)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(mockScene, NegativeDt))
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged state when there are no entities"):
     val state = stateWithEntities(List())
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     result shouldBe state
 
@@ -131,7 +131,7 @@ class BorderContactRuleTest
 
     val state = stateWithEntities(List(fixedEntity))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == fixedEntity.id).get
     resultEntity.position shouldBe fixedEntity.position
@@ -146,7 +146,7 @@ class BorderContactRuleTest
 
     val state               = stateWithEntities(List(entity))
     given CollisionDetector = detectorWithoutCollision()
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result              = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).get
     resultEntity.position shouldBe entity.position
@@ -234,7 +234,7 @@ class BorderContactRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).get
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).get
@@ -256,7 +256,7 @@ class BorderContactRuleTest
     val state             = stateWithEntities(List(entity))
     val expectedHalfWidth = SizeHelper.horizontalShapeSize(entity) / 2
 
-    val result  = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result  = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
     val updated = result.allEntities.find(_.id == entity.id).value
 
     updated.position.x shouldBe expectedHalfWidth +- 1e-9

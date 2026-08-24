@@ -1,7 +1,5 @@
 package monad_core.engine.physics.core
 
-import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.traits.State
 import monad_core.engine.helper.PhysicsRuleHelper
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,17 +8,13 @@ class PhysicsRuleTest extends AnyFunSuite with Matchers:
   test("two PhysicsRule instances with the same id should be equal"):
     val rule1: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule1"
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, PhysicsRuleResult] =
-        Right(PhysicsRuleResult(scene))
+      override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(context.state))
 
     val rule2: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule1"
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, PhysicsRuleResult] =
-        Right(PhysicsRuleResult(scene))
+      override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(context.state))
 
     rule1 == rule2 shouldBe true
 
@@ -28,27 +22,19 @@ class PhysicsRuleTest extends AnyFunSuite with Matchers:
     val rule1: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule1"
 
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, PhysicsRuleResult] =
-        Right(PhysicsRuleResult(scene))
+      override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(context.state))
 
     val rule2: PhysicsRule = new PhysicsRule:
       override val RuleId: String = "rule2"
 
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, PhysicsRuleResult] =
-        Right(PhysicsRuleResult(scene))
+      override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
+        Right(PhysicsRuleResult(context.state))
 
     rule1 == rule2 shouldBe false
 
   test("a PhysicsRule should have an empty id by default"):
-    val rule: PhysicsRule = new PhysicsRule:
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, PhysicsRuleResult] =
-        Right(PhysicsRuleResult(scene))
+    val rule: PhysicsRule = (context: PhysicsContext) => Right(PhysicsRuleResult(context.state))
 
     rule.RuleId shouldBe ""
 

@@ -2,9 +2,9 @@ package integrations.monad_core.simulator.infrastructure.engine
 
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.core.events.EngineEvent
-import monad_core.engine.core.events.EngineEvent.EntityUpdated
+import monad_core.engine.core.events.EngineEvent.{EntityRemoved, EntityUpdated}
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, GameLoop}
-import monad_core.engine.model.{Entity, Scene, Vector2D}
+import monad_core.engine.model.{Entity, Scene, Surface, Vector2D}
 import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.{DrawCommand, GameEngineRuntime}
 import monad_core.simulator.application.engine.errors.EngineErrorAdapted
@@ -100,6 +100,38 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val updatedEntity = getOrFail(world.getEntity(movingEntity.id.value))
     updatedEntity.position.x should be > movingEntity.position.x
     receivedEvents.get() shouldBe Vector(EntityUpdated(movingEntity, updatedEntity))
+
+  test("a simulation tick removes a dead entity without stopping the runtime"):
+    val entity = getOrFail(
+      Entity
+        .circle("entity", Vector2D(10, 10), 1)
+        .flatMap(_.withHealth(5))
+        .map(_.withSpeed(Vector2D(0, 0)))
+    )
+    val surface = getOrFail(
+      Surface
+        .circle("surface", Vector2D(10, 10), 10)
+        .flatMap(_.withDamageOverTime(5))
+    )
+    val initialScene = getOrFail(
+      for
+        withEntity  <- Scene().addEntity(entity)
+        withSurface <- withEntity.addSurface(surface)
+      yield withSurface
+    )
+    val world          = MonadCoreWorld(initialScene)
+    val receivedEvents = new AtomicReference(Vector.empty[EngineEvent])
+    val engine = MonadCoreGameEngineRuntime(
+      onEvents = events => receivedEvents.set(events)
+    )
+
+    getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
+    engine.start()
+    engine.tick(GameLoop.DefaultTickTime)(_ => ())
+
+    world.getAllEntities shouldBe empty
+    receivedEvents.get() shouldBe Vector(EntityRemoved(entity))
+    engine.isRunning shouldBe true
 
   test("a physics rule can be disabled through the runtime"):
     val engine = MonadCoreGameEngineRuntime()

@@ -36,7 +36,7 @@ class CollisionResolutionRuleTest
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
-    val result = Rule.apply(MockScene, NegativeDt)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext.detect(MockScene, NegativeDt))
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
@@ -44,7 +44,7 @@ class CollisionResolutionRuleTest
 
     val state = stateWithEntities(List())
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     result shouldBe state
 
@@ -57,7 +57,7 @@ class CollisionResolutionRuleTest
 
     given CollisionDetector = detectorWithoutCollision()
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity1.id).value
 
@@ -73,7 +73,7 @@ class CollisionResolutionRuleTest
 
     detector.collision.expects(entity1, entity2).returning(Some(collision)).once()
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using detector).value
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)(using detector)).value
 
     result.events shouldBe Vector(
       CollisionDetected(entity1.id, CollisionTarget.Entity(entity2.id), collision)
@@ -105,7 +105,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     result.allEntities.find(_.id == mobileEntity.id).value.position shouldBe expectedPosition
 
@@ -147,7 +147,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultMoving = result.allEntities.find(_.id == movingEntity.id).value
     val resultFixed  = result.allEntities.find(_.id == fixedEntity.id).value
@@ -224,7 +224,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value
@@ -260,7 +260,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond))
 
     result shouldBe Left(ZeroMassError())
 
@@ -314,7 +314,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultCircular    = result.allEntities.find(_.id == circularEntity.id).value
     val resultRectangular = result.allEntities.find(_.id == rectangularEntity.id).value
@@ -351,7 +351,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultFixed1 = result.allEntities.find(_.id == fixedEntity1.id).value
     val resultFixed2 = result.allEntities.find(_.id == fixedEntity2.id).value
@@ -403,7 +403,7 @@ class CollisionResolutionRuleTest
       )
     )
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 

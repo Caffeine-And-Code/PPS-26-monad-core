@@ -35,14 +35,14 @@ class KinematicsRuleTest
 
     val state = stateWithEntities(List(entity))
 
-    val result = Rule.apply(state, NegativeDt)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(state, NegativeDt))
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
   test("the rule should return the unchanged state when the entities map is empty"):
     val state = stateWithEntities(List())
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond))
 
     result.value.state shouldBe state
 
@@ -51,7 +51,7 @@ class KinematicsRuleTest
 
     val state = stateWithEntities(List(fixedEntity))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond))
 
     val resultEntity = result.value.state.allEntities.find(_.id == fixedEntity.id).value
 
@@ -69,7 +69,7 @@ class KinematicsRuleTest
       .nextPosition(movingEntity.position, movingEntity.speed.value, DeltaTimeOneSecond)
       .value
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond))
 
     val resultEntity = result.value.state.allEntities.find(_.id == movingEntity.id).value
 
@@ -99,7 +99,7 @@ class KinematicsRuleTest
       .nextPosition(entity2.position, entity2.speed.value, DeltaTimeOneSecond)
       .value
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond))
 
     val resultEntity1 = result.value.state.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.value.state.allEntities.find(_.id == entity2.id).value
@@ -112,7 +112,7 @@ class KinematicsRuleTest
       .withAngularSpeed(90.0)
     val state = stateWithEntities(List(rotatingEntity))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 90.0
 
@@ -128,6 +128,6 @@ class KinematicsRuleTest
 
     val state = stateWithEntities(List(rotatingEntity))
 
-    val result = Rule.apply(state, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     result.allEntities.find(_.id == rotatingEntity.id).value.rotation shouldBe 10.0
