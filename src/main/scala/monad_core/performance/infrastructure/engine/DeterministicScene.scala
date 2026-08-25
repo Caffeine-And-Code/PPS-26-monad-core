@@ -1,31 +1,77 @@
 package monad_core.performance.infrastructure.engine
 
-import monad_core.engine.model.{Entity, Scene, Vector2D, WorldBounds}
+import monad_core.engine.model.*
 import monad_core.performance.domain.{EnginePerformanceError, EntityCount, PerformanceError}
 
 /**
- * Builds reproducible engine scenes for performance measurements.
+ * Builds reproducible, full-physics engine scenes for performance measurements.
  *
- * Entities are equal circles arranged row by row on a square-like grid, assigned stable identifiers,
- * and given the same horizontal speed. World dimensions are derived from the grid so every entity
- * starts inside the bounds. This removes random scene variation between experiment runs.
+ * Every entity has complete linear, angular, health, and damage properties. Alternating shapes,
+ * teams, and movement directions exercise collision resolution, enemy attraction, damage
+ * application, and kinematics. The overlapping grid crosses every world border and is covered by
+ * one damaging surface, so the default physics pipeline can be measured as one integrated workload.
  */
 object DeterministicScene:
 
-  /** Radius assigned to every generated circle. */
+  /** Radius assigned to generated circles. */
   private val EntityRadius = 1.0
 
-  /** Distance between the origins of adjacent grid cells. */
-  private val EntitySpacing = EntityRadius * 4.0
+  /** Side assigned to generated squares. */
+  private val EntitySide = EntityRadius * 2.0
 
-  /** Padding between the world origin and the first entity center. */
-  private val OriginOffset = EntitySpacing
+  /** Fraction of one entity side separating adjacent centers. */
+  private val EntitySpacingRatio = 0.75
 
-  /** Horizontal speed assigned to every generated entity. */
-  private val HorizontalSpeed = 1.0
+  /** Distance between adjacent grid centers, intentionally smaller than one entity side. */
+  private val EntitySpacing = EntitySide * EntitySpacingRatio
+
+  /** Offset that makes edge entities cross the corresponding world border. */
+  private val BorderOffset = EntityRadius / 2.0
+
+  /** Positive mass assigned to every entity. */
+  private val EntityWeight = 2
+
+  /** Health high enough to survive one complete integrated tick. */
+  private val EntityHealth = 100
+
+  /** Contact damage inflicted by every entity. */
+  private val EntityDamage = 1
+
+  /** Magnitude used by both components of linear velocity. */
+  private val LinearSpeed = 1.0
+
+  /** Number of consecutive entities sharing one vertical direction. */
+  private val VerticalDirectionBlockSize = 2
+
+  /** Magnitude of angular velocity in degrees per second. */
+  private val AngularSpeed = 30.0
+
+  /** Difference in degrees between consecutive initial rotations. */
+  private val RotationStep = 15.0
+
+  /** Number of distinct rotation steps in one full turn. */
+  private val RotationStepsPerTurn = 24
 
   /** Stable prefix used to derive unique entity identifiers. */
   private val EntityIdPrefix = "performance-entity"
+
+  /** Stable identifier of the first opposing team. */
+  private val FirstTeamId = "performance-team-a"
+
+  /** Stable identifier of the second opposing team. */
+  private val SecondTeamId = "performance-team-b"
+
+  /** Stable identifier of the full-scene surface. */
+  private val SurfaceId = "performance-surface"
+
+  /** Friction applied to entities by the full-scene surface. */
+  private val SurfaceFriction = 0.1
+
+  /** Force applied to entities by the full-scene surface. */
+  private val SurfaceForce = Vector2D(0.25, 0.5)
+
+  /** Contact damage inflicted by the full-scene surface. */
+  private val SurfaceDamage = 1
 
   /**
    * Creates a deterministic scene containing exactly the requested number of entities.
@@ -33,115 +79,135 @@ object DeterministicScene:
    * @param entityCount
    *   validated number of entities to create
    * @return
-   *   the populated scene, or an
-   *   [[monad_core.performance.domain.EnginePerformanceError]] if bounds or an entity cannot be
-   *   built or inserted
+   *   the complete scene, or the first translated engine error
    */
   def apply(entityCount: EntityCount): Either[PerformanceError, Scene] =
     for
-      bounds <- boundsFor(entityCount)
-      scene  <- addEntities(Scene(bounds = bounds), entityCount)
-    yield scene
+      bounds           <- boundsFor(entityCount)
+      sceneWithTeams   <- addTeams(Scene(bounds = bounds))
+      surface          <- surfaceFor(bounds)
+      sceneWithSurface <- fromEngine(sceneWithTeams.addSurface(surface))
+      populatedScene   <- addEntities(sceneWithSurface, entityCount)
+    yield populatedScene
 
-  /**
-   * Calculates world bounds large enough for the generated entity grid.
-   *
-   * @param entityCount
-   *   number of grid cells that must fit in the world
-   * @return
-   *   valid world bounds or a translated engine validation error
-   */
+  /** Translates one engine result into the performance error domain. */
+  private def fromEngine[A](result: Either[EngineError, A]): Either[PerformanceError, A] =
+    result.left.map(EnginePerformanceError.apply)
+
+  /** Calculates tight world bounds for the overlapping entity grid. */
   private def boundsFor(entityCount: EntityCount): Either[PerformanceError, WorldBounds] =
     val columns = columnsFor(entityCount)
     val rows    = math.ceil(entityCount.value.toDouble / columns).toInt
-    val width   = dimensionFor(columns)
-    val height  = dimensionFor(rows)
-    WorldBounds(width, height).left.map(EnginePerformanceError.apply)
+    fromEngine(WorldBounds(dimensionFor(columns), dimensionFor(rows)))
 
-  /**
-   * Adds every deterministic entity to an initial scene in index order.
-   *
-   * The fold is fail-fast: once entity creation or insertion fails, the error is propagated and no
-   * later entity is attempted.
-   *
-   * @param initialScene
-   *   empty or partially initialized scene receiving generated entities
-   * @param entityCount
-   *   number of entities to generate
-   * @return
-   *   the fully populated immutable scene or the first translated engine error
-   */
+  /** Creates and inserts both mutually opposing teams. */
+  private def addTeams(initialScene: Scene): Either[PerformanceError, Scene] =
+    for
+      firstTeam  <- fromEngine(Team.create(FirstTeamId, Set(SecondTeamId)))
+      secondTeam <- fromEngine(Team.create(SecondTeamId, Set(FirstTeamId)))
+      withFirst  <- fromEngine(initialScene.addTeam(firstTeam))
+      withBoth   <- fromEngine(withFirst.addTeam(secondTeam))
+    yield withBoth
+
+  /** Creates the rectangle that applies force, friction, and damage across the whole world. */
+  private def surfaceFor(bounds: WorldBounds): Either[PerformanceError, Surface] =
+    val width  = bounds.lowerRight.x - bounds.upperLeft.x
+    val height = bounds.lowerRight.y - bounds.upperLeft.y
+    val center = Vector2D(
+      bounds.upperLeft.x + width / 2.0,
+      bounds.upperLeft.y + height / 2.0
+    )
+
+    fromEngine(
+      for
+        surface      <- Surface.rectangle(SurfaceId, center, height, width)
+        withFriction <- surface.withFrictionIndex(SurfaceFriction)
+        withForce    <- withFriction.withAppliedForce(SurfaceForce)
+        withDamage   <- withForce.withDamageOverTime(SurfaceDamage)
+      yield withDamage
+    )
+
+  /** Adds every deterministic entity in index order, stopping at the first engine error. */
   private def addEntities(
       initialScene: Scene,
       entityCount: EntityCount
   ): Either[PerformanceError, Scene] =
+    val columns = columnsFor(entityCount)
+
     (0 until entityCount.value).foldLeft(
       Right(initialScene): Either[PerformanceError, Scene]
     ) { (sceneResult, index) =>
       for
-        scene  <- sceneResult
-        entity <- entityAt(index, columnsFor(entityCount))
-        updatedScene <- scene
-          .addEntity(entity)
-          .left
-          .map(EnginePerformanceError.apply)
+        scene        <- sceneResult
+        entity       <- entityAt(index, columns)
+        updatedScene <- fromEngine(scene.addEntity(entity))
       yield updatedScene
     }
 
-  /**
-   * Creates the entity assigned to one row-major grid index.
-   *
-   * @param index
-   *   zero-based entity and grid-cell index
-   * @param columns
-   *   positive number of columns in the grid
-   * @return
-   *   a moving circle with deterministic id and position, or a translated engine validation error
-   */
+  /** Creates one fully configured entity at its deterministic grid index. */
   private def entityAt(index: Int, columns: Int): Either[PerformanceError, Entity] =
-    val column   = index % columns
-    val row      = index / columns
-    val position = Vector2D(coordinateFor(column), coordinateFor(row))
+    val position = Vector2D(
+      coordinateFor(index % columns),
+      coordinateFor(index / columns)
+    )
+    val rotation = (index % RotationStepsPerTurn) * RotationStep
 
-    Entity
-      .circle(
-        id = s"$EntityIdPrefix-$index",
-        position = position,
-        radius = EntityRadius
-      )
-      .map(_.withSpeed(Vector2D(HorizontalSpeed, 0.0)))
-      .left
-      .map(EnginePerformanceError.apply)
+    for
+      entity       <- fromEngine(entityShapeAt(index, position, rotation))
+      weighted     <- fromEngine(entity.withWeight(EntityWeight))
+      healthy      <- fromEngine(weighted.withHealth(EntityHealth))
+      damaging     <- fromEngine(healthy.withDamage(EntityDamage))
+      assignedTeam <- fromEngine(damaging.withTeamId(teamIdFor(index)))
+    yield assignedTeam
+      .withSpeed(speedFor(index))
+      .withAngularSpeed(angularSpeedFor(index))
 
-  /**
-   * Selects the column count for a grid as close to square as possible.
-   *
-   * @param entityCount
-   *   number of cells to arrange
-   * @return
-   *   ceiling of the square root of the entity count
-   */
+  /** Alternates circles and squares so both engine shape families are represented. */
+  private def entityShapeAt(
+      index: Int,
+      position: Vector2D,
+      rotation: Double
+  ): Either[EngineError, Entity] =
+    if isEven(index) then
+      Entity.circle(entityIdFor(index), position, EntityRadius, rotation)
+    else
+      Entity.rectangle(entityIdFor(index), position, EntitySide, EntitySide, rotation)
+
+  /** Produces a non-zero two-dimensional velocity with deterministic alternating directions. */
+  private def speedFor(index: Int): Vector2D =
+    Vector2D(
+      directionFor(index) * LinearSpeed,
+      directionFor(index / VerticalDirectionBlockSize) * LinearSpeed
+    )
+
+  /** Alternates clockwise and counter-clockwise angular velocity. */
+  private def angularSpeedFor(index: Int): Double =
+    directionFor(index) * AngularSpeed
+
+  /** Alternates entity membership between the two opposing teams. */
+  private def teamIdFor(index: Int): String =
+    if isEven(index) then FirstTeamId else SecondTeamId
+
+  /** Derives a stable entity identifier from its zero-based index. */
+  private def entityIdFor(index: Int): String =
+    s"$EntityIdPrefix-$index"
+
+  /** Returns a positive sign for even blocks and a negative sign for odd blocks. */
+  private def directionFor(block: Int): Double =
+    if isEven(block) then 1.0 else -1.0
+
+  /** Tests index parity without duplicating modulo expressions. */
+  private def isEven(value: Int): Boolean =
+    value % 2 == 0
+
+  /** Selects a near-square positive column count. */
   private def columnsFor(entityCount: EntityCount): Int =
     math.ceil(math.sqrt(entityCount.value.toDouble)).toInt
 
-  /**
-   * Converts a zero-based grid coordinate into a world-space center coordinate.
-   *
-   * @param index
-   *   row or column index
-   * @return
-   *   coordinate offset from the origin by the configured padding and spacing
-   */
+  /** Converts one zero-based grid index into a world coordinate. */
   private def coordinateFor(index: Int): Double =
-    OriginOffset + index * EntitySpacing
+    BorderOffset + index * EntitySpacing
 
-  /**
-   * Calculates a world dimension for one grid axis.
-   *
-   * @param cellCount
-   *   number of cells along the axis
-   * @return
-   *   dimension including entity spacing and padding on both sides
-   */
+  /** Fits the outer centers while leaving every edge entity across its border. */
   private def dimensionFor(cellCount: Int): Double =
-    OriginOffset * 2.0 + cellCount * EntitySpacing
+    BorderOffset * 2.0 + (cellCount - 1) * EntitySpacing

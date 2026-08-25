@@ -41,6 +41,11 @@ class Langchain4jToolsTest
   private var world: World                         = uninitialized
   private var gameEngineRuntime: GameEngineRuntime = uninitialized
 
+  private def normalizeLineEndings(string: String): String =
+    string
+      .replace("\r\n", "\n")
+      .replace("\r", "\n")
+
   override def beforeEach(): Unit =
     super.beforeEach()
     world = mock[World]
@@ -71,9 +76,8 @@ class Langchain4jToolsTest
       Entity.rectangle("rectangle", Vector2D(posX, posY), height, rectangleLength).value
     (() => world.getAllEntities).expects().returning(List(circle, rectangle)).once()
 
-    val result = tools.getAllEntities
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getAllEntities)
+    val expected = normalizeLineEndings(
       s"""Result: 2 entities found.
          |1:
          |id: circle
@@ -98,14 +102,17 @@ class Langchain4jToolsTest
          |health: none
          |damage: none
          |team: none""".stripMargin
+    )
+
+    result shouldBe expected
+
 
   test("when get entity is called returns the formatted entity"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
     world.getEntity.expects(LocatableId(entityId).value.value).returning(Right(entity)).once()
 
-    val result = tools.getEntity(entityId)
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getEntity(entityId))
+    val expected = normalizeLineEndings(
       s"""Result:
          |id: $entityId
          |position: ($posX, $posY)
@@ -117,6 +124,9 @@ class Langchain4jToolsTest
          |health: none
          |damage: none
          |team: none""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when get entity receives an invalid id returns an error"):
     val result = tools.getEntity(invalidId)
@@ -417,9 +427,8 @@ class Langchain4jToolsTest
     val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
     (() => world.getAllSurfaces).expects().returning(List(surface)).once()
 
-    val result = tools.getAllSurfaces
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getAllSurfaces)
+    val expected = normalizeLineEndings(
       s"""Result: 1 surfaces found.
          |1:
          |id: $surfaceId
@@ -429,14 +438,16 @@ class Langchain4jToolsTest
          |frictionIndex: none
          |appliedForce: none
          |damageOverTime: none""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when get surface is called returns the formatted surface"):
     val surface = Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
     world.getSurface.expects(LocatableId(surfaceId).value.value).returning(Right(surface)).once()
 
-    val result = tools.getSurface(surfaceId)
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getSurface(surfaceId))
+    val expected = normalizeLineEndings(
       s"""Result:
          |id: $surfaceId
          |position: ($posX, $posY)
@@ -445,6 +456,9 @@ class Langchain4jToolsTest
          |frictionIndex: none
          |appliedForce: none
          |damageOverTime: none""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when create circle surface is called returns a success message"):
     val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
@@ -702,24 +716,28 @@ class Langchain4jToolsTest
     val team = Team.create("blue", Set("red", "green")).value
     (() => world.getAllTeams).expects().returning(List(team)).once()
 
-    val result = tools.getAllTeams
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getAllTeams)
+    val expected = normalizeLineEndings(
       """Result: 1 teams found.
         |1:
         |id: blue
         |enemies: green, red""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when get team is called returns the formatted team"):
     val team = Team.create("blue", Set("red")).value
     world.getTeam.expects(TeamId("blue").value.value).returning(Right(team)).once()
 
-    val result = tools.getTeam("blue")
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getTeam("blue"))
+    val expected = normalizeLineEndings(
       """Result:
         |id: blue
         |enemies: red""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when create team is called returns a success message"):
     val team = Team.create("blue", Set("red", "green")).value
