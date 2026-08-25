@@ -30,7 +30,7 @@ object ErrorsAdapter:
 
     /**
      * utilizes the base adaptError to wrap any Either[EngineError, A]
-     * 
+     *
      * @see [[adaptError()]]
      * @return
      */

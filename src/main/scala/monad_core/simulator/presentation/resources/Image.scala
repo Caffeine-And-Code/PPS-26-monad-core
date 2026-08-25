@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.resources
 
 /**
- * Trait representing how an image resource is viewed by the system. 
+ * Trait representing how an image resource is viewed by the system.
  */
 trait Image(
     val fileName: String,
@@ -13,7 +13,7 @@ trait Image(
 
 /**
  * Image Singleton Object which provides all the static attributes of the resources usable by the Gui Application.
- * 
+ *
  * @see [[ImageLoader]]
  */
 object Image:

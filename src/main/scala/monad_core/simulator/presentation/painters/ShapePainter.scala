@@ -2,7 +2,7 @@ package monad_core.simulator.presentation.painters
 
 import monad_core.engine.model.EngineColor
 import monad_core.engine.model.EngineColor.{HSL, RGB}
-import monad_core.simulator.application.engine.{DrawCommand, ShapeArchitect}
+import monad_core.engine.simulator.DrawCommand
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 
@@ -15,9 +15,7 @@ object ShapePainter:
         case RGB(r, g, b) => Color.rgb(r.value, g.value, b.value)
         case HSL(h, s, l) => Color.hsb(h.value, s.value / 100.0, l.value / 100.0)
 
-  def paint(gc: GraphicsContext)(using drawer: ShapeArchitect): Unit =
-    val commands = drawer.drainBuffer()
-
+  def paint(gc: GraphicsContext, commands: Vector[DrawCommand]): Unit =
     gc.clearRect(0, 0, gc.canvas.getWidth, gc.canvas.getHeight)
 
     commands.foreach:

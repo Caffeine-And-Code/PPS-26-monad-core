@@ -2,21 +2,12 @@ package monad_core.simulator.infrastructure.engine.painters
 
 import monad_core.engine.model.*
 import monad_core.engine.model.EngineColor.{HSL, RGB}
-import monad_core.engine.simulator.Painter
-import monad_core.simulator.application.engine.{DrawCommand, ShapeArchitect}
+import monad_core.engine.simulator.{DrawCommand, Painter}
 
-import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.hashing.MurmurHash3
 
-object PaintArchitect extends Painter with ShapeArchitect:
-
-  private val buffer = ListBuffer.empty[DrawCommand]
-
-  def drainBuffer(): List[DrawCommand] =
-    val commands = buffer.toList
-    buffer.clear()
-    commands
+object PaintArchitect extends Painter:
 
   def baseEntityColor: Either[EngineError, EngineColor] =
     for uniqueValue <- RGBValue(255)
@@ -43,21 +34,23 @@ object PaintArchitect extends Painter with ShapeArchitect:
       brightness <- PercentValue(extractRandomValue())
     yield HSL(hue, saturation, brightness)
 
-  def drawCircle(locatable: Locatable, color: EngineColor): Unit =
+  def drawCircle(locatable: Locatable, color: EngineColor): Option[DrawCommand] =
     locatable.shape match
       case Shape2D.Circle(r) =>
-        buffer += DrawCommand.Circle(locatable.position.x, locatable.position.y, r, color)
-      case _ => ()
+        Some(DrawCommand.Circle(locatable.position.x, locatable.position.y, r, color))
+      case _ => None
 
-  def drawRectangle(locatable: Locatable, color: EngineColor): Unit =
+  def drawRectangle(locatable: Locatable, color: EngineColor): Option[DrawCommand] =
     locatable.shape match
       case Shape2D.Rectangle(w, h) =>
-        buffer += DrawCommand.Rectangle(
-          locatable.position.x,
-          locatable.position.y,
-          h,
-          w,
-          locatable.rotation,
-          color
+        Some(
+          DrawCommand.Rectangle(
+            locatable.position.x,
+            locatable.position.y,
+            h,
+            w,
+            locatable.rotation,
+            color
+          )
         )
-      case _ => ()
+      case _ => None

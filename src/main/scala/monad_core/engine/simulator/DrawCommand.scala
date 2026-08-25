@@ -1,4 +1,4 @@
-package monad_core.simulator.application.engine
+package monad_core.engine.simulator
 
 import monad_core.engine.model.EngineColor
 
@@ -13,6 +13,3 @@ enum DrawCommand:
       rotation: Double,
       color: EngineColor
   )
-
-trait ShapeArchitect:
-  def drainBuffer(): List[DrawCommand]

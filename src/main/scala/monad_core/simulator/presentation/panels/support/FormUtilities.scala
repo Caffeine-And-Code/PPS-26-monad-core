@@ -35,8 +35,8 @@ object FormUtilities:
    * @tparam T the input type to the action
    */
   def onActionMakeSnapshot[T](
-                               actionInput: T
-                             )(action: T => Either[BaseError, Unit])(using
+      actionInput: T
+  )(action: T => Either[BaseError, Unit])(using
       gameEngineRuntime: GameEngineRuntime
   ): Unit =
     action(actionInput) match

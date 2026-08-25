@@ -23,7 +23,7 @@ trait Painter:
    * @param color the base color: if the entity is in a Team the color is
    *              the team color, otherwise a default color is provided
    */
-  def drawCircle(locatable: Locatable, color: EngineColor): Unit
+  def drawCircle(locatable: Locatable, color: EngineColor): Option[DrawCommand]
 
   /**
    * specifies how rectangles are drawn by the engine
@@ -32,7 +32,7 @@ trait Painter:
    * @param color the base color: if the entity is in a Team the color is
    *              the team color, otherwise a default color is provided
    */
-  def drawRectangle(locatable: Locatable, color: EngineColor): Unit
+  def drawRectangle(locatable: Locatable, color: EngineColor): Option[DrawCommand]
 
   /**
    * defines a relation between TeamId and a Color, which will then be used to

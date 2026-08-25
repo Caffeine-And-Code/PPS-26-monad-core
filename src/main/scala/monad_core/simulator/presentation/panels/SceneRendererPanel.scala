@@ -2,9 +2,9 @@ package monad_core.simulator.presentation.panels
 
 import javafx.scene.input.{MouseButton, MouseEvent}
 import monad_core.engine.model.{Entity, Shape2D, Surface, Vector2D}
-import monad_core.engine.simulator.Painter
+import monad_core.engine.simulator.{DrawCommand, Painter}
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, SaveSurfaceCommand, World}
-import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.MenuButton.toMenuItem
 import monad_core.simulator.presentation.components.forms.{
@@ -60,7 +60,9 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
 
       onActionMakeSnapshot(surface.id)(id => viewModel.world.removeSurface(id.value))
 
-    private def startRendering(onFrame: World => Unit)(using Painter): AnimationTimer =
+    private def startRendering(
+        onFrame: (World, Vector[DrawCommand]) => Unit
+    )(using Painter): AnimationTimer =
       viewModel.gameEngineRuntime.resetToSnapshot()
       val animationTimer = AnimationTimer { currentTime =>
         viewModel.gameEngineRuntime.tick(currentTime)(onFrame)
@@ -72,7 +74,6 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
   def build(isEngineRunning: BooleanProperty)(using
       gameEngineRuntime: GameEngineRuntime,
       world: World,
-      architect: ShapeArchitect,
       painter: Painter
   ): Either[BaseError, VBox] =
 
@@ -153,7 +154,9 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
           isEngineRunning = isEngineRunning
         )
 
-        viewModel.startRendering(_ => ShapePainter.paint(canvas.graphicsContext2D))
+        viewModel.startRendering((_, commands) =>
+          ShapePainter.paint(canvas.graphicsContext2D, commands)
+        )
 
         val container = new VBox:
           children = Seq(canvas)

@@ -5,8 +5,8 @@ import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.events.EngineEvent.{EntityRemoved, EntityUpdated}
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, GameLoop}
 import monad_core.engine.model.{Entity, Scene, Surface, Vector2D}
-import monad_core.engine.simulator.Painter
-import monad_core.simulator.application.engine.{DrawCommand, GameEngineRuntime}
+import monad_core.engine.simulator.{DrawCommand, Painter}
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.EngineErrorAdapted
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
@@ -42,7 +42,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     getOrFail(engine.initializeWorld(MonadCoreWorld(Scene())))
     engine.createSnapshot()
     val animationTimer = AnimationTimer { currentTime =>
-      engine.tick(currentTime) { world =>
+      engine.tick(currentTime) { (world, _) =>
         received.set(world)
         firstFrame.countDown()
       }
@@ -68,7 +68,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     getOrFail(engine.initializeWorld(MonadCoreWorld(Scene())))
     engine.createSnapshot()
     val animationTimer = AnimationTimer { currentTime =>
-      engine.tick(currentTime)(_ => frames.countDown())
+      engine.tick(currentTime)((_, _) => frames.countDown())
     }
     animationTimer.start()
     engine.start()
@@ -86,20 +86,22 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
         .circle("moving", Vector2D(10, 10), 1)
         .map(_.withSpeed(Vector2D(1, 0)))
     )
-    val initialScene   = getOrFail(Scene().addEntity(movingEntity))
-    val world          = MonadCoreWorld(initialScene)
-    val receivedEvents = new AtomicReference(Vector.empty[EngineEvent])
+    val initialScene     = getOrFail(Scene().addEntity(movingEntity))
+    val world            = MonadCoreWorld(initialScene)
+    val receivedEvents   = new AtomicReference(Vector.empty[EngineEvent])
+    val receivedCommands = new AtomicReference(Vector.empty[DrawCommand])
     val engine = MonadCoreGameEngineRuntime(
       onEvents = events => receivedEvents.set(events)
     )
 
     getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
     engine.start()
-    engine.tick(GameLoop.DefaultTickTime)(_ => ())
+    engine.tick(GameLoop.DefaultTickTime)((_, commands) => receivedCommands.set(commands))
 
     val updatedEntity = getOrFail(world.getEntity(movingEntity.id.value))
     updatedEntity.position.x should be > movingEntity.position.x
     receivedEvents.get() shouldBe Vector(EntityUpdated(movingEntity, updatedEntity))
+    receivedCommands.get() should not be empty
 
   test("a simulation tick removes a dead entity without stopping the runtime"):
     val entity = getOrFail(
@@ -127,7 +129,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
 
     getOrFail(engine.initializeWorld(world, withDefaultEntity = false))
     engine.start()
-    engine.tick(GameLoop.DefaultTickTime)(_ => ())
+    engine.tick(GameLoop.DefaultTickTime)((_, _) => ())
 
     world.getAllEntities shouldBe empty
     receivedEvents.get() shouldBe Vector(EntityRemoved(entity))
@@ -215,7 +217,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     engine.createSnapshot()
 
     val animationTimer = AnimationTimer { currentTime =>
-      engine.tick(currentTime) { world =>
+      engine.tick(currentTime) { (world, _) =>
         if world.getAllEntities == worldAfterReset.getAllEntities then
           received.set(world)
           frameAfterReset.countDown()

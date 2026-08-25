@@ -4,7 +4,7 @@ import monad_core.engine.simulator.Painter
 import monad_core.engine.core.events.EngineEvent
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
@@ -60,8 +60,6 @@ object Launcher:
     )
 
     given painter: Painter = PaintArchitect
-
-    given architect: ShapeArchitect = PaintArchitect
 
     given AiAgent = Langchain4jAgentFactory
       .buildOllama(

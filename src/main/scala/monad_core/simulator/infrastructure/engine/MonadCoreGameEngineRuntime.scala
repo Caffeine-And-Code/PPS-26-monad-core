@@ -4,7 +4,13 @@ import monad_core.engine.core.LoopMode
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.model.{Entity, Scene, UnhandledStateType, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.{EngineFacade, Painter, RendererManager, StateInterpolator}
+import monad_core.engine.simulator.{
+  DrawCommand,
+  EngineFacade,
+  Painter,
+  RendererManager,
+  StateInterpolator
+}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
@@ -33,27 +39,29 @@ final class MonadCoreGameEngineRuntime(
       engineSession = EngineFacade.stop(engineSession)
       currentWorld.foreach(_.enterEditMode())
 
-  override def tick(currentTime: Long)(renderer: World => Unit)(using painter: Painter): Unit =
+  override def tick(currentTime: Long)(
+      renderer: (World, Vector[DrawCommand]) => Unit
+  )(using painter: Painter): Unit =
     lock.synchronized:
       currentWorld.foreach { world =>
         val currentScene = world.scene
         EngineFacade.tick(engineSession, currentScene, currentTime, physics) match
           case Right(tickResult) =>
-            val processedScene = for
+            val processedFrame = for
               interpolatedScene <- StateInterpolator(
                 previousScene = tickResult.previousState,
                 nextScene = tickResult.state,
                 interpolationAlpha = tickResult.alpha
               )
-              _ <- RendererManager.render(interpolatedScene)
-            yield tickResult.state
+              commands <- RendererManager.render(interpolatedScene)
+            yield (tickResult.state, commands)
 
-            processedScene match
-              case Right(scene: Scene) =>
+            processedFrame match
+              case Right((scene: Scene, commands)) =>
                 world.replaceScene(scene)
                 engineSession = tickResult.nextSession
                 onEvents(tickResult.events)
-                renderer(world)
+                renderer(world, commands)
 
               case Left(engineError) =>
                 handleError(engineError)

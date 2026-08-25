@@ -46,9 +46,9 @@ final class MainStage(
    * Build the Main stage setting its width and height to the provided values.
    * It calls the two builders provided in the class constructor and displays them in an `HBox` spaced around by
    * a calculated responsive padding.
-   * 
+   *
    * @see [[bindResponsivePadding]] and [[assignPanelsSize]]
-   * @param stageWidth the desired width of the stage 
+   * @param stageWidth the desired width of the stage
    * @param stageHeight the desired height of the stage
    * @param aiAgent the agent required by the
    *                [[monad_core.simulator.presentation.panels.traits.AiModelChatPanelBuilder AiModelChatPanelBuilder]]
@@ -89,21 +89,21 @@ final class MainStage(
   /**
    * It calculates the padding based on the provided dimensions of the stage.
    * [[HorizontalPaddingRatio]] and [[VerticalPaddingRatio]] are used to find the actual padding value.
-   * 
+   *
    * @param dimensions the stage desired size
-   * @return [[Insets]] ScalaFx specific padding record 
+   * @return [[Insets]] ScalaFx specific padding record
    */
   private def computePadding(dimensions: StageDimensions): Insets =
     val h = dimensions.width.value * HorizontalPaddingRatio
     val v = dimensions.height.value * VerticalPaddingRatio
-    
+
     Insets(v, h, v, h)
 
   /**
    * Binds the [[computePadding]] function to the `onWindowResize` event of ScalaFx.
    * It also sets the padding of the Main stage built Node to the calculated value.
-   * 
-   * @param rootContent the built Main stage 
+   *
+   * @param rootContent the built Main stage
    * @param dimensions the desired dimensions
    */
   private def bindResponsivePadding(
@@ -121,12 +121,12 @@ final class MainStage(
 
   /**
    * It calculates the panels actual dimensions based on the provided Main stage dimensions.
-   * By doing so it also binds the values so that when the `onWindowResize` event occurs ([[bindResponsivePadding]]) the panels dimensions change accordingly. 
-   * 
+   * By doing so it also binds the values so that when the `onWindowResize` event occurs ([[bindResponsivePadding]]) the panels dimensions change accordingly.
+   *
    * @see [[bindResponsivePadding]]
    * @param dimensions the desired Main stage dimensions
    * @param rootContent the built Main stage
-   * @param leftPanel the built left panel  
+   * @param leftPanel the built left panel
    * @param rightPanel the built right panel
    * @return
    */
