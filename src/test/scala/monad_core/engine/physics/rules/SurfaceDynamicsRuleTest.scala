@@ -30,21 +30,46 @@ class SurfaceDynamicsRuleTest
 
   private val Rule = SurfaceDynamicsRule.surfaceDynamicsRule
 
-  private val MockScene   = mock[State]
   given CollisionDetector = mock[CollisionDetector]
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
-    val result = Rule.apply(MockScene, NegativeDt)(using summon[CollisionDetector])
+    val entity = makeMovingEntityCircle(
+      position = Vector2D(0, 0),
+      speed = Vector2D(1, 1)
+    ).withWeight(1).value
+
+    val surface = makeSurfaceCircle(
+      position = Vector2D(0, 0),
+      radius = 5.0
+    )
+      .withFrictionIndex(0.1)
+      .value
+
+    val expectedSpeedAfterFriction = PhysicsUtil
+      .applyFriction(
+        entity.speed.value,
+        surface.frictionIndex.value,
+        DeltaTimeOneSecond
+      )
+      .value
+
+    val state = stateWithSurfaces(List(entity), List(surface))
+
+    given CollisionDetector = detectorWithContaining(
+      contains = Map((entity.id.value, surface.id.value) -> true)
+    )
+
+    val result = Rule.apply(PhysicsContext.detect(state, NegativeDt))
 
     result.shouldBe(Left(NegativeDeltaTime(NegativeDt)))
 
-  test("the rule should return the unchanged scene when there are no entities"):
-    val scene = stateWithSurfaces(List(), List())
+  test("the rule should return the unchanged state when there are no entities"):
+    val state = stateWithSurfaces(List(), List())
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
-    result shouldBe scene
+    result shouldBe state
 
   test("the rule should not update an entity when it is fixed"):
 
@@ -61,13 +86,13 @@ class SurfaceDynamicsRuleTest
       .withFrictionIndex(0.1)
       .value
 
-    val scene = stateWithSurfaces(List(fixedEntity), List(surface))
+    val state = stateWithSurfaces(List(fixedEntity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((fixedEntity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == fixedEntity.id).value
 
@@ -89,13 +114,13 @@ class SurfaceDynamicsRuleTest
       .withFrictionIndex(0.1)
       .value
 
-    val scene = stateWithSurfaces(List(entity), List(surface))
+    val state = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> false)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -113,13 +138,13 @@ class SurfaceDynamicsRuleTest
       radius = 5.0
     )
 
-    val scene = stateWithSurfaces(List(entity), List(surface))
+    val state = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -143,13 +168,13 @@ class SurfaceDynamicsRuleTest
 
     val expectedSpeedAfterForce = entity.speed.value + acceleration
 
-    val scene = stateWithSurfaces(List(entity), List(surface))
+    val state = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -177,13 +202,13 @@ class SurfaceDynamicsRuleTest
       )
       .value
 
-    val scene = stateWithSurfaces(List(entity), List(surface))
+    val state = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -217,13 +242,13 @@ class SurfaceDynamicsRuleTest
       )
       .value
 
-    val scene = stateWithSurfaces(List(entity), List(surface))
+    val state = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -254,7 +279,7 @@ class SurfaceDynamicsRuleTest
       .withFrictionIndex(0.1)
       .value
 
-    val scene = stateWithSurfaces(List(entity1, entity2), List(surface))
+    val state = stateWithSurfaces(List(entity1, entity2), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map(
@@ -263,7 +288,7 @@ class SurfaceDynamicsRuleTest
       )
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value
@@ -311,13 +336,13 @@ class SurfaceDynamicsRuleTest
       .withAppliedForce(Vector2D(10, 0))
       .value
 
-    val scene = stateWithSurfaces(List(entity), List(surface))
+    val state = stateWithSurfaces(List(entity), List(surface))
 
     given CollisionDetector = detectorWithContaining(
       contains = Map((entity.id.value, surface.id.value) -> true)
     )
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond))
 
     result shouldBe Left(ZeroMassError())
 

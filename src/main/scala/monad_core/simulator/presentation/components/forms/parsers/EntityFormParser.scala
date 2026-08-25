@@ -22,6 +22,7 @@ object EntityFormParser:
   val RotationKey     = "rotation"
   val AngularSpeedKey = "angularSpeed"
   val HealthKey       = "health"
+  val DamageKey       = "damage"
   val WeightKey       = "weight"
   val TeamIdKey       = "teamId"
 
@@ -43,15 +44,20 @@ object EntityFormParser:
       angularSpeed <- BaseFormParser.parseOptionalDouble(values, AngularSpeedKey)
       entityWithAngularSpeed = angularSpeed.fold(entityWithSpeed)(entityWithSpeed.withAngularSpeed)
 
-      health = values.get(HealthKey).flatMap(_.toDoubleOption).map(_.toInt)
+      health <- BaseFormParser.parseOptionalInt(values, HealthKey)
       entityWithHealth <- health match
         case Some(h) => entityWithAngularSpeed.withHealth(h).adaptError()
         case None    => Right(entityWithAngularSpeed)
 
-      weight = values.get(WeightKey).flatMap(_.toDoubleOption).map(_.toInt)
+      damage <- BaseFormParser.parseOptionalInt(values, DamageKey)
+      entityWithDamage <- damage match
+        case Some(value) => entityWithHealth.withDamage(value).adaptError()
+        case None        => Right(entityWithHealth)
+
+      weight <- BaseFormParser.parseOptionalInt(values, WeightKey)
       entityWithWeight <- weight match
-        case Some(w) => entityWithHealth.withWeight(w).adaptError()
-        case None    => Right(entityWithHealth)
+        case Some(w) => entityWithDamage.withWeight(w).adaptError()
+        case None    => Right(entityWithDamage)
 
       teamId = values.get(TeamIdKey)
       finalEntity <- teamId match

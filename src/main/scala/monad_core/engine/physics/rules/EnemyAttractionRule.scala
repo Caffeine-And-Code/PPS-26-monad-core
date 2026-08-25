@@ -1,14 +1,7 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.collision_detection.CollisionDetector
-import monad_core.engine.core.traits.State
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{
-  PhysicsError,
-  PhysicsRule,
-  PhysicsRuleError,
-  PhysicsRuleResult
-}
+import monad_core.engine.physics.core.{PhysicsContext, PhysicsError, PhysicsRule, PhysicsRuleResult}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
@@ -20,13 +13,11 @@ private[physics] object EnemyAttractionRule:
 
     override val RuleId: String = EnemyAttractionRule.Id
 
-    override def apply(scene: State, dt: Long)(using
-        detector: CollisionDetector
-    ): Either[PhysicsError, PhysicsRuleResult] =
+    override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
-        _ <- PhysicsUtil.timeLongToSeconds(dt)
-        entities = scene.allEntities
-        teams    = scene.allTeams
+        _ <- PhysicsUtil.timeLongToSeconds(context.dt)
+        entities = context.state.allEntities
+        teams    = context.state.allTeams
 
         vertexes = VertexFinder(entities)
 
@@ -34,11 +25,11 @@ private[physics] object EnemyAttractionRule:
           entities,
           teams,
           vertexes,
-          scene.bounds.upperLeft,
-          scene.bounds.lowerRight,
-          dt
+          context.state.bounds.upperLeft,
+          context.state.bounds.lowerRight,
+          context.dt
         )
-        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)
       yield PhysicsRuleResult(updatedScene)
 
   private def applyEnemyAttraction(

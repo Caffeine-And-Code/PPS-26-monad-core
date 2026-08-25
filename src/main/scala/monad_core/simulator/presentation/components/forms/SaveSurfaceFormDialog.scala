@@ -36,6 +36,7 @@ private case class SaveSurfaceFormDefaultValues(
     frictionIndex: Option[String] = None,
     appliedForceX: Option[String] = None,
     appliedForceY: Option[String] = None,
+    damageOverTime: Option[String] = None,
     radius: Option[String] = None,
     height: Option[String] = None,
     length: Option[String] = None
@@ -88,9 +89,10 @@ object SaveSurfaceFormDialog:
           height = height,
           length = length,
           rotation = Some(surface.rotation.toString),
-          appliedForceX = surface.appliedForce.flatMap(vector => Some(vector.x.toString)),
-          appliedForceY = surface.appliedForce.flatMap(vector => Some(vector.y.toString)),
-          frictionIndex = surface.frictionIndex.map(_.toString)
+          appliedForceX = surface.appliedForce.map(_.x.toString),
+          appliedForceY = surface.appliedForce.map(_.y.toString),
+          frictionIndex = surface.frictionIndex.map(_.toString),
+          damageOverTime = surface.damageOverTime.map(_.value.toString)
         )
 
   private[forms] def buildFields(defaultValues: SaveSurfaceFormDefaultValues): Seq[FormFieldSpec] =
@@ -135,5 +137,10 @@ object SaveSurfaceFormDialog:
         id = SurfaceFormParser.FrictionIndexKey,
         label = "Friction Index",
         defaultValue = defaultValues.frictionIndex
+      ),
+      TextFieldSpec(
+        id = SurfaceFormParser.DamageOverTimeKey,
+        label = "Damage Over Time",
+        defaultValue = defaultValues.damageOverTime
       )
     )

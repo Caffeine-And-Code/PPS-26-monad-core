@@ -2,7 +2,7 @@ package monad_core.engine.physics.utils
 
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
-import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError, PhysicsRuleError}
+import monad_core.engine.physics.core.{PhysicsDomainError, PhysicsError}
 
 private[physics] object SceneEntitiesUpdate:
 
