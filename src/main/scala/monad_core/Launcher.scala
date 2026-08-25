@@ -1,10 +1,10 @@
 package monad_core
 
-import monad_core.engine.simulator.Painter
 import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
-import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.engine.GameEngineRuntime
+import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
@@ -38,8 +38,26 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}
 
+/**
+ * Application entry point handler.
+ *
+ * It is conceived to handle specific terminal params to start:
+ *    - The default Gui application
+ *    - A suite to evaluate the Ai Model
+ *    - Stress test the application
+ */
 object Launcher:
 
+  /**
+   * Declarative shell which provide ALL the dependencies for the application itself.
+   *
+   * Once each dependency is arranged the Gui application is initialized by calling [[ScalaFxLauncher]] providing
+   * the [[MainStage]] as the main panel
+   *
+   * @return `Left(BaseError)` if during initialization an error is occurred
+   *
+   *         `Right(Unit)` otherwise
+   */
   private def guiApplication(): Either[BaseError, Unit] =
     given Logger = ConsoleLogger
 
@@ -117,6 +135,12 @@ object Launcher:
     )
   }
 
+  /**
+   * Entry point which needs to define each [[Route]] for the terminal arguments redirects.
+   *
+   * @see [[Route]], [[Router]], [[evaluateModel]] and [[guiApplication]]
+   * @param args terminal arguments provided
+   */
   def main(args: Array[String]): Unit =
     lazy val evaluateModelRoute = evaluateModel(args)
     lazy val guiRoute           = outcomeFor(guiApplication())
