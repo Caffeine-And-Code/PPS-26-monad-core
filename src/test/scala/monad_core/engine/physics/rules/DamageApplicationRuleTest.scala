@@ -1,5 +1,6 @@
 package monad_core.engine.physics.rules
 
+import monad_core.engine.geometry.Collision
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.*
@@ -12,7 +13,7 @@ class DamageApplicationRuleTest extends AnyFunSuite with Matchers:
 
   private val Rule = DamageApplicationRule.damageApplicationRule
 
-  private val ContactCollision = monad_core.engine.geometry.Collision(
+  private val ContactCollision = Collision(
     normalVector = Vector2D(1, 0),
     penetrationDepth = 1,
     collisionPoint = Vector2D(0.5, 0)
