@@ -39,6 +39,7 @@ private case class SaveEntityFormDefaultValues(
     angularSpeed: Option[String] = None,
     weight: Option[String] = None,
     health: Option[String] = None,
+    damage: Option[String] = None,
     teamId: Option[String] = None,
     radius: Option[String] = None,
     height: Option[String] = None,
@@ -92,6 +93,7 @@ object SaveEntityFormDialog:
           teamId = entity.teamId.map(_.value),
           weight = entity.weight.map(_.toString),
           health = entity.health.map(_.toString),
+          damage = entity.damage.map(_.value.toString),
           speedX = entity.speed.map(_.x.toString),
           speedY = entity.speed.map(_.y.toString),
           rotation = Some(entity.rotation.toString),
@@ -153,6 +155,11 @@ object SaveEntityFormDialog:
         id = EntityFormParser.HealthKey,
         label = "Health",
         defaultValue = defaultValues.health
+      ),
+      TextFieldSpec(
+        id = EntityFormParser.DamageKey,
+        label = "Damage",
+        defaultValue = defaultValues.damage
       ),
       SelectFieldSpec(
         id = EntityFormParser.TeamIdKey,

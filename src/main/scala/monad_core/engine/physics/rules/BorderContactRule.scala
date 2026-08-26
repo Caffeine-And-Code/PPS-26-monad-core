@@ -1,13 +1,12 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.EngineEvent.CollisionDetected
 import monad_core.engine.core.events.CollisionTarget
-import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{BorderSide, EngineError, Entity, Vector2D}
 import monad_core.engine.physics.core.{
   PhysicsDomainError,
+  PhysicsContext,
   PhysicsError,
   PhysicsRule,
   PhysicsRuleResult
@@ -29,23 +28,21 @@ private[physics] object BorderContactRule:
 
     override val RuleId: String = BorderContactRule.Id
 
-    override def apply(scene: State, dt: Long)(using
-        detector: CollisionDetector
-    ): Either[PhysicsError, PhysicsRuleResult] =
+    override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
-        _ <- PhysicsUtil.timeLongToSeconds(dt)
-        entities = scene.allEntities.filterNot(_.isFixed)
+        _ <- PhysicsUtil.timeLongToSeconds(context.dt)
+        entities = context.state.allEntities.filterNot(_.isFixed)
 
         detectedCollisions <- findCollisions(
           entities,
-          scene.bounds.upperLeft,
-          scene.bounds.lowerRight
+          context.state.bounds.upperLeft,
+          context.state.bounds.lowerRight
         ).left.map(PhysicsDomainError.apply)
         activeCollisions = toCollisionMap(entities, detectedCollisions)
 
         updatedEntities <- CollisionResolver(activeCollisions)
 
-        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)
       yield PhysicsRuleResult(
         state = updatedScene,
         events = detectedCollisions.map(toEvent)
@@ -55,7 +52,7 @@ private[physics] object BorderContactRule:
         entities: List[Entity],
         upperLeft: Vector2D,
         lowerRight: Vector2D
-    )(using detector: CollisionDetector): Either[EngineError, Vector[DetectedBorderCollision]] =
+    ): Either[EngineError, Vector[DetectedBorderCollision]] =
       entities.foldLeft(
         Right(Vector.empty): Either[EngineError, Vector[DetectedBorderCollision]]
       ) { case (acc, entity) =>
@@ -90,8 +87,6 @@ private[physics] object BorderContactRule:
         entity: Entity,
         upperLeft: Vector2D,
         lowerRight: Vector2D
-    )(using
-        detector: CollisionDetector
     ): Either[EngineError, List[(BorderSide, Entity, Collision)]] =
 
       val position   = entity.position

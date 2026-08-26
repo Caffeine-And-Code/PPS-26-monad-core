@@ -28,6 +28,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
         surface.rotation shouldBe 0
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
+        surface.damageOverTime shouldBe None
 
   test("can create a surface with a rectangle shape"):
     val entity = Surface.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
@@ -39,6 +40,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
         surface.shape shouldBe Shape2D.rectangle(ValidHeight, ValidLength).toOption.get
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
+        surface.damageOverTime shouldBe None
 
   test("can create a surface and give it an friction index"):
     val frictionIndex = 2
@@ -71,3 +73,18 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
 
     inside(surfaceWithAppliedForce):
       case Right(surface) => surface.appliedForce shouldBe Some(appliedForce)
+
+  test("can create a surface and give it damage over time"):
+    val damage = 5
+
+    val surfaceWithDamage = ValidSurface.flatMap(_.withDamageOverTime(damage))
+
+    inside(surfaceWithDamage):
+      case Right(surface) => surface.damageOverTime.map(_.value) shouldBe Some(damage)
+
+  test("cannot create a surface and give it negative damage over time"):
+    val invalidDamage = -1
+
+    val surfaceWithDamage = ValidSurface.flatMap(_.withDamageOverTime(invalidDamage))
+
+    surfaceWithDamage shouldBe Left(DamageCannotBeNegative())

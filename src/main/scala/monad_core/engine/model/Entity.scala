@@ -9,7 +9,8 @@ final case class Entity private (
     angularSpeed: Option[Double] = None,
     weight: Option[Weight] = None,
     health: Option[Health] = None,
-    teamId: Option[TeamId] = None
+    teamId: Option[TeamId] = None,
+    damage: Option[Damage] = None
 ) extends Locatable
 
 object Entity:
@@ -67,6 +68,9 @@ object Entity:
 
     def withHealth(health: Int): Either[EngineError, Entity] =
       Health(health).map(h => entity.copy(health = Some(h)))
+
+    def withDamage(damage: Int): Either[EngineError, Entity] =
+      Damage(damage).map(d => entity.copy(damage = Some(d)))
 
     def applyDamage(damage: Int): Either[EngineError, Entity] =
       entity.health match

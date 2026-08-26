@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.components.forms.parsers
 
 import monad_core.engine.model.{Surface, Vector2D}
-import monad_core.simulator.MissingKeyInFormError
+import monad_core.simulator.{InvalidNumericFormFieldError, MissingKeyInFormError}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.{convertEitherToValuable, convertLeftProjectionToValuable}
 import org.scalatest.Inside
@@ -17,6 +17,7 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
   val SurfacePosition: Vector2D     = Vector2D(10, 11)
   val SurfaceAppliedForce: Vector2D = Vector2D(12, 13)
   val SurfaceFrictionIndex: Double  = 0.8
+  val SurfaceDamageOverTime: Int    = 4
 
   val SurfaceFormValues: Map[String, String] = Map(
     SurfaceFormParser.PositionXKey -> SurfacePosition.x.toString,
@@ -37,9 +38,10 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
 
   def buildFormValuesWithOptionalParams(formValues: Map[String, String]): Map[String, String] =
     formValues
-      + (SurfaceFormParser.FrictionIndexKey -> SurfaceFrictionIndex.toString)
-      + (SurfaceFormParser.AppliedForceXKey -> SurfaceAppliedForce.x.toString)
-      + (SurfaceFormParser.AppliedForceYKey -> SurfaceAppliedForce.y.toString)
+      + (SurfaceFormParser.FrictionIndexKey  -> SurfaceFrictionIndex.toString)
+      + (SurfaceFormParser.AppliedForceXKey  -> SurfaceAppliedForce.x.toString)
+      + (SurfaceFormParser.AppliedForceYKey  -> SurfaceAppliedForce.y.toString)
+      + (SurfaceFormParser.DamageOverTimeKey -> SurfaceDamageOverTime.toString)
 
   test("A circle surface can be converted from form values by utilizing the default id generator"):
     val expectedCircle = Surface.circle("id", SurfacePosition, SurfaceRadius).value
@@ -52,6 +54,7 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
         surface.position should be(SurfacePosition)
         surface.frictionIndex should be(expectedCircle.frictionIndex)
         surface.appliedForce should be(expectedCircle.appliedForce)
+        surface.damageOverTime should be(expectedCircle.damageOverTime)
         surface.shape should be(expectedCircle.shape)
 
   test(
@@ -68,6 +71,7 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
         surface.position should be(SurfacePosition)
         surface.frictionIndex should be(expectedRectangle.frictionIndex)
         surface.appliedForce should be(expectedRectangle.appliedForce)
+        surface.damageOverTime should be(expectedRectangle.damageOverTime)
         surface.shape should be(expectedRectangle.shape)
 
   test("If form values doesn't have the 'shape' value the surface cannot be parsed"):
@@ -153,6 +157,7 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
         case Right(surface) =>
           surface.frictionIndex should be(Some(SurfaceFrictionIndex))
           surface.appliedForce should be(Some(SurfaceAppliedForce))
+          surface.damageOverTime.map(_.value) should be(Some(SurfaceDamageOverTime))
 
   test("A surface without friction and applied force values has them empty"):
     val cases = Table(
@@ -168,6 +173,23 @@ class SurfaceFormParserTest extends AnyFunSuite with Inside with Matchers with M
         case Right(surface) =>
           surface.frictionIndex should be(None)
           surface.appliedForce should be(None)
+          surface.damageOverTime should be(None)
+
+  test("A surface with negative damage over time cannot be parsed"):
+    val formValues = circleFormValues + (SurfaceFormParser.DamageOverTimeKey -> "-1")
+
+    val parseResult = SurfaceFormParser.buildSurface(formValues)
+
+    parseResult.left.value.message should be("Damage cannot be negative")
+
+  test("A surface with non-integer damage over time cannot be parsed"):
+    val formValues = circleFormValues + (SurfaceFormParser.DamageOverTimeKey -> "1.5")
+
+    val parseResult = SurfaceFormParser.buildSurface(formValues)
+
+    parseResult.left.value should be(
+      InvalidNumericFormFieldError(SurfaceFormParser.DamageOverTimeKey)
+    )
 
   test("buildByShape should correctly construct surfaces based on shape type"):
     val testCases = Table(

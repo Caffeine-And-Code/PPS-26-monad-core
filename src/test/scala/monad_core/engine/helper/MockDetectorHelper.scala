@@ -40,6 +40,11 @@ private[engine] trait MockDetectorHelper:
   ): CollisionDetector =
     val detector = mock[CollisionDetector]
 
+    detector.collision
+      .expects(*, *)
+      .returning(None)
+      .anyNumberOfTimes()
+
     detector.isInside
       .expects(*, *)
       .onCall { (entity, surface) =>

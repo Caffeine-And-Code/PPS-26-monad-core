@@ -13,6 +13,7 @@ class Langchain4jToolResponseTest extends AnyFunSuite with Matchers:
   private val radius       = 3.0
   private val rotation     = 45.0
   private val angularSpeed = -30.0
+  private val damage       = 7
 
   test("renderEntity should include rotation"):
     val entity       = Entity.circle(id, position, radius, rotation).value
@@ -30,9 +31,28 @@ class Langchain4jToolResponseTest extends AnyFunSuite with Matchers:
 
     result.linesIterator.toList should contain(expectedLine)
 
+  test("renderEntity should include damage"):
+    val entity       = Entity.circle(id, position, radius).flatMap(_.withDamage(damage)).value
+    val expectedLine = s"damage: $damage"
+
+    val result = renderEntity(entity)
+
+    result.linesIterator.toList should contain(expectedLine)
+
   test("renderSurface should include rotation"):
     val surface      = Surface.circle(id, position, radius, rotation).value
     val expectedLine = s"rotation: $rotation"
+
+    val result = renderSurface(surface)
+
+    result.linesIterator.toList should contain(expectedLine)
+
+  test("renderSurface should include damage over time"):
+    val surface = Surface
+      .circle(id, position, radius)
+      .flatMap(_.withDamageOverTime(damage))
+      .value
+    val expectedLine = s"damageOverTime: $damage"
 
     val result = renderSurface(surface)
 
