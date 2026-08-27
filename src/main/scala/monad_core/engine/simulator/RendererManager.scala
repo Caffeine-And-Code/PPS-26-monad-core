@@ -4,8 +4,26 @@ import monad_core.engine.core.traits.{RenderEngine, State}
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{EngineColor, EngineError, TeamId}
 
+/**
+ * Pure renderer that converts an engine state into backend-independent drawing commands.
+ *
+ * Surfaces are emitted before entities. Entities use their team color when available and the painter's base entity
+ * color otherwise.
+ */
 object RendererManager extends RenderEngine:
 
+  /**
+   * Produces the ordered drawing plan for a state.
+   *
+   * Color construction is evaluated before commands are produced; the first painter error stops rendering.
+   *
+   * @param state
+   *   state whose surfaces, entities and teams are rendered
+   * @param painter
+   *   strategy used to select colors and translate shapes into commands
+   * @return
+   *   the ordered drawing commands, or the first color-construction error
+   */
   override def render(state: State)(using
       painter: Painter
   ): Either[EngineError, Vector[DrawCommand]] =

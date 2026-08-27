@@ -12,20 +12,55 @@ import monad_core.simulator.presentation.components.forms.parsers.LocatableFormS
 
 import scala.util.Random
 
+/** Converts submitted entity form values into validated engine entities. */
 object EntityFormParser:
 
-  val PositionXKey    = "x"
-  val PositionYKey    = "y"
-  val ShapeKey        = "shape"
-  val SpeedXKey       = "speedX"
-  val SpeedYKey       = "speedY"
-  val RotationKey     = "rotation"
-  val AngularSpeedKey = "angularSpeed"
-  val HealthKey       = "health"
-  val DamageKey       = "damage"
-  val WeightKey       = "weight"
-  val TeamIdKey       = "teamId"
+  /** Key of the horizontal position. */
+  val PositionXKey = "x"
 
+  /** Key of the vertical position. */
+  val PositionYKey = "y"
+
+  /** Key of the selected shape. */
+  val ShapeKey = "shape"
+
+  /** Key of the optional horizontal speed. */
+  val SpeedXKey = "speedX"
+
+  /** Key of the optional vertical speed. */
+  val SpeedYKey = "speedY"
+
+  /** Key of the optional initial rotation. */
+  val RotationKey = "rotation"
+
+  /** Key of the optional angular speed. */
+  val AngularSpeedKey = "angularSpeed"
+
+  /** Key of the optional health. */
+  val HealthKey = "health"
+
+  /** Key of the optional contact damage. */
+  val DamageKey = "damage"
+
+  /** Key of the optional weight. */
+  val WeightKey = "weight"
+
+  /** Key of the optional team identifier. */
+  val TeamIdKey = "teamId"
+
+  /**
+   * Builds an entity from submitted form values.
+   *
+   * Position and shape dimensions are required. Speed, rotation, angular speed, health, damage, weight and team are
+   * applied when valid values are supplied. Domain construction failures are adapted to presentation errors.
+   *
+   * @param values
+   *   submitted values indexed by the keys exposed by this parser and `BaseFormParser`
+   * @param generateId
+   *   identifier generator; invoked once after position and shape have been parsed
+   * @return
+   *   the validated entity, or the first parsing or domain error
+   */
   def buildEntity(
       values: Map[String, String],
       generateId: () => String = () => Random.alphanumeric.take(10).mkString
@@ -68,6 +103,22 @@ object EntityFormParser:
         case None => Right(entityWithWeight)
     yield finalEntity
 
+  /**
+   * Builds the base entity for a parsed shape.
+   *
+   * @param shape
+   *   shape selected by the user
+   * @param id
+   *   identifier assigned to the entity
+   * @param position
+   *   parsed initial position
+   * @param values
+   *   values containing the required shape dimensions
+   * @param rotation
+   *   initial rotation in degrees
+   * @return
+   *   a circle or rectangle entity, or a parsing or domain error
+   */
   private[forms] def buildByShape(
       shape: LocatableFormShapes,
       id: String,

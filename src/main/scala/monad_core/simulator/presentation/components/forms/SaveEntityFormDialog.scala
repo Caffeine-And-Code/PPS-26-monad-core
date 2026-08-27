@@ -15,6 +15,22 @@ import monad_core.simulator.presentation.components.forms.parsers.{
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
+/**
+ * Configuration of an entity creation or editing dialog.
+ *
+ * @param title
+ *   title displayed by the dialog
+ * @param onSubmit
+ *   callback invoked with the validated entity
+ * @param onError
+ *   callback invoked when submitted values cannot produce an entity
+ * @param teams
+ *   teams available for assignment
+ * @param anchorNode
+ *   optional node whose window owns the dialog
+ * @param entityToUpdate
+ *   existing entity to edit; `None` selects creation mode
+ */
 final case class SaveEntityFormDialogProps(
     title: String,
     onSubmit: Entity => Unit,
@@ -46,8 +62,10 @@ private case class SaveEntityFormDefaultValues(
     length: Option[String] = None
 )
 
+/** Builds entity forms and converts their submitted values into engine entities. */
 object SaveEntityFormDialog:
 
+  /** Shape labels offered by the entity form. */
   private[forms] val Shapes =
     Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
@@ -60,6 +78,17 @@ object SaveEntityFormDialog:
         case Some(entity) => EntityFormParser.buildEntity(values, () => entity.id.value)
         case None         => EntityFormParser.buildEntity(values)
 
+  /**
+   * Displays an entity creation or editing dialog.
+   *
+   * In editing mode the existing identifier is preserved. Parsing and domain errors produced on submission are sent
+   * to `props.onError`; this method returns failures raised while constructing the dialog itself.
+   *
+   * @param props
+   *   dialog mode, available teams and result callbacks
+   * @return
+   *   the result of building and displaying the underlying form dialog
+   */
   def show(props: SaveEntityFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.entityToUpdate)
     val viewModel     = SaveEntityViewModel(props.entityToUpdate)
@@ -75,6 +104,14 @@ object SaveEntityFormDialog:
     )
   }
 
+  /**
+   * Derives field defaults for creation or editing mode.
+   *
+   * @param entityToUpdate
+   *   entity whose current properties populate the fields
+   * @return
+   *   creation defaults when absent, otherwise textual values extracted from the entity
+   */
   private[forms] def buildDefaultValues(
       entityToUpdate: Option[Entity]
   ): SaveEntityFormDefaultValues =
@@ -100,6 +137,16 @@ object SaveEntityFormDialog:
           angularSpeed = entity.angularSpeed.map(_.toString)
         )
 
+  /**
+   * Builds the complete ordered entity field specification.
+   *
+   * @param teams
+   *   teams offered by the team selection
+   * @param defaultValues
+   *   initial values displayed by the fields
+   * @return
+   *   entity fields, including shape-dependent dimensions
+   */
   private[forms] def buildFields(
       teams: Seq[Team],
       defaultValues: SaveEntityFormDefaultValues

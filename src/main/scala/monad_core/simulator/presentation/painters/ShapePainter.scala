@@ -6,6 +6,7 @@ import monad_core.engine.simulator.DrawCommand
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 
+/** ScalaFX interpreter for backend-independent engine drawing commands. */
 object ShapePainter:
 
   extension (engineColor: EngineColor)
@@ -15,6 +16,17 @@ object ShapePainter:
         case RGB(r, g, b) => Color.rgb(r.value, g.value, b.value)
         case HSL(h, s, l) => Color.hsb(h.value, s.value / 100.0, l.value / 100.0)
 
+  /**
+   * Clears a canvas and executes drawing commands in their original order.
+   *
+   * Circles are positioned by their center. Rectangles are translated to their center and rotated before being
+   * filled, with the graphics context restored after each command.
+   *
+   * @param gc
+   *   target ScalaFX graphics context
+   * @param commands
+   *   immutable drawing plan to interpret
+   */
   def paint(gc: GraphicsContext, commands: Vector[DrawCommand]): Unit =
     gc.clearRect(0, 0, gc.canvas.getWidth, gc.canvas.getHeight)
 
