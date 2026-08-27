@@ -163,13 +163,13 @@ class CollisionResolutionRuleTest
       id = "entity1",
       position = Vector2D(0, 0),
       speed = Vector2D(1, 0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val entity2 = makeMovingEntityCircle(
       id = "entity2",
       position = Vector2D(1, 0),
       speed = Vector2D(-1, 0)
-    ).withWeight(2).value
+    ).withWeight(Some(2)).value
 
     val collisionNormal   = Vector2D(1, 0)
     val firstEntityNormal = collisionNormal.flip
@@ -240,7 +240,7 @@ class CollisionResolutionRuleTest
       id = "entity1",
       position = Vector2D(0, 0),
       speed = Vector2D(1, 0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val entity2 = makeMovingEntityCircle(
       id = "entity2",

@@ -53,9 +53,9 @@ class Langchain4jToolsTest
       surface: Either[EngineError, Surface]
   ): Surface =
     surface
-      .flatMap(_.withFrictionIndex(frictionIndex))
-      .flatMap(_.withAppliedForce(appliedForce))
-      .flatMap(_.withDamageOverTime(damageOverTime))
+      .flatMap(_.withFrictionIndex(Some(frictionIndex)))
+      .flatMap(_.withAppliedForce(Some(appliedForce)))
+      .flatMap(_.withDamageOverTime(Some(damageOverTime)))
       .value
 
   test("list all entities in the world returns empty if scene is empty"):
@@ -145,11 +145,11 @@ class Langchain4jToolsTest
     val damage = 7
     val entity = Entity
       .circle(entityId, Vector2D(posX, posY), radius)
-      .flatMap(_.withTeamId(teamId))
-      .flatMap(_.withWeight(weight))
-      .map(_.withSpeed(Vector2D(speedX, speedY)))
-      .flatMap(_.withHealth(health))
-      .flatMap(_.withDamage(damage))
+      .flatMap(_.withTeamId(Some(teamId)))
+      .flatMap(_.withWeight(Some(weight)))
+      .map(_.withSpeed(Some(Vector2D(speedX, speedY))))
+      .flatMap(_.withHealth(Some(health)))
+      .flatMap(_.withDamage(Some(damage)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))
@@ -249,7 +249,7 @@ class Langchain4jToolsTest
   test("when create circle entity receives an angular speed it is saved"):
     val entity = Entity
       .circle(entityId, Vector2D(posX, posY), radius)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))
@@ -270,7 +270,7 @@ class Langchain4jToolsTest
   test("when create rectangle entity receives an angular speed it is saved"):
     val entity = Entity
       .rectangle(entityId, Vector2D(posX, posY), height, rectangleLength)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))
@@ -356,7 +356,7 @@ class Langchain4jToolsTest
   test("when update circle entity receives an angular speed it is saved"):
     val entity = Entity
       .circle(entityId, Vector2D(posX, posY), radius)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.updateEntity
       .expects(SaveEntityCommand(entity))
@@ -377,7 +377,7 @@ class Langchain4jToolsTest
   test("when update rectangle entity receives an angular speed it is saved"):
     val entity = Entity
       .rectangle(entityId, Vector2D(posX, posY), height, rectangleLength)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.updateEntity
       .expects(SaveEntityCommand(entity))

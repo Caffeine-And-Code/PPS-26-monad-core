@@ -65,31 +65,31 @@ private[ai] object Langchain4jToolOptions:
   def applyTo(entity: Entity, fields: EntityOptionalFields): Either[BaseError, Entity] =
     for
       entityWithTeam <- withOptionalEngineField(entity, Option(fields.teamId))((entity, teamId) =>
-        entity.withTeamId(teamId)
+        entity.withTeamId(Some(teamId))
       )
 
       entityWithWeight <- withOptionalEngineField(
         entityWithTeam,
         Option(fields.weight).map(_.intValue())
-      )((entity, weight) => entity.withWeight(weight))
+      )((entity, weight) => entity.withWeight(Some(weight)))
 
       entityWithHealth <- withOptionalEngineField(
         entityWithWeight,
         Option(fields.health).map(_.intValue())
-      )((entity, health) => entity.withHealth(health))
+      )((entity, health) => entity.withHealth(Some(health)))
 
       entityWithDamage <- withOptionalEngineField(
         entityWithHealth,
         Option(fields.damage).map(_.intValue())
-      )((entity, damage) => entity.withDamage(damage))
+      )((entity, damage) => entity.withDamage(Some(damage)))
 
       entityWithSpeed <- optionalVector(
         fields.speedX,
         fields.speedY,
         IncompleteEntitySpeed()
-      ).map(_.fold(entityWithDamage)(entityWithDamage.withSpeed))
+      ).map(_.fold(entityWithDamage)(speed => entityWithDamage.withSpeed(Some(speed))))
     yield Option(fields.angularSpeed).fold(entityWithSpeed)(value =>
-      entityWithSpeed.withAngularSpeed(value.doubleValue())
+      entityWithSpeed.withAngularSpeed(Some(value.doubleValue()))
     )
 
   /**
@@ -112,18 +112,18 @@ private[ai] object Langchain4jToolOptions:
       surfaceWithFriction <- withOptionalEngineField(
         surface,
         Option(fields.frictionIndex).map(_.doubleValue())
-      )((surface, frictionIndex) => surface.withFrictionIndex(frictionIndex))
+      )((surface, frictionIndex) => surface.withFrictionIndex(Some(frictionIndex)))
       surfaceWithForce <- optionalVector(
         fields.appliedForceX,
         fields.appliedForceY,
         IncompleteSurfaceAppliedForce()
       ).flatMap:
         case None        => Right(surfaceWithFriction)
-        case Some(force) => surfaceWithFriction.withAppliedForce(force).adaptError()
+        case Some(force) => surfaceWithFriction.withAppliedForce(Some(force)).adaptError()
       completeSurface <- withOptionalEngineField(
         surfaceWithForce,
         Option(fields.damageOverTime).map(_.intValue())
-      )((surface, damageOverTime) => surface.withDamageOverTime(damageOverTime))
+      )((surface, damageOverTime) => surface.withDamageOverTime(Some(damageOverTime)))
     yield completeSurface
 
   /**

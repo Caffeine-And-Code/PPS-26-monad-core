@@ -34,9 +34,9 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
   private def completeSurface(surface: Surface): Surface =
     val either = for
-      withFriction    <- surface.withFrictionIndex(SurfaceFrictionIndex)
-      withForce       <- withFriction.withAppliedForce(SurfaceAppliedForce)
-      completeSurface <- withForce.withDamageOverTime(SurfaceDamageOverTime)
+      withFriction    <- surface.withFrictionIndex(Some(SurfaceFrictionIndex))
+      withForce       <- withFriction.withAppliedForce(Some(SurfaceAppliedForce))
+      completeSurface <- withForce.withDamageOverTime(Some(SurfaceDamageOverTime))
     yield completeSurface
     either.value
 

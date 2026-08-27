@@ -2,6 +2,12 @@ package monad_core.engine.model
 
 import monad_core.engine.model.Locatable.validateAndReturn
 
+/**
+ * Immutable environmental element placed in a [[Scene]].
+ *
+ * A surface can optionally affect entities through friction and an applied
+ * force. Use the factory methods to create validated instances.
+ */
 final case class Surface private (
     id: LocatableId,
     position: Vector2D,
@@ -14,6 +20,7 @@ final case class Surface private (
 
 object Surface:
 
+  /** Creates a validated circular surface. */
   def circle(
       id: String,
       position: Vector2D,
@@ -24,6 +31,7 @@ object Surface:
       Surface(id, position, shape, rotation)
     )
 
+  /** Creates a validated rectangular surface. */
   def rectangle(
       id: String,
       position: Vector2D,
@@ -37,19 +45,21 @@ object Surface:
 
   extension (surface: Surface)
 
-    def withFrictionIndex(frictionIndex: Double): Either[EngineError, Surface] =
-      validateAndReturn(surface.copy(frictionIndex = Some(frictionIndex)))
+    /** Returns a copy with the given friction index. */
+    def withFrictionIndex(frictionIndex: Option[Double]): Either[EngineError, Surface] =
+      validateAndReturn(surface.copy(frictionIndex = frictionIndex))
 
-    def withAppliedForce(appliedForce: Vector2D): Either[EngineError, Surface] =
-      validateAndReturn(surface.copy(appliedForce = Some(appliedForce)))
+    /** Returns a copy that applies the given force vector. */
+    def withAppliedForce(appliedForce: Option[Vector2D]): Either[EngineError, Surface] =
+      validateAndReturn(surface.copy(appliedForce = appliedForce))
 
     /**
      * Returns a copy with validated damage applied to entities contained by this surface.
      *
-     * @param damage
-     *   non-negative damage applied during a physics update
+     * @param damageOverTime
+     * non-negative damage applied during a physics update
      * @return
-     *   the updated surface, or `DamageCannotBeNegative` for a negative value
+     * the updated surface, or `DamageCannotBeNegative` for a negative value
      */
-    def withDamageOverTime(damage: Int): Either[EngineError, Surface] =
-      Damage(damage).map(value => surface.copy(damageOverTime = Some(value)))
+    def withDamageOverTime(damageOverTime: Option[Int]): Either[EngineError, Surface] =
+      Damage.fromOption(damageOverTime).map(value => surface.copy(damageOverTime = value))
