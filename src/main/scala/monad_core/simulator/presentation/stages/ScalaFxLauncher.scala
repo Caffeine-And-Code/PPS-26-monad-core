@@ -17,26 +17,22 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
- * Contains data that can alter the behavior of the startup routine
- * @param timeoutSeconds the waited time before the startup routine execution expressed in seconds
+ * Configuration for the JavaFX startup routine.
+ *
+ * @param timeoutSeconds maximum number of seconds to wait for startup completion
  */
 private case class BlockingJfxBootstrapData(timeoutSeconds: Long)
 
-/**
- * Utility object to encapsulate the management of the ScalaFx UI Thread.
- */
+/** Manages initialization and access to the JavaFX application thread. */
 private object BlockingJfxBootstrap:
 
   /**
-   * Run the provided action safely by trying to start the ScalaFx UI Thread,
-   * if it's already running the action is scheduled to start as soon as possible.
+   * Runs an action on the JavaFX application thread, initializing the toolkit when necessary.
    *
-   *
-   * @param data [[BlockingJfxBootstrapData]] containing startup behavior information
-   * @param action the executed function on the UI thread
-   * @return `Left(BaseError)` if any unexpected error was thrown by the ScalaFx library during startup
-   *
-   *         `Right(Unit)` if the action was executed correctly
+   * @param data startup configuration
+   * @param action action to execute on the UI thread
+   * @return the action result, `StartupTimeout` if it does not complete in time, or
+   *         `UnexpectedStartupFailure` if startup throws an exception
    */
   def run(
       data: BlockingJfxBootstrapData
@@ -67,11 +63,10 @@ private object BlockingJfxBootstrap:
     if !completedInTime then Left(StartupTimeout(timeoutSeconds)) else result
 
 /**
- * ScalaFx Entry Point of the application, it wraps the UI Thread management and displays the result
- * of [[MainStageBuilder.buildRootContent()]] provided into a [[Stage]] constructed by the [[buildStage()]] function.
+ * Starts the ScalaFX UI and displays the content produced by
+ * [[monad_core.simulator.presentation.stages.traits.MainStageBuilder.buildRootContent MainStageBuilder.buildRootContent]].
  *
- * @see [[BlockingJfxBootstrap]]
- * @param mainStage the builder who construct the displayed stage inside the main window
+ * @param mainStage builder for the content displayed in the application window
  */
 final class ScalaFxLauncher(mainStage: MainStageBuilder):
 
@@ -79,11 +74,7 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder):
   private val MinStageHeight        = 720.0
   private val StartupTimeoutSeconds = 10L
 
-  /**
-   * Build the [[Stage]] with the default values as minWidth and minHeight by [[MinStageWidth]] and [[MinStageHeight]]
-   *
-   * @return the built [[Stage]]
-   */
+  /** Builds the application stage with its minimum dimensions. */
   private def buildStage(): Stage =
     new Stage {
       title = "MonadCore2D"
@@ -92,27 +83,20 @@ final class ScalaFxLauncher(mainStage: MainStageBuilder):
       minHeight = MinStageHeight
     }
 
-  /**
-   * Builds the [[Scene]] used as background and container of the [[MainStageBuilder.buildRootContent()]]
-   *
-   * @return the built [[Scene]]
-   */
+  /** Builds the scene that hosts the main content and notification layer. */
   private def buildScene(): Scene =
     new Scene(900, 600) {
       fill = Color.rgb(25, 26, 28)
     }
 
   /**
-   * Starts the ScalaFx UI Thread by invoking [[BlockingJfxBootstrap.run]], to which it provides an action
-   * that build the main window of the application.
+   * Starts the JavaFX application thread, builds the main content, and displays the stage.
    *
-   * @see [[buildStage()]], [[buildScene()]], [[BlockingJfxBootstrap]]
-   * @param aiAgent The [[AiAgent]] that will be provided to the [[MainStageBuilder.buildRootContent()]]
-   * @param world The [[World]] that will be provided to the [[MainStageBuilder.buildRootContent()]]
-   * @param gameEngineRuntime The [[GameEngineRuntime]] that will be provided to the [[MainStageBuilder.buildRootContent()]]
-   * @return `Left(BaseError)` which is carried from [[BlockingJfxBootstrap.run()]] or [[MainStageBuilder.buildRootContent()]]
-   *         
-   *         `Right(Unit)` when the window is constructed correctly
+   * @param aiAgent contextual AI agent passed to the main-stage builder
+   * @param world world associated with the application session
+   * @param gameEngineRuntime runtime associated with the application session
+   * @return `Left(BaseError)` if startup times out, throws an exception, or the main content cannot be built;
+   *         `Right(Unit)` after the stage is shown
    */
   def run()(using
       aiAgent: AiAgent,

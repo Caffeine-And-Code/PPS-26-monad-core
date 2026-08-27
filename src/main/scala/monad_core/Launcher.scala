@@ -39,24 +39,20 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 import scala.Console.{GREEN, RESET}
 
 /**
- * Application entry point handler.
+ * Application entry point and command-line router.
  *
- * It is conceived to handle specific terminal params to start:
- *    - The default Gui application
- *    - A suite to evaluate the Ai Model
- *    - Stress test the application
+ * It starts the model-evaluation suite when the `evaluate-model` argument is present;
+ * otherwise, it launches the default GUI application.
  */
 object Launcher:
 
   /**
-   * Declarative shell which provide ALL the dependencies for the application itself.
+   * Assembles the dependencies required by the GUI and starts the ScalaFX application.
    *
-   * Once each dependency is arranged the Gui application is initialized by calling [[ScalaFxLauncher]] providing
-   * the [[MainStage]] as the main panel
+   * The runtime, world, painter, AI agent, and panels are wired before control is delegated
+   * to [[monad_core.simulator.presentation.stages.ScalaFxLauncher ScalaFxLauncher]].
    *
-   * @return `Left(BaseError)` if during initialization an error is occurred
-   *
-   *         `Right(Unit)` otherwise
+   * @return `Left(BaseError)` if the UI cannot be initialized, or `Right(Unit)` once it is started
    */
   private def guiApplication(): Either[BaseError, Unit] =
     given Logger = ConsoleLogger
@@ -102,6 +98,12 @@ object Launcher:
 
     ScalaFxLauncher(mainStage).run()
 
+  /**
+   * Converts the outcome of an application startup into a response suitable for command-line routing.
+   *
+   * @param result startup result to convert
+   * @return a successful response when `result` is `Right`, or a failure response containing the error message
+   */
   def outcomeFor(result: Either[BaseError, Unit]): RouteResponse =
     result match
       case Left(error) =>
@@ -136,10 +138,13 @@ object Launcher:
   }
 
   /**
-   * Entry point which needs to define each [[Route]] for the terminal arguments redirects.
+   * Routes command-line arguments to model evaluation or to the default GUI application.
    *
-   * @see [[Route]], [[Router]], [[evaluateModel]] and [[guiApplication]]
-   * @param args terminal arguments provided
+   * The process exits with status `1` when routing or application startup fails.
+   *
+   * @see [[monad_core.simulator.presentation.routes.RouteType.Route Route]]
+   * @see [[monad_core.simulator.presentation.routes.Router Router]]
+   * @param args command-line arguments
    */
   def main(args: Array[String]): Unit =
     lazy val evaluateModelRoute = evaluateModel(args)

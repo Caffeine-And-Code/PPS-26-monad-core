@@ -30,7 +30,7 @@ import scalafx.scene.layout.{Priority, VBox}
 /**
  * SceneRendererPanel concrete builder.
  *
- * It handles the rendering of the current [[World]] and the user interaction
+ * It handles the rendering of the current [[monad_core.simulator.application.engine.world.World World]] and the user interaction
  * with its clickable elements.
  */
 object SceneRendererPanel extends SceneRendererPanelBuilder:
@@ -152,24 +152,23 @@ object SceneRendererPanel extends SceneRendererPanelBuilder:
    * Imperative shell that constructs the panel.
    *
    * It creates a resizable canvas used to render the current world and keeps
-   * the [[GameEngineRuntime]] dimensions synchronized with the canvas dimensions.
+   * the [[monad_core.simulator.application.engine.GameEngineRuntime GameEngineRuntime]] dimensions synchronized with the canvas dimensions.
    *
    * A right-click context menu is attached to the canvas, allowing the user to:
-   * - edit or remove an [[Entity]]
-   * - edit or remove a [[Surface]]
+   * - edit or remove an [[monad_core.engine.model.Entity Entity]]
+   * - edit or remove a [[monad_core.engine.model.Surface Surface]]
    *
    * These interactions are available only while the engine is not running.
    *
    * Finally, the rendering loop is started and each generated sequence of
-   * [[DrawCommand]]s is painted on the canvas through [[ShapePainter]].
+   * [[monad_core.engine.simulator.DrawCommand DrawCommand]] values is painted on the canvas through
+   * [[monad_core.simulator.presentation.painters.ShapePainter ShapePainter]].
    *
-   * @param isEngineRunning [[BooleanProperty]] representing if the engine is currently running or not
-   * @param gameEngineRuntime [[GameEngineRuntime]] used to handle the world
-   * @param world current [[World]] rendered by the panel
-   * @param painter [[Painter]] used by the game engine to generate the drawing commands
-   * @return `Left(BaseError)` if the runtime already contains an error
-   *
-   *         `Right(VBox)` if the panel is built, the [[VBox]] is the panel
+   * @param isEngineRunning observable property indicating whether the engine is running
+   * @param gameEngineRuntime runtime used to update and render the world
+   * @param world world rendered by the panel
+   * @param painter painter used by the game engine to generate drawing commands
+   * @return the current runtime error in `Left`, or the completed panel in `Right`
    */
   def build(isEngineRunning: BooleanProperty)(using
       gameEngineRuntime: GameEngineRuntime,

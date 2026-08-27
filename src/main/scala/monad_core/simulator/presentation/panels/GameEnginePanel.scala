@@ -15,14 +15,14 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
 /**
- * GameEnginePanel concrete builder
+ * Composes the game-engine controls and scene renderer into a single panel.
  *
- * @param modePanel builder which creates the game engine controls, to enable the user to interact with the engine itself
- * @param rendererPanel builder which creates the view of the game engine state
- * @param imageConfig system configuration for the image usage
- * @param world current world
- * @param gameEngineRuntime the runtime that will be used to handle and mutate the provided world
- * @param painter the [[Painter]] which will be used to paint/display the elements of the world
+ * @param modePanel builder for the engine controls
+ * @param rendererPanel builder for the current engine-state view
+ * @param imageConfig image-loading configuration used by the controls
+ * @param world world initialized and displayed by the panel
+ * @param gameEngineRuntime runtime used to initialize and mutate the world
+ * @param painter [[monad_core.engine.simulator.Painter Painter]] used to display world elements
  */
 final class GameEnginePanel(
     modePanel: GameEngineModePanelBuilder,
@@ -49,14 +49,9 @@ final class GameEnginePanel(
   extension (viewModel: GameEnginePanelViewModel)
 
     /**
-     * The pure logic to handle the change of mode of the [[GameEngineRuntime]].
+     * Starts or stops the runtime and synchronizes the observable running state.
      *
-     * It propagates the instruction, based on [[isButtonActive]], to the relative [[GameEngineRuntime]] function.
-     *
-     * @see [[GameEngineRuntime.stop()]] and [[GameEngineRuntime.start()]]
-     * @param isButtonActive boolean value that symbolize the current state of the button of start and stop.
-     *
-     *                       if `true` is passed the engine is started, otherwise the engine is stopped
+     * @param isButtonActive `true` to start the engine, or `false` to stop it
      */
     private def onModeChange(isButtonActive: Boolean): Unit =
       if isButtonActive then viewModel.gameEngineRuntime.start()
@@ -64,25 +59,19 @@ final class GameEnginePanel(
 
       viewModel.isEngineRunning.value = viewModel.gameEngineRuntime.isRunning
 
-    /**
-     * The pure logic to handle the reset button click.
-     *
-     * The engine interaction is delegated to the [[GameEngineRuntime.resetToSnapshot()]] function.
-     */
+    /** Restores the engine world to its current snapshot. */
     private def onResetClick(): Unit =
       viewModel.gameEngineRuntime.resetToSnapshot()
 
   /**
-   * Imperative shell that build the Panel itself.
+   * Initializes the runtime world, creates its baseline snapshot, and builds the panel.
    *
-   * It first constructs each provided panel and then displays them in a static column layout:
-   * - The mode panel as the first one occupying a [[TopPanelHeightRatio]] of the total height, with [[TopPanelMinHeight]] as minimum height
-   * - The scene panel as the second one occupying the rest of the available space spaced by [[SpacingRatio]] from the top panel
+   * The controls occupy the top section, while the scene renderer fills the remaining
+   * space in a responsive vertical layout.
    *
-   * @see [[SceneRendererPanelBuilder]] and [[GameEngineModePanelBuilder]]
-   * @return `Left(BaseError)` propagated by any of the panels build method
-   *
-   *         `Right(VBox)` if the panel is built, the [[VBox]] is the panel
+   * @see [[monad_core.simulator.presentation.panels.traits.SceneRendererPanelBuilder SceneRendererPanelBuilder]]
+   * @see [[monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder GameEngineModePanelBuilder]]
+   * @return `Left(CannotBuildPanel)` when either child builder fails, or `Right(VBox)` with the composed panel
    */
   def build(): Either[BaseError, VBox] =
     gameEngineRuntime.initializeWorld(world)

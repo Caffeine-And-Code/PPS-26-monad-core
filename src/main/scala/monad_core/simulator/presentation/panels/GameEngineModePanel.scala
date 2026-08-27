@@ -24,15 +24,14 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.geometry.Pos
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 
-/**
- *  GameEngineModePanel concrete builder
- */
+/** Builds the controls for engine execution, world editing, team management, and physics rules. */
 object GameEngineModePanel extends GameEngineModePanelBuilder:
 
   /**
-   * ViewModel used as state of the panel component
-   * @param world [[World]]
-   * @param gameEngineRuntime [[GameEngineRuntime]]
+   * Mutable UI state derived from the current world and engine runtime.
+   *
+   * @param world world edited by the panel
+   * @param gameEngineRuntime runtime controlled by the panel
    */
   private case class GameEngineModeViewModel(world: World, gameEngineRuntime: GameEngineRuntime):
     val editTeamsDisabled: BooleanProperty   = BooleanProperty(true)
@@ -41,11 +40,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
   extension (viewModel: GameEngineModeViewModel)
 
     /**
-     * The Sole point where [[viewModel.editTeamsDisabled]] and [[viewModel.deleteTeamsDisabled]]
-     * state variables are changed based on the world teams count.
+     * Synchronizes team-action availability with the number of teams in the world.
      *
-     * - [[viewModel.editTeamsDisabled]] is set to `true` when world teams are more than one
-     * - [[viewModel.deleteTeamsDisabled]] is set to `true` when world teams are more than zero
+     * Editing is disabled when fewer than two teams exist, while deletion is disabled
+     * when the world contains no teams.
      */
     private def refreshTeamAvailability(): Unit =
       val teams = viewModel.world.getAllTeams
@@ -54,9 +52,10 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
       viewModel.deleteTeamsDisabled.value = teams.isEmpty
 
     /**
-     * Wrapper that runs [[refreshTeamAvailability]] when result is `Right`
-     * @param result the provided result
-     * @return the propagated result from result itself
+     * Refreshes team-action availability after a successful operation and preserves failures.
+     *
+     * @param result result of the team operation
+     * @return the original failure, or `Right(Unit)` after refreshing the UI state
      */
     private def refreshTeamsAfter(
         result: Either[BaseError, Unit]
@@ -130,8 +129,9 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
       )
 
     /**
-     * Permits the component to enable/disable a physics rule by calling the [[GameEngineRuntime.setPhysicsRuleEnabled]] function.
-     * @param ruleId the rule specific id
+     * Enables or disables a physics rule through the game-engine runtime.
+     *
+     * @param ruleId identifier of the physics rule
      * @param isEnabled `true` if the rule needs to be enabled, `false` otherwise
      */
     private def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit =
@@ -140,17 +140,18 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
   /**
    * Imperative shell that constructs the panel.
    *
-   * It constructs each button and displays them in a row layout, separating the menu button and physic
-   * rule button from the engine mode control buttons.
+   * It constructs the world-editing and physics-rule menus alongside the engine mode
+   * and reset controls, then arranges them in a row layout.
    *
-   * @see [[IconButton]] and [[MenuButton]]
-   * @param imageConfig system configuration to handle the images
-   * @param onModeChange callback run each time the mode button is clicked
-   * @param onResetClick callback run each time the reset button is clicked
-   * @param isEngineRunning [[BooleanProperty]] representing if the engine is currently running or not
-   * @param world [[World]]
-   * @param gameEngineRuntime [[GameEngineRuntime]]
-   * @return
+   * @see [[monad_core.simulator.presentation.components.IconButton IconButton]]
+   * @see [[monad_core.simulator.presentation.components.MenuButton MenuButton]]
+   * @param imageConfig image-loading configuration used by the controls
+   * @param onModeChange callback invoked with the requested running state
+   * @param onResetClick callback invoked when the reset button is clicked
+   * @param isEngineRunning observable property synchronized with the engine running state
+   * @param world world edited by the panel
+   * @param gameEngineRuntime runtime controlled by the panel
+   * @return `Left(BaseError)` if a child control cannot be built, or `Right(VBox)` with the completed panel
    */
   def build(
       imageConfig: ImageConfigRecord,
