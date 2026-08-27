@@ -6,13 +6,13 @@ import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{Entity, LocatableId, Surface}
 
 /**
- * Record class representing the collision between two entities
+ * Collision contact between two entities.
  *
  * @see [[monad_core.engine.geometry.Collision Collision]] and [[PhysicsContext.detect]]
- * @param firstId first entity id
- * @param secondId second entity id
- * @param collision collision record produced by the collision system
- *                  ([[monad_core.engine.collision_detection.CollisionDetector CollisionDetector]])
+ * @param firstId identifier of the first entity
+ * @param secondId identifier of the second entity
+ * @param collision geometric data produced by the
+ *                  [[monad_core.engine.collision_detection.CollisionDetector CollisionDetector]]
  */
 final case class EntityCollisionContact(
     firstId: LocatableId,
@@ -21,11 +21,11 @@ final case class EntityCollisionContact(
 )
 
 /**
- * Record class representing the collision between a surface and a entity
+ * Contact between an entity and a surface that contains it.
  *
  * @see [[PhysicsContext.detect]]
- * @param entityId entity id
- * @param surfaceId surface id
+ * @param entityId identifier of the entity
+ * @param surfaceId identifier of the surface
  */
 final case class SurfaceContact(
     entityId: LocatableId,
@@ -33,12 +33,14 @@ final case class SurfaceContact(
 )
 
 /**
- * Record class representing a specific moment in the simulation by collecting all the collisions,
- * useful for the physic system to not recalculate them each time
+ * Immutable collection of contacts detected for one physics step.
+ *
+ * The snapshot allows every physics rule to consume the same collision data without
+ * running collision detection again.
  *
  * @see [[PhysicsContext.detect]]
- * @param entityContacts all the collisions between entities
- * @param surfaceContacts all the collisions between an entity and a surface
+ * @param entityContacts contacts between pairs of entities
+ * @param surfaceContacts contacts between entities and surfaces
  */
 final case class CollisionSnapshot(
     entityContacts: Vector[EntityCollisionContact] = Vector.empty,
@@ -46,12 +48,13 @@ final case class CollisionSnapshot(
 )
 
 /**
- * Record class used as input to each rule execution
+ * Input shared by all physics rules during one simulation step.
  *
- * @see [[CollisionSnapshot]], [[monad_core.engine.core.traits.State State]] and [[PhysicsRule]]
- * @param state the state before the rule execution
- * @param dt the delta time, representing the time difference between a prior tick and the current tick
- * @param collisions the collision snapshot
+ * @see [[CollisionSnapshot]], [[monad_core.engine.core.traits.State State]] and
+ *      [[monad_core.engine.physics.core.PhysicsRule PhysicsRule]]
+ * @param state state at the beginning of the physics step
+ * @param dt elapsed simulation time represented in nanoseconds
+ * @param collisions contacts detected for the current step
  */
 final case class PhysicsContext(
     state: State,
@@ -59,37 +62,38 @@ final case class PhysicsContext(
     collisions: CollisionSnapshot = CollisionSnapshot()
 )
 
+/** Factory and lookup utilities for [[PhysicsContext]]. */
 object PhysicsContext:
   private val CombinationSize = 2
 
   /**
-   * Format the entities list from the state to a map entity.id -> entity
+   * Indexes the context entities by identifier.
    *
-   * @param context rule context
-   * @return the produced map
+   * @param context physics context to inspect
+   * @return map from entity identifiers to entities
    */
   def getEntityMapById(context: PhysicsContext): Map[LocatableId, Entity] =
     context.state.allEntities.map(entity => entity.id -> entity).toMap
 
   /**
-   * Format the surface list from the state to a map surface.id -> surface
+   * Indexes the context surfaces by identifier.
    *
-   * @param context rule context
-   * @return the produced map
+   * @param context physics context to inspect
+   * @return map from surface identifiers to surfaces
    */
   def getSurfaceMapById(context: PhysicsContext): Map[LocatableId, Surface] =
     context.state.allSurfaces.map(surface => surface.id -> surface).toMap
 
   /**
-   * Detect all the collisions via the appliance of the
-   * [[monad_core.engine.collision_detection.CollisionDetector CollisionDetector]] and produces the
-   * initial [[PhysicsContext]] for the first rule to be executed
+   * Detects contacts and creates the initial context for a physics-rule sequence.
    *
-   * @see `RuleCombinator`
-   * @param state the state record BEFORE the physics rule appliance
-   * @param dt the delta time, representing the time difference between a prior tick and the current tick
-   * @param detector the collision detector
-   * @return
+   * Entity pairs where both entities are fixed are ignored. Surface contacts are detected
+   * only for non-fixed entities.
+   *
+   * @param state state at the beginning of the physics step
+   * @param dt elapsed simulation time represented in nanoseconds
+   * @param detector collision detector used for entity and surface checks
+   * @return a context containing the input state, elapsed time, and detected contacts
    */
   def detect(state: State, dt: Long)(using detector: CollisionDetector): PhysicsContext =
     val entities = state.allEntities

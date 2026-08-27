@@ -11,8 +11,14 @@ import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.model.BorderSide
 import monad_core.engine.model.LocatableId.value
 
+/** Severity assigned to a formatted engine event. */
 enum EventLogLevel:
-  case Info, Trace
+
+  /** High-level lifecycle or collision event. */
+  case Info
+
+  /** Detailed state-transition event. */
+  case Trace
 
 /**
  * Record class representing a single message that needs to be printed
