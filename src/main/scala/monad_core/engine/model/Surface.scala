@@ -43,5 +43,13 @@ object Surface:
     def withAppliedForce(appliedForce: Vector2D): Either[EngineError, Surface] =
       validateAndReturn(surface.copy(appliedForce = Some(appliedForce)))
 
+    /**
+     * Returns a copy with validated damage applied to entities contained by this surface.
+     *
+     * @param damage
+     *   non-negative damage applied during a physics update
+     * @return
+     *   the updated surface, or `DamageCannotBeNegative` for a negative value
+     */
     def withDamageOverTime(damage: Int): Either[EngineError, Surface] =
       Damage(damage).map(value => surface.copy(damageOverTime = Some(value)))

@@ -16,6 +16,18 @@ import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.errors.BaseError
 
+/**
+ * Thread-safe runtime that integrates the engine facade with an application `World`.
+ *
+ * Successful ticks interpolate the engine state, produce drawing commands, commit the resulting scene, publish
+ * engine events and invoke the frame renderer. Engine failures are adapted, retained, forwarded to `onError` and
+ * stop the runtime. Snapshots provide an edit-mode baseline that can be restored after simulation.
+ *
+ * @param onError
+ *   callback invoked after an engine failure has been recorded
+ * @param onEvents
+ *   callback receiving events produced by successful fixed updates
+ */
 final class MonadCoreGameEngineRuntime(
     onError: BaseError => Unit = _ => (),
     onEvents: Vector[EngineEvent] => Unit = _ => ()
@@ -149,8 +161,19 @@ final class MonadCoreGameEngineRuntime(
       case LoopMode.EditMode       => world.enterEditMode()
       case LoopMode.SimulationMode => world.enterSimulationMode()
 
+/** Factory for the simulator's engine runtime adapter. */
 object MonadCoreGameEngineRuntime:
 
+  /**
+   * Creates a runtime with optional error and event consumers.
+   *
+   * @param onError
+   *   callback invoked for adapted engine failures
+   * @param onEvents
+   *   callback receiving events from successful ticks
+   * @return
+   *   a runtime initialized with a default stopped engine session
+   */
   def apply(
       onError: BaseError => Unit = _ => (),
       onEvents: Vector[EngineEvent] => Unit = _ => ()
