@@ -162,7 +162,9 @@ object Launcher:
     val arguments = AgentEvaluationArguments.parse(args)
 
     given AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
-    given Logger                = ConsoleLogger
+
+    given Logger = ConsoleLogger
+
     given AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
       agentConfig = Langchain4jOllamaConfig(
         url = arguments.testModelUrl,
