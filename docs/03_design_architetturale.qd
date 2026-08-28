@@ -1,93 +1,190 @@
 # Design architetturale
 
-## Obiettivi architetturali
+Il design di MonadCore2D deriva dai requisiti di indipendenza del motore, uso interattivo e headless, sostituibilità degli adapter e verificabilità automatica. L'unità di deployment è un solo fat JAR, ma l'architettura conserva due confini logici netti: il package `monad_core.engine`, utilizzabile come libreria autonoma, e `monad_core.simulator`, applicazione client del motore.
 
-L'architettura di MonadCore2D è stata progettata con i seguenti obiettivi:
+Le decisioni principali sono:
 
-- separare il motore di simulazione dalle modalità con cui viene utilizzato;
-- mantenere la logica fisica e il modello indipendenti dalla GUI e dai servizi di intelligenza artificiale;
-- isolare le dipendenze esterne, in particolare ScalaFX, LangChain4j e Ollama;
-- permettere l'esecuzione sia interattiva, tramite GUI, sia headless, per la valutazione degli agenti;
-- rendere sostituibili le implementazioni del motore, dell'agente AI, del logging e del dataset di valutazione;
-- rappresentare gli errori attesi mediante tipi espliciti, principalmente `Either`, evitando di affidare il normale flusso applicativo alle eccezioni.
+- mantenere modello, game loop, fisica e piano di rendering dell'engine indipendenti dalla GUI e dall'AI, in risposta a **BR-01** e **RNF-02**;
+- collocare le operazioni applicative dietro porte e confinare tecnologie esterne negli adapter, in risposta a **RNF-07** e **RI-03**;
+- condividere tra GUI e agente la stessa istanza di mondo e runtime, per applicare in un solo punto atomicità e vincolo di modifica richiesti da **RS-01** e **RS-10**;
+- separare stato fisico definitivo e frame interpolato, per rispettare passo fisso e fluidità del rendering richiesti da **RS-03** e **RS-04**;
+- comporre a runtime la modalità GUI oppure la valutazione headless, in risposta a **BR-04** e **RS-12**;
+- modellare gli errori attesi come valori e usare eccezioni soltanto ai confini delle librerie che le impongono, in risposta a **RS-02**.
 
-Il sistema è organizzato in due macrocomponenti: il **game engine**, utilizzabile come libreria autonoma, e il **simulatore**, che integra il motore con interfaccia grafica e agenti AI.
+## Contesto e modalità di esecuzione
+
+Il sistema interagisce con quattro elementi esterni:
+
+- lo sviluppatore client, che invoca direttamente l'API Scala dell'engine;
+- l'utente desktop, che invia eventi alla GUI;
+- l'operatore, che passa argomenti alla route `evaluate-model` e legge il riepilogo su console;
+- uno o due endpoint logici Ollama, usati rispettivamente dal modello agente e dal modello giudice. I due endpoint possono coincidere e possono trovarsi sulla stessa macchina del simulatore oppure su macchine diverse.
+
+Il `Launcher` è il **composition root** e il router della linea di comando. Senza una route specifica costruisce il grafo della GUI; con `evaluate-model` costruisce valutatore, dataset, printer e configurazioni dei due modelli. Le due modalità condividono dominio e adapter AI, ma la seconda non inizializza ScalaFX e usa un controllo dell'engine headless.
 
 ## Ambiente di esecuzione
 
-L'ambiente di esecuzione dell'applicazione è descritto dal seguente deployment diagram.
+Il deployment diagram rappresenta la configurazione interattiva minima.
 
-![deployment-diagram-pps.png](assets/deployment-diagram-pps.png)
+![Deployment del simulatore e di Ollama](assets/deployment-diagram-pps.png)
 
-- **Personal computer**: esegue la JVM contenente il simulatore. Nella modalità interattiva ospita anche la GUI ScalaFX; nella modalità di valutazione esegue invece il processo headless da linea di comando.
-- **Server Ollama**: espone via rete i modelli utilizzati da LangChain4j. Può essere eseguito sullo stesso computer del simulatore oppure su una macchina distinta.
+Sul personal computer una JVM Java 21 esegue il fat JAR. Nella modalità interattiva la stessa JVM ospita ScalaFX/JavaFX, runtime del motore, mondo, chat e adapter LangChain4j. In modalità di valutazione ospita invece dataset, runner, mondo isolato e aggregatore dei risultati. Non sono presenti database o stato remoto applicativo.
 
-La GUI utilizza un agente configurato tramite URL del server e nome del modello.
+Ollama espone un'API di rete request/response. La GUI usa `MONAD_CORE_OLLAMA_URL` e `MONAD_CORE_MODEL_NAME`, con valori predefiniti se le variabili non sono presenti; la route di valutazione accetta separatamente URL e nome di agente e giudice. La rete è quindi necessaria soltanto quando si invoca un modello. L'engine e le operazioni grafiche non dipendono dalla disponibilità del servizio.
 
-Il collegamento a Ollama è necessario per le funzionalità AI, ma il game engine non dipende da Ollama e può essere utilizzato autonomamente.
+Poiché JavaFX include librerie native, la pipeline assembla JAR distinti per Linux, Windows e macOS. Questa è una conseguenza architetturale della scelta desktop e rende esplicito il compromesso tra portabilità del bytecode JVM e dipendenze native della GUI.
 
-## Vista dei componenti
+## Vista complessiva dei componenti
 
-Il seguente component diagram mostra i principali componenti del sistema e le loro dipendenze logiche.
+Il component diagram raggruppa i confini principali e mostra la direzione delle dipendenze a compile time.
 
-![component-diagram-pps.png](assets/component-diagram-pps.png)
+![Componenti principali e dipendenze](assets/component-diagram-pps.png)
 
-Le dipendenze esterne sono confinate, per quanto possibile, ai bordi del sistema:
+I componenti architetturali sono undici; per ciascuno sono indicati responsabilità, interlocutori e dati scambiati.
 
-- ScalaFX è utilizzato dalla Presentation.
-- LangChain4j è utilizzato dagli adattatori AI nel livello Infrastructure;
-- Ollama rimane un servizio esterno e viene raggiunto esclusivamente attraverso LangChain4j.
+### 1. Engine Model
 
-L'oggetto `Launcher` costituisce il **composition root** dell'applicazione: seleziona la modalità di esecuzione, costruisce le implementazioni concrete delle entità di livello Infrastructure e le collega alle rispettive interfacce definite nel livello Application.
+`engine.model` definisce `Scene`, `Entity`, `Surface`, `Team`, forme, vettori, colori, confini e tipi validati. Riceve valori primitivi dai client e restituisce oggetti validi o `EngineError`; le modifiche alla scena restituiscono nuove scene. È il vocabolario condiviso da tutti gli altri componenti dell'engine e, intenzionalmente, dai layer del simulatore che devono mostrare o trasportare dati del mondo.
 
-## Architettura del simulatore
+### 2. Geometry e Collision Detection
 
-L'architettura del simulatore è ispirata alla **Clean Architecture** e applica anche il principio **Ports and Adapters**. L'applicazione è suddivisione nei seguenti package `presentation`, `application`, `domain` e `infrastructure`.
+`engine.geometry` implementa le operazioni geometriche tra forme posizionate; `engine.collision_detection` offre il contratto `CollisionDetector` e l'implementazione costruita dalle type class `Collides` e `Contains`. Riceve elementi `Locatable` e restituisce collisioni geometriche opzionali o informazioni di contenimento. Non conosce regole fisiche né interfacce utente.
 
-### Domain
+### 3. Physics
 
-Il livello Domain contiene i tipi che descrivono i concetti propri delle funzionalità AI e della loro valutazione.
-Si intende parte del livello di dominio anche i modelli descritti nel package `model` dell'engine, in quanto sono semplici rappresentazioni di forme geometriche e sono coerenti con il modo di rappresentare e di intendere le forme geometriche del simulatore.
-Il livello Domain non ha dipendenze esterne ad eccezione di quella sopra citata
+`engine.physics` costruisce un `PhysicsContext` dalla scena, rileva una sola volta i contatti del passo e applica in sequenza le regole abilitate mediante `RuleCombinator`. Riceve `State` e durata del fixed update; restituisce nuovo stato, eventi oppure `PhysicsError`. Include collision resolution, superfici, bordi, danno, cinematica e pathfinding.
 
-### Application
+### 4. Engine Core
 
-Il livello Application definisce i casi d'uso e le porte necessarie per realizzarli.
-Il livello Application dipende dai tipi del livello Domain e nient'altro.
+`engine.core` definisce `State`, `PhysicsEngine`, modalità e game loop a passo fisso. Il loop non possiede lo stato del mondo: riceve stato, tempo e implementazione della fisica e restituisce `GameLoopTickResult`. Questa separazione impedisce stato globale e permette a un client di mantenere più sessioni indipendenti.
 
-### Infrastructure
+### 5. Engine Integration API
 
-Il livello Infrastructure contiene gli adattatori concreti delle porte applicative.
-Questo livello dipende sia dalle porte definite in Application sia dalle librerie esterne. Le implementazioni possono quindi essere sostituite senza modificare i contratti applicativi: ad esempio è possibile introdurre un altro provider AI, un dataset caricato da file o una diversa implementazione del game engine.
-Il livello di Infrastructure dipende dai livelli di Application, Domain e dalle librerie esterne necessarie per le implementazioni delle porte di Application.
+`engine.simulator` è il confine pubblico di integrazione. `EngineFacade` nasconde il `GameLoop` dietro l'opaque type `Session`; `StateInterpolator` calcola il frame intermedio; `RendererManager` e `Painter` trasformano lo stato in `DrawCommand` indipendenti dal backend. Il package non è una GUI e, nonostante il nome storico `simulator`, appartiene all'engine.
 
-### Presentation
+### 6. Simulator Domain
 
-Il livello Presentation contiene le due interfacce di ingresso dell'applicazione:
+`simulator.domain` contiene conversazioni, prompt, risposte, informazioni sul modello e tipi della valutazione dell'agente. Dipende soltanto da tipi Scala e, quando un test deve descrivere il mondo iniziale, da `engine.model.Scene`. Non importa Application, Infrastructure o Presentation.
 
-- la GUI ScalaFX, composta da stage, pannelli, componenti, form e painter;
-- il comando `evaluate-model`, che esegue la valutazione e presenta il risultato su console.
+### 7. Simulator Application
 
-La Presentation invoca le porte di Application e usa i tipi di dominio necessari per mostrare o raccogliere dati. Non può usare in maniera diretta le dipendenze esterne come LangChain4j.
-Per interagire con le dipendenze esterne dovrà riferire alla loro implementazione fornitagli tramite dependency injection dal composition root, tramite le port definite nel livello Application.
-Il livello di Presentation dipende dal livello di Application, di Domain e dalla libreria `ScalaFX` per la GUI.
+`simulator.application` espone casi d'uso e porte: `AiAgent`, `AgentEvaluator`, `AgentEvaluationDataset`, `Logger`, `World`, `EngineControl` e `GameEngineRuntime`. Presentation invoca tali contratti; Infrastructure li implementa. I messaggi scambiati sono comandi applicativi, `Future` di risposte AI, `Either[BaseError, ...]`, scene, comandi di disegno, eventi e riepiloghi di valutazione.
 
-## Interazione con la GUI: MVVM
+Application dipende dal Domain e dai contratti pubblici dell'engine necessari ai casi d'uso. Non è quindi una Clean Architecture “pura” in cui Application conosce esclusivamente il Domain del simulatore: l'engine è trattato come **shared kernel interno e stabile**, più vicino al centro dell'architettura rispetto a tutti i layer del simulatore.
 
-Per l’interazione con la GUI è stato scelto di utilizzare il pattern MVVM.
-- Componente GUI: definisce i componenti `ScalaFx` del componente, attacca gli handler dei suoi componenti con gli handler del ViewModel, inoltre ha un listener sullo stato per cui ogni volta che si aggiorna lo stato, aggiorna la GUI 
-- ViewModel: inizializza lo stato iniziale, mette gli handler a disposizione del Componente GUI, associa a ogni handler l’Action corrispondente e aggiorna lo stato. 
-- Action: presenta una serie di metodi che ritornano lo stato aggiornato 
-- State: rappresenta lo stato del componente
+### 8. Engine e Logging Adapters
 
-![mvvm-gui.png](assets/mvvm-gui.png)
+`simulator.infrastructure.engine` implementa `World` e `GameEngineRuntime`. `MonadCoreWorld` custodisce una `Scene` e delega le modifiche pure a `WorldEditor`; `MonadCoreGameEngineRuntime` coordina sessione, snapshot, fisica, interpolazione, rendering ed eventi. `simulator.infrastructure.logging` converte gli eventi in record e implementa il logger di console. Questi adapter traducono `EngineError` in `BaseError` prima di esporli all'applicazione.
 
-## Architettura del game engine
+### 9. AI Adapters
 
-Il game engine è progettato come libreria indipendente dal simulatore e non dipende da LangChain4j o Ollama o ScalaFX. Al suo interno i file sono raggrupati in base al dominio di appartenenza:
+`simulator.infrastructure.ai` usa LangChain4j per costruire l'assistente Ollama e associare i suoi tool alle porte `World` ed `EngineControl`. Riceve prompt e identificatore di conversazione, effettua la chiamata esterna e restituisce `AgentResponse` o errore. Il sottocomponente `agent_evaluator` crea mondi headless isolati, raccoglie i `ToolExecution`, li mappa nell'ADT `ToolCall` e usa il modello giudice per le proprietà semantiche.
 
-- `model` contiene gli oggetti del dominio fisico;
-- `geometry` e `collision_detection` contengono le operazioni geometriche e il rilevamento delle collisioni;
-- `physics` contiene regole, combinatori, risoluzione delle collisioni e pathfinding;
-- `core` contiene `GameLoop`, lo stato e i contratti di rendering e fisica;
-- `public_api` raccoglie `EngineFacade` e il contratto `Painter`, cioè il principale punto di integrazione con i client del motore.
+### 10. Presentation
+
+`simulator.presentation` contiene due inbound adapter:
+
+- la GUI ScalaFX, composta da stage, pannelli, form, componenti, view model e interprete dei `DrawCommand` sul canvas;
+- il runner `agent_evaluation`, che analizza gli argomenti e stampa il riepilogo su console.
+
+Presentation conosce le porte Application e i tipi di dominio necessari alla visualizzazione, ma non importa gli adapter Infrastructure. ScalaFX e JavaFX sono confinati in questo componente.
+
+### 11. Launcher
+
+`monad_core.Launcher` seleziona la modalità e collega implementazioni concrete e porte mediante contextual parameters. È l'unico punto applicativo autorizzato a conoscere contemporaneamente Presentation e Infrastructure. Inoltre collega il callback condiviso degli eventi al formatter e al logger.
+
+## Regole di dipendenza
+
+L'architettura del simulatore è ispirata a **Ports and Adapters** e **Clean Architecture**, con l'engine nel ruolo di nucleo condiviso. Le dipendenze ammesse sono:
+
+- l'engine può dipendere soltanto dai propri sottopackage e dalla libreria standard;
+- Domain non dipende dagli altri layer del simulatore e può usare i soli dati di `engine.model` necessari alla valutazione;
+- Application dipende da Domain, dagli errori comuni del simulatore e dai contratti pubblici `engine.model`/`engine.simulator` necessari alle porte;
+- Infrastructure dipende da Application, Domain, engine e librerie esterne;
+- Presentation dipende da Application, Domain, ScalaFX/JavaFX e dai tipi pubblici dell'engine necessari a form e rendering, ma non da Infrastructure;
+- il Launcher, esterno ai quattro layer, effettua il wiring concreto.
+
+Queste regole non sono soltanto convenzioni. I test architetturali ispezionano gli import e verificano l'indipendenza dell'engine, il confinamento di ScalaFX/JavaFX e le direzioni tra i layer del simulatore. Le eccezioni per `engine.model` ed `engine.simulator` rendono esplicita la scelta dello shared kernel, evitando di mascherarla dietro copie dei medesimi DTO.
+
+## Flussi operativi
+
+### Modifica del mondo
+
+Un evento di un form GUI o un tool AI viene convertito in un comando `SaveEntityCommand`, `SaveSurfaceCommand` o `SaveTeamCommand` e inviato alla porta `World`. `MonadCoreWorld` sincronizza l'accesso e delega a `WorldEditor`, interprete puro dell'ADT `WorldEdit`.
+
+Se la modalità è `SimulationMode`, l'interprete restituisce `SceneEditingNotAllowed`. In `EditMode` applica la transizione alla scena immutabile e restituisce `WorldEditResult`; soltanto allora l'adapter sostituisce la scena corrente e pubblica gli eventuali eventi. La GUI aggiorna lo snapshot dopo il successo, mentre un errore lascia invariati scena e snapshot. Il doppio controllo — controlli grafici disabilitati e vincolo nell'interprete — garantisce la stessa regola anche ai comandi AI.
+
+![Integrazione tra porte applicative e adapter del mondo](assets/simulator-integration.png)
+
+### Tick, rendering ed eventi
+
+Un `AnimationTimer` invoca `GameEngineRuntime.tick` con il tempo monotono. Il runtime passa sessione, scena e `PhysicsManager` a `EngineFacade.tick`; il facade delega al game loop, che richiede zero o più passi alla fisica. Ogni passo costruisce il contesto delle collisioni e concatena stato ed eventi delle regole abilitate.
+
+In caso di successo il runtime:
+
+1. interpola stato precedente e corrente usando `alpha`;
+2. trasforma lo stato interpolato in un vettore di `DrawCommand` tramite il `Painter` fornito;
+3. sostituisce nel `World` lo stato fisico non interpolato e conserva la sessione successiva nel runtime;
+4. inoltra gli eventi al callback di logging;
+5. consegna i comandi alla Presentation, dove `ShapePainter` li interpreta sul canvas.
+
+In caso di errore adatta l'errore dell'engine, lo conserva, lo notifica e arresta la sessione. Questa pipeline separa aggiornamento deterministico, interpolazione visuale e side effect grafico.
+
+### Richiesta all'assistente
+
+Il `ChatPanelViewModel` valida il prompt, porta lo stato del pannello a `Waiting` e invoca `AiAgent.ask`. `Langchain4jAiAgent` sposta la chiamata bloccante in un `Future`; LangChain4j invia contesto e prompt a Ollama e può richiamare `Langchain4jTools`.
+
+I tool di lettura e CRUD delegano allo stesso `World` usato dalla GUI; start e stop delegano a `EngineControl`. Le risposte dei tool hanno forma esplicita `Result`, `Success` o `Error` e vengono reinserite nel turno del modello. Al completamento il view model programma l'aggiornamento sul JavaFX Application Thread. La memoria è indicizzata per conversazione e limitata a dieci messaggi; il comando di pulizia agisce sia sulla memoria LangChain4j sia sullo stato visibile della chat.
+
+### Valutazione headless
+
+Per ciascun `AgentEvaluationTest`, l'adapter crea un nuovo `MonadCoreWorld` dalla scena iniziale e un `HeadlessEngineControl`. L'assistente sottoposto a test esegue in ordine i prompt; il valutatore raccoglie contenuti e tool call reali. Il confronto strutturale valuta tool, ordine e parametri, mentre il giudice LLM valuta lingua e aspettativa rispetto allo stato finale del mondo. `AgentEvaluator` aggrega i risultati e `AgentEvaluatorConsolePrinter` li presenta senza inizializzare la GUI.
+
+La scelta di un mondo nuovo per caso impedisce contaminazioni tra scenari; la possibilità di configurare URL diversi separa modello testato e giudice. La modalità resta tuttavia dipendente dalla disponibilità dei due servizi, motivo per cui non appartiene alla suite CI standard.
+
+## Pattern architetturali
+
+### Functional Core, Imperative Shell
+
+Il modello, le trasformazioni di `Scene`, `WorldEditor`, le regole fisiche, il game loop e il renderer sono prevalentemente funzioni pure che restituiscono nuovi valori. Mutabilità, sincronizzazione, rete, console e JavaFX restano negli adapter e nella Presentation. Il pattern limita la superficie soggetta a race condition e rende direttamente testabili le transizioni.
+
+### Ports and Adapters
+
+`World`, `GameEngineRuntime`, `AiAgent`, `AgentEvaluator`, `AgentEvaluationDataset` e `Logger` sono porte definite in Application. Gli adapter MonadCore, LangChain4j, hardcoded dataset e console sono sostituibili dal composition root. Presentation dipende dai contratti, non dalle classi concrete.
+
+### Facade
+
+`EngineFacade` è l'ingresso funzionale al ciclo di vita dell'engine. Nasconde il game loop concreto e la sua rappresentazione dietro `Session`, espone creazione, start/stop, tick e gestione delle regole e restituisce un unico `TickResult`. Il facade riduce l'accoppiamento dei client alla struttura interna di `core` e `physics`.
+
+### Strategy e contextual abstraction
+
+`CollisionDetector`, `Painter`, `PhysicsEngine` e le porte applicative separano contratto e implementazione. Le implementazioni vengono fornite tramite `using`/`given` oppure dependency injection nel Launcher. Un client può quindi cambiare rilevatore, colori/comandi di rendering o adapter senza modificare l'orchestrazione.
+
+### Pipeline di regole
+
+Ogni `PhysicsRule` è una trasformazione `PhysicsContext -> Either[PhysicsError, PhysicsRuleResult]`. `RuleCombinator.sequence` le concatena nell'ordine configurato e interrompe la pipeline al primo errore. `PhysicsManager` conserva immutabilmente regole disponibili e insieme di quelle abilitate.
+
+### MVVM nei componenti stateful
+
+Il pattern MVVM viene applicato soprattutto alla chat: `ChatPanelState` è l'insieme finito degli stati Ready, Waiting ed Error; `ChatPanelActions` contiene le trasformazioni pure; `ChatPanelViewModel` coordina agente e thread UI; `AiModelChatPanel` traduce lo stato nei componenti ScalaFX. I pannelli del motore usano view model locali più leggeri e proprietà osservabili, senza imporre una gerarchia MVVM uniforme a ogni nodo grafico.
+
+### Event notification
+
+L'engine emette un ADT chiuso di `EngineEvent`. Runtime e mondo li consegnano a un callback senza dipendere dal destinatario; il Launcher sceglie formatter e logger. Il sistema resta quindi estendibile verso osservatori diversi senza introdurre una dipendenza dell'engine dall'infrastruttura di logging.
+
+## Scelte tecnologiche cruciali
+
+- **Scala 3** permette di esprimere ADT, opaque type, extension method, contextual abstraction e pipeline funzionali richieste dal progetto. Il costo è una curva di apprendimento maggiore rispetto a uno stile Java-like, compensata da invarianti più vicine ai tipi.
+- **SBT** unifica compilazione, test, configurazione separata LLM, Scaladoc e assembly. La classificazione delle dipendenze JavaFX in base al sistema operativo rende la build più complessa ma produce artefatti avviabili sulle piattaforme supportate.
+- **ScalaFX/JavaFX** fornisce canvas, proprietà osservabili e toolkit desktop maturo. Introduce vincoli sul thread grafico e dipendenze native, confinati alla Presentation e gestiti nei test con Xvfb.
+- **LangChain4j** fornisce memoria, system prompt, tool calling e astrazione del chat model. Resta confinato a Infrastructure affinché `AiAgent` e il dominio non dipendano dal provider.
+- **Ollama** consente modelli locali e configurabili senza credenziali cloud. È un processo esterno e la sua indisponibilità viene trattata come degradazione delle sole funzioni AI.
+- **Quarkdown e Scaladoc** permettono di versionare relazione e API insieme al codice e di produrre gli artefatti richiesti dalla consegna attraverso la CI/CD.
+
+## Concorrenza, consistenza ed errori
+
+La GUI e la risposta dell'agente possono accedere al mondo da thread differenti. `MonadCoreWorld` e `MonadCoreGameEngineRuntime` serializzano quindi letture e transizioni critiche con un lock per istanza. La scena resta immutabile: il lock protegge esclusivamente la sostituzione atomica del riferimento corrente, della sessione, dello snapshot e della configurazione fisica.
+
+Gli errori seguono tre vocabolari: `EngineError` per modello e core, `PhysicsError` per la pipeline fisica e `BaseError` per i casi d'uso del simulatore. L'adapter `ErrorsAdapter` traduce gli errori dell'engine prima che attraversino le porte applicative. Presentation decide la rappresentazione — notifica, messaggio chat, console o exit code — senza modificare la semantica dell'errore.
+
+Non viene introdotto un meccanismo distribuito di replica, retry o persistenza: il solo collegamento remoto è la chiamata a Ollama e non esiste stato applicativo condiviso tra processi. Questa scelta è coerente con il requisito di applicazione desktop locale e impedisce di attribuire al sistema proprietà di disponibilità o scalabilità non richieste e non verificate.
