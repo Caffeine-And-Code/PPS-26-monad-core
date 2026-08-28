@@ -40,6 +40,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.angularSpeed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
+        entity.damage shouldBe None
         entity.teamId shouldBe None
 
   test("can create an entity with ID, position and the shape of a rectangle"):
@@ -53,6 +54,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
         entity.speed shouldBe None
         entity.weight shouldBe None
         entity.health shouldBe None
+        entity.damage shouldBe None
         entity.teamId shouldBe None
 
   test("can create an entity in position 0,0"):
@@ -144,6 +146,21 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val entityWithHealth = ValidEntity.flatMap(_.withHealth(invalidHealth))
 
     entityWithHealth shouldBe Left(HealthCannotBeNegativeOrZero(invalidHealth))
+
+  test("can create an entity and give it damage"):
+    val damage = 5
+
+    val entityWithDamage = ValidEntity.flatMap(_.withDamage(damage))
+
+    inside(entityWithDamage):
+      case Right(entity) => entity.damage.map(_.value) shouldBe Some(damage)
+
+  test("cannot create an entity and give it negative damage"):
+    val invalidDamage = -1
+
+    val entityWithDamage = ValidEntity.flatMap(_.withDamage(invalidDamage))
+
+    entityWithDamage shouldBe Left(DamageCannotBeNegative())
 
   test("can apply damage to an entity"):
     val health = 50

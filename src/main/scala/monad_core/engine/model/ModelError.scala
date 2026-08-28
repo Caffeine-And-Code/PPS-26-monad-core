@@ -1,11 +1,18 @@
 package monad_core.engine.model
 
+/** Indicates that damage was applied to an entity without health. */
 case class CannotApplyDamageToNoneHealthEntity()
     extends EngineError("Cannot apply damage to none health entity")
 
 case class HealthCannotBeNegativeOrZero(health: Double)
     extends EngineError(s"health cannot be negative or zero, health = $health")
 
+/**
+ * Indicates that a negative amount was supplied to a damage application.
+ *
+ * @param damage
+ *   invalid negative amount
+ */
 case class CannotApplyNegativeDamage(damage: Double)
     extends EngineError(s"Cannot apply negative damage, damage = $damage")
 
@@ -36,7 +43,10 @@ case class LengthMustBeGreaterThanZero() extends EngineError("Length must be gre
 
 case class TeamIdCannotBeEmpty() extends EngineError("TeamId cannot be empty")
 
-case class WeightCannotBeNegativeOrZero() extends EngineError("Weight cannot be negative")
+case class WeightCannotBeNegativeOrZero() extends EngineError("Weight cannot be negative or zero")
+
+/** Indicates that a `Damage` value was constructed from a negative amount. */
+case class DamageCannotBeNegative() extends EngineError("Damage cannot be negative")
 
 case class ATeamCannotBeItsOwnEnemy() extends EngineError("A team cannot be its own enemy")
 

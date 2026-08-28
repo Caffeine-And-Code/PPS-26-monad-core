@@ -19,7 +19,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
   private val surface = Surface.circle("surface-1", Vector2D(30, 40), 3).value
 
   test("formats lifecycle events at info level"):
-    formatEvents(Vector(EntityCreated(entity), EntityRemoved(entity))) shouldBe Vector(
+    mapEventsToLogEntries(Vector(EntityCreated(entity), EntityRemoved(entity))) shouldBe Vector(
       EventLogEntry(EventLogLevel.Info, "event=entity_created entity_id=entity-1"),
       EventLogEntry(EventLogLevel.Info, "event=entity_removed entity_id=entity-1")
     )
@@ -27,7 +27,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
   test("formats entity updates at trace level"):
     val previous = entity.moveTo(Vector2D(0, 0))
 
-    formatEvent(EntityUpdated(previous, entity)) shouldBe EventLogEntry(
+    mapEventToLogEntry(EntityUpdated(previous, entity)) shouldBe EventLogEntry(
       EventLogLevel.Trace,
       "event=entity_updated entity_id=entity-1 " +
         "previous_position_x=0.0 previous_position_y=0.0 " +
@@ -37,7 +37,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
   test("formats an entity collision target"):
     val collision = Collision(Vector2D(0, 1), 2.5, Vector2D(1, 1))
 
-    formatEvent(
+    mapEventToLogEntry(
       CollisionDetected(entity.id, CollisionTarget.Entity(entity.id), collision)
     ) shouldBe EventLogEntry(
       EventLogLevel.Info,
@@ -48,7 +48,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
   test("formats a surface collision target"):
     val collision = Collision(Vector2D(1, 0), 1.5, Vector2D(30, 40))
 
-    formatEvent(
+    mapEventToLogEntry(
       CollisionDetected(entity.id, CollisionTarget.Surface(surface.id), collision)
     ) shouldBe EventLogEntry(
       EventLogLevel.Info,
@@ -59,7 +59,7 @@ class EventLogFormatterTest extends AnyFunSuite with Matchers:
   test("formats a border collision target"):
     val collision = Collision(Vector2D(1, 0), 1.5, Vector2D(0, 0))
 
-    formatEvent(
+    mapEventToLogEntry(
       CollisionDetected(entity.id, CollisionTarget.Border(BorderSide.Left), collision)
     ) shouldBe EventLogEntry(
       EventLogLevel.Info,

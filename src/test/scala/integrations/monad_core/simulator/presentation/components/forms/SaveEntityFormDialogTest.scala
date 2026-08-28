@@ -22,6 +22,7 @@ class SaveEntityFormDialogTest
   val RadiusFieldIndex: Int = 2
   val WeightFieldIndex: Int = 7
   val HealthFieldIndex: Int = 8
+  val DamageFieldIndex: Int = 9
 
   val GenericEitherCircleEntity: Either[EngineError, Entity] =
     Entity.circle("id", Vector2D(0, 0), 6)
@@ -45,7 +46,8 @@ class SaveEntityFormDialogTest
     val either = for
       entity           <- eitherEntity
       entityWithHealth <- entity.withHealth(10)
-      entityWithWeight <- entityWithHealth.withWeight(11)
+      entityWithDamage <- entityWithHealth.withDamage(5)
+      entityWithWeight <- entityWithDamage.withWeight(11)
       entityWithTeam   <- entityWithWeight.withTeamId(testTeams.head.id.value)
       finalEntity = entityWithTeam.withSpeed(Vector2D(12, 13))
     yield finalEntity
@@ -97,6 +99,7 @@ class SaveEntityFormDialogTest
       allFormFields(RadiusFieldIndex).setText("10.0")
       allFormFields(WeightFieldIndex).setText("70.0")
       allFormFields(HealthFieldIndex).setText("100.0")
+      allFormFields(DamageFieldIndex).setText("25.0")
 
       selectCircleInComboBox()
 
@@ -104,6 +107,7 @@ class SaveEntityFormDialogTest
     }
 
     submittedEntity shouldBe defined
+    submittedEntity.flatMap(_.damage).map(_.value) should be(Some(25))
 
   test(
     "SaveEntityFormDialog invokes onSubmit with constructed Entity on valid input, with passed entityToUpdate"
@@ -113,6 +117,7 @@ class SaveEntityFormDialogTest
     val expectedRadius                  = 10.0
     val expectedWeight                  = 70.0
     val expectedHealth                  = 100.0
+    val expectedDamage                  = 25
 
     val props = SaveEntityFormDialogProps(
       title = "Add Entity Test",
@@ -128,6 +133,7 @@ class SaveEntityFormDialogTest
       allFormFields(RadiusFieldIndex).setText(expectedRadius.toString)
       allFormFields(WeightFieldIndex).setText(expectedWeight.toString)
       allFormFields(HealthFieldIndex).setText(expectedHealth.toString)
+      allFormFields(DamageFieldIndex).setText(expectedDamage.toString)
 
       formSaveButton.fire()
     }
@@ -138,6 +144,7 @@ class SaveEntityFormDialogTest
     providedEntity.position should be(entityToUpdate.position)
 
     providedEntity.health.get should be(expectedHealth)
+    providedEntity.damage.map(_.value) should be(Some(expectedDamage))
     providedEntity.weight.get should be(expectedWeight)
     inside(providedEntity.shape):
       case Shape2D.Circle(radius) => radius should be(expectedRadius)

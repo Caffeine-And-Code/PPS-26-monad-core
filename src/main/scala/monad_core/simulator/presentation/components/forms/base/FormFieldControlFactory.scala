@@ -6,8 +6,21 @@ import scalafx.collections.ObservableBuffer
 import scalafx.scene.Node
 import scalafx.scene.control.*
 
+/** Interprets declarative field specifications as ScalaFX controls. */
 private[forms] object FormFieldControlFactory:
 
+  /**
+   * Creates the control for a field and the function used to read its submitted value.
+   *
+   * For a selection with dependent fields, the callback is invoked for the initial selection and after each change.
+   *
+   * @param spec
+   *   field specification to render
+   * @param onDependentSelectionChange
+   *   callback used to replace fields that depend on a selected option
+   * @return
+   *   the rendered node and a function that reads its current textual value
+   */
   def create(
       spec: FormFieldSpec,
       onDependentSelectionChange: (SelectFieldSpec, String) => Unit

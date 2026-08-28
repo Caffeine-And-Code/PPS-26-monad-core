@@ -1,7 +1,6 @@
 package monad_core.simulator.infrastructure.ai
 
 import monad_core.engine.model.*
-import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.errors.BaseError
 
 object Langchain4jToolResponse:
@@ -50,6 +49,7 @@ object Langchain4jToolResponse:
       s"angularSpeed: ${entity.angularSpeed.fold("none")(_.toString)}",
       s"weight: ${entity.weight.fold("none")(_.toString)}",
       s"health: ${entity.health.fold("none")(_.value.toString)}",
+      s"damage: ${entity.damage.fold("none")(_.value.toString)}",
       s"team: ${entity.teamId.fold("none")(_.value)}"
     ).mkString("\n")
 
@@ -60,7 +60,8 @@ object Langchain4jToolResponse:
       s"shape: ${renderShape(surface.shape)}",
       s"rotation: ${surface.rotation}",
       s"frictionIndex: ${surface.frictionIndex.fold("none")(_.toString)}",
-      s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}"
+      s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}",
+      s"damageOverTime: ${surface.damageOverTime.fold("none")(_.value.toString)}"
     ).mkString("\n")
 
   def renderTeam(team: Team): String =
@@ -73,47 +74,12 @@ object Langchain4jToolResponse:
       s"enemies: $enemies"
     ).mkString("\n")
 
-  def renderShape(shape: Shape2D): String =
+  private def renderShape(shape: Shape2D): String =
     shape match
       case Shape2D.Circle(radius) =>
         s"circle, radius: $radius"
       case Shape2D.Rectangle(height, length) =>
         s"rectangle, height: $height, length: $length"
 
-  def renderVector(vector: Vector2D): String =
+  private def renderVector(vector: Vector2D): String =
     s"(${vector.x}, ${vector.y})"
-
-  def withOptionalEntityFields(
-      entity: Entity,
-      teamId: String,
-      weight: Integer,
-      speedX: java.lang.Double,
-      speedY: java.lang.Double,
-      angularSpeed: java.lang.Double
-  ): Either[BaseError, Entity] =
-    for
-      entityWithTeam <- Option(teamId)
-        .fold(Right(entity): Either[EngineError, Entity])(entity.withTeamId)
-        .adaptError()
-      entityWithWeight <- Option(weight)
-        .fold(Right(entityWithTeam): Either[EngineError, Entity])(value =>
-          entityWithTeam.withWeight(value.intValue())
-        )
-        .adaptError()
-      completeEntity <- (
-        (Option(speedX), Option(speedY)) match
-          case (None, None) =>
-            Right(entityWithWeight)
-          case (Some(horizontal), Some(vertical)) =>
-            Right(
-              entityWithWeight.withSpeed(
-                Vector2D(horizontal.doubleValue(), vertical.doubleValue())
-              )
-            )
-          case _ =>
-            Left(IncompleteEntitySpeed())
-      ): Either[BaseError, Entity]
-    yield withOptionalAngularSpeed(completeEntity, angularSpeed)
-
-  def withOptionalAngularSpeed(entity: Entity, angularSpeed: java.lang.Double): Entity =
-    Option(angularSpeed).fold(entity)(value => entity.withAngularSpeed(value.doubleValue()))

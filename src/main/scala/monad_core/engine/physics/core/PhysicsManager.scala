@@ -2,7 +2,7 @@ package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.EngineEvent
-import monad_core.engine.core.events.EngineEvent.EntityUpdated
+import monad_core.engine.core.events.EngineEvent.{EntityRemoved, EntityUpdated}
 import monad_core.engine.core.traits.{PhysicsEngine, PhysicsStep, State}
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
@@ -17,10 +17,12 @@ final case class PhysicsManager private (
 
   override def step(scene: State, deltaTime: Long): Either[PhysicsError, PhysicsStep] =
     val activeRules = rules.filter(enabledRules.contains)
-    RuleCombinator.sequence(activeRules)(scene, deltaTime)(using detector).map { result =>
+    val context     = PhysicsContext.detect(scene, deltaTime)(using detector)
+
+    RuleCombinator.sequence(activeRules)(context).map { result =>
       PhysicsStep(
         state = result.state,
-        events = result.events ++ detectEntityUpdateEvents(scene, result.state)
+        events = result.events ++ detectEntityStateEvents(scene, result.state)
       )
     }
 
@@ -39,15 +41,19 @@ final case class PhysicsManager private (
   def isEnabled(rule: PhysicsRule): Boolean =
     enabledRules.contains(rule)
 
-  private def detectEntityUpdateEvents(before: State, after: State): Vector[EngineEvent] =
+  private def detectEntityStateEvents(before: State, after: State): Vector[EngineEvent] =
     val previousEntities = before.allEntities.map(entity => entity.id -> entity).toMap
     val currentEntities  = after.allEntities.map(entity => entity.id -> entity).toMap
 
-    (previousEntities.keySet intersect currentEntities.keySet).toVector
+    previousEntities.keys.toVector
       .sortBy(_.value)
-      .collect {
-        case id if previousEntities(id) != currentEntities(id) =>
-          EntityUpdated(previousEntities(id), currentEntities(id))
+      .flatMap { id =>
+        currentEntities.get(id) match
+          case None =>
+            Some(EntityRemoved(previousEntities(id)))
+          case Some(current) if previousEntities(id) != current =>
+            Some(EntityUpdated(previousEntities(id), current))
+          case _ => None
       }
 
 object PhysicsManager:
@@ -67,6 +73,7 @@ object PhysicsManager:
         EnemyAttractionRule.enemyAttractionRule,
         CollisionResolutionRule.collisionResolutionRule,
         BorderContactRule.borderContactRule,
+        DamageApplicationRule.damageApplicationRule,
         KinematicsRule.kinematicsRule
       )
     )

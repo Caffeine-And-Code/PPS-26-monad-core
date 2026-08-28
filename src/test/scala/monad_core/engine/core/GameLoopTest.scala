@@ -84,6 +84,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockS
     val result = StandardLoop.tick(scene, currentTime).value
 
     result.state shouldBe scene
+    result.previousState shouldBe scene
 
   test("the game loop should have have two modes: edit and simulation"):
     LoopMode.values should contain allOf (LoopMode.EditMode, LoopMode.SimulationMode)
@@ -128,6 +129,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockS
     val result = initialLoop.tick(scene, currentTime).value
 
     result.state shouldBe scene
+    result.previousState shouldBe scene
     result.loop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing exactly one tick period should invoke the physics engine once"):
@@ -145,6 +147,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockS
     val result = initialLoop.tick(scene, currentTime).value
 
     result.state shouldBe updatedScene
+    result.previousState shouldBe scene
     result.loop.lastTime shouldBe currentTime
 
   test("in simulation mode, passing two tick periods should invoke the physics engine twice"):
@@ -168,6 +171,7 @@ class GameLoopTest extends AnyFunSuite with Matchers with MockFactory with MockS
     val result = initialLoop.tick(scene, currentTime).value
 
     result.state shouldBe sceneStep2
+    result.previousState shouldBe sceneStep1
     result.loop.lastTime shouldBe currentTime
 
   test("in simulation mode, remaining time after fixed updates must be saved in the accumulator"):

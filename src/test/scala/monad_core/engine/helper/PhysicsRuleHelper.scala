@@ -1,9 +1,8 @@
 package monad_core.engine.helper
 
-import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.State
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
+import monad_core.engine.physics.core.{PhysicsContext, PhysicsError, PhysicsRule, PhysicsRuleResult}
 
 object PhysicsRuleHelper:
 
@@ -14,7 +13,5 @@ object PhysicsRuleHelper:
   ): PhysicsRule =
     new PhysicsRule:
       override val RuleId: String = id
-      override def apply(scene: State, dt: Long)(using
-          detector: CollisionDetector
-      ): Either[PhysicsError, PhysicsRuleResult] =
-        action(scene, dt).map(PhysicsRuleResult(_, events))
+      override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
+        action(context.state, context.dt).map(PhysicsRuleResult(_, events))
