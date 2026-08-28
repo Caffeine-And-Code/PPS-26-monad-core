@@ -2,6 +2,17 @@ package monad_core
 
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.simulator.Painter
+import monad_core.performance.application.{NanoClock, PerformanceWorkload}
+import monad_core.performance.domain.ExperimentKind
+import monad_core.performance.infrastructure.SystemNanoClock
+import monad_core.performance.infrastructure.engine.EngineTickWorkload
+import monad_core.performance.presentation.{
+  PerformanceArguments,
+  PerformanceConsolePrinter,
+  PerformanceReportPrinter,
+  PerformanceRoutes,
+  PerformanceRuntime
+}
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
@@ -116,7 +127,9 @@ object Launcher:
     val arguments = AgentEvaluationArguments.parse(args)
 
     given AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
-    given Logger                = ConsoleLogger
+
+    given Logger = ConsoleLogger
+
     given AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
       agentConfig = Langchain4jOllamaConfig(
         url = arguments.testModelUrl,
@@ -137,6 +150,21 @@ object Launcher:
     )
   }
 
+  private def runPerformance(args: Array[String], kind: ExperimentKind): RouteResponse =
+    given PerformanceWorkload      = EngineTickWorkload
+    given NanoClock                = SystemNanoClock
+    given PerformanceReportPrinter = PerformanceConsolePrinter
+
+    val result = for
+      config <- PerformanceArguments.parse(args)
+      _      <- PerformanceRuntime.handle(kind, config)
+    yield ()
+
+    result match
+      case Left(error) => RouteResponse(success = false, message = error.message)
+      case Right(_) =>
+        RouteResponse(success = true, message = s"Finished ${kind.toString.toLowerCase} experiment")
+
   /**
    * Routes command-line arguments to model evaluation or to the default GUI application.
    *
@@ -147,11 +175,19 @@ object Launcher:
    * @param args command-line arguments
    */
   def main(args: Array[String]): Unit =
-    lazy val evaluateModelRoute = evaluateModel(args)
-    lazy val guiRoute           = outcomeFor(guiApplication())
+    lazy val evaluateModelRoute          = evaluateModel(args)
+    lazy val performanceLoadRoute        = runPerformance(args, ExperimentKind.Load)
+    lazy val performanceStressRoute      = runPerformance(args, ExperimentKind.Stress)
+    lazy val performanceSpikeRoute       = runPerformance(args, ExperimentKind.Spike)
+    lazy val performanceScalabilityRoute = runPerformance(args, ExperimentKind.Scalability)
+    lazy val guiRoute                    = outcomeFor(guiApplication())
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)
+      .on(Route(PerformanceRoutes.Load), () => performanceLoadRoute)
+      .on(Route(PerformanceRoutes.Stress), () => performanceStressRoute)
+      .on(Route(PerformanceRoutes.Spike), () => performanceSpikeRoute)
+      .on(Route(PerformanceRoutes.Scalability), () => performanceScalabilityRoute)
       .on(All(), () => guiRoute)
       .evaluate(args)
 
