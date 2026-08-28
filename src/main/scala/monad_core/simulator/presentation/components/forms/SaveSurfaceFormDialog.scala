@@ -15,6 +15,20 @@ import monad_core.simulator.presentation.components.forms.parsers.{
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
+/**
+ * Configuration of a surface creation or editing dialog.
+ *
+ * @param title
+ *   title displayed by the dialog
+ * @param onSubmit
+ *   callback invoked with the validated surface
+ * @param onError
+ *   callback invoked when submitted values cannot produce a surface
+ * @param anchorNode
+ *   optional node whose window owns the dialog
+ * @param surfaceToUpdate
+ *   existing surface to edit; `None` selects creation mode
+ */
 final case class SaveSurfaceFormDialogProps(
     title: String,
     onSubmit: Surface => Unit,
@@ -42,8 +56,10 @@ private case class SaveSurfaceFormDefaultValues(
     length: Option[String] = None
 )
 
+/** Builds surface forms and converts their submitted values into engine surfaces. */
 object SaveSurfaceFormDialog:
 
+  /** Shape labels offered by the surface form. */
   private[forms] val Shapes =
     Seq(LocatableFormShapes.CircleLabel, LocatableFormShapes.RectangleLabel)
 
@@ -58,6 +74,17 @@ object SaveSurfaceFormDialog:
         case Some(surface) => SurfaceFormParser.buildSurface(values, () => surface.id.value)
         case None          => SurfaceFormParser.buildSurface(values)
 
+  /**
+   * Displays a surface creation or editing dialog.
+   *
+   * In editing mode the existing identifier is preserved. Parsing and domain errors produced on submission are sent
+   * to `props.onError`; this method returns failures raised while constructing the dialog itself.
+   *
+   * @param props
+   *   dialog mode and result callbacks
+   * @return
+   *   the result of building and displaying the underlying form dialog
+   */
   def show(props: SaveSurfaceFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues = buildDefaultValues(props.surfaceToUpdate)
     val viewModel     = SaveSurfaceViewModel(props.surfaceToUpdate)
@@ -73,6 +100,14 @@ object SaveSurfaceFormDialog:
     )
   }
 
+  /**
+   * Derives field defaults for creation or editing mode.
+   *
+   * @param surfaceToUpdate
+   *   surface whose current properties populate the fields
+   * @return
+   *   creation defaults when absent, otherwise textual values extracted from the surface
+   */
   private[forms] def buildDefaultValues(
       surfaceToUpdate: Option[Surface]
   ): SaveSurfaceFormDefaultValues =
@@ -95,6 +130,14 @@ object SaveSurfaceFormDialog:
           damageOverTime = surface.damageOverTime.map(_.value.toString)
         )
 
+  /**
+   * Builds the complete ordered surface field specification.
+   *
+   * @param defaultValues
+   *   initial values displayed by the fields
+   * @return
+   *   surface fields, including shape-dependent dimensions
+   */
   private[forms] def buildFields(defaultValues: SaveSurfaceFormDefaultValues): Seq[FormFieldSpec] =
     Seq(
       TextFieldSpec(

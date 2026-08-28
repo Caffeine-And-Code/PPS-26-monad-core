@@ -4,12 +4,30 @@ import monad_core.engine.core.LoopMode
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.model.{Entity, Scene, UnhandledStateType, Vector2D}
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.{EngineFacade, Painter, RendererManager, StateInterpolator}
+import monad_core.engine.simulator.{
+  DrawCommand,
+  EngineFacade,
+  Painter,
+  RendererManager,
+  StateInterpolator
+}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.errors.BaseError
 
+/**
+ * Thread-safe runtime that integrates the engine facade with an application `World`.
+ *
+ * Successful ticks interpolate the engine state, produce drawing commands, commit the resulting scene, publish
+ * engine events and invoke the frame renderer. Engine failures are adapted, retained, forwarded to `onError` and
+ * stop the runtime. Snapshots provide an edit-mode baseline that can be restored after simulation.
+ *
+ * @param onError
+ *   callback invoked after an engine failure has been recorded
+ * @param onEvents
+ *   callback receiving events produced by successful fixed updates
+ */
 final class MonadCoreGameEngineRuntime(
     onError: BaseError => Unit = _ => (),
     onEvents: Vector[EngineEvent] => Unit = _ => ()
@@ -33,27 +51,29 @@ final class MonadCoreGameEngineRuntime(
       engineSession = EngineFacade.stop(engineSession)
       currentWorld.foreach(_.enterEditMode())
 
-  override def tick(currentTime: Long)(renderer: World => Unit)(using painter: Painter): Unit =
+  override def tick(currentTime: Long)(
+      renderer: (World, Vector[DrawCommand]) => Unit
+  )(using painter: Painter): Unit =
     lock.synchronized:
       currentWorld.foreach { world =>
         val currentScene = world.scene
         EngineFacade.tick(engineSession, currentScene, currentTime, physics) match
           case Right(tickResult) =>
-            val processedScene = for
+            val processedFrame = for
               interpolatedScene <- StateInterpolator(
                 previousScene = tickResult.previousState,
                 nextScene = tickResult.state,
                 interpolationAlpha = tickResult.alpha
               )
-              _ <- RendererManager.render(interpolatedScene)
-            yield tickResult.state
+              commands <- RendererManager.render(interpolatedScene)
+            yield (tickResult.state, commands)
 
-            processedScene match
-              case Right(scene: Scene) =>
+            processedFrame match
+              case Right((scene: Scene, commands)) =>
                 world.replaceScene(scene)
                 engineSession = tickResult.nextSession
                 onEvents(tickResult.events)
-                renderer(world)
+                renderer(world, commands)
 
               case Left(engineError) =>
                 handleError(engineError)
@@ -141,8 +161,19 @@ final class MonadCoreGameEngineRuntime(
       case LoopMode.EditMode       => world.enterEditMode()
       case LoopMode.SimulationMode => world.enterSimulationMode()
 
+/** Factory for the simulator's engine runtime adapter. */
 object MonadCoreGameEngineRuntime:
 
+  /**
+   * Creates a runtime with optional error and event consumers.
+   *
+   * @param onError
+   *   callback invoked for adapted engine failures
+   * @param onEvents
+   *   callback receiving events from successful ticks
+   * @return
+   *   a runtime initialized with a default stopped engine session
+   */
   def apply(
       onError: BaseError => Unit = _ => (),
       onEvents: Vector[EngineEvent] => Unit = _ => ()

@@ -14,6 +14,19 @@ import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.world.WorldEdit.*
 import monad_core.simulator.infrastructure.engine.world.{WorldEdit, WorldEditor}
 
+/**
+ * Thread-safe imperative world adapter backed by an immutable engine `Scene`.
+ *
+ * Editing commands are delegated to `WorldEditor`. A successful edit atomically replaces the current scene and then
+ * publishes its events; a failed edit preserves the previous scene and publishes nothing.
+ *
+ * @param initialScene
+ *   scene held when the adapter is created
+ * @param onEvents
+ *   callback receiving events emitted by successful edits
+ * @param initialMode
+ *   mode that initially controls whether edits are accepted
+ */
 final class MonadCoreWorld(
     initialScene: Scene,
     onEvents: Vector[EngineEvent] => Unit,
@@ -111,8 +124,21 @@ final class MonadCoreWorld(
     }
     editResult.map(_ => ())
 
+/** Factory for `MonadCoreWorld` adapters. */
 object MonadCoreWorld:
 
+  /**
+   * Creates a world adapter.
+   *
+   * @param initialScene
+   *   initial immutable scene
+   * @param onEvents
+   *   callback receiving events emitted by successful edits
+   * @param initialMode
+   *   initial editing or simulation mode
+   * @return
+   *   a thread-safe world adapter
+   */
   def apply(
       initialScene: Scene = Scene(),
       onEvents: Vector[EngineEvent] => Unit = _ => (),
