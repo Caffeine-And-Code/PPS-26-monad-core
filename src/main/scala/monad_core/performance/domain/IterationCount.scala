@@ -16,5 +16,4 @@ object IterationCount:
   def from(value: Int): Either[PerformanceError, IterationCount] =
     Either.cond(value > 0, value, InvalidIterationCount(value))
 
-  extension (iterationCount: IterationCount)
-    def value: Int = iterationCount
+  extension (iterationCount: IterationCount) def value: Int = iterationCount

@@ -20,7 +20,8 @@ class PerformanceReportFormatterTest extends AnyFunSuite with Matchers:
   )
 
   test("the report formatter formats a complete performance point"):
-    val result = PerformanceReportFormatter.format(BaseReport)
+    val result = PerformanceReportFormatter
+      .format(BaseReport)
       .replace("\r\n", "\n")
 
     val expected = """Performance experiment: Load
@@ -30,7 +31,7 @@ class PerformanceReportFormatterTest extends AnyFunSuite with Matchers:
                      |p99: 3.000 ms
                      |Frame budget completion: 95.00%""".stripMargin
       .replace("\r\n", "\n")
-    
+
     result shouldBe expected
 
   test("the report formatter preserves the order of every performance point"):

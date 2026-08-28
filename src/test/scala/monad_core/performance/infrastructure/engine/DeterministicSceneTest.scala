@@ -9,21 +9,21 @@ import org.scalatest.matchers.should.Matchers
 
 class DeterministicSceneTest extends AnyFunSuite with Matchers:
 
-  private val EntityNumber         = 6
-  private val MinimumEntityNumber  = 1
-  private val EntityIdPrefix       = "performance-entity"
-  private val FirstTeamId          = "performance-team-a"
-  private val SecondTeamId         = "performance-team-b"
-  private val SurfaceId            = "performance-surface"
-  private val EntityRadius         = 1.0
-  private val EntityDiameter       = EntityRadius * 2.0
-  private val EntityWeight         = 2
-  private val EntityHealth         = 100
-  private val EntityDamage         = 1
-  private val LinearSpeed          = 1.0
-  private val AngularSpeed         = 30.0
-  private val RotationStep         = 15.0
-  private val RotationStepsPerTurn = 24
+  private val EntityNumber          = 6
+  private val MinimumEntityNumber   = 1
+  private val EntityIdPrefix        = "performance-entity"
+  private val FirstTeamId           = "performance-team-a"
+  private val SecondTeamId          = "performance-team-b"
+  private val SurfaceId             = "performance-surface"
+  private val EntityRadius          = 1.0
+  private val EntityDiameter        = EntityRadius * 2.0
+  private val EntityWeight          = 2
+  private val EntityHealth          = 100
+  private val EntityDamage          = 1
+  private val LinearSpeed           = 1.0
+  private val AngularSpeed          = 30.0
+  private val RotationStep          = 15.0
+  private val RotationStepsPerTurn  = 24
   private val FullTurnRotation      = 0.0
   private val SurfaceFriction       = 0.1
   private val SurfaceForce          = Vector2D(0.25, 0.5)
@@ -31,6 +31,7 @@ class DeterministicSceneTest extends AnyFunSuite with Matchers:
   private val ExpectedEntitySpacing = 1.5
   private val ExpectedUpperLeft     = Vector2D(0.0, 0.0)
   private val ExpectedLowerRight    = Vector2D(4.0, 2.5)
+
   private val ExpectedSurfaceSize =
     Shape2D.rectangle(ExpectedLowerRight.y, ExpectedLowerRight.x).value
 

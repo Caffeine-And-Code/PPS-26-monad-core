@@ -15,7 +15,7 @@ private[physics] object SizeHelper:
    *  the entity whose vertical size is to be computed
    * @return
    *  the vertical size of the entity after applying its rotation
-   * */
+   */
   def verticalShapeSize(entity: Entity): Double =
     entity.shape match
       case circle: Circle       => circle.verticalSize()
@@ -28,7 +28,7 @@ private[physics] object SizeHelper:
    *  the entity whose horizontal size is to be computed
    * @return
    *  the horizontal size of the entity after applying its rotation
-   * */
+   */
   def horizontalShapeSize(entity: Entity): Double =
     entity.shape match
       case circle: Circle       => circle.horizontalSize()

@@ -180,9 +180,9 @@ class ExperimentDialogTest
     val runtime      = MonadCoreGameEngineRuntime()
     val disabledRule = runtime.physicsRules.head
     runtime.setPhysicsRuleEnabled(disabledRule.id, isEnabled = false)
-    val pendingResult = Promise[Either[PerformanceError, String]]()
+    val pendingResult                              = Promise[Either[PerformanceError, String]]()
     var receivedRequest: Option[ExperimentRequest] = None
-    var receivedPhysics: Option[PhysicsManager]               = None
+    var receivedPhysics: Option[PhysicsManager]    = None
     val runner: ExperimentExecutor[PhysicsManager] = (request, physics) =>
       receivedRequest = Some(request)
       receivedPhysics = Some(physics)

@@ -106,7 +106,6 @@ class Langchain4jToolsTest
 
     result shouldBe expected
 
-
   test("when get entity is called returns the formatted entity"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
     world.getEntity.expects(LocatableId(entityId).value.value).returning(Right(entity)).once()

@@ -28,13 +28,13 @@ private[physics] object CollisionResolutionRule:
     override val RuleId: String = CollisionResolutionRule.Id
 
     /**
-      * Resolves the entity contacts.
-      *
-      * @param context
-      *   physics context containing the state, elapsed time and entity contacts
-      * @return
-      *   updated state and entity-collision events, or a [[PhysicsError]]
-      */
+     * Resolves the entity contacts.
+     *
+     * @param context
+     *   physics context containing the state, elapsed time and entity contacts
+     * @return
+     *   updated state and entity-collision events, or a [[PhysicsError]]
+     */
     override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(context.dt)
@@ -49,14 +49,14 @@ private[physics] object CollisionResolutionRule:
       )
 
     /**
-      * Builds the bidirectional collision map consumed by the resolver.
-      * The normal is reversed for the second entity so each response points away from its collider.
-      *
-      * @param context
-      *   physics context containing detected entity contacts
-      * @return
-      *   collisions grouped by entity
-      */
+     * Builds the bidirectional collision map consumed by the resolver.
+     * The normal is reversed for the second entity so each response points away from its collider.
+     *
+     * @param context
+     *   physics context containing detected entity contacts
+     * @return
+     *   collisions grouped by entity
+     */
     private def toCollisionMap(context: PhysicsContext): CollisionMap =
       val entitiesById = context.state.allEntities.map(entity => entity.id -> entity).toMap
 
@@ -80,13 +80,13 @@ private[physics] object CollisionResolutionRule:
         .toMap
 
     /**
-      * Converts a detected entity contact into an engine event.
-      *
-      * @param detected
-      *   entity contact to convert
-      * @return
-      *   corresponding collision event
-      */
+     * Converts a detected entity contact into an engine event.
+     *
+     * @param detected
+     *   entity contact to convert
+     * @return
+     *   corresponding collision event
+     */
     private def toEvent(detected: EntityCollisionContact): CollisionDetected =
       CollisionDetected(
         entityId = detected.firstId,

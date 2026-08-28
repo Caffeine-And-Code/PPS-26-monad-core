@@ -16,7 +16,7 @@ private[pathfinding] object WaypointFinder:
    *  the entity around which the waypoints are to be computed
    * @return
    *  a list of two candidate waypoints around the target entity
-   * */
+   */
   def apply(start: Entity, target: Entity): List[Vector2D] =
     target.shape match
       case circle: Circle =>
@@ -35,7 +35,7 @@ private[pathfinding] object WaypointFinder:
    *  the circular obstacle geometry
    * @return
    *  a list of two candidate waypoints around the target entity
-   * */
+   */
   private def findWaypointsForCircle(
       start: Entity,
       target: Entity,
@@ -84,7 +84,7 @@ private[pathfinding] object WaypointFinder:
    *  the rectangular obstacle for which to find the waypoints
    * @return
    *  a list of two candidate waypoints around the target entity
-   * */
+   */
   private def findRectangleWaypoints(
       start: Entity,
       target: Entity,

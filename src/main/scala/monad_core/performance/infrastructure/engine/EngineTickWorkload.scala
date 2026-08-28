@@ -10,10 +10,10 @@ object EngineTickWorkload extends PerformanceWorkload:
 
   /**
    * Prepares a repeatable engine-tick operation for the requested scene size, using the default
-   * [[PhysicsManager]] implementation.
+   * [[monad_core.engine.physics.core.PhysicsManager]] implementation.
    *
    * Engine failures from scene construction and ticking are translated to
-   * [[EnginePerformanceError]].
+   * [[monad_core.performance.domain.EnginePerformanceError]].
    *
    * @param entityCount
    *   number of entities placed in the deterministic scene

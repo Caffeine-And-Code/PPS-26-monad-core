@@ -12,7 +12,7 @@ class ExperimentTypeTest extends AnyFunSuite with Matchers:
     val result = ExperimentType.fromLabel("Load")
 
     val resultValue = result.map(testType => (testType.route, testType.specificArguments))
-    
+
     resultValue shouldBe Right(
       (PerformanceRoutes.Load, Vector.empty)
     )
@@ -21,12 +21,12 @@ class ExperimentTypeTest extends AnyFunSuite with Matchers:
     val result = ExperimentType.fromLabel("Stress")
 
     val resultValue = result.map(testType => (testType.route, testType.specificArguments))
-    
+
     resultValue shouldBe Right(
       (
         PerformanceRoutes.Stress,
         Vector(
-          PerformanceArguments.MaximumEntities, 
+          PerformanceArguments.MaximumEntities,
           PerformanceArguments.GrowthFactor
         )
       )
@@ -34,12 +34,12 @@ class ExperimentTypeTest extends AnyFunSuite with Matchers:
 
   test("spike selects its route with maximum entities"):
     val result = ExperimentType.fromLabel("Spike")
-    
+
     val resultValue = result.map(testType => (testType.route, testType.specificArguments))
-    
+
     resultValue shouldBe Right(
       (
-        PerformanceRoutes.Spike, 
+        PerformanceRoutes.Spike,
         Vector(PerformanceArguments.MaximumEntities)
       )
     )
@@ -53,7 +53,7 @@ class ExperimentTypeTest extends AnyFunSuite with Matchers:
       (
         PerformanceRoutes.Scalability,
         Vector(
-          PerformanceArguments.MaximumEntities, 
+          PerformanceArguments.MaximumEntities,
           PerformanceArguments.GrowthFactor
         )
       )

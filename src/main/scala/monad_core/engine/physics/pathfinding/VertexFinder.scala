@@ -17,7 +17,7 @@ private[engine] object VertexFinder:
    *  the entities whose vertices are to be computed
    * @return
    *  a map of entity identifiers to their corresponding vertices in world coordinates
-   * */
+   */
   def apply(entities: List[Entity]): Map[LocatableId, List[Vector2D]] =
     entities.map { entity =>
       entity.id -> findVertexesForEntity(entity)
@@ -30,7 +30,7 @@ private[engine] object VertexFinder:
    *  the entity whose vertices are to be computed
    * @return
    *  a list of the entity's vertices in world coordinates
-   *  */
+   */
   private def findVertexesForEntity(entity: Entity): List[Vector2D] =
     entity.shape match
       case circle: Circle =>

@@ -6,16 +6,12 @@ import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
 import monad_core.engine.physics.core.{PhysicsManager, PhysicsRuleError}
 import monad_core.performance.application.SampleCollector
-import monad_core.performance.domain.{
-  EnginePerformanceError,
-  EntityCount,
-  PerformanceError
-}
+import monad_core.performance.domain.{EnginePerformanceError, EntityCount, PerformanceError}
 import monad_core.performance.infrastructure.engine.EngineTickWorkload
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class EngineTickWorkloadTest  extends AnyFunSuite with Matchers:
+class EngineTickWorkloadTest extends AnyFunSuite with Matchers:
 
   private def prepareWorkload(
       entityCount: Int

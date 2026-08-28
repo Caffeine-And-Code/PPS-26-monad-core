@@ -31,16 +31,16 @@ object ExperimentDialog:
   /** Result-window title exposed for presentation integration. */
   val ResultTitle: String = ResultDialog.Title
 
-  val SubmitLabel = "Run"
-  private val FormWidth = 520.0
-  private val FailureHeader = "Performance test failed:"
-  private val RunningMessage = "Performance test running..."
-  private val StartEntitiesLabel = "Start entities"
+  val SubmitLabel                  = "Run"
+  private val FormWidth            = 520.0
+  private val FailureHeader        = "Performance test failed:"
+  private val RunningMessage       = "Performance test running..."
+  private val StartEntitiesLabel   = "Start entities"
   private val MaximumEntitiesLabel = "Maximum entities"
-  private val GrowthFactorLabel = "Growth factor"
-  private val IterationsLabel = "Iterations"
-  private val WarmupsLabel = "Warm-ups"
-  private val FrameBudgetLabel = "Frame budget (ms)"
+  private val GrowthFactorLabel    = "Growth factor"
+  private val IterationsLabel      = "Iterations"
+  private val WarmupsLabel         = "Warm-ups"
+  private val FrameBudgetLabel     = "Frame budget (ms)"
 
   /** Editable fields indexed by the command argument they produce. */
   private val ArgumentFields: Map[String, TextFieldSpec] = Map(

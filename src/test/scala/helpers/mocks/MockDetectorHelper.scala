@@ -31,7 +31,7 @@ trait MockDetectorHelper:
         }
       }
       .anyNumberOfTimes()
-    
+
     detector.isInside
       .expects(*, *)
       .returning(false)

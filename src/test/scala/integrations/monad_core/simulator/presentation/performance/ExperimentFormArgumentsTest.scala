@@ -21,7 +21,7 @@ class ExperimentFormArgumentsTest extends AnyFunSuite with Matchers:
   )
 
   private val MaximumEntitiesValue = Map(
-    PerformanceArguments.MaximumEntities              -> "1600"
+    PerformanceArguments.MaximumEntities -> "1600"
   )
 
   private val GrowthFactorValue = Map(
@@ -67,7 +67,7 @@ class ExperimentFormArgumentsTest extends AnyFunSuite with Matchers:
         PerformanceRoutes.Stress,
         CommonArguments ++
           MaximumEntitiesArgument ++
-            GrowthFactorArgument
+          GrowthFactorArgument
       )
     )
 
@@ -95,7 +95,7 @@ class ExperimentFormArgumentsTest extends AnyFunSuite with Matchers:
         PerformanceRoutes.Scalability,
         CommonArguments ++
           MaximumEntitiesArgument ++
-            GrowthFactorArgument
+          GrowthFactorArgument
       )
     )
 

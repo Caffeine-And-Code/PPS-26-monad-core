@@ -12,7 +12,7 @@ private[engine] object PhysicsConstantHelper:
   val DeltaTimeOneSecond = 1_000_000_000L
 
   /** Representative invalid negative duration. */
-  val NegativeDt         = -1L
+  val NegativeDt = -1L
 
   /** Default radius used by circular physics fixtures. */
-  val DefaultRadius      = 1.0
+  val DefaultRadius = 1.0

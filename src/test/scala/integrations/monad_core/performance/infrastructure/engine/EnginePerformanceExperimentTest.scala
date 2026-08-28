@@ -5,7 +5,11 @@ import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
 import monad_core.engine.physics.core.{PhysicsManager, PhysicsRuleError}
-import monad_core.performance.domain.{EnginePerformanceError, InvalidPerformanceArgument, PerformanceError}
+import monad_core.performance.domain.{
+  EnginePerformanceError,
+  InvalidPerformanceArgument,
+  PerformanceError
+}
 import monad_core.performance.helpers.SequenceNanoClock
 import monad_core.performance.infrastructure.engine.EnginePerformanceExperiment
 import monad_core.performance.presentation.{PerformanceArguments, PerformanceRoutes}
@@ -13,7 +17,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class EnginePerformanceExperimentTest extends AnyFunSuite with Matchers:
-  
+
   private val ValidArguments = Vector(
     PerformanceArguments.Entities,
     "1",
@@ -30,7 +34,7 @@ class EnginePerformanceExperimentTest extends AnyFunSuite with Matchers:
   )
 
   private def run(route: String, clockValues: Vector[Long]): Either[PerformanceError, String] =
-    val clock = SequenceNanoClock(clockValues)
+    val clock   = SequenceNanoClock(clockValues)
     val physics = PhysicsManager.default().disableAll
     EnginePerformanceExperiment.run(route, ValidArguments, physics)(using clock)
 
@@ -71,7 +75,7 @@ class EnginePerformanceExperimentTest extends AnyFunSuite with Matchers:
     )(using clock)
 
     result shouldBe Left(EnginePerformanceError(failure))
-  
+
   test("an engine performance test returns an invalid command argument"):
     val invalidValue = "invalid"
     val arguments    = Vector(PerformanceArguments.Entities, invalidValue)

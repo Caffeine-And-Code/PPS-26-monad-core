@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 /**
  * Orchestrates performance experiments and converts raw measurements into reports.
  *
- * The selected [[ExperimentKind]] determines which entity counts
+ * The selected [[monad_core.performance.domain.ExperimentKind]] determines which entity counts
  * are measured and whether execution stops when the configured p95 frame budget is exceeded.
  * Workload setup, warm-up, collection, and statistical aggregation are performed once per point.
  */
@@ -50,9 +50,7 @@ object ExperimentRunner:
           config
         )
       case ExperimentKind.Scalability =>
-        config.growth.counts.flatMap(counts =>
-          report(kind, counts, config)
-        )
+        config.growth.counts.flatMap(counts => report(kind, counts, config))
 
   /**
    * Collects performance points and builds the final report.
