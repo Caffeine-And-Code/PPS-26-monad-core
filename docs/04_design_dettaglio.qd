@@ -1,7 +1,275 @@
 # Design di dettaglio
 
+Il presente capitolo dettaglia le decisioni introdotte dal design architetturale fino a definire la struttura logica dei sottosistemi. La descrizione riguarda il prodotto finale: non riporta l'ordine con cui le soluzioni sono state sviluppate né attribuisce attività ai singoli componenti del gruppo, aspetti riservati rispettivamente alla retrospettiva e al capitolo di implementazione.
+
+Il livello di dettaglio scelto espone responsabilità, contratti, trasformazioni e pattern necessari a riprodurre l'organizzazione del software, senza trasformare la relazione in un elenco delle classi o in una trascrizione del codice. I diagrammi richiamati sono quindi limitati ai flussi per i quali la rappresentazione grafica chiarisce relazioni non immediate.
+
 ## Scelte rilevanti di design
+
+### Modello validato per costruzione
+
+Il modello dell'engine è progettato affinché i valori non validi vengano respinti nel momento in cui entrano nel dominio. Concetti come identificatori, peso, salute, danno e componenti di colore sono rappresentati mediante **opaque type**: all'esterno mantengono un'interfaccia minimale, mentre il tipo primitivo sottostante non può essere usato per aggirarne le invarianti. I relativi smart constructor restituiscono `Either[EngineError, A]`; non lanciano eccezioni per un input non valido e possono essere concatenati con `map`, `flatMap` e for-comprehension.
+
+Anche i costruttori di `Entity`, `Surface`, `Team`, `Shape2D` e `WorldBounds` centralizzano la validazione. `Entity` e `Surface` condividono attraverso `Locatable` le regole comuni su identificatore, posizione, forma e rotazione, mentre le factory specializzate distinguono cerchio e rettangolo. Gli aggiornamenti non espongono setter: le extension method restituiscono una copia, eventualmente racchiusa in `Either` quando il nuovo valore deve essere validato.
+
+L'assenza di una proprietà opzionale è rappresentata mediante `Option`, non attraverso valori sentinella. Un'entità priva sia di velocità lineare sia di velocità angolare è considerata fissa; salute, peso, team e danno possono essere assenti senza assegnare significati speciali a zero o a stringhe vuote. Gli ADT `Shape2D`, `EngineColor`, `BorderSide` e `LoopMode` delimitano invece insiemi chiusi di alternative e permettono pattern matching esaustivi.
+
+Questa scelta aumenta il lavoro richiesto ai client, che devono gestire esplicitamente `Either` e `Option`, ma impedisce che un errore di input venga trasformato in uno stato parzialmente valido e fallisca più avanti nella pipeline fisica.
+
+### Scena immutabile e astrazione dello stato
+
+`State` è il contratto minimo consumato da game loop, fisica e renderer. Espone confini del mondo, collezioni e operazioni necessarie sul dominio senza imporre una rappresentazione concreta. `Scene` implementa il contratto mediante tre mappe immutabili indicizzate da `LocatableId` o `TeamId`; lookup, inserimento e rimozione restituiscono rispettivamente un valore o una nuova scena.
+
+Le tre mappe richiedono le stesse operazioni, ma producono errori specifici. Per non duplicare la logica viene impiegata una piccola `Lens[S, A]`, composta da una funzione di lettura e da una funzione di sostituzione. Le lens di entità, superfici e team vengono fornite come istanze contestuali alle funzioni generiche di accesso. La lens non introduce mutabilità: il `set` costruisce una nuova `Scene` con la sola parte interessata sostituita.
+
+Le modifiche composte seguono una semantica transazionale a livello di valore. Per aggiornare un elemento, il sistema recupera l'istanza esistente, la rimuove da una copia intermedia e inserisce la nuova versione. La scena condivisa viene sostituita soltanto se l'intera for-comprehension termina in `Right`; nessuna copia intermedia diventa osservabile.
+
+### Geometria separata dagli oggetti del dominio
+
+Gli algoritmi geometrici non operano direttamente su `Entity` o `Surface`. `Placed[A]` associa in modo generico una forma alla posizione e alla rotazione; una conversione da `Locatable` permette al resto dell'engine di usare gli algoritmi senza duplicare i dati geometrici. In questo modo collisione e contenimento restano riutilizzabili anche per oggetti diversi da quelli presenti nella scena.
+
+Le operazioni sono definite dalle type class `Collides[A, B]` e `Contains[A]`. Le istanze specializzate gestiscono cerchio-cerchio, rettangolo-rettangolo e combinazioni miste; le istanze per `Shape2D` effettuano il dispatch mediante pattern matching. `CollisionDetector` costituisce il contratto di livello superiore: riceve due `Locatable` e restituisce una `Collision` opzionale, oppure verifica se il centro di un elemento è contenuto in una superficie.
+
+Una collisione non è ridotta a un booleano, ma conserva normale, profondità di penetrazione e punto di contatto. Questi dati permettono alla fisica di separare corpi sovrapposti, calcolare la risposta e produrre eventi senza rieseguire l'algoritmo geometrico. I rettangoli ruotati vengono trattati nel loro sistema di riferimento locale; la rilevazione rettangolo-rettangolo usa gli assi di separazione, mentre il caso misto usa il punto del rettangolo più vicino al cerchio.
+
+La risoluzione attraverso `given` rende sostituibili le istanze geometriche e consente ai test delle parti orchestrative di fornire detector controllati. La selezione del comportamento avviene quindi staticamente per i tipi specifici e dinamicamente, tramite l'ADT, quando una scena contiene forme eterogenee.
+
+### Contesto fisico e composizione delle regole
+
+Ogni `PhysicsRule` rappresenta una trasformazione da `PhysicsContext` a `Either[PhysicsError, PhysicsRuleResult]`. Il contesto contiene lo stato all'ingresso della regola, il delta temporale e uno snapshot dei contatti; il risultato contiene il nuovo stato e gli eventi prodotti. Non esistono regole che modifichino direttamente un manager o la scena posseduta dal simulatore.
+
+`PhysicsManager` costruisce una volta per fixed update il `CollisionSnapshot`. Le coppie di entità entrambe fisse sono escluse, mentre il contenimento nelle superfici viene cercato soltanto per le entità mobili. Tutte le regole del medesimo aggiornamento ricevono quindi la stessa fotografia dei contatti, ma la regola successiva vede lo stato prodotto da quella precedente. Questa decisione evita rilevamenti ripetuti e rende coerenti le interpretazioni di collisione, attrito e danno all'interno dello stesso passo.
+
+`RuleCombinator.sequence` applica le regole nell'ordine configurato usando un `foldLeft`. Per ogni `Right` inoltra alla regola successiva lo stato aggiornato e concatena gli eventi; un `Left` interrompe la sequenza e preserva il primo errore. `PhysicsManager` separa inoltre l'ordine delle regole disponibili dall'insieme di quelle abilitate, entrambi immutabili: abilitazione e disabilitazione producono un nuovo manager e non modificano le regole.
+
+Le regole condividono soltanto il contratto e il contesto:
+
+- `surface-dynamics` interpreta i contatti con le superfici e aggiorna velocità lineare e angolare applicando forza e attrito;
+- `enemy-attraction` seleziona il nemico più vicino in base alle relazioni tra team e orienta gradualmente la velocità dell'inseguitore;
+- `collision-resolution` risolve sovrapposizione e rimbalzo tra entità;
+- `border-contact` rappresenta ciascun bordo come ostacolo e riusa la medesima logica di risposta;
+- `damage-application` applica il danno tra entità e quello delle superfici e rimuove i corpi la cui salute si esaurisce;
+- `kinematics` integra velocità lineare e angolare rispetto al delta temporale.
+
+La risposta alle collisioni distingue oggetti fissi e mobili mediante le proprietà cinematiche. Prima viene corretta la compenetrazione, poi viene aggiornata la velocità; nel caso di due corpi mobili la correzione e l'impulso dipendono dai pesi, mentre un corpo fisso viene trattato come massa non spostabile. La separazione in due fasi impedisce che la sola inversione della velocità lasci i corpi sovrapposti e generi collisioni spurie nei passi successivi.
+
+L'attrazione non usa un grafo globale persistente. Per ogni entità mobile viene tentato un ray cast verso il nemico più vicino; se il primo ostacolo non è il bersaglio, vengono calcolati waypoint attorno all'ostacolo incontrato. I vertici sono espansi in funzione dell'ingombro dell'inseguitore e vengono scartati i punti che lo porterebbero oltre i confini del mondo. La regola sceglie il waypoint valido più vicino al bersaglio e limita l'angolo di rotazione della velocità in funzione del tempo. Questa soluzione privilegia una navigazione locale e priva di stato, adeguata alla scala del simulatore, senza introdurre un sistema generale di pianificazione del percorso.
+
+Il diagramma seguente usa il danno come esempio della struttura comune: il contesto fornisce contatti e stato, la regola produce una nuova scena oppure un errore e il manager ricava gli eventi dalla differenza tra stato iniziale e finale.
+
+![Flusso della regola di applicazione del danno](assets/damage-rule.png)
+
+### Game loop a passo fisso e sessione funzionale
+
+Il game loop separa frequenza della simulazione e frequenza del rendering. La sessione conserva ultimo tempo osservato, accumulatore, durata del fixed update e massimo intervallo elaborabile. A ogni chiamata il tempo trascorso viene limitato e aggiunto all'accumulatore; una ricorsione tail-recursive applica la fisica finché rimane almeno un passo completo. Il resto viene conservato nella sessione successiva.
+
+Il risultato include sia lo stato più recente sia quello che lo precede. Il rapporto tra resto dell'accumulatore e durata del tick costituisce `alpha`; `StateInterpolator` lo usa per calcolare posizione e rotazione visuali senza modificare lo stato fisico definitivo. Superfici, team e proprietà non interpolate provengono dallo stato più recente. Una sessione arrestata aggiorna il riferimento temporale ma lascia invariato il mondo, evitando un grande delta alla successiva ripresa.
+
+`EngineFacade` nasconde la rappresentazione concreta del game loop mediante l'opaque type `Session`. Il facade non possiede stato globale: `start`, `stop` e `tick` ricevono una sessione e restituiscono quella successiva. `TickResult` espone soltanto i valori che il client deve adottare — stati, sessione, eventi e `alpha` — mentre i dettagli dell'accumulatore rimangono interni. Questa scelta mantiene il confine pubblico stabile senza rinunciare al flusso esplicito dei dati.
+
+### Rendering descritto come dato
+
+Il rendering è suddiviso in pianificazione pura e interpretazione effectful. `RendererManager` legge lo `State`, risolve i colori mediante un `Painter` contestuale e restituisce un `Vector[DrawCommand]`. `DrawCommand` è un ADT backend-neutral: i casi cerchio e rettangolo contengono tutti i dati necessari al disegno, ma non invocano API grafiche.
+
+Il `Painter` definisce la politica con cui colori e forme vengono trasformati in comandi. L'implementazione del simulatore, `PaintArchitect`, assegna colori base e colori derivati dal team; un client dell'engine può fornire una strategia differente. I comandi delle superfici precedono quelli delle entità, rendendo esplicito e verificabile l'ordine dei livelli grafici.
+
+Soltanto `ShapePainter`, nel layer Presentation, interpreta il vettore su un `GraphicsContext` ScalaFX. Il renderer dell'engine può così essere testato confrontando valori e può essere riusato da un backend non JavaFX. Il diagramma evidenzia il confine tra piano di disegno, strategia sostituibile e interprete grafico.
+
+![Separazione tra piano di rendering e backend grafico](assets/renderer-architecture.png)
+
+### Eventi accumulati insieme allo stato
+
+`EngineEvent` è un ADT che descrive creazione, aggiornamento, rimozione e collisione. Una regola non pubblica direttamente un side effect: inserisce gli eventi nel proprio `PhysicsRuleResult`. Il combinatore li concatena nello stesso ordine in cui vengono applicate le trasformazioni e il game loop accumula quelli prodotti dai diversi fixed update eseguiti nello stesso frame.
+
+`PhysicsManager` confronta le entità prima e dopo la pipeline per ricavare gli eventi di aggiornamento o rimozione che attraversano più regole. Gli eventi di collisione vengono invece prodotti dalla regola che possiede i dati geometrici completi. Nel simulatore, `WorldEditor` aggiunge gli eventi relativi alle modifiche esplicite delle entità.
+
+Il runtime e il mondo inoltrano i vettori a un callback configurato dal Launcher. `EventLogFormatter` trasforma ogni variante in un `EventLogEntry`, mentre la porta `Logger` decide la destinazione. Il design è simile a un writer funzionale: risultato ed eventi percorrono insieme la pipeline, senza introdurre un event bus globale o una dipendenza dell'engine dal logging.
+
+### Comandi del mondo e interprete puro
+
+Il layer Application divide le operazioni del mondo nei contratti per entità, superfici e team, riuniti nella porta `World`. I dati di salvataggio sono incapsulati in command object dedicati, mentre le nove mutazioni possibili sono rappresentate dall'ADT `WorldEdit`.
+
+`WorldEditor` interpreta una tripla formata da modalità, scena e comando. In `SimulationMode` restituisce `SceneEditingNotAllowed`; in `EditMode` applica la trasformazione immutabile e restituisce `WorldEditResult`, che contiene scena ed eventi. Un update composto non pubblica la scena ottenuta dopo la rimozione: l'interprete restituisce soltanto il risultato finale.
+
+`MonadCoreWorld` costituisce il guscio stateful. Sotto un lock legge scena e modalità correnti, invoca l'interprete e sostituisce il riferimento soltanto in caso di successo; gli eventi vengono pubblicati dopo il commit. GUI e tool AI passano dalla stessa porta, quindi l'autorizzazione alla modifica non dipende dal canale che ha originato il comando.
+
+Il flusso seguente mostra il doppio livello di protezione: la Presentation disabilita preventivamente le azioni durante l'esecuzione, mentre `WorldEditor` rimane l'autorità che accetta o rifiuta il comando.
+
+![Flusso di una modifica dalla GUI al mondo](assets/ui-api-call-workflow.png)
+
+### Runtime, snapshot e consistenza del frame
+
+`GameEngineRuntime` coordina sessione, mondo e rendering senza esporre il game loop alla Presentation. L'adapter `MonadCoreGameEngineRuntime` conserva sessione, configurazione fisica, riferimento al mondo, snapshot e ultimo errore. Tali valori sono protetti da un lock perché gli eventi JavaFX e le operazioni richieste dall'agente possono arrivare da thread differenti.
+
+All'avvio il runtime porta mondo e sessione in modalità di simulazione. Nel tick adotta lo stato e la sessione successivi soltanto dopo che avanzamento, interpolazione e costruzione dei comandi di disegno sono terminati correttamente; successivamente inoltra eventi e frame alla Presentation. Al primo errore conserva l'errore adattato, invoca il callback di notifica e arresta il runtime.
+
+Lo snapshot è separato dalla scena corrente. Ogni azione GUI riuscita aggiorna la baseline mediante `createSnapshot`, mentre un errore conserva quella precedente. `resetToSnapshot` ripristina la scena, crea una sessione predefinita arrestata e riabilita le modifiche. Il ridimensionamento aggiorna sia il mondo corrente sia, quando possibile, i confini della baseline, evitando che un reset ripristini dimensioni obsolete del canvas.
+
+### GUI composta da componenti e stato osservabile
+
+Lo stage principale compone il pannello del motore e quello della chat. Il pannello del motore separa i controlli di modalità dal canvas; entrambi ricevono le porte applicative e condividono una `BooleanProperty` che riflette lo stato di esecuzione. Questa proprietà governa icone e disponibilità dei controlli, ma non sostituisce la validazione autorevole di `WorldEditor`.
+
+Il canvas viene aggiornato da un `AnimationTimer`. A ogni frame il pannello passa il tempo corrente al runtime e interpreta i `DrawCommand` ricevuti. Il ridimensionamento del canvas viene propagato ai confini del mondo. La selezione tramite tasto destro usa un tipo unione `Entity | Surface`; il pattern matching costruisce il menu contestuale appropriato e rende impossibile associare azioni di team a un elemento grafico.
+
+I componenti maggiori dipendono da piccoli trait builder, così stage e pannelli possono essere composti con sostituti nei test. Per gli errori condivisi, `NotificationManager` mantiene una coda e associa stile e animazione al tipo di notifica, evitando che ogni pannello implementi un proprio meccanismo.
+
+### Form dichiarativi e parser di dominio
+
+I form non sono costruiti duplicando controlli per ogni oggetto. `FormFieldSpec` è un ADT con input testuale, selezione singola e selezione multipla. `FormFieldControlFactory` interpreta una specifica producendo il nodo ScalaFX e una funzione che ne legge il valore corrente. `FormFieldsState` indicizza queste funzioni e mantiene i nodi dinamici.
+
+Una selezione può dichiarare campi dipendenti. Quando l'utente passa da cerchio a rettangolo, il builder rimuove lettori e nodi della forma precedente e materializza raggio oppure altezza e larghezza; soltanto i campi attivi partecipano al submit. Lo stesso `FormDialog` gestisce pertanto entità, superfici e team, mentre le tre configurazioni specializzate definiscono campi e valori iniziali.
+
+La conversione da `Map[String, String]` al modello è responsabilità dei parser. Il parsing numerico, la gestione delle coppie di coordinate e il dispatch sulla forma sono separati dalla costruzione grafica; la validazione definitiva resta nei costruttori dell'engine. In modalità di modifica i form vengono popolati dai valori esistenti e il generatore dell'identificatore restituisce quello originale, così un update sostituisce l'elemento corretto.
+
+### Chat come macchina a stati finiti
+
+Il pannello chat applica MVVM insieme a una macchina a stati esplicita. `ChatPanelState` ammette soltanto tre varianti:
+
+- `Ready`, con messaggi e prompt modificabile;
+- `Waiting`, con messaggi ma senza un nuovo prompt inviabile;
+- `Error`, con messaggi, prompt ed errore visibile.
+
+Proprietà derivate come `canSend`, `prompt` e `isWaiting` dipendono dalla variante e non da combinazioni di flag indipendenti. `ChatPanelActions` contiene le transizioni pure per modifica del prompt, submit, risposta e pulizia della cronologia. Una risposta viene accettata soltanto dallo stato `Waiting`, evitando che un completamento tardivo alteri uno stato non compatibile.
+
+`ChatPanelViewModel` gestisce gli effetti: costruisce i comandi applicativi, invoca `AiAgent`, riceve il `Future` e programma la transizione risultante sul JavaFX Application Thread. `AiModelChatPanel` proietta lo stato nei modelli visuali dei componenti e si aggiorna tramite listener. Il diagramma rappresenta tale ciclo senza dipendere dalle singole classi ScalaFX.
+
+![Relazione tra vista, view model, azioni e stato](assets/mvvm-gui.png)
+
+### Confine con l'agente e i tool
+
+La porta `AiAgent` usa tipi interni: `AskAgentCommand`, `CleanHistoryCommand`, `AgentResponse` e gli errori del simulatore. L'adapter LangChain4j converte la chiamata sincrona del modello in `Future[Either[AgentResponseError, AgentResponse]]`, confinando sia il blocco sia le eccezioni della libreria fuori da Presentation e Application.
+
+`Langchain4jTools` costituisce un anti-corruption layer tra i parametri Java richiesti dal framework e il dominio Scala. I valori nullable diventano `Option`; velocità e forza vengono accettate soltanto quando entrambe le componenti sono presenti; costruttori e operazioni del `World` effettuano la validazione restante. Ogni tool restituisce testo con prefisso `Result`, `Success` o `Error`, così il modello non deve dedurre l'esito da eccezioni o valori impliciti. Le mutazioni verificano inoltre `EngineControl.isRunning` prima di raggiungere il mondo, mantenendo un messaggio di errore adatto alla conversazione; `WorldEditor` rimane comunque il controllo definitivo.
+
+L'assistente è costruito da una factory che riceve il `ChatModel`, installa tool e memoria e restituisce l'implementazione della porta. Il system prompt definisce il perimetro, impone l'uso dei tool per lo stato corrente, vieta di inventare esiti e richiede una domanda di chiarimento quando mancano parametri obbligatori. La memoria è indicizzata da `ConversationId` e limitata a una finestra di dieci messaggi.
+
+### Valutazione dell'agente
+
+Il valutatore separa descrizione del caso, esecuzione e giudizio. `AgentEvaluationTest` contiene scena iniziale, prompt ordinati, lingua, tool attesi e aspettativa semantica. Per ogni caso `Langchain4jAgentEvaluator` crea un nuovo `MonadCoreWorld`, un controllo headless e un assistente, impedendo che memoria o modifiche contaminino il caso successivo.
+
+Le richieste tool osservate da LangChain4j vengono convertite dall'adapter `Langchain4jToolCallMapper` nell'ADT interno `ToolCall`. Il mapper riconosce nomi, tipi e argomenti supportati e restituisce `InvalidToolCall` per richieste sconosciute o malformate. Il confronto tra sequenza attesa ed effettiva resta quindi strutturale e indipendente dalla serializzazione JSON del provider.
+
+Le proprietà linguistiche e semantiche vengono affidate a `Langchain4jAgentEvaluationJudge`, che riceve lingua e aspettativa, prompt e risposte ordinati e rappresentazione del mondo finale. I punteggi numerici sono validati nell'intervallo 0–100 prima di entrare nel dominio. `AgentEvaluator` aggrega separatamente scelta della lingua, correttezza linguistica, tool corretti, aspettativa rispettata e casi falliti, senza nascondere dietro una media le valutazioni non completate.
+
+### Adattamento e propagazione degli errori
+
+Gli errori seguono il confine che li produce. `EngineError` descrive modello e game loop; `PhysicsError` aggiunge fallimenti della pipeline e può incapsulare un errore di dominio; `BaseError` è il vocabolario esposto dai casi d'uso del simulatore. `ErrorsAdapter` converte `EngineError` in `BaseError` quando l'engine attraversa una porta applicativa.
+
+Le funzioni pure propagano il primo errore mediante `Either`; le eccezioni vengono intercettate con `Try` esclusivamente presso confini che non offrono un'alternativa tipizzata, come costruzione dei dialoghi, chiamate LangChain4j e parsing JSON dei tool. Presentation sceglie se mostrare una notifica, un messaggio nella chat, una riga di console o un exit code. La rappresentazione non modifica il significato dell'errore e nessun layer interno dipende dal meccanismo grafico usato per comunicarlo.
 
 ## Pattern di progettazione
 
+I pattern seguenti descrivono soluzioni effettivamente presenti. Alcuni sono pattern classici, altri idiomi funzionali usati con la stessa finalità; vengono distinti per non attribuire al codice strutture che non possiede.
+
+### Facade
+
+`EngineFacade` offre un ingresso stabile al ciclo di vita del motore e nasconde `GameLoop` e `GameLoopTickResult`. La variante adottata è funzionale: la facade non conserva stato e restituisce una nuova `Session` dopo ogni transizione.
+
+### Adapter e Ports and Adapters
+
+`MonadCoreWorld`, `MonadCoreGameEngineRuntime`, `Langchain4jAiAgent`, `Langchain4jAgentEvaluator` e `ConsoleLogger` adattano engine o librerie esterne alle porte definite in Application. `ErrorsAdapter` e `Langchain4jToolCallMapper` sono adapter di dati: traducono vocabolari di errore e rappresentazioni esterne senza farli attraversare nei layer interni.
+
+### Command con interprete
+
+I command object `SaveEntityCommand`, `SaveSurfaceCommand` e `SaveTeamCommand` descrivono le richieste applicative. L'ADT `WorldEdit` porta il pattern a un livello più generale: ogni caso è un comando immutabile e `WorldEditor` è l'interprete puro che decide se e come applicarlo. Anche `DrawCommand` rappresenta una richiesta, interpretata successivamente da `ShapePainter`.
+
+### Strategy e Type Class
+
+`Painter`, `CollisionDetector`, `AiAgent`, `Logger` e le altre porte consentono di sostituire una politica mantenendo invariato il chiamante. `Collides` e `Contains` realizzano la Strategy mediante type class, risolta tramite `given`; il comportamento dipende dai tipi coinvolti senza richiedere ereditarietà alle forme.
+
+### Smart Constructor
+
+Opaque type, valori di dominio e principali aggregati espongono factory che restituiscono `Either`. Il costruttore non si limita a creare un oggetto, ma costituisce l'unico passaggio autorizzato verso una rappresentazione valida.
+
+### Lens
+
+La lens minimale di `Scene` separa il modo di focalizzare una collezione dalla logica generica di lookup, inserimento e rimozione. È un pattern funzionale locale, non una dipendenza da una libreria di ottiche completa.
+
+### Pipeline e Chain of Responsibility
+
+`RuleCombinator.sequence` costruisce una pipeline ordinata di `PhysicsRule`. Ogni regola riceve il risultato della precedente e può terminare l'intera catena con un errore. A differenza della Chain of Responsibility classica, tutte le regole abilitate partecipano quando il flusso ha successo; la responsabilità consiste nella trasformazione progressiva dello stato.
+
+### MVVM con Reducer
+
+La chat usa View, ViewModel e stato osservabile. `ChatPanelActions` svolge il ruolo di reducer: evento e stato corrente determinano un nuovo stato immutabile. I pannelli del motore adottano view model locali e proprietà reattive, ma non viene forzata la medesima struttura completa sui componenti privi di una macchina a stati articolata.
+
+### Factory e Dependency Injection
+
+Le factory LangChain4j costruiscono agenti e giudici a partire da un `ChatModel`; i trait builder dei pannelli consentono al composition root e ai test di fornire costruzioni alternative. Le dipendenze vengono passate nel costruttore oppure come contextual parameter `using`, mai cercate attraverso un service locator globale. La soluzione impiega quindi factory locali e injection esplicita, senza introdurre una gerarchia di factory astratte.
+
+### Observer leggero
+
+Il sistema di eventi usa callback iniettati per notificare vettori di `EngineEvent` e cambiamenti delle proprietà ScalaFX. Non viene implementato un registry generale di subscriber: si tratta di una forma intenzionalmente ridotta di Observer, sufficiente per collegare runtime, logging e vista senza aggiungere un event bus.
+
+### Functional Core, Imperative Shell
+
+Le transizioni di scena, regole fisiche, reducer della chat, interpolazione e piano di rendering costituiscono il nucleo funzionale. Lock, riferimenti mutabili, rete, console e JavaFX sono confinati in runtime, adapter e Presentation. Questo principio attraversa più componenti e guida la collocazione degli effetti più di un singolo pattern di classe.
+
 ## Organizzazione del codice
+
+I sorgenti di produzione sono radicati in `monad_core` e separano il pacchetto installabile dell'engine dall'applicazione simulator:
+
+```text
+monad_core
+├── engine
+│   ├── model
+│   ├── geometry
+│   ├── collision_detection
+│   ├── physics
+│   │   ├── core
+│   │   ├── combinators
+│   │   ├── rules
+│   │   ├── utils
+│   │   └── pathfinding
+│   ├── core
+│   │   ├── traits
+│   │   └── events
+│   └── simulator
+├── simulator
+│   ├── domain
+│   ├── application
+│   ├── infrastructure
+│   ├── presentation
+│   └── errors
+└── Launcher.scala
+```
+
+### Organizzazione dell'engine
+
+- `model` contiene esclusivamente dati e invarianti del dominio: non dipende da fisica, rendering o simulator;
+- `geometry` contiene primitive e algoritmi indipendenti dalla scena, mentre `collision_detection` li presenta al resto dell'engine tramite un contratto sui `Locatable`;
+- `physics/core` definisce contesto, regola, risultato, errori e manager; `rules` contiene una responsabilità fisica per file; `combinators` compone le regole; `utils` raccoglie calcoli condivisi privi di stato; `pathfinding` isola la navigazione usata dall'attrazione;
+- `core` contiene il ciclo temporale e i contratti `State`, `PhysicsEngine` e `RenderEngine`; `events` contiene il solo ADT degli eventi;
+- `engine/simulator` espone il confine d'integrazione composto da facade, interpolatore, renderer, `Painter` e `DrawCommand`. Il nome storico del package non implica una dipendenza dall'applicazione `monad_core.simulator`.
+
+Le implementazioni che non devono costituire API sono ristrette mediante visibilità come `private[engine]` e `private[physics]`. In particolare, le regole predefinite e le utility di risoluzione rimangono dettagli del sottosistema, mentre contratti, modello e facade restano accessibili al client.
+
+### Organizzazione del simulator
+
+- `domain/ai` contiene valori e ADT indipendenti dalle librerie esterne; il sottopackage `agent_evaluation` raccoglie casi, risultati e tool osservati;
+- `application/engine` e `application/engine/world` definiscono controllo del runtime, porta del mondo e comandi; `application/ai` definisce agente, valutatore e dataset; `application/logging` definisce la destinazione dei log;
+- `infrastructure/engine` adatta la scena e il facade alle porte applicative; il sottopackage `world` contiene comando e interprete delle modifiche, mentre `painters` fornisce la politica di rendering;
+- `infrastructure/ai` confina LangChain4j, configurazione Ollama, tool e memoria; `agent_evaluator` contiene mapper e giudice e `dataset` l'implementazione concreta dei casi;
+- `infrastructure/logging` contiene formatter degli eventi e logger di console;
+- `presentation/stages` compone le finestre; `panels` coordina aree funzionali; `components` contiene controlli riusabili; `forms` separa specifiche, builder e parser; `chat` contiene stato, azioni e view model; `agent_evaluation` è l'inbound adapter da linea di comando;
+- `simulator/errors` definisce l'errore applicativo comune usato dalle porte.
+
+Il Launcher rimane fuori dai layer perché ne costituisce il composition root: seleziona la route, costruisce gli adapter concreti e li fornisce ai contratti. Nessun package interno deve importare il Launcher.
+
+### Criteri di collocazione
+
+Un tipo viene collocato in base alla responsabilità, non alla libreria che lo usa. Un comando del caso d'uso appartiene ad Application; l'ADT che descrive un concetto AI appartiene al Domain; il codice che importa LangChain4j appartiene a Infrastructure; il codice che importa ScalaFX o JavaFX appartiene a Presentation. I tipi pubblici dell'engine possono attraversare i layer del simulator come shared kernel, ma l'engine non importa mai il simulator.
+
+Le estensioni seguono confini prevedibili:
+
+- una nuova regola implementa `PhysicsRule` e viene inserita nella configurazione del manager senza modificare il game loop;
+- una diversa politica grafica implementa `Painter`, mentre un nuovo backend interpreta i `DrawCommand` fuori dall'engine;
+- un nuovo provider AI implementa `AiAgent` e viene collegato nel Launcher senza modificare chat e casi d'uso;
+- un nuovo dataset o printer implementa la relativa porta dell'evaluator;
+- un nuovo tipo di campo estende `FormFieldSpec` e il relativo interprete, mantenendo i form di dominio dichiarativi.
+
+### Organizzazione dei test
+
+La suite standard rispecchia i package di produzione sotto `src/test/scala/monad_core`. Le collaborazioni complete sono raccolte sotto `src/test/scala/integrations`, i vincoli tra package sotto `src/test/scala/architecture` e gli helper comuni sotto `src/test/scala/helpers`. Snapshot strutturali e visuali sono versionati accanto ai test di integrazione della GUI, mentre le teorie Prolog usate per generare combinazioni si trovano nelle risorse di test.
+
+I test che interrogano realmente un modello sono separati in `src/llmIntegrationTest` e nella configurazione SBT omonima. La separazione è coerente con il design: la suite standard verifica in modo deterministico dominio, porte e adapter usando mock o collaboratori locali; la suite LLM verifica il comportamento emergente soltanto in un ambiente dotato di Ollama.
