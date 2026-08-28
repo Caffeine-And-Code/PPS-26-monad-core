@@ -157,8 +157,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
       imageConfig: ImageConfigRecord,
       onModeChange: Boolean => Unit,
       onResetClick: () => Unit,
-      isEngineRunning: BooleanProperty,
-      onPerformanceExperiment: () => Unit
+      isEngineRunning: BooleanProperty
   )(using
       world: World,
       gameEngineRuntime: GameEngineRuntime
@@ -304,19 +303,6 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
         )
         .left
         .map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
-
-      performanceTestBtn <- IconButton
-        .build(
-          PerformanceIcon(),
-          IconButtonBaseProps(
-            imageConfig = imageConfig,
-            onClick = _ => onPerformanceExperiment(),
-            isDisabled = isEngineRunning
-          )
-        )
-        .map(MenuButton.styleIconButton)
-        .left
-        .map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
     yield
       val spacer = new Region()
       HBox.setHgrow(spacer, Priority.Always)
@@ -328,7 +314,6 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
           children = Seq(
             menuBtn,
             physicsMenuBtn,
-            performanceTestBtn,
             spacer,
             playPauseBtn,
             resetBtn

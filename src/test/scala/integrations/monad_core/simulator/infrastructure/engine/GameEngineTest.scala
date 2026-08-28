@@ -6,9 +6,8 @@ import monad_core.engine.core.events.EngineEvent.{EntityRemoved, EntityUpdated}
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, GameLoop}
 import monad_core.engine.model.{Entity, Scene, Surface, Vector2D}
 import monad_core.engine.simulator.{DrawCommand, Painter}
-import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.engine.simulator.EngineFacade
-import monad_core.simulator.application.engine.{DrawCommand, GameEngineRuntime}
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.errors.EngineErrorAdapted
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
