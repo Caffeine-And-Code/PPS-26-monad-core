@@ -1,13 +1,13 @@
 package monad_core.engine.simulator
 
 import monad_core.engine.core.InvalidInterpolationAlpha
-import monad_core.engine.helper.DummyEntityHelper.{
+import helpers.dummies.DummyEntityHelper.{
   makeFixedEntityCircle,
   makeFixedEntityRectangle,
   makeMovingEntityRectangle
 }
-import monad_core.engine.helper.DummySurfaceHelper.makeSurfaceCircle
-import monad_core.engine.helper.MockStateHelper
+import helpers.dummies.DummySurfaceHelper.makeSurfaceCircle
+import helpers.mocks.MockStateHelper
 import monad_core.engine.model.*
 import monad_core.engine.physics.utils.Rotation
 import monad_core.engine.simulator.StateInterpolator

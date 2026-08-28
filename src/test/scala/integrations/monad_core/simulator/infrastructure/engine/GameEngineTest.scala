@@ -6,6 +6,7 @@ import monad_core.engine.core.events.EngineEvent.{EntityRemoved, EntityUpdated}
 import monad_core.engine.core.{CannotAddAlreadyPresentElementInMap, CannotAddEntity, GameLoop}
 import monad_core.engine.model.{Entity, Scene, Surface, Vector2D}
 import monad_core.engine.simulator.Painter
+import monad_core.engine.simulator.EngineFacade
 import monad_core.simulator.application.engine.{DrawCommand, GameEngineRuntime}
 import monad_core.simulator.application.engine.errors.EngineErrorAdapted
 import monad_core.simulator.application.engine.world.{SaveEntityCommand, World}
@@ -140,6 +141,27 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     engine.setPhysicsRuleEnabled(rule.id, isEnabled = false)
 
     engine.physicsRules.find(_.id == rule.id).map(_.isEnabled) shouldBe Some(false)
+
+  test(
+    "the concrete runtime exposes a physics-manager snapshot with the current rule configuration"
+  ):
+    val engine = MonadCoreGameEngineRuntime()
+    val rule   = engine.physicsRules.head
+    engine.setPhysicsRuleEnabled(rule.id, isEnabled = false)
+
+    val snapshot = engine.physicsManagerSnapshot
+
+    EngineFacade.physicsRules(snapshot).find(_.id == rule.id).map(_.isEnabled) shouldBe Some(false)
+
+  test("a physics-manager snapshot is not changed by later runtime updates"):
+    val engine = MonadCoreGameEngineRuntime()
+    val rule   = engine.physicsRules.head
+    engine.setPhysicsRuleEnabled(rule.id, isEnabled = false)
+    val snapshot = engine.physicsManagerSnapshot
+
+    engine.setPhysicsRuleEnabled(rule.id, isEnabled = true)
+
+    EngineFacade.physicsRules(snapshot).find(_.id == rule.id).map(_.isEnabled) shouldBe Some(false)
 
   test("starting the runtime prevents edits on its world"):
     val entity = getOrFail(Entity.circle("new", Vector2D(0, 0), 1))

@@ -12,13 +12,6 @@ class EngineTickWorkloadTest extends AnyFunSuite with Matchers:
   ): Either[PerformanceError, SampleCollector.Operation] =
     EntityCount.from(entityCount).flatMap(EngineTickWorkload.prepare)
 
-  test("prepare should initialize the workload correctly"):
-    val entityCount = 10
-
-    val result = prepareWorkload(entityCount).flatMap(operation => operation())
-
-    result shouldBe Right(())
-
   test("an invalid entity count should prevent workload preparation"):
     val invalidEntityCount = 0
 

@@ -1,9 +1,10 @@
-package monad_core.engine.helper
+package helpers.dummies
 
 import monad_core.engine.model.{Entity, Team}
 import org.scalatest.EitherValues.convertEitherToValuable
 
-private[engine] object DummyTeamHelper:
+/** A helper object for creating dummy teams for testing purposes. */
+object DummyTeamHelper:
 
   def addTeam(entity: Entity, teamId: String): Entity =
     entity.withTeamId(teamId).value

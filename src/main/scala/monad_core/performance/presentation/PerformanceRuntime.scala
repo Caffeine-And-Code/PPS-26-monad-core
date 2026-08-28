@@ -1,10 +1,35 @@
 package monad_core.performance.presentation
 
 import monad_core.performance.application.{ExperimentRunner, NanoClock, PerformanceWorkload}
-import monad_core.performance.domain.{ExperimentKind, PerformanceConfig, PerformanceError}
+import monad_core.performance.domain.{
+  ExperimentKind,
+  ExperimentReport,
+  PerformanceConfig,
+  PerformanceError
+}
 
 /** Presentation-level entry point for executing and printing performance experiments. */
 object PerformanceRuntime:
+
+  /**
+   * Runs an experiment and returns its completed report.
+   *
+   * @param kind
+   *   performance strategy to execute
+   * @param config
+   *   validated experiment settings
+   * @param workload
+   *   workload measured by the experiment
+   * @param clock
+   *   monotonic clock used for latency sampling
+   * @return
+   *   the completed report, or the first experiment error
+   */
+  def run(kind: ExperimentKind, config: PerformanceConfig)(using
+      workload: PerformanceWorkload,
+      clock: NanoClock
+  ): Either[PerformanceError, ExperimentReport] =
+    ExperimentRunner.run(kind, config)
 
   /**
    * Runs an experiment and prints its report after successful completion.
@@ -29,4 +54,4 @@ object PerformanceRuntime:
       clock: NanoClock,
       printer: PerformanceReportPrinter
   ): Either[PerformanceError, Unit] =
-    ExperimentRunner.run(kind, config).map(printer.print)
+    run(kind, config).map(printer.print)

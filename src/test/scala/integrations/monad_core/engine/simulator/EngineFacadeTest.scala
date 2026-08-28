@@ -11,7 +11,7 @@ import monad_core.engine.core.{
 }
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
-import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
+import helpers.dummies.PhysicsRuleHelper.makeDummyRule
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.physics.core.{PhysicsError, PhysicsManager, PhysicsRuleError}
 import monad_core.engine.simulator.EngineFacade

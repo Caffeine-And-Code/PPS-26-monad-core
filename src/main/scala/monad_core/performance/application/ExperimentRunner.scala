@@ -37,7 +37,7 @@ object ExperimentRunner:
   ): Either[PerformanceError, ExperimentReport] =
     kind match
       case ExperimentKind.Load =>
-        report(kind, Vector(config.growth.start), config, stopAtBreakpoint = false)
+        report(kind, Vector(config.growth.start), config)
       case ExperimentKind.Stress =>
         config.growth.counts.flatMap(counts =>
           report(kind, counts, config, stopAtBreakpoint = true)
@@ -46,12 +46,11 @@ object ExperimentRunner:
         report(
           kind,
           Vector(config.growth.start, config.growth.maximum, config.growth.start),
-          config,
-          stopAtBreakpoint = false
+          config
         )
       case ExperimentKind.Scalability =>
         config.growth.counts.flatMap(counts =>
-          report(kind, counts, config, stopAtBreakpoint = false)
+          report(kind, counts, config)
         )
 
   /**
@@ -76,7 +75,7 @@ object ExperimentRunner:
       kind: ExperimentKind,
       counts: Vector[EntityCount],
       config: PerformanceConfig,
-      stopAtBreakpoint: Boolean
+      stopAtBreakpoint: Boolean = false
   )(using
       workload: PerformanceWorkload,
       clock: NanoClock

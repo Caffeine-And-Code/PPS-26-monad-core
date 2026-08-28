@@ -5,6 +5,7 @@ import monad_core.engine.model.EngineError
 import monad_core.simulator.ImageResourceNotFound
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}
+import monad_core.simulator.presentation.resources.Image.PerformanceIcon
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -31,3 +32,14 @@ class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFac
     inside(result):
       case Right(loadedImage) =>
         loadedImage shouldBe a[ScalaFxImage]
+
+  test("The performance icon resource can be loaded"):
+    val imageConfig = MockImageConfig()
+    val icon        = PerformanceIcon()
+
+    val result = ImageLoader.getScalaFxImage(icon, imageConfig)
+
+    inside(result):
+      case Right(loadedImage) =>
+        loadedImage.width.value shouldBe icon.width
+        loadedImage.height.value shouldBe icon.height

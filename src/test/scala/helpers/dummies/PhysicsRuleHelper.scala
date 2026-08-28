@@ -1,9 +1,10 @@
-package monad_core.engine.helper
+package helpers.dummies
 
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.State
 import monad_core.engine.physics.core.{PhysicsContext, PhysicsError, PhysicsRule, PhysicsRuleResult}
 
+/** A helper for creating dummy physics rules for testing purposes. */
 object PhysicsRuleHelper:
 
   def makeDummyRule(

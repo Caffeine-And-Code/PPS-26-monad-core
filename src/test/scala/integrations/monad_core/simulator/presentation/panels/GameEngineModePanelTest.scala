@@ -1,6 +1,7 @@
 package integrations.monad_core.simulator.presentation.panels
 
 import helpers.mocks.MockImageConfig
+import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import javafx.scene.control.Button
 import javafx.scene.layout.HBox
@@ -27,29 +28,32 @@ class GameEngineModePanelTest
     with Matchers
     with MockFactory
     with ScalaFxInit:
+
   given mockWorld: World                     = mock[World]
   given gameEngineRuntime: GameEngineRuntime = MonadCoreGameEngineRuntime()
 
-  val ToolsButtonIndex   = 0
-  val PhysicsButtonIndex = 1
-  val SpacingRegionIndex = 2
-  val ModeButtonIndex    = 3
-  val StopButtonIndex    = 4
+  private val ModePanel              = GameEngineModePanel
+  private val ToolsButtonIndex       = 0
+  private val PhysicsButtonIndex     = 1
+  private val PerformanceButtonIndex = 2
+  private val SpacingRegionIndex     = 3
+  private val ModeButtonIndex        = 4
+  private val StopButtonIndex        = 5
+  private val ImageConfigRecord      = MockImageConfig()
+  private val OnModeChange           = mockFunction[Boolean, Unit]
+  private val OnStopClick            = mockFunction[Unit]
 
-  def freshSceneCanBeUpdated: BooleanProperty = BooleanProperty(false)
+  private def FreshSceneCanBeUpdated: BooleanProperty = BooleanProperty(false)
 
-  def freshSceneCannotBeUpdated: BooleanProperty = BooleanProperty(true)
+  private def FreshSceneCannotBeUpdated: BooleanProperty = BooleanProperty(true)
 
   test("A GameEngineModePanel can be created"):
-    val imageConfigRecord = MockImageConfig()
-    val onModeChange      = mockFunction[Boolean, Unit]
-    val onStopClick       = mockFunction[Unit]
 
-    val builderResult: Either[BaseError, VBox] = GameEngineModePanel.build(
-      imageConfigRecord,
-      onModeChange,
-      onStopClick,
-      freshSceneCanBeUpdated
+    val builderResult: Either[BaseError, VBox] = ModePanel.build(
+      ImageConfigRecord,
+      OnModeChange,
+      OnStopClick,
+      FreshSceneCanBeUpdated
     )
 
     inside(builderResult):
@@ -57,16 +61,12 @@ class GameEngineModePanelTest
         scene.children.getFirst shouldBe a[HBox]
 
   test("A GameEngineModePanel should contain the physics rules menu button"):
-    val imageConfigRecord = MockImageConfig()
-    val onModeChange      = mockFunction[Boolean, Unit]
-    val onStopClick       = mockFunction[Unit]
-
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCanBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
       )
     )
 
@@ -74,16 +74,57 @@ class GameEngineModePanelTest
       case buttonsRow: HBox =>
         buttonsRow.children.get(PhysicsButtonIndex) shouldBe a[Button]
 
-  test("A GameEngineModePanel cannot be built when an invalid image config record is passed"):
-    val imageConfigRecord: ImageConfigRecord = mock[ImageConfigRecord]
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
+  test("A GameEngineModePanel should contain the performance-test button"):
 
-    val builderResult = GameEngineModePanel.build(
-      imageConfigRecord,
-      onModeChange,
-      onStopClick,
-      freshSceneCanBeUpdated
+    val builderResult = getOrFail(
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
+      )
+    )
+
+    inside(builderResult.children.head):
+      case buttonsRow: HBox =>
+        buttonsRow.children.get(PerformanceButtonIndex) shouldBe a[Button]
+
+  test(
+    "A GameEngineModePanel should run its configured action when the performance-test button is clicked"
+  ):
+    var performanceTestRuns = 0
+    val configuredModePanel =
+      GameEngineModePanel.withPerformanceExperiment(() => performanceTestRuns += 1)
+
+    val builderResult = getOrFail(
+      configuredModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
+      )
+    )
+
+    onFxThread {
+      val performanceButton = builderResult.delegate.getChildren.getFirst
+        .asInstanceOf[HBox]
+        .getChildren
+        .get(PerformanceButtonIndex)
+        .asInstanceOf[Button]
+
+      performanceButton.fire()
+
+      performanceTestRuns shouldBe 1
+    }
+
+  test("A GameEngineModePanel cannot be built when an invalid image config record is passed"):
+    val invalidImageConfig: ImageConfigRecord = mock[ImageConfigRecord]
+
+    val builderResult = ModePanel.build(
+      invalidImageConfig,
+      OnModeChange,
+      OnStopClick,
+      FreshSceneCanBeUpdated
     )
 
     inside(builderResult):
@@ -93,20 +134,17 @@ class GameEngineModePanelTest
   test(
     "Mode Button Click event calls the passed onModeChange function with isActive equal to true after one click"
   ):
-    val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
 
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCanBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
       )
     )
 
-    onModeChange.expects(true).once()
+    OnModeChange.expects(true).once()
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -117,22 +155,19 @@ class GameEngineModePanelTest
   test(
     "Mode Button Click event calls the passed onModeChange function with isActive equal to false after two clicks"
   ):
-    val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
 
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCanBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
       )
     )
 
     inSequence:
-      onModeChange.expects(true).once()
-      onModeChange.expects(false).once()
+      OnModeChange.expects(true).once()
+      OnModeChange.expects(false).once()
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -141,19 +176,17 @@ class GameEngineModePanelTest
             clickButton(playPauseBtn, times = 2)
 
   test("Stop Button Click cannot be clicked upon scene start up when the isEngineRunning is false"):
-    val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
+
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCanBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
       )
     )
 
-    onStopClick.expects().never()
+    OnStopClick.expects().never()
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -162,19 +195,17 @@ class GameEngineModePanelTest
             clickButton(stopButton)
 
   test("Stop Button Click can be clicked upon scene start up when the isEngineRunning is true"):
-    val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
+
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCannotBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCannotBeUpdated
       )
     )
 
-    onStopClick.expects().once()
+    OnStopClick.expects().once()
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -183,20 +214,18 @@ class GameEngineModePanelTest
             clickButton(stopButton)
 
   test("Stop Button Click can be clicked once the PlayButton is clicked once"):
-    val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
+
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCanBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
       )
     )
 
-    onModeChange.expects(true)
-    onStopClick.expects()
+    OnModeChange.expects(true)
+    OnStopClick.expects()
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -208,23 +237,21 @@ class GameEngineModePanelTest
             clickButton(stopButton)
 
   test("Stop Button Click cannot be clicked once the PlayButton is clicked two times"):
-    val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
+
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCanBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
       )
     )
 
     inSequence:
-      onModeChange.expects(true)
-      onModeChange.expects(false)
+      OnModeChange.expects(true)
+      OnModeChange.expects(false)
 
-    onStopClick.expects().never()
+    OnStopClick.expects().never()
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -236,24 +263,22 @@ class GameEngineModePanelTest
             clickButton(stopButton)
 
   test("Stop Button Click can be clicked when the PlayButton is active"):
-    val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-    val onModeChange                         = mockFunction[Boolean, Unit]
-    val onStopClick                          = mockFunction[Unit]
+
     val builderResult = getOrFail(
-      GameEngineModePanel.build(
-        imageConfigRecord,
-        onModeChange,
-        onStopClick,
-        freshSceneCanBeUpdated
+      ModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCanBeUpdated
       )
     )
 
     inSequence:
-      onModeChange.expects(true)
-      onModeChange.expects(false)
-      onModeChange.expects(true)
+      OnModeChange.expects(true)
+      OnModeChange.expects(false)
+      OnModeChange.expects(true)
 
-    onStopClick.expects()
+    OnStopClick.expects()
 
     inside(builderResult.children.head):
       case buttonsRow: HBox =>
@@ -269,23 +294,69 @@ class GameEngineModePanelTest
   ):
     val cases = Table(
       ("isEngineRunning", "expectedIsDisableValue"),
-      (freshSceneCannotBeUpdated, true),
-      (freshSceneCanBeUpdated, false)
+      (FreshSceneCannotBeUpdated, true),
+      (FreshSceneCanBeUpdated, false)
     )
 
     forAll(cases): (isEngineRunning, expectedIsDisableValue) =>
-      val imageConfigRecord: ImageConfigRecord = MockImageConfig()
-      val onModeChange                         = mockFunction[Boolean, Unit]
-      val onStopClick                          = mockFunction[Unit]
+
       val builderResult = getOrFail(
-        GameEngineModePanel.build(imageConfigRecord, onModeChange, onStopClick, isEngineRunning)
+        ModePanel.build(ImageConfigRecord, OnModeChange, OnStopClick, isEngineRunning)
       )
 
-      onModeChange.expects(*).never()
-      onStopClick.expects().never()
+      OnModeChange.expects(*).never()
+      OnStopClick.expects().never()
 
       inside(builderResult.children.head):
         case buttonsRow: HBox =>
           inside(buttonsRow.children.get(ToolsButtonIndex)):
             case menuButton: Button =>
               menuButton.isDisabled should be(expectedIsDisableValue)
+
+  test("Performance Button is disabled exactly while the GameEngine is running"):
+    val cases = Table(
+      ("isEngineRunning", "expectedIsDisableValue"),
+      (FreshSceneCannotBeUpdated, true),
+      (FreshSceneCanBeUpdated, false)
+    )
+
+    forAll(cases): (isEngineRunning, expectedIsDisableValue) =>
+      val builderResult = getOrFail(
+        ModePanel.build(
+          ImageConfigRecord,
+          OnModeChange,
+          OnStopClick,
+          isEngineRunning
+        )
+      )
+
+      inside(builderResult.children.head):
+        case buttonsRow: HBox =>
+          inside(buttonsRow.children.get(PerformanceButtonIndex)):
+            case performanceButton: Button =>
+              performanceButton.isDisabled shouldBe expectedIsDisableValue
+
+  test("a disabled Performance Button does not run its configured action"):
+    var performanceTestRuns = 0
+    val configuredModePanel =
+      GameEngineModePanel.withPerformanceExperiment(() => performanceTestRuns += 1)
+    val panel = getOrFail(
+      configuredModePanel.build(
+        ImageConfigRecord,
+        OnModeChange,
+        OnStopClick,
+        FreshSceneCannotBeUpdated
+      )
+    )
+
+    onFxThread {
+      val performanceButton = panel.delegate.getChildren.getFirst
+        .asInstanceOf[HBox]
+        .getChildren
+        .get(PerformanceButtonIndex)
+        .asInstanceOf[Button]
+
+      performanceButton.fire()
+
+      performanceTestRuns shouldBe 0
+    }

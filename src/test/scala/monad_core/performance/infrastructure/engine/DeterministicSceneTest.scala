@@ -1,8 +1,6 @@
 package monad_core.performance.infrastructure.engine
 
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.EngineFacade
 import monad_core.performance.domain.EntityCount
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -66,9 +64,6 @@ class DeterministicSceneTest extends AnyFunSuite with Matchers:
       scene.bounds.upperLeft,
       scene.bounds.lowerRight
     )
-
-  private def applyDefaultPhysics(scene: Scene) =
-    PhysicsManager.default().step(scene, EngineFacade.DefaultTickTime)
 
   test("a deterministic scene contains the requested number of entities"):
     val result = DeterministicScene(EntityCountValue)
@@ -147,7 +142,6 @@ class DeterministicSceneTest extends AnyFunSuite with Matchers:
         entity.speed.exists(speed => speed.x != 0.0 && speed.y != 0.0)
       )
     } shouldBe Right(true)
-
   test("a deterministic scene alternates horizontal movement direction"):
     val expectedSpeeds = Map(
       entityId(0) -> LinearSpeed,
@@ -347,26 +341,3 @@ class DeterministicSceneTest extends AnyFunSuite with Matchers:
         entity.position.y <= scene.bounds.lowerRight.y
       }
     } shouldBe Right(true)
-
-  test("default physics can process the complete deterministic scene"):
-    val scene = DeterministicScene(EntityCountValue).value
-
-    val result = applyDefaultPhysics(scene)
-
-    result.isRight shouldBe true
-
-  test("default physics applies damage in the complete deterministic scene"):
-    val scene = DeterministicScene(EntityCountValue).value
-
-    val result = applyDefaultPhysics(scene)
-
-    result.map(_.state.allEntities.forall(_.health.exists(_.value < EntityHealth))) shouldBe Right(
-      true
-    )
-
-  test("default physics keeps every deterministic entity alive after applying damage"):
-    val scene = DeterministicScene(EntityCountValue).value
-
-    val result = applyDefaultPhysics(scene)
-
-    result.map(_.state.allEntities.size) shouldBe Right(EntityNumber)

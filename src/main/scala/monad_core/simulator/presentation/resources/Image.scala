@@ -47,3 +47,10 @@ object Image:
         width = menuToolSize,
         height = menuToolSize
       )
+
+  case class PerformanceIcon()
+      extends Image(
+        fileName = "performance.png",
+        width = menuToolSize,
+        height = menuToolSize
+      )

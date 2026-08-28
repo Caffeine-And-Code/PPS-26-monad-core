@@ -4,13 +4,14 @@ import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.EngineEvent.CollisionDetected
 import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{
+import helpers.dummies.DummyEntityHelper.{
   makeFixedEntityCircle,
   makeMovingEntityCircle,
   makeMovingEntityRectangle
 }
+import helpers.mocks.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
-import monad_core.engine.helper.{BorderContactHelper, MockDetectorHelper, MockStateHelper}
+import monad_core.engine.helper.BorderContactHelper
 import monad_core.engine.model.{BorderSide, Vector2D}
 import monad_core.engine.physics.core.{NegativeDeltaTime, PhysicsContext}
 import monad_core.engine.physics.pathfinding.SizeHelper
@@ -145,7 +146,7 @@ class BorderContactRuleTest
     )
 
     val state               = stateWithEntities(List(entity))
-    given CollisionDetector = detectorWithoutCollision()
+    given CollisionDetector = detectorWithCollisions(Map.empty)
     val result              = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).get

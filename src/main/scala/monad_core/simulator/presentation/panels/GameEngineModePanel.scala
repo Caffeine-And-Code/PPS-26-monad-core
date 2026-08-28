@@ -20,6 +20,7 @@ import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.Image.{
   PauseIcon,
+  PerformanceIcon,
   PhysicsIcon,
   PlayIcon,
   StopIcon,
@@ -31,6 +32,45 @@ import scalafx.geometry.Pos
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 
 object GameEngineModePanel extends GameEngineModePanelBuilder:
+
+  /** Creates a panel builder with its performance-test action injected. */
+  def withPerformanceExperiment(
+      onPerformanceExperiment: () => Unit
+  ): GameEngineModePanelBuilder =
+    new GameEngineModePanelBuilder:
+      override def build(
+          imageConfig: ImageConfigRecord,
+          onModeChange: Boolean => Unit,
+          onStopClick: () => Unit,
+          isEngineRunning: BooleanProperty
+      )(using
+          world: World,
+          gameEngineRuntime: GameEngineRuntime
+      ): Either[BaseError, VBox] =
+        buildPanel(
+          imageConfig,
+          onModeChange,
+          onStopClick,
+          isEngineRunning,
+          onPerformanceExperiment
+        )
+
+  override def build(
+      imageConfig: ImageConfigRecord,
+      onModeChange: Boolean => Unit,
+      onStopClick: () => Unit,
+      isEngineRunning: BooleanProperty
+  )(using
+      world: World,
+      gameEngineRuntime: GameEngineRuntime
+  ): Either[BaseError, VBox] =
+    buildPanel(
+      imageConfig,
+      onModeChange,
+      onStopClick,
+      isEngineRunning,
+      onPerformanceExperiment = () => ()
+    )
 
   private case class GameEngineModeViewModel(world: World, gameEngineRuntime: GameEngineRuntime):
     val editTeamsDisabled: BooleanProperty   = BooleanProperty(true)
@@ -84,11 +124,13 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
     private def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit =
       viewModel.gameEngineRuntime.setPhysicsRuleEnabled(ruleId, isEnabled)
 
-  def build(
+  /** Builds the panel with an explicit action for its dedicated performance button. */
+  private def buildPanel(
       imageConfig: ImageConfigRecord,
       onModeChange: Boolean => Unit,
       onStopClick: () => Unit,
-      isEngineRunning: BooleanProperty
+      isEngineRunning: BooleanProperty,
+      onPerformanceExperiment: () => Unit
   )(using
       world: World,
       gameEngineRuntime: GameEngineRuntime
@@ -234,6 +276,19 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
         )
         .left
         .map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
+
+      performanceTestBtn <- IconButton
+        .build(
+          PerformanceIcon(),
+          IconButtonBaseProps(
+            imageConfig = imageConfig,
+            onClick = _ => onPerformanceExperiment(),
+            isDisabled = isEngineRunning
+          )
+        )
+        .map(MenuButton.styleIconButton)
+        .left
+        .map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
     yield
       val spacer = new Region()
       HBox.setHgrow(spacer, Priority.Always)
@@ -245,6 +300,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
           children = Seq(
             menuBtn,
             physicsMenuBtn,
+            performanceTestBtn,
             spacer,
             playPauseBtn,
             stopBtn

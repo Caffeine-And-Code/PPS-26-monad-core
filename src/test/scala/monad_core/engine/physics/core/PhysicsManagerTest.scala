@@ -5,10 +5,10 @@ import monad_core.engine.core.events.EngineEvent.{CollisionDetected, EntityRemov
 import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
-import monad_core.engine.helper.MockStateHelper
 import monad_core.engine.model.{Entity, Scene, Vector2D}
 import monad_core.engine.helper.PhysicsConstantHelper.DeltaTimeOneSecond
-import monad_core.engine.helper.PhysicsRuleHelper.makeDummyRule
+import helpers.dummies.PhysicsRuleHelper.makeDummyRule
+import helpers.mocks.MockStateHelper
 import monad_core.engine.physics.rules.*
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable

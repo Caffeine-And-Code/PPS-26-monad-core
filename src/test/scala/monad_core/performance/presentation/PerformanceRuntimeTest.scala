@@ -1,6 +1,6 @@
 package monad_core.performance.presentation
 
-import monad_core.performance.application.{NanoClock, PerformanceWorkload}
+import monad_core.performance.application.PerformanceWorkload
 import monad_core.performance.domain.*
 import monad_core.performance.helpers.SequenceNanoClock
 import org.scalamock.scalatest.MockFactory

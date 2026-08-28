@@ -30,9 +30,6 @@ object PerformanceArguments:
   /** Option selecting the frame budget in milliseconds. */
   val FrameBudgetMillis = "--frame-budget-ms"
 
-  /** Number of nanoseconds in one millisecond. */
-  private val NanosPerMillisecond = 1_000_000L
-
   /**
    * Parses all supported arguments and validates the resulting configuration.
    *
@@ -59,7 +56,9 @@ object PerformanceArguments:
       budgetMillis <- longArgument(
         args,
         FrameBudgetMillis,
-        PerformanceConfig.DefaultFrameBudgetNanos / NanosPerMillisecond
+        DurationConversion.nanosToWholeMillis(
+          PerformanceConfig.DefaultFrameBudgetNanos
+        )
       )
       config <- PerformanceConfig.from(
         startEntities = start,
@@ -67,7 +66,7 @@ object PerformanceArguments:
         growthFactor = factor,
         iterations = iterations,
         warmups = warmups,
-        frameBudgetNanos = budgetMillis * NanosPerMillisecond
+        frameBudgetNanos = DurationConversion.millisToNanos(budgetMillis)
       )
     yield config
 

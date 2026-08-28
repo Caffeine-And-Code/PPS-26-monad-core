@@ -16,7 +16,8 @@ final case class FormDialogProps(
     fields: Seq[FormFieldSpec],
     onSubmit: Map[String, String] => Unit,
     owner: Option[Window] = None,
-    minWidth: Double = 500
+    minWidth: Double = 500,
+    submitLabel: String = "Save"
 )
 
 object FormDialog:
