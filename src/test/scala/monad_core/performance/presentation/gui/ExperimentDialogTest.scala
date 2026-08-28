@@ -32,3 +32,21 @@ class ExperimentDialogTest extends AnyFunSuite with Matchers with DialogTesting:
     )
 
     result shouldBe None
+
+  test("a failed state displays its failure header and message"):
+    val failureMessage = "failure message"
+    val expectedContent = s"Performance test failed:\n$failureMessage"
+    val (output, currentDialog) = onFxThread {
+      val textArea = new TextArea()
+      (textArea, Some(ResultDialogHandle(textArea)))
+    }
+
+    val result = onFxThread {
+      ExperimentDialog.displayState(
+        ExperimentState.Failed(failureMessage),
+        owner = None,
+        currentDialog = currentDialog
+      )
+    }
+
+    onFxThread(output.text.value) shouldBe expectedContent

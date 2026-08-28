@@ -40,6 +40,23 @@ class ResultDialogTest extends AnyFunSuite with Matchers with Inside with Dialog
       output.isEditable shouldBe false
     }
 
+  test("the performance result dialog does not wrap its report"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+      val output = getRequiredActiveStage.getScene.getRoot
+        .lookup(".performance-result-output")
+        .asInstanceOf[TextArea]
+
+      output.isWrapText shouldBe false
+    }
+
+  test("the performance result dialog is resizable"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+
+      getRequiredActiveStage.isResizable shouldBe true
+    }
+
   test("an open performance result dialog can update its displayed content"):
     onFxThread {
       val dialog = getOrFail(ResultDialog.open(Report))
@@ -63,6 +80,16 @@ class ResultDialogTest extends AnyFunSuite with Matchers with Inside with Dialog
       closeButton.fire()
 
       stage.isShowing shouldBe false
+    }
+
+  test("the performance result dialog uses an explicit close label"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+      val closeButton = getRequiredActiveStage.getScene.getRoot
+        .lookup(".performance-result-close")
+        .asInstanceOf[Button]
+
+      closeButton.getText shouldBe "Close"
     }
 
   test("the performance result dialog matches its visual snapshot"):
