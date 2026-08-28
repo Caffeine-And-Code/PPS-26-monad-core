@@ -34,13 +34,17 @@ import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluatorPrinter
 }
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
-import monad_core.simulator.presentation.performance.ExperimentDialog
+import monad_core.simulator.presentation.performance.{
+  ExperimentDialog,
+  PerformanceGameEngineModePanel
+}
 import monad_core.simulator.presentation.panels.{
   AiModelChatPanel,
   GameEngineModePanel,
   GameEnginePanel,
   SceneRendererPanel
 }
+import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{RouteResponse, Router}
@@ -52,9 +56,31 @@ import scala.Console.{GREEN, RESET}
  * Application entry point and command-line router.
  *
  * It starts the model-evaluation suite when the `evaluate-model` argument is present;
- * otherwise, it launches the default GUI application.
+ * otherwise, it launches the GUI application. The `--performance` option decorates the GUI
+ * with its optional performance control.
  */
 object Launcher:
+
+  /** Command-line option that enables graphical performance controls. */
+  private[monad_core] val PerformanceGuiArgument = "--performance"
+
+  /**
+   * Selects the standard or performance-decorated engine-mode panel.
+   *
+   * @param args
+   *   application command-line arguments
+   * @param onPerformanceExperiment
+   *   callback assigned to the optional performance control
+   * @return
+   *   decorated builder only when the performance option is present
+   */
+  private[monad_core] def modePanelFor(
+      args: Array[String],
+      onPerformanceExperiment: () => Unit
+  ): GameEngineModePanelBuilder =
+    if args.contains(PerformanceGuiArgument) then
+      PerformanceGameEngineModePanel(GameEngineModePanel, onPerformanceExperiment)
+    else GameEngineModePanel
 
   /**
    * Assembles the dependencies required by the GUI and starts the ScalaFX application.
@@ -62,9 +88,10 @@ object Launcher:
    * The runtime, world, painter, AI agent, and panels are wired before control is delegated
    * to [[monad_core.simulator.presentation.stages.ScalaFxLauncher ScalaFxLauncher]].
    *
+   * @param args application command-line arguments controlling optional GUI features
    * @return `Left(BaseError)` if the UI cannot be initialized, or `Right(Unit)` once it is started
    */
-  private def guiApplication(): Either[BaseError, Unit] =
+  private def guiApplication(args: Array[String]): Either[BaseError, Unit] =
     given Logger = ConsoleLogger
 
     val logger = summon[Logger]
@@ -95,13 +122,17 @@ object Launcher:
 
     val imageConfig = BaseImageConfig()
 
-    val gamePanel = GameEnginePanel(
-      modePanel = GameEngineModePanel.withPerformanceExperiment(() =>
+    val modePanel = modePanelFor(
+      args,
+      () =>
         ExperimentDialog
           .show(() => runtime.physicsManagerSnapshot)
           .left
           .foreach(error => NotificationManager.show(error.message, Error))
-      ),
+    )
+
+    val gamePanel = GameEnginePanel(
+      modePanel = modePanel,
       rendererPanel = SceneRendererPanel,
       imageConfig = imageConfig
     )
@@ -184,7 +215,7 @@ object Launcher:
     lazy val performanceStressRoute      = runPerformance(args, PerformanceRoutes.Stress)
     lazy val performanceSpikeRoute       = runPerformance(args, PerformanceRoutes.Spike)
     lazy val performanceScalabilityRoute = runPerformance(args, PerformanceRoutes.Scalability)
-    lazy val guiRoute                    = outcomeFor(guiApplication())
+    lazy val guiRoute                    = outcomeFor(guiApplication(args))
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)

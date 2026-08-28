@@ -239,16 +239,6 @@
                           ]
                         },
                         {
-                          "type": "Button",
-                          "styleClass": ["button", "menu-icon-button"],
-                          "children": [
-                            {
-                              "type": "ImageView",
-                              "styleClass": ["image-view"]
-                            }
-                          ]
-                        },
-                        {
                           "type": "Region"
                         },
                         {
