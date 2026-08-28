@@ -20,9 +20,9 @@ extension (state: ExperimentState)
 /** Pure state transitions used by the graphical performance-test view model. */
 object ExperimentActions:
 
-  /** Starts a request unless one is already running. */
+  /** Moves a request to running; repeated starts preserve the same state. */
   def onStart(state: ExperimentState): ExperimentState =
-    if state.isRunning then state else ExperimentState.Running
+    ExperimentState.Running
 
   /** Applies a domain result only to the request that is currently running. */
   def onComplete(

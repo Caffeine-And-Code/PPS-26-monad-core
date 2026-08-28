@@ -11,7 +11,7 @@ class ExperimentStateTest extends AnyFunSuite with Matchers:
 
   test("the initial state is ready"):
     ExperimentState.initial shouldBe ExperimentState.Ready
-
+  
   test("starting a ready performance test changes its state to running"):
     val result = ExperimentActions.onStart(ExperimentState.Ready)
 
