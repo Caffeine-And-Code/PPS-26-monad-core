@@ -3,10 +3,10 @@ package monad_core.performance.domain
 import scala.annotation.tailrec
 
 /**
- * Entity-count progression used by stress and scalability experiments.
+ * Entity count progression used by stress and scalability experiments.
  *
- * Counts start at `start`, are multiplied by `factor`, and are capped at `maximum`. Therefore the
- * maximum is always included even when it is not an exact power of the factor.
+ * Counts start at `start`, are multiplied by `factor`, and are capped at `maximum`.
+ * The maximum is always included, even when it is not an exact power of the factor.
  *
  * @param start
  *   first entity count in the progression
@@ -25,44 +25,44 @@ final case class EntityGrowth private (
    * Expands this growth policy into its finite sequence of entity counts.
    *
    * @return
-   *   monotonically increasing counts from `start` through `maximum`, or a validation error
+   *   increasing counts from `start` through `maximum`, or a validation error
    */
   def counts: Either[PerformanceError, Vector[EntityCount]] =
-    /**
-     * Tail-recursive builder for [[counts]].
-     *
-     * @param current
-     *   current entity count to append
-     * @param accumulated
-     *   counts already generated
-     * @return
-     *   the completed count sequence once `maximum` is reached, or a validation error
-     */
-    @tailrec
-    def loop(
-        current: Int,
-        accumulated: Vector[EntityCount]
-    ): Either[PerformanceError, Vector[EntityCount]] =
-      EntityCount.from(current) match
-        case Left(error) => Left(error)
-        case Right(currentCount) =>
-          val nextAccumulated = accumulated :+ currentCount
-          if current == maximum.value then Right(nextAccumulated)
-          else
-            val multiplied = current.toLong * factor.toLong
-            val next       = math.min(multiplied, maximum.value.toLong).toInt
-            loop(next, nextAccumulated)
-
     loop(start.value, Vector.empty)
 
-/** Factory methods for [[EntityGrowth]]. */
+  /**
+   * Tail-recursive builder for [[counts]].
+   *
+   * @param current
+   *   current entity count to append
+   * @param accumulated
+   *   counts already generated
+   * @return
+   *   the completed count sequence once `maximum` is reached, or a validation error
+   */
+  @tailrec
+  private def loop(
+            current: Int,
+            accumulated: Vector[EntityCount]
+          ): Either[PerformanceError, Vector[EntityCount]] =
+    EntityCount.from(current) match
+      case Left(error) => Left(error)
+      case Right(currentCount) =>
+        val nextAccumulated = accumulated :+ currentCount
+        if current == maximum.value then Right(nextAccumulated)
+        else
+          val multiplied = current.toLong * factor.toLong
+          val next = math.min(multiplied, maximum.value.toLong).toInt
+          loop(next, nextAccumulated)
+
 object EntityGrowth:
 
   /**
    * Validates and creates an entity-growth policy.
    *
-   * Validation is fail-fast in parameter order: both entity counts must be positive, `maximum`
-   * must not be lower than `start`, and `factor` must be greater than one.
+   * Both entity counts must be positive,
+   * `maximum` must not be lower than `start`,
+   * and `factor` must be greater than one.
    *
    * @param start
    *   candidate starting entity count

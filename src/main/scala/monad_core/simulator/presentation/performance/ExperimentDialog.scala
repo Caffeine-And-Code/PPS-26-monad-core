@@ -31,18 +31,10 @@ object ExperimentDialog:
   /** Result-window title exposed for presentation integration. */
   val ResultTitle: String = ResultDialog.Title
 
-  /** Explicit label used to start the experiment. */
   val SubmitLabel = "Run"
-
-  /** Preferred width of the parameter form. */
   private val FormWidth = 520.0
-
-  /** Text shown before a failed performance result. */
   private val FailureHeader = "Performance test failed:"
-
-  /** Text displayed while the selected experiment is running. */
   private val RunningMessage = "Performance test running..."
-
   private val StartEntitiesLabel = "Start entities"
   private val MaximumEntitiesLabel = "Maximum entities"
   private val GrowthFactorLabel = "Growth factor"
@@ -126,7 +118,7 @@ object ExperimentDialog:
       )
     )
 
-  /** Opens the performance form with explicit, testable dependencies. */
+  /** Opens the performance form with explicit dependencies. */
   def show[Snapshot](props: ExperimentDialogProps[Snapshot]): Either[BaseError, Unit] =
     val viewModel = ExperimentViewModel(
       props.runner,
@@ -154,7 +146,7 @@ object ExperimentDialog:
   private def fieldsFor(arguments: Vector[String]): Seq[FormFieldSpec] =
     arguments.flatMap(ArgumentFields.get)
 
-  /** Displays the current execution state in one reusable result window. */
+  /** Displays the current execution state in a result window. */
   private[performance] def displayState(
       state: ExperimentState,
       owner: Option[Window],
@@ -169,7 +161,7 @@ object ExperimentDialog:
         displayResult(RunningMessage, owner, currentDialog)
       case ExperimentState.Ready => currentDialog
 
-  /** Opens or updates the result and reports an unexpected graphical failure. */
+  /** Opens or updates the result or reports an unexpected graphical failure. */
   private def displayResult(
       content: String,
       owner: Option[Window],

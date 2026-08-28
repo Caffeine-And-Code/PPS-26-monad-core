@@ -7,6 +7,7 @@ import helpers.dummies.DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.physics.utils.BorderWall
 import org.scalatest.EitherValues.convertEitherToValuable
 
+/** Fixture containing one entity-to-border collision and its expected response. */
 private[engine] case class SingleWallResult(
     entity: Entity,
     wall: Entity,
@@ -15,6 +16,7 @@ private[engine] case class SingleWallResult(
     expectedSpeed: Vector2D
 )
 
+/** Fixture containing two border collisions at one world corner and their expected response. */
 private[engine] case class CornerWallResult(
     entity: Entity,
     wall1: Entity,
@@ -25,8 +27,23 @@ private[engine] case class CornerWallResult(
     expectedSpeed: Vector2D
 )
 
+/** Builds deterministic entity and wall fixtures for border-contact tests. */
 private[engine] object BorderContactHelper:
 
+  /**
+   * Creates a circular entity crossing one selected border.
+   *
+   * @param borderSide
+   *   border crossed by the entity
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param lowerRight
+   *   lower-right world boundary
+   * @param entityId
+   *   fixture entity identifier
+   * @return
+   *   generated entity, wall contact, and expected response
+   */
   def generateSingleWallEntities(
       borderSide: BorderSide,
       upperLeft: Vector2D,
@@ -80,6 +97,20 @@ private[engine] object BorderContactHelper:
 
     SingleWallResult(entity, wallCollision._1, wallCollision._2, values._3, values._4)
 
+  /**
+   * Creates a circular entity crossing one vertical and one horizontal border.
+   *
+   * @param borderSideV
+   *   crossed vertical border
+   * @param borderSideH
+   *   crossed horizontal border
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param lowerRight
+   *   lower-right world boundary
+   * @return
+   *   generated entity, both wall contacts, and expected response
+   */
   def generateCornerEntities(
       borderSideV: BorderSide,
       borderSideH: BorderSide,

@@ -6,8 +6,7 @@ import monad_core.performance.domain.{EntityCount, PerformanceError}
  * Defines the workload measured by a performance experiment.
  *
  * Preparation is deliberately separated from execution so that scene construction and other
- * setup costs are excluded from the collected latency samples. A prepared operation may retain
- * the state needed by subsequent invocations.
+ * setup costs are excluded from the collected latency samples.
  */
 trait PerformanceWorkload:
 
@@ -17,7 +16,7 @@ trait PerformanceWorkload:
    * @param entityCount
    *   number of entities that the operation must process
    * @return
-   *   a callable operation on success, or a [[monad_core.performance.domain.PerformanceError]] if
+   *   a callable operation on success, or a [[PerformanceError]] if
    *   the workload cannot be initialized
    */
   def prepare(entityCount: EntityCount): Either[PerformanceError, SampleCollector.Operation]

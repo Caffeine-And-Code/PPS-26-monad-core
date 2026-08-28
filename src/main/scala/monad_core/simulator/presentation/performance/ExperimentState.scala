@@ -10,14 +10,13 @@ enum ExperimentState:
   case Failed(message: String)
 
 object ExperimentState:
-  /** Initial state before the first request. */
+  /** The initial state of an experiment. */
   val initial: ExperimentState = Ready
 
 extension (state: ExperimentState)
   /** Whether a request is currently being executed. */
   def isRunning: Boolean = state == ExperimentState.Running
 
-/** Pure state transitions used by the graphical performance-test view model. */
 object ExperimentActions:
 
   /** Moves a request to running; repeated starts preserve the same state. */

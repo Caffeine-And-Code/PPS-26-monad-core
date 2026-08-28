@@ -5,7 +5,7 @@ import monad_core.performance.domain.ExperimentReport
 /**
  * Output boundary for completed performance reports.
  *
- * Implementations decide how reports are rendered or persisted, keeping experiment orchestration
+ * Implementations decide how reports are rendered, keeping experiment orchestration
  * independent of a concrete presentation channel.
  */
 trait PerformanceReportPrinter:

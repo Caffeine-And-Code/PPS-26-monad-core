@@ -8,7 +8,7 @@ import scala.annotation.tailrec
  * Executes performance operations for warm-up and latency sampling.
  *
  * Operations are run sequentially and collection stops at the first domain error. Only measured
- * executions read the configured [[NanoClock]]; warm-up executions intentionally discard their
+ * executions read the configured [[NanoClock]]. Warm-up executions intentionally discard their
  * results and timings.
  */
 object SampleCollector:
@@ -17,14 +17,14 @@ object SampleCollector:
   type Operation = () => Either[PerformanceError, Unit]
 
   /**
-   * Runs an operation repeatedly without measuring it.
+   * Runs an [[Operation]] repeatedly without measuring it.
    *
    * @param warmups
    *   validated number of warm-up executions
    * @param operation
    *   operation to execute
    * @return
-   *   `Right(())` after every execution succeeds, or the first error returned by `operation`
+   *   `Right(())` after every execution succeeds, or the first error occurred
    */
   def warmUp(warmups: WarmupCount, operation: Operation): Either[PerformanceError, Unit] =
     repeat(warmups.value, operation, Vector.empty).map(_ => ())
@@ -72,7 +72,7 @@ object SampleCollector:
    * Executes an operation a fixed number of times and accumulates successful results.
    *
    * @param remaining
-   *   number of executions still to perform; callers must supply a non-negative value
+   *   number of executions still to perform. Callers must supply a non-negative value
    * @param operation
    *   fallible operation executed at each step
    * @param accumulated

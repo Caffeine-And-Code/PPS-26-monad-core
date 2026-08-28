@@ -3,7 +3,7 @@ package monad_core.performance.presentation
 /** Command names that route the launcher to each performance experiment. */
 object PerformanceRoutes:
 
-  /** Command that runs a sustained load experiment. */
+  /** Command that runs a load experiment. */
   val Load = "performance-load-test"
 
   /** Command that runs a progressively increasing stress experiment. */

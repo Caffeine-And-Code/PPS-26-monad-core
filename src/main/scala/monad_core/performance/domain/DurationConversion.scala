@@ -3,14 +3,13 @@ package monad_core.performance.domain
 /** Pure conversions between the duration units used by performance experiments. */
 object DurationConversion:
 
-  /** Number of nanoseconds contained in one millisecond. */
   private val NanosecondsPerMillisecond = 1_000_000L
 
   /**
-   * Converts an integral millisecond duration to nanoseconds.
+   * Converts a duration in milliseconds to nanoseconds.
    *
    * @param ms
-   *   duration expressed in milliseconds
+   *   duration in milliseconds
    * @return
    *   the same duration expressed in nanoseconds
    */
@@ -18,23 +17,21 @@ object DurationConversion:
     ms * NanosecondsPerMillisecond
 
   /**
-   * Converts a nanosecond duration to fractional milliseconds.
+   * Converts a duration in nanoseconds to milliseconds.
    *
    * @param ns
-   *   duration expressed in nanoseconds
+   *   duration in nanoseconds
    * @return
-   *   the same duration expressed in milliseconds, preserving its fractional part
+   *   the same duration expressed in milliseconds
    */
   def nanosToMillis(ns: Long): Double =
     ns.toDouble / NanosecondsPerMillisecond
 
   /**
-   * Converts a nanosecond duration to integral milliseconds.
-   *
-   * Any fractional millisecond is discarded through integer division.
+   * Converts a duration in nanoseconds to integral milliseconds.
    *
    * @param ns
-   *   duration expressed in nanoseconds
+   *   duration in nanoseconds
    * @return
    *   the whole milliseconds contained in the supplied duration
    */

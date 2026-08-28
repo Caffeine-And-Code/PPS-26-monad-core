@@ -16,7 +16,14 @@ final class ExperimentViewModel[Snapshot](
   val state: ObjectProperty[ExperimentState] =
     ObjectProperty(ExperimentState.initial)
 
-  /** Starts one selected performance test when no previous request is running. */
+  /**
+   * Starts one selected performance test when no previous request is running.
+   *
+   * @param values
+   *   the form values
+   * @return
+   *   a new experiment view model
+   */
   def onSubmit(values: Map[String, String]): Unit =
     if !state.value.isRunning then
       update(ExperimentActions.onStart)
@@ -46,7 +53,18 @@ final class ExperimentViewModel[Snapshot](
 
 object ExperimentViewModel:
 
-  /** Creates a view model with explicit asynchronous and UI boundaries. */
+  /**
+   * Creates a view model with explicit asynchronous and UI boundaries.
+   *
+   * @param runner
+   *   the experiment executor
+   * @param physicsManager
+   *   the physics manager
+   * @param runOnUiThread
+   *   the UI thread runner
+   * @return
+   *   a new experiment view model
+   */
   def apply[Snapshot](
       runner: ExperimentExecutor[Snapshot],
       physicsManager: () => Snapshot,

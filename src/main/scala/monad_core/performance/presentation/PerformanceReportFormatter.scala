@@ -12,19 +12,10 @@ import java.util.Locale
  */
 object PerformanceReportFormatter:
 
-  /** Multiplier that converts a ratio to a percentage. */
   private val PercentageFactor = 100.0
-
-  /** Format producing millisecond values with three fractional digits. */
   private val MillisecondsFormat = "%.3f"
-
-  /** Format producing percentage values with two fractional digits. */
   private val PercentageFormat = "%.2f"
-
-  /** Measure unit for milliseconds. */
   private val MillisecondsUnit = " ms"
-
-  /** Measure unit for percentages. */
   private val PercentageUnit = "%"
 
   /**
@@ -33,7 +24,7 @@ object PerformanceReportFormatter:
    * @param report
    *   completed report to format
    * @return
-   *   complete human-readable report
+   *   complete readable report
    */
   def format(report: ExperimentReport): String =
     val header = Vector(s"Performance experiment: ${report.kind}")

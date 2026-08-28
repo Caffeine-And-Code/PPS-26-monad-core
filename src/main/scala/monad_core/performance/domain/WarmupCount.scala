@@ -3,7 +3,6 @@ package monad_core.performance.domain
 /** Validated number of unmeasured warm-up executions. */
 opaque type WarmupCount = Int
 
-/** Factory methods for [[WarmupCount]]. */
 object WarmupCount:
 
   /**
@@ -18,5 +17,4 @@ object WarmupCount:
     Either.cond(value >= 0, value, InvalidWarmupCount(value))
 
   extension (warmupCount: WarmupCount)
-    /** Returns the validated primitive value. */
     def value: Int = warmupCount

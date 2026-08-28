@@ -16,7 +16,7 @@ object PerformanceCommand:
    * @param workload
    *   workload measured by the selected experiment
    * @param clock
-   *   monotonic clock used for latency sampling
+   *   clock used for latency sampling
    * @return
    *   completed experiment report, or the first routing, parsing, or execution error
    */

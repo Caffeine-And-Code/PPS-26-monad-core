@@ -5,7 +5,7 @@ import monad_core.simulator.application.performance.ExperimentRequest
 import monad_core.simulator.domain.performance.MissingPerformanceArgument
 import monad_core.simulator.errors.BaseError
 
-/** Converts graphical values into one selected performance command. */
+/** Converts graphical values into a selected performance command. */
 object ExperimentFormArguments:
 
   /** Form key containing the selected performance-test type. */

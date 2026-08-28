@@ -8,7 +8,7 @@ import monad_core.simulator.application.performance.ExperimentExecutor
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/** Engine-backed executor used by the graphical performance interface. */
+/** Engine executor used by the graphical performance interface. */
 object EngineExperimentExecutor:
 
   /** Executes the selected engine command outside the graphical thread. */

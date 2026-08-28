@@ -8,7 +8,7 @@ import monad_core.performance.domain.{
   PerformanceError
 }
 
-/** Presentation-level entry point for executing and printing performance experiments. */
+/** Presentation level entry point for executing and printing performance experiments. */
 object PerformanceRuntime:
 
   /**
@@ -21,7 +21,7 @@ object PerformanceRuntime:
    * @param workload
    *   workload measured by the experiment
    * @param clock
-   *   monotonic clock used for latency sampling
+   *   clock used for latency sampling
    * @return
    *   the completed report, or the first experiment error
    */
@@ -43,7 +43,7 @@ object PerformanceRuntime:
    * @param workload
    *   workload measured by the experiment
    * @param clock
-   *   monotonic clock used for latency sampling
+   *   clock used for latency sampling
    * @param printer
    *   output boundary receiving the successful report
    * @return

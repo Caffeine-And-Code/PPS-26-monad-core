@@ -5,14 +5,24 @@ import monad_core.engine.physics.core.{PhysicsContext, PhysicsError, PhysicsRule
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.utils.{PhysicsUtil, SceneEntitiesUpdate}
 
+/** Steers mobile entities towards the nearest visible enemy or a detour waypoint. */
 private[physics] object EnemyAttractionRule:
   private val Id          = "enemy-attraction"
   private val MaxTurnRate = 4.0 // radians per second
 
+  /** Physics rule instance applying enemy attraction to the current scene. */
   given enemyAttractionRule: PhysicsRule with
 
     override val RuleId: String = EnemyAttractionRule.Id
 
+    /**
+     * Applies attraction to every non-fixed entity and updates the scene.
+     *
+     * @param context
+     *   current scene, collisions, and elapsed time
+     * @return
+     *   updated physics state, or the first [[PhysicsError]]
+     */
     override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
         _ <- PhysicsUtil.timeLongToSeconds(context.dt)
@@ -32,6 +42,24 @@ private[physics] object EnemyAttractionRule:
         updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)
       yield PhysicsRuleResult(updatedScene)
 
+  /**
+   * Traverses all mobile entities while preserving the first physics failure.
+   *
+   * @param entities
+   *   current scene entities
+   * @param teams
+   *   current team relationships
+   * @param vertexes
+   *   pathfinding vertices indexed by entity identifier
+   * @param upperLeftCorner
+   *   upper-left world boundary
+   * @param lowerRightCorner
+   *   lower-right world boundary
+   * @param dt
+   *   elapsed nanoseconds
+   * @return
+   *   updated mobile entities, or the first [[PhysicsError]]
+   */
   private def applyEnemyAttraction(
       entities: List[Entity],
       teams: List[Team],
@@ -56,6 +84,26 @@ private[physics] object EnemyAttractionRule:
         ).map(updatedEntity => updatedEntities :+ updatedEntity)
   }
 
+  /**
+   * Steers one entity towards its nearest enemy when a reachable target exists.
+   *
+   * @param entity
+   *   entity to orient
+   * @param entities
+   *   current scene entities
+   * @param teams
+   *   current team relationships
+   * @param vertexes
+   *   pathfinding vertices indexed by entity identifier
+   * @param upperLeftCorner
+   *   upper-left world boundary
+   * @param lowerRightCorner
+   *   lower-right world boundary
+   * @param dt
+   *   elapsed nanoseconds
+   * @return
+   *   oriented entity, unchanged entity when no target exists, or a [[PhysicsError]]
+   */
   private[physics] def applyAttractionToEntity(
       entity: Entity,
       entities: List[Entity],
@@ -92,6 +140,21 @@ private[physics] object EnemyAttractionRule:
         )
       }
 
+  /**
+   * Rotates a velocity towards a target without changing its magnitude.
+   * The signed angular difference is clamped to the maximum allowed turn.
+   *
+   * @param entity
+   *   entity whose velocity is updated
+   * @param currentSpeed
+   *   current linear velocity
+   * @param targetPosition
+   *   desired world-space destination
+   * @param maxTurnAngle
+   *   maximum angular change in radians
+   * @return
+   *   entity with an oriented velocity, or unchanged when already at the target
+   */
   private[physics] def orientSpeed(
       entity: Entity,
       currentSpeed: Vector2D,
@@ -117,6 +180,14 @@ private[physics] object EnemyAttractionRule:
         )
       )
 
+  /**
+   * Normalizes a radian angle to the interval from minus Pi to Pi.
+   *
+   * @param angle
+   *   angle in radians
+   * @return
+   *   equivalent wrapped angle
+   */
   private def normalizeAngle(angle: Double): Double =
     val twoPi = 2 * math.Pi
     ((angle + math.Pi) % twoPi + twoPi) % twoPi - math.Pi
