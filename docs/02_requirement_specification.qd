@@ -1,99 +1,146 @@
-# Requisiti
-Il presente capitolo descrive i requisiti del software finale. Il software è composto da due macroaree: un engine che gestisce entità di forme diverse e la loro interazione con l'ambiente circostante, riutilizzabile come modulo a sé stante, e un'applicazione dotata di GUI, che rappresenta graficamente l'engine e consente di interagire con esso tramite un agente AI basato su un Large Language Model.
+# Requirement specification
+
+Il presente capitolo specifica il comportamento esterno della versione finale di **MonadCore2D**. Il termine «deve» ha valore normativo e non indica una funzionalità futura: identifica una proprietà che il sistema consegnato è tenuto a rispettare. La specifica considera tre categorie di utilizzatori:
+
+- lo **sviluppatore integratore**, che usa il game engine come libreria Scala;
+- l'**utente del simulatore**, che costruisce e osserva una scena attraverso la GUI e l'assistente AI;
+- l'**operatore della valutazione**, che esegue da linea di comando la suite di valutazione dell'agente.
+
+Il sistema è composto da due prodotti coordinati ma separabili: il **game engine**, privo di dipendenze dalla GUI e dai servizi LLM, e il **simulatore**, che fornisce l'interfaccia grafica, l'integrazione con Ollama e la modalità headless di valutazione.
 
 ## Requisiti di business
-Dovranno essere disponibili un'applicazione dotata di GUI e una libreria utilizzabile da altri sviluppatori software nei propri progetti. I requisiti saranno quindi suddivisi tra quelli relativi alla libreria che implementa l'engine grafico 2D e quelli relativi all'applicazione dotata di GUI, attraverso la quale sarà possibile interagire graficamente con l'engine. \
-Tramite l'engine 2D dovrà essere possibile:
-- gestire entità grafiche di forma circolare o quadrata, ciascuna dotata di peso, velocità, posizione, vita e team di appartenenza
-- gestire superfici grafiche di forma circolare o quadrata, caratterizzate da una posizione e in grado di applicare attrito o forza a ogni entità che vi passa sopra
-- fare in modo che un'entità possa essere attratta dall'entità più vicina appartenente a un team diverso
-- far avanzare la simulazione tick per tick, applicando la simulazione della fisica e gestendo le reazioni alle collisioni in base al tempo trascorso tra un tick e il successivo
-- gestire una scena composta da entità, superfici e team
 
-Tramite l'applicazione dotata di GUI dovrà essere possibile:
-- visualizzare graficamente l'evoluzione della scena dell'engine 2D attraverso un'interfaccia grafica
-- interagire con gli elementi presenti nella scena dell'engine, aggiungendo, modificando e rimuovendo entità, superfici e team
-- avviare la simulazione, metterla in pausa o ripristinarne lo stato iniziale
-- interagire con un agente AI in grado di eseguire tutte le operazioni disponibili nella GUI mediante richieste formulate sotto forma di messaggi
+- **BR-01 — Motore riutilizzabile.** Il progetto deve fornire una libreria Scala con cui modellare ed evolvere scene fisiche bidimensionali senza dipendere dal simulatore, da ScalaFX, da LangChain4j o da Ollama.
+- **BR-02 — Simulatore interattivo.** Il progetto deve fornire un'applicazione desktop con cui creare una scena, configurare le regole fisiche, eseguirne la simulazione e osservarne l'evoluzione.
+- **BR-03 — Interazione in linguaggio naturale.** L'applicazione deve affiancare ai controlli grafici un assistente LLM capace di consultare e modificare il mondo attraverso un insieme dichiarato di operazioni applicative.
+- **BR-04 — Valutazione ripetibile dell'agente.** Il progetto deve fornire una modalità headless che esegua un dataset di conversazioni, osservi i tool invocati e produca misure aggregate sul comportamento dell'agente.
+- **BR-05 — Qualità verificabile.** Correttezza funzionale, separazione architetturale, rendering grafico e integrazione tra componenti devono essere protetti da test automatizzati eseguibili da un checkout pulito.
+- **BR-06 — Consegna autonoma.** La GUI, la relazione e la documentazione delle API devono essere producibili dalla build e distribuibili mediante gli artefatti di release, senza richiedere file applicativi esterni al JAR. Le sole funzioni AI richiedono un endpoint Ollama raggiungibile e un modello già disponibile sul server.
 
-## Modelli di dominio
+## Modello di dominio
 
-![Diagramma dei casi d'uso](assets/monad_core_use_case_diagram.drawio.png)
+### Struttura del mondo
 
-Glossario:
-- entità: oggetti rappresentabili dall'engine, ai quali vengono applicate le regole del motore fisico, che ne gestisce gli spostamenti in funzione del tempo e le reazioni alle collisioni con altre entità
-- superfici: zone della scena che applicano una forza alle entità che vi passano sopra, generando attrito o accelerazione in una direzione prestabilita
-- team: gruppi ai quali possono appartenere le entità. Attraverso apposite regole del motore fisico è possibile fare in modo che un'entità trovi automaticamente il percorso più breve per raggiungere l'entità più vicina di un team avversario, mediante un algoritmo di path finding, e che ne sia attratta, muovendosi verso di essa in relazione alla propria velocità
-- scena: contenitore di entità e superfici
-- simulazione: una volta popolata la scena, è possibile avviare la simulazione, durante la quale le posizioni e i dati delle entità vengono aggiornati in base alle regole fisiche applicate
+Il **mondo** osservato dall'utente corrisponde a una **scena** immutabile. La scena contiene tre collezioni indicizzate per identificatore e i confini rettangolari dell'area di simulazione:
+
+- una **entità** è un corpo fisico identificato, collocato in una posizione e rappresentato da un cerchio o da un rettangolo. Può possedere velocità lineare, velocità angolare, peso, salute, danno da contatto e team di appartenenza. L'assenza sia della velocità lineare sia di quella angolare rende l'entità fissa;
+- una **superficie** è una zona circolare o rettangolare identificata. Può applicare alle entità contenute una forza, un coefficiente di attrito e un danno per aggiornamento fisico;
+- un **team** è identificato da un nome e contiene l'insieme degli identificatori dei team considerati nemici;
+- i **confini del mondo** definiscono l'angolo superiore sinistro `(0, 0)` e l'angolo inferiore destro `(larghezza, altezza)` usati dal rilevamento del contatto con i bordi;
+- una **sessione dell'engine** conserva modalità, stato di esecuzione e informazioni temporali del game loop, ma non contiene la scena. Scena e sessione vengono passate esplicitamente a ogni avanzamento.
+
+Le relazioni principali sono quindi: una scena aggrega zero o più entità, superfici e team; una entità può riferirsi a un team; un team può riferirsi a più team nemici. Gli identificatori di entità e superfici sono univoci all'interno della rispettiva collezione, mentre gli identificatori di team sono univoci nella collezione dei team.
+
+### Valori e invarianti
+
+I costruttori e le operazioni pubbliche devono rifiutare i valori che violano le seguenti invarianti, restituendo un errore esplicito:
+
+- gli identificatori, dopo la rimozione degli spazi iniziali e finali, non possono essere vuoti;
+- le coordinate iniziali `x` e `y` di entità e superfici non possono essere negative;
+- il raggio, l'altezza e la lunghezza delle forme devono essere strettamente positivi;
+- la rotazione deve appartenere all'intervallo chiuso da 0 a 360 gradi;
+- il peso e la salute devono essere strettamente positivi;
+- il danno da contatto e il danno di una superficie non possono essere negativi;
+- larghezza e altezza dei confini del mondo devono essere strettamente positive;
+- un team non può dichiarare se stesso come nemico;
+- l'aggiunta di un elemento con identificatore già presente e la rimozione o modifica di un elemento assente devono fallire senza alterare la scena;
+- velocità e forza sono vettori bidimensionali: attraverso i tool AI le due componenti devono essere fornite insieme oppure entrambe omesse.
+
+### Dinamica della simulazione
+
+Il mondo può trovarsi in **modalità di modifica** o in **modalità di simulazione**. In modifica, entità, superfici e team possono essere creati, aggiornati o rimossi. In simulazione, ogni mutazione richiesta dalla GUI o dai tool deve essere rifiutata; lettura, arresto e rendering restano disponibili.
+
+Il game loop usa aggiornamenti fisici a passo fisso. A ogni tick riceve un tempo monotono, accumula il tempo trascorso, limita un singolo intervallo al `maxFrameTime` configurato ed esegue zero o più aggiornamenti di durata `tickTime`. Il risultato contiene lo stato corrente, quello precedente, la sessione successiva, gli eventi prodotti e il coefficiente `alpha` usato per interpolare il frame visualizzato. Con i valori predefiniti il passo fisso è di 16 millisecondi e il massimo intervallo elaborato in una chiamata è di 250 millisecondi.
+
+La configurazione fisica predefinita applica, nell'ordine, le seguenti regole, ognuna attivabile o disattivabile mediante il proprio identificatore stabile:
+
+1. `surface-dynamics`: applicazione della forza e dell'attrito lineare e angolare delle superfici;
+2. `enemy-attraction`: orientamento graduale della velocità verso il nemico più vicino, usando il pathfinding per individuare una direzione raggiungibile;
+3. `collision-resolution`: separazione e risposta elastica alle collisioni tra entità;
+4. `border-contact`: risposta al contatto con i quattro confini della scena;
+5. `damage-application`: applicazione del danno tra entità a contatto e del danno delle superfici; una entità viene rimossa quando la salute diventa negativa;
+6. `kinematics`: aggiornamento di posizione e rotazione in funzione del tempo trascorso.
+
+I fixed update producono **eventi di engine** quando una entità cambia, viene rimossa oppure collide con un'altra entità o con un bordo. Nel simulatore, `WorldEditor` produce inoltre gli eventi di creazione, aggiornamento e rimozione dovuti alle operazioni dell'utente. Gli eventi descrivono transizioni già avvenute e non comandano direttamente il flusso applicativo; il simulatore li adatta a record di log testuali.
+
+### Conversazione e valutazione dell'agente
+
+Una **conversazione** è identificata e conserva una finestra limitata di messaggi. Ogni richiesta produce in modo asincrono una risposta testuale oppure un errore. L'agente opera esclusivamente sul dominio MonadCore2D e considera i tool come unica fonte attendibile sullo stato corrente.
+
+Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt, la lingua attesa, la sequenza attesa di tool e una proprietà semantica da rispettare. Il valutatore esegue la conversazione in un mondo headless isolato e calcola: scelta della lingua, correttezza linguistica, corrispondenza ordinata dei tool e rispetto dell'aspettativa. Il riepilogo aggrega le percentuali e il numero di casi non valutabili.
 
 ## Requisiti funzionali
 
-### Requisiti dello sviluppatore che utilizza l'engine 2D
-1. creare entità
-   1. specificarne la forma, scegliendo tra cerchio e rettangolo, e indicare le relative dimensioni (raggio per il cerchio; altezza e lunghezza per il rettangolo), la posizione (X e Y) e l'ID
-   2. specificarne facoltativamente il peso
-   3. specificarne facoltativamente la velocità (un vettore con componenti X e Y)
-   4. specificarne facoltativamente la vita
-   5. specificarne facoltativamente il team di appartenenza
-   6. aggiungerle alla scena
-2. creare superfici
-   1. specificarne la forma, scegliendo tra cerchio e rettangolo, e indicare le relative dimensioni (raggio per il cerchio; altezza e lunghezza per il rettangolo), la posizione (X e Y) e l'ID
-   2. specificarne facoltativamente l'attrito
-   3. specificare facoltativamente la forza applicata alle entità che vi si trovano sopra
-3. creare team
-   1. specificare i team nemici
-4. poter aggiungere entità, superfici e team alla scena
-5. poter configurare il metodo di rilevamento delle collisioni
-   1. disporre di un'implementazione predefinita
-6. poter configurare il metodo di rilevamento della presenza di un'entità su una superficie
-   1. disporre di un'implementazione predefinita
-7. poter configurare le regole fisiche da applicare alla scena a ogni tick
-   1. disporre delle regole fisiche di base predefinite
-      1. risposta alle collisioni
-      2. cinetica di base
-      3. attrazione verso i nemici
-      4. rimbalzo sui muri, ovvero sui confini della scena
-      5. applicazione alle entità delle forze e dell'attrito generati dalle superfici
-8. poter gestire il game engine
-   1. poter fornire una funzione da eseguire a ogni avanzamento dell'engine e alla conseguente applicazione della fisica; la funzione riceverà in input la scena modificata dalle regole fisiche applicate
-   2. poter impostare una scena iniziale
+### Requisiti dell'utente
 
-### Requisiti dell'utente della GUI
-1. poter disegnare e visualizzare la scena in una schermata
-2. poter interagire con il game engine e con la relativa scena tramite la GUI
-   1. poter creare entità specificandone ogni parametro
-   2. poter modificare ogni parametro di ciascuna entità
-   3. poter eliminare un'entità dalla scena
-   4. poter creare superfici specificandone ogni parametro
-   5. poter modificare ogni parametro di ciascuna superficie
-   6. poter eliminare una superficie dalla scena
-   7. poter creare team specificandone ogni parametro
-   8. poter modificare ogni parametro di ciascun team
-   9. poter eliminare un team
-   10. poter avviare la simulazione
-   11. poter mettere in pausa la simulazione
-   12. poter ripristinare lo stato iniziale della simulazione
-3. poter interagire con un assistente AI
-   1. poter eseguire, mediante l'invio di messaggi testuali all'assistente AI, tutte le operazioni disponibili nella GUI
-   2. l'agente potrà conversare esclusivamente su temi riguardanti l'applicazione e non fornirà risposte a richieste relative ad altri argomenti
-4. notificare graficamente all'utente ogni errore verificatosi durante la creazione, la modifica o l'eliminazione di entità, superfici o team e causato dall'inserimento di dati non validi
+#### Sviluppatore integratore del game engine
+
+- **RU-ENG-01 — Costruzione del modello.** Lo sviluppatore deve poter creare cerchi e rettangoli sia come entità sia come superfici, creare team e comporre una scena mediante operazioni immutabili di aggiunta, ricerca e rimozione.
+- **RU-ENG-02 — Proprietà delle entità.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente velocità lineare, velocità angolare, peso, salute, danno e team.
+- **RU-ENG-03 — Proprietà delle superfici.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente attrito, forza applicata e danno.
+- **RU-ENG-04 — Configurazione della fisica.** Deve poter utilizzare tutte le regole predefinite, fornire una sequenza di regole diversa e sostituire il rilevatore di collisioni tramite il relativo contratto.
+- **RU-ENG-05 — Sessione.** Deve poter creare una sessione con tempi predefiniti o personalizzati, avviarla, arrestarla e interrogarne modalità e stato di esecuzione.
+- **RU-ENG-06 — Avanzamento.** Deve poter avanzare uno `State` passando sessione, tempo corrente e configurazione fisica, ricevendo un `Either` contenente errore oppure stato aggiornato, stato precedente, prossima sessione, eventi e coefficiente di interpolazione.
+- **RU-ENG-07 — Regole attive.** Deve poter ottenere l'elenco delle regole fisiche configurate e abilitarle o disabilitarle per identificatore senza mutare il manager ricevuto.
+- **RU-ENG-08 — Rendering indipendente dal backend.** Deve poter trasformare uno stato in una sequenza ordinata di comandi di disegno per cerchi e rettangoli, fornendo una strategia `Painter` per forme e colori.
+- **RU-ENG-09 — Osservazione.** Deve poter consumare gli eventi prodotti dagli aggiornamenti fisici senza dipendere dal simulatore.
+
+#### Utente della GUI
+
+- **RU-GUI-01 — Visualizzazione.** L'utente deve vedere entità e superfici su un canvas ridimensionabile; i cambiamenti delle dimensioni del canvas devono aggiornare i confini del mondo.
+- **RU-GUI-02 — Creazione.** In modalità di modifica deve poter creare entità e superfici tramite form che espongono posizione, forma, dimensioni e proprietà opzionali; il sistema assegna loro un identificatore alfanumerico. Deve inoltre poter creare un team specificandone nome e nemici.
+- **RU-GUI-03 — Modifica e rimozione.** In modalità di modifica deve poter selezionare con il tasto destro entità e superfici per modificarle o rimuoverle e deve poter scegliere un team da modificare o rimuovere.
+- **RU-GUI-04 — Controllo della simulazione.** Deve poter avviare, mettere in pausa e arrestare con ripristino la simulazione. Il ripristino deve riportare la scena all'ultimo snapshot creato dopo una modifica riuscita e deve rientrare in modalità di modifica.
+- **RU-GUI-05 — Configurazione fisica.** Deve poter consultare le sei regole configurate e abilitarle o disabilitarle singolarmente dal menu dedicato.
+- **RU-GUI-06 — Vincolo di modifica.** Durante la simulazione i controlli di modifica devono essere disabilitati; un comando di modifica che raggiunga comunque il dominio deve essere rifiutato senza cambiamenti parziali.
+- **RU-GUI-07 — Errori.** Gli errori di parsing, validazione, modifica e runtime devono essere resi visibili mediante una notifica o un messaggio nel pannello interessato.
+- **RU-GUI-08 — Chat.** Deve poter inviare un messaggio non vuoto, vedere il messaggio inviato, distinguere lo stato di attesa e leggere la risposta o l'errore dell'assistente senza bloccare l'interfaccia.
+- **RU-GUI-09 — Memoria della chat.** Deve poter proseguire una conversazione multi-turno e cancellarne la cronologia quando non è in corso una risposta.
+- **RU-GUI-10 — Operazioni AI.** In linguaggio naturale deve poter richiedere la lettura, creazione, sostituzione e rimozione di entità, superfici e team e l'avvio o l'arresto dell'engine. Reset e configurazione delle regole fisiche restano operazioni esclusivamente grafiche.
+
+#### Operatore della valutazione headless
+
+- **RU-EVAL-01 — Avvio.** L'operatore deve poter selezionare la modalità `evaluate-model` da linea di comando.
+- **RU-EVAL-02 — Configurazione.** Deve poter indicare URL e nome del modello sottoposto a test e del modello giudice; in assenza di argomenti vengono usati i valori predefiniti.
+- **RU-EVAL-03 — Isolamento.** Ogni caso deve essere eseguito su una nuova copia della scena iniziale con controllo headless dell'engine, senza avviare ScalaFX.
+- **RU-EVAL-04 — Risultato.** Al termine deve ricevere su console le quattro percentuali aggregate e il numero di valutazioni fallite.
+
+### Requisiti di sistema
+
+- **RS-01 — Atomicità delle modifiche.** Il sistema deve sostituire la scena corrente soltanto quando l'intera operazione di creazione, modifica, rimozione o ridimensionamento ha successo; al primo errore deve conservare la scena precedente.
+- **RS-02 — Errori tipizzati.** Le condizioni attese di dominio, fisica e applicazione devono essere rappresentate come valori `Left`; le eccezioni di librerie esterne devono essere intercettate e adattate al confine infrastrutturale quando possibile.
+- **RS-03 — Passo fisso.** Una sessione in esecuzione deve applicare tanti aggiornamenti completi quanti ne ammette l'accumulatore e deve conservarne il resto; una sessione arrestata deve lasciare invariato lo stato.
+- **RS-04 — Interpolazione.** Prima del rendering il sistema deve interpolare posizione e rotazione delle entità tra gli ultimi due stati con un coefficiente compreso tra 0 e 1, senza modificare lo stato fisico definitivo.
+- **RS-05 — Piano di disegno.** Il renderer dell'engine deve produrre prima i comandi delle superfici e poi quelli delle entità; il colore di una entità deve dipendere dal team quando presente, altrimenti dal colore base.
+- **RS-06 — Snapshot.** Dopo ogni modifica GUI riuscita il simulatore deve aggiornare lo snapshot di ripristino; un errore non deve sostituirlo.
+- **RS-07 — Propagazione degli eventi.** Il runtime deve inoltrare gli eventi prodotti dai fixed update e dalle modifiche di entità al formatter di log; un tick fallito deve notificare l'errore e arrestare la sessione.
+- **RS-08 — Affidabilità dell'agente.** Per domande sullo stato corrente l'agente deve usare i tool di lettura, non deve inventare il risultato di una operazione, deve chiedere i parametri obbligatori mancanti e deve riportare gli errori restituiti dai tool.
+- **RS-09 — Perimetro e lingua dell'agente.** L'agente deve rispondere in testo semplice, in modo conciso e nella lingua dell'utente; per richieste estranee a MonadCore2D deve rifiutare senza invocare tool.
+- **RS-10 — Mutua esclusione delle modifiche.** GUI e tool AI devono condividere lo stesso `World` e lo stesso stato del runtime, così che il divieto di modifica durante la simulazione sia applicato indipendentemente dal canale di ingresso.
+- **RS-11 — Valutazione.** Il valutatore deve confrontare posizione e parametri delle chiamate tool, delegare al modello giudice le proprietà linguistiche e semantiche e registrare separatamente i casi che non producono un giudizio valido.
+- **RS-12 — Selezione della modalità.** Il launcher deve avviare la valutazione quando trova la route `evaluate-model`; in ogni altro caso deve costruire la GUI. Un errore di routing o avvio deve produrre un codice di uscita non nullo.
 
 ## Requisiti non funzionali
-Per quanto riguarda l'engine, i requisiti non funzionali riguardano il costo, in termini di prestazioni, dell'esecuzione di un ciclo di elaborazione della fisica per ogni elemento (entità, superficie e team) presente nella scena. L'applicazione dovrà mettere a disposizione strumenti, sotto forma di performance test, che consentano a ogni utente di ottenere informazioni sulle prestazioni dell'engine sul proprio hardware.
 
-Per quanto riguarda la GUI, i requisiti non funzionali riguardano la fluidità e la semplicità d'uso:
-- l'esperienza d'uso deve essere fluida
-- l'utilizzo deve essere intuitivo per l'utente
-- l'applicazione non deve presentare blocchi, malfunzionamenti o arresti anomali e inattesi durante il normale utilizzo
+- **RNF-01 — Portabilità verificata.** Il progetto deve essere compilabile con Java 21 e SBT sulle piattaforme Linux, Windows e macOS previste dalla matrice di release. Poiché JavaFX contiene componenti native, la release deve produrre un fat JAR specifico per ciascuna piattaforma; il JAR Linux è obbligatorio.
+- **RNF-02 — Indipendenza dell'engine.** Nessun sorgente sotto `monad_core.engine` deve importare `monad_core.simulator`, ScalaFX, JavaFX, LangChain4j o Ollama. Il vincolo deve essere controllato automaticamente.
+- **RNF-03 — Reattività della GUI.** L'invocazione del modello deve avvenire fuori dal JavaFX Application Thread; durante l'attesa il pannello deve impedire invii concorrenti, mostrare lo stato di caricamento e tornare in uno stato utilizzabile dopo risposta o errore.
+- **RNF-04 — Determinismo della suite standard.** `sbt test` non deve richiedere Ollama o accesso a servizi remoti. I test che usano realmente un LLM devono appartenere alla configurazione SBT separata `llmIntegrationTest`.
+- **RNF-05 — Riproducibilità grafica.** I test GUI devono poter essere eseguiti in CI Linux mediante display virtuale e font controllati; gli snapshot devono usare soglie esplicite per tollerare soltanto differenze di rasterizzazione limitate.
+- **RNF-06 — Copertura.** La suite standard deve mantenere una copertura delle righe dei sorgenti di produzione superiore al 90%, misurata sullo stesso insieme di sorgenti e test documentato nel capitolo di testing.
+- **RNF-07 — Manutenibilità architetturale.** Le direzioni di dipendenza tra engine e simulator e tra Domain, Application, Infrastructure e Presentation devono essere espresse da test architetturali che falliscano in presenza di import vietati.
+- **RNF-08 — Distribuibilità.** La pipeline di release deve generare fat JAR eseguibili, relazione PDF e tag di versione; la pipeline Pages deve pubblicare relazione HTML e Scaladoc.
+- **RNF-09 — Disponibilità degradata.** L'assenza o l'irraggiungibilità di Ollama può rendere indisponibili chat e valutazione, ma non deve introdurre una dipendenza di runtime nel game engine né impedire l'uso programmatico della libreria.
+
+Non viene assunto un requisito quantitativo sulle prestazioni della fisica: la versione finale non include un benchmark utente stabile con soglie riproducibili. Tempi di tick o frame-rate dipenderebbero inoltre da numero e disposizione degli elementi e dall'hardware, perciò non vengono presentati come proprietà verificate.[[TODO Update with Tonelli part]]
 
 ## Requisiti di implementazione
-- raggiungere una copertura dei test superiore al 90%
-- implementare unit test per ogni logica dell'applicazione
-- implementare integration test per le parti che richiedono l'integrazione tra domini differenti
-- implementare UI test per garantire il rispetto dei requisiti funzionali della GUI
-- implementare snapshot test per i pannelli e i componenti grafici della GUI
-- implementare test architetturali sull'applicazione dotata di GUI, al fine di garantire la corretta organizzazione del codice
-- implementare mutation test per verificare l'efficacia dei test mediante la mutazione del codice sorgente
-- implementare performance test eseguibili dall'utente, affinché possa ottenere informazioni sulle prestazioni dell'engine sul proprio dispositivo
-- utilizzare il paradigma di programmazione funzionale e il linguaggio Scala sia per lo sviluppo dell'applicazione dotata di GUI sia per quello della libreria dell'engine
+
+- **RI-01 — Linguaggio e paradigma.** Il codice di produzione deve essere scritto in Scala 3 e usare in modo significativo immutabilità, funzioni pure, ADT, opaque type, pattern matching, higher-order function, contextual abstraction ed errori rappresentati con `Either`.
+- **RI-02 — Toolchain.** La build deve usare SBT, Java 21, Scalafmt e sbt-assembly; il progetto deve essere importabile ed eseguibile direttamente dopo il clone.
+- **RI-03 — Tecnologie ai confini.** ScalaFX/JavaFX devono essere limitati alla Presentation; LangChain4j e il client Ollama agli adapter Infrastructure. L'engine non deve conoscere tali tecnologie.
+- **RI-04 — Test automatizzati.** Devono essere presenti test unitari e di integrazione per engine e simulator, test GUI e snapshot, test architetturali e mutation testing dell'engine mediante Stryker4s.
+- **RI-05 — Integrazione LLM.** I test con modello reale devono essere isolati nella configurazione `llmIntegrationTest`; il valutatore headless deve poter usare configurazioni distinte per agente e giudice.
+- **RI-06 — Continuous integration.** Ogni pull request verso `main` o `development` deve eseguire test e controllo Scalafmt; i test grafici devono essere eseguiti con Xvfb in CI.
+- **RI-07 — Documentazione.** Le API pubbliche devono essere corredate da Scaladoc e la relazione Quarkdown deve essere compilata automaticamente in HTML e PDF.
+- **RI-08 — Versionamento e release.** Ogni merge su `main` destinato a una release deve incrementare `release_version`; la pipeline deve rifiutare versioni uguali o inferiori all'ultima pubblicata.
