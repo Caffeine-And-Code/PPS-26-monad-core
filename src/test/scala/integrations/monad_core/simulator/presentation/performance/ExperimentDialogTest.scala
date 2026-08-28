@@ -1,4 +1,4 @@
-package integrations.monad_core.performance.presentation.gui
+package integrations.monad_core.simulator.presentation.performance
 
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
@@ -15,8 +15,10 @@ import monad_core.performance.domain.{
 import monad_core.performance.helpers.SequenceNanoClock
 import monad_core.performance.infrastructure.engine.EnginePerformanceExperiment
 import monad_core.performance.presentation.PerformanceArguments
-import monad_core.performance.presentation.gui.*
+import monad_core.simulator.application.performance.{ExperimentExecutor, ExperimentRequest}
 import monad_core.simulator.infrastructure.engine.MonadCoreGameEngineRuntime
+import monad_core.simulator.infrastructure.performance.EngineExperimentExecutor.given
+import monad_core.simulator.presentation.performance.*
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
@@ -59,7 +61,7 @@ class ExperimentDialogTest
     PerformanceArguments.FrameBudgetMillis
   )
 
-  private def pendingProps: ExperimentDialogProps =
+  private def pendingProps: ExperimentDialogProps[PhysicsManager] =
     val pendingResult = Promise[Either[PerformanceError, String]]()
     ExperimentDialogProps(
       physicsManager = () => PhysicsManager.default(),
@@ -181,7 +183,7 @@ class ExperimentDialogTest
     val pendingResult = Promise[Either[PerformanceError, String]]()
     var receivedRequest: Option[ExperimentRequest] = None
     var receivedPhysics: Option[PhysicsManager]               = None
-    val runner: ExperimentExecutor = (request, physics) =>
+    val runner: ExperimentExecutor[PhysicsManager] = (request, physics) =>
       receivedRequest = Some(request)
       receivedPhysics = Some(physics)
       pendingResult.future

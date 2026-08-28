@@ -1,11 +1,8 @@
-package monad_core.performance.presentation.gui
+package monad_core.simulator.presentation.performance
 
-import monad_core.engine.physics.core.PhysicsManager
-import monad_core.performance.application.NanoClock
 import monad_core.performance.domain.{DurationConversion, PerformanceConfig}
-import monad_core.performance.infrastructure.SystemNanoClock
-import monad_core.performance.infrastructure.engine.EnginePerformanceExperiment
 import monad_core.performance.presentation.PerformanceArguments
+import monad_core.simulator.application.performance.ExperimentExecutor
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.components.forms.base.{
@@ -18,13 +15,11 @@ import monad_core.simulator.presentation.components.forms.base.{
 import scalafx.application.Platform
 import scalafx.stage.Window
 
-import scala.concurrent.{ExecutionContext, Future}
-
 /** Dependencies required to launch a graphical performance test. */
-final case class ExperimentDialogProps(
-                                        physicsManager: () => PhysicsManager,
-                                        runner: ExperimentExecutor,
-                                        owner: Option[Window] = None
+final case class ExperimentDialogProps[Snapshot](
+    physicsManager: () => Snapshot,
+    runner: ExperimentExecutor[Snapshot],
+    owner: Option[Window] = None
 )
 
 /** Dynamic parameter form and result orchestration for all performance experiments. */
@@ -47,7 +42,7 @@ object ExperimentDialog:
 
   /** Text displayed while the selected experiment is running. */
   private val RunningMessage = "Performance test running..."
-  
+
   private val StartEntitiesLabel = "Start entities"
   private val MaximumEntitiesLabel = "Maximum entities"
   private val GrowthFactorLabel = "Growth factor"
@@ -114,23 +109,25 @@ object ExperimentDialog:
     ) +: fieldsFor(CommonArguments)
 
   /**
-   * Opens the form using the real engine workload and system clock.
+   * Opens the form using the contextual performance executor.
    *
    * @param physicsManager
    *   provider read only when the user submits the form
    * @return
    *   form construction result
    */
-  def show(physicsManager: () => PhysicsManager): Either[BaseError, Unit] =
+  def show[Snapshot](
+      physicsManager: () => Snapshot
+  )(using runner: ExperimentExecutor[Snapshot]): Either[BaseError, Unit] =
     show(
       ExperimentDialogProps(
         physicsManager = physicsManager,
-        runner = defaultRunner
+        runner = runner
       )
     )
 
   /** Opens the performance form with explicit, testable dependencies. */
-  def show(props: ExperimentDialogProps): Either[BaseError, Unit] =
+  def show[Snapshot](props: ExperimentDialogProps[Snapshot]): Either[BaseError, Unit] =
     val viewModel = ExperimentViewModel(
       props.runner,
       props.physicsManager,
@@ -157,18 +154,11 @@ object ExperimentDialog:
   private def fieldsFor(arguments: Vector[String]): Seq[FormFieldSpec] =
     arguments.flatMap(ArgumentFields.get)
 
-  /** Executes the selected engine command outside the graphical thread. */
-  private[gui] val defaultRunner: ExperimentExecutor = (request, physicsManager) =>
-    Future {
-      given NanoClock = SystemNanoClock
-      EnginePerformanceExperiment.run(request.route, request.arguments, physicsManager)
-    }(ExecutionContext.global)
-
   /** Displays the current execution state in one reusable result window. */
-  private[gui] def displayState(
-                                 state: ExperimentState,
-                                 owner: Option[Window],
-                                 currentDialog: Option[ResultDialogHandle]
+  private[performance] def displayState(
+      state: ExperimentState,
+      owner: Option[Window],
+      currentDialog: Option[ResultDialogHandle]
   ): Option[ResultDialogHandle] =
     state match
       case ExperimentState.Succeeded(report) =>

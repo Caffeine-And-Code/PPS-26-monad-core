@@ -1,6 +1,6 @@
-package monad_core.performance.presentation.gui
+package monad_core.simulator.presentation.performance
 
-import monad_core.performance.domain.PerformanceError
+import monad_core.simulator.errors.BaseError
 
 /** Lifecycle of one performance request launched from the graphical interface. */
 enum ExperimentState:
@@ -26,8 +26,8 @@ object ExperimentActions:
 
   /** Applies a domain result only to the request that is currently running. */
   def onComplete(
-                  state: ExperimentState,
-                  result: Either[PerformanceError, String]
+      state: ExperimentState,
+      result: Either[BaseError, String]
   ): ExperimentState =
     state match
       case ExperimentState.Running =>
@@ -39,9 +39,9 @@ object ExperimentActions:
 
   /** Applies an unexpected asynchronous failure only to a running request. */
   def onFailure(
-                 state: ExperimentState,
-                 message: String
+      state: ExperimentState,
+      message: String
   ): ExperimentState =
     state match
       case ExperimentState.Running => ExperimentState.Failed(message)
-      case _                                  => state
+      case _                       => state

@@ -10,7 +10,6 @@ import monad_core.performance.presentation.{
   PerformanceConsolePrinter,
   PerformanceRoutes
 }
-import monad_core.performance.presentation.gui.ExperimentDialog
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
@@ -27,6 +26,7 @@ import monad_core.simulator.infrastructure.logging.{
   EventLogLevel,
   mapEventsToLogEntries
 }
+import monad_core.simulator.infrastructure.performance.EngineExperimentExecutor.given
 import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluationArguments,
   AgentEvaluationRuntime,
@@ -34,6 +34,7 @@ import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluatorPrinter
 }
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
+import monad_core.simulator.presentation.performance.ExperimentDialog
 import monad_core.simulator.presentation.panels.{
   AiModelChatPanel,
   GameEngineModePanel,
