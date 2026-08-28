@@ -9,6 +9,12 @@ import scalafx.scene.layout.{GridPane, HBox, VBox}
 import scalafx.scene.Scene
 import scalafx.stage.{Modality, Stage}
 
+/**
+ * Materializes a form specification as a modal ScalaFX stage.
+ *
+ * @param props
+ *   form configuration to render
+ */
 final private[forms] class FormDialogBuilder(props: FormDialogProps):
 
   private var fieldsState: FormFieldsState = FormFieldsState()
@@ -27,6 +33,7 @@ final private[forms] class FormDialogBuilder(props: FormDialogProps):
     props.owner.foreach(initOwner)
   }
 
+  /** Renders the configured fields and displays the dialog stage. */
   def display(): Unit =
     props.fields.zipWithIndex.foreach { (spec, row) =>
       renderField(spec, row, isDynamic = false)

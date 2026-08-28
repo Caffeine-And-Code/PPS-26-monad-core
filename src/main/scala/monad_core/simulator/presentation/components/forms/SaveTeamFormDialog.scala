@@ -8,6 +8,22 @@ import monad_core.simulator.presentation.components.forms.parsers.TeamFormParser
 import monad_core.simulator.presentation.support.ScalaFxUtils
 import scalafx.scene.Node
 
+/**
+ * Configuration of a team creation or editing dialog.
+ *
+ * @param title
+ *   title displayed by the dialog
+ * @param onSubmit
+ *   callback invoked with the validated team
+ * @param onError
+ *   callback invoked when submitted values cannot produce a team
+ * @param possibleEnemies
+ *   teams offered by the enemy selection
+ * @param anchorNode
+ *   optional node whose window owns the dialog
+ * @param teamToUpdate
+ *   existing team to edit; `None` selects creation mode
+ */
 final case class SaveTeamFormDialogProps(
     title: String,
     onSubmit: Team => Unit,
@@ -17,16 +33,33 @@ final case class SaveTeamFormDialogProps(
     teamToUpdate: Option[Team] = None
 )
 
+/**
+ * Initial values displayed by a team form.
+ *
+ * @param teamName
+ *   initial identifier
+ * @param enemies
+ *   initially selected enemy identifiers
+ */
 final case class SaveTeamFormDefaultValues(
     teamName: Option[TeamId] = Option.empty,
     enemies: Seq[TeamId] = Seq.empty
 )
 
+/**
+ * Input required to construct the fields of a team form.
+ *
+ * @param possibleEnemies
+ *   teams offered by the enemy selection
+ * @param defaultValues
+ *   values initially displayed by the form
+ */
 final private[forms] case class BuildSaveTeamFormFieldsRecord(
     possibleEnemies: Seq[Team],
     defaultValues: SaveTeamFormDefaultValues
 )
 
+/** Builds team forms and converts their submitted values into engine teams. */
 object SaveTeamFormDialog:
 
   private case class SaveTeamViewModel(teamToUpdate: Option[Team])
@@ -43,6 +76,17 @@ object SaveTeamFormDialog:
         case Some(_) => buildTeamEditFields(record)
         case None    => buildTeamCreationFields(record)
 
+  /**
+   * Displays a team creation or editing dialog.
+   *
+   * Editing mode preserves the existing team identifier and displays only the enemy selection. Parsing and domain
+   * errors produced on submission are sent to `props.onError`.
+   *
+   * @param props
+   *   dialog mode, possible enemies and result callbacks
+   * @return
+   *   the result of building and displaying the underlying form dialog
+   */
   def show(props: SaveTeamFormDialogProps): Either[BaseError, Unit] = {
     val defaultValues     = buildDefaultValues(props.teamToUpdate)
     val buildFieldsRecord = BuildSaveTeamFormFieldsRecord(props.possibleEnemies, defaultValues)
@@ -59,6 +103,14 @@ object SaveTeamFormDialog:
     )
   }
 
+  /**
+   * Derives field defaults for creation or editing mode.
+   *
+   * @param teamToUpdate
+   *   team whose identifier and enemies populate the defaults
+   * @return
+   *   creation defaults when absent, otherwise values extracted from the team
+   */
   private[forms] def buildDefaultValues(
       teamToUpdate: Option[Team]
   ): SaveTeamFormDefaultValues =
@@ -70,6 +122,14 @@ object SaveTeamFormDialog:
           enemies = Seq.from(team.enemies)
         )
 
+  /**
+   * Builds fields for team creation.
+   *
+   * @param record
+   *   possible enemies and initial values
+   * @return
+   *   identifier field followed by the enemy selection
+   */
   private[forms] def buildTeamCreationFields(
       record: BuildSaveTeamFormFieldsRecord
   ): Seq[FormFieldSpec] =
@@ -83,6 +143,14 @@ object SaveTeamFormDialog:
       buildTeamEditFields(record)
     )
 
+  /**
+   * Builds fields for team editing.
+   *
+   * @param record
+   *   possible enemies and initial values
+   * @return
+   *   the enemy selection field; the existing identifier is not editable
+   */
   private[forms] def buildTeamEditFields(
       record: BuildSaveTeamFormFieldsRecord
   ): Seq[FormFieldSpec] =

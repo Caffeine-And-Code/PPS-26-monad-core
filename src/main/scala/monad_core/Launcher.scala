@@ -1,7 +1,7 @@
 package monad_core
 
-import monad_core.engine.simulator.Painter
 import monad_core.engine.core.events.EngineEvent
+import monad_core.engine.simulator.Painter
 import monad_core.performance.application.{NanoClock, PerformanceWorkload}
 import monad_core.performance.infrastructure.SystemNanoClock
 import monad_core.performance.infrastructure.engine.EngineTickWorkload
@@ -11,8 +11,8 @@ import monad_core.performance.presentation.{
   PerformanceRoutes
 }
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
 import monad_core.simulator.application.logging.Logger
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
@@ -24,7 +24,7 @@ import monad_core.simulator.infrastructure.logging.{
   ConsoleLogger,
   EventLogEntry,
   EventLogLevel,
-  formatEvents
+  mapEventsToLogEntries
 }
 import monad_core.simulator.infrastructure.performance.EngineExperimentExecutor.given
 import monad_core.simulator.presentation.agent_evaluation.{
@@ -48,14 +48,28 @@ import monad_core.simulator.presentation.stages.{MainStage, ScalaFxLauncher}
 
 import scala.Console.{GREEN, RESET}
 
+/**
+ * Application entry point and command-line router.
+ *
+ * It starts the model-evaluation suite when the `evaluate-model` argument is present;
+ * otherwise, it launches the default GUI application.
+ */
 object Launcher:
 
+  /**
+   * Assembles the dependencies required by the GUI and starts the ScalaFX application.
+   *
+   * The runtime, world, painter, AI agent, and panels are wired before control is delegated
+   * to [[monad_core.simulator.presentation.stages.ScalaFxLauncher ScalaFxLauncher]].
+   *
+   * @return `Left(BaseError)` if the UI cannot be initialized, or `Right(Unit)` once it is started
+   */
   private def guiApplication(): Either[BaseError, Unit] =
     given Logger = ConsoleLogger
 
     val logger = summon[Logger]
     val logEvents: Vector[EngineEvent] => Unit = events =>
-      formatEvents(events).foreach:
+      mapEventsToLogEntries(events).foreach:
         case EventLogEntry(EventLogLevel.Info, message)  => logger.info(message)
         case EventLogEntry(EventLogLevel.Trace, message) => logger.trace(message)
 
@@ -70,8 +84,6 @@ object Launcher:
     )
 
     given painter: Painter = PaintArchitect
-
-    given architect: ShapeArchitect = PaintArchitect
 
     given AiAgent = Langchain4jAgentFactory
       .buildOllama(
@@ -101,6 +113,12 @@ object Launcher:
 
     ScalaFxLauncher(mainStage).run()
 
+  /**
+   * Converts the outcome of an application startup into a response suitable for command-line routing.
+   *
+   * @param result startup result to convert
+   * @return a successful response when `result` is `Right`, or a failure response containing the error message
+   */
   def outcomeFor(result: Either[BaseError, Unit]): RouteResponse =
     result match
       case Left(error) =>
@@ -149,6 +167,15 @@ object Launcher:
           message = s"Finished ${report.kind.toString.toLowerCase} experiment"
         )
 
+  /**
+   * Routes command-line arguments to model evaluation or to the default GUI application.
+   *
+   * The process exits with status `1` when routing or application startup fails.
+   *
+   * @see [[monad_core.simulator.presentation.routes.RouteType.Route Route]]
+   * @see [[monad_core.simulator.presentation.routes.Router Router]]
+   * @param args command-line arguments
+   */
   def main(args: Array[String]): Unit =
     lazy val evaluateModelRoute          = evaluateModel(args)
     lazy val performanceLoadRoute        = runPerformance(args, PerformanceRoutes.Load)

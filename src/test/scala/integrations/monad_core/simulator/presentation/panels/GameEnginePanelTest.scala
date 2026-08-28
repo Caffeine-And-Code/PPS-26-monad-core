@@ -5,7 +5,7 @@ import integrations.monad_core.simulator.presentation.support.ScalaFxInit
 import monad_core.engine.model.Scene
 import monad_core.engine.simulator.Painter
 import monad_core.simulator.application.engine.world.World
-import monad_core.simulator.application.engine.{GameEngineRuntime, ShapeArchitect}
+import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.infrastructure.engine.painters.PaintArchitect
 import monad_core.simulator.infrastructure.engine.{MonadCoreGameEngineRuntime, MonadCoreWorld}
 import monad_core.simulator.presentation.panels.GameEnginePanel
@@ -31,8 +31,7 @@ class GameEnginePanelTest
     with ScalaFxInit:
   given MonadCoreGameEngineRuntime = MonadCoreGameEngineRuntime()
 
-  given painter: Painter          = PaintArchitect
-  given architect: ShapeArchitect = PaintArchitect
+  given painter: Painter = PaintArchitect
 
   given World = MonadCoreWorld()
 
@@ -84,10 +83,9 @@ class GameEnginePanelTest
       .build(_: BooleanProperty)(using
         _: GameEngineRuntime,
         _: World,
-        _: ShapeArchitect,
         _: Painter
       ))
-      .expects(*, *, *, *, *)
+      .expects(*, *, *, *)
       .returns(
         Right(
           new VBox {
@@ -101,10 +99,9 @@ class GameEnginePanelTest
       .build(_: BooleanProperty)(using
         _: GameEngineRuntime,
         _: World,
-        _: ShapeArchitect,
         _: Painter
       ))
-      .expects(*, *, *, *, *)
+      .expects(*, *, *, *)
       .returns(Left(CannotBuildPanel(ImageResourceNotFound(MockImage()), "")))
 
   def setupNeverCalledSceneRenderer(): Unit =
@@ -112,10 +109,9 @@ class GameEnginePanelTest
       .build(_: BooleanProperty)(using
         _: GameEngineRuntime,
         _: World,
-        _: ShapeArchitect,
         _: Painter
       ))
-      .expects(*, *, *, *, *)
+      .expects(*, *, *, *)
       .never()
 
   test("A GameEnginePanel can be built"):

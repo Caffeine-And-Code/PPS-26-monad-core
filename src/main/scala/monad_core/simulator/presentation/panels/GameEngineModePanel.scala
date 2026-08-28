@@ -18,71 +18,45 @@ import monad_core.simulator.presentation.panels.support.FormUtilities.{
 }
 import monad_core.simulator.presentation.panels.support.PanelStyles
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
-import monad_core.simulator.presentation.resources.Image.{
-  PauseIcon,
-  PerformanceIcon,
-  PhysicsIcon,
-  PlayIcon,
-  StopIcon,
-  ToolsIcon
-}
+import monad_core.simulator.presentation.resources.Image.*
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.beans.property.BooleanProperty
 import scalafx.geometry.Pos
 import scalafx.scene.layout.{HBox, Priority, Region, VBox}
 
+/** Builds the controls for engine execution, world editing, team management, and physics rules. */
 object GameEngineModePanel extends GameEngineModePanelBuilder:
 
-  /** Creates a panel builder with its performance-test action injected. */
-  def withPerformanceExperiment(
-      onPerformanceExperiment: () => Unit
-  ): GameEngineModePanelBuilder =
-    new GameEngineModePanelBuilder:
-      override def build(
-          imageConfig: ImageConfigRecord,
-          onModeChange: Boolean => Unit,
-          onStopClick: () => Unit,
-          isEngineRunning: BooleanProperty
-      )(using
-          world: World,
-          gameEngineRuntime: GameEngineRuntime
-      ): Either[BaseError, VBox] =
-        buildPanel(
-          imageConfig,
-          onModeChange,
-          onStopClick,
-          isEngineRunning,
-          onPerformanceExperiment
-        )
-
-  override def build(
-      imageConfig: ImageConfigRecord,
-      onModeChange: Boolean => Unit,
-      onStopClick: () => Unit,
-      isEngineRunning: BooleanProperty
-  )(using
-      world: World,
-      gameEngineRuntime: GameEngineRuntime
-  ): Either[BaseError, VBox] =
-    buildPanel(
-      imageConfig,
-      onModeChange,
-      onStopClick,
-      isEngineRunning,
-      onPerformanceExperiment = () => ()
-    )
-
+  /**
+   * Mutable UI state derived from the current world and engine runtime.
+   *
+   * @param world world edited by the panel
+   * @param gameEngineRuntime runtime controlled by the panel
+   */
   private case class GameEngineModeViewModel(world: World, gameEngineRuntime: GameEngineRuntime):
     val editTeamsDisabled: BooleanProperty   = BooleanProperty(true)
     val deleteTeamsDisabled: BooleanProperty = BooleanProperty(true)
 
   extension (viewModel: GameEngineModeViewModel)
 
+    /**
+     * Synchronizes team-action availability with the number of teams in the world.
+     *
+     * Editing is disabled when fewer than two teams exist, while deletion is disabled
+     * when the world contains no teams.
+     */
     private def refreshTeamAvailability(): Unit =
       val teams = viewModel.world.getAllTeams
+
       viewModel.editTeamsDisabled.value = teams.length <= 1
       viewModel.deleteTeamsDisabled.value = teams.isEmpty
 
+    /**
+     * Refreshes team-action availability after a successful operation and preserves failures.
+     *
+     * @param result result of the team operation
+     * @return the original failure, or `Right(Unit)` after refreshing the UI state
+     */
     private def refreshTeamsAfter(
         result: Either[BaseError, Unit]
     ): Either[BaseError, Unit] =
@@ -90,45 +64,99 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
         viewModel.refreshTeamAvailability()
       }
 
+    /**
+     * Wraps the [[World.createEntity]] function to handle and display a possible error returned by it.
+     * By doing so [[onActionMakeSnapshot]] is used to make a snapshot on `Right` result, or display the error on `Left`.
+     *
+     * @see [[onActionMakeSnapshot]], [[World.createEntity]]
+     * @param entity the entity that needs to be created
+     */
     private def addEntity(entity: Entity): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveEntityCommand(entity), viewModel.world.createEntity)
+      onActionMakeSnapshot(SaveEntityCommand(entity))(viewModel.world.createEntity)
 
+    /**
+     * Wraps the [[World.createSurface]] function to handle and display a possible error returned by it.
+     * By doing so [[onActionMakeSnapshot]] is used to make a snapshot on `Right` result, or display the error on `Left`.
+     *
+     * @see [[onActionMakeSnapshot]], [[World.createSurface]]
+     * @param surface the surface that needs to be created
+     */
     private def addSurface(surface: Surface): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveSurfaceCommand(surface), viewModel.world.createSurface)
+      onActionMakeSnapshot(SaveSurfaceCommand(surface))(viewModel.world.createSurface)
 
+    /**
+     * Wraps the [[World.createTeam]] function to handle and display a possible error returned by it.
+     * By doing so [[onActionMakeSnapshot]] is used to make a snapshot on `Right` result, or display the error on `Left`.
+     *
+     * @see [[onActionMakeSnapshot]], [[World.createTeam]]
+     * @param team the team that needs to be created
+     */
     private def addTeam(team: Team): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(
-        SaveTeamCommand(team),
-        command => viewModel.refreshTeamsAfter(viewModel.world.createTeam(command))
+      onActionMakeSnapshot(SaveTeamCommand(team))(command =>
+        viewModel.refreshTeamsAfter(viewModel.world.createTeam(command))
       )
 
+    /**
+     * Wraps the [[World.updateTeam]] function to handle and display a possible error returned by it.
+     * By doing so [[onActionMakeSnapshot]] is used to make a snapshot on `Right` result, or display the error on `Left`.
+     *
+     * @see [[onActionMakeSnapshot]], [[World.updateTeam]]
+     * @param team the team that needs to be updated
+     */
     private def updateTeam(team: Team): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(SaveTeamCommand(team), command => viewModel.world.updateTeam(command))
+      onActionMakeSnapshot(SaveTeamCommand(team))(command => viewModel.world.updateTeam(command))
 
+    /**
+     * Wraps the [[World.removeTeam]] function to handle and display a possible error returned by it.
+     * By doing so [[onActionMakeSnapshot]] is used to make a snapshot on `Right` result, or display the error on `Left`.
+     *
+     * @see [[onActionMakeSnapshot]], [[World.removeTeam]]
+     * @param teamId the id of the team that needs to be deleted
+     */
     private def deleteTeam(teamId: TeamId): Unit =
       given GameEngineRuntime = viewModel.gameEngineRuntime
 
-      onActionMakeSnapshot(
-        teamId,
-        id => viewModel.refreshTeamsAfter(viewModel.world.removeTeam(id.value))
+      onActionMakeSnapshot(teamId)(id =>
+        viewModel.refreshTeamsAfter(viewModel.world.removeTeam(id.value))
       )
 
+    /**
+     * Enables or disables a physics rule through the game-engine runtime.
+     *
+     * @param ruleId identifier of the physics rule
+     * @param isEnabled `true` if the rule needs to be enabled, `false` otherwise
+     */
     private def setPhysicsRuleEnabled(ruleId: String, isEnabled: Boolean): Unit =
       viewModel.gameEngineRuntime.setPhysicsRuleEnabled(ruleId, isEnabled)
 
-  /** Builds the panel with an explicit action for its dedicated performance button. */
-  private def buildPanel(
+  /**
+   * Imperative shell that constructs the panel.
+   *
+   * It constructs the world-editing and physics-rule menus alongside the engine mode
+   * and reset controls, then arranges them in a row layout.
+   *
+   * @see [[monad_core.simulator.presentation.components.IconButton IconButton]]
+   * @see [[monad_core.simulator.presentation.components.MenuButton MenuButton]]
+   * @param imageConfig image-loading configuration used by the controls
+   * @param onModeChange callback invoked with the requested running state
+   * @param onResetClick callback invoked when the reset button is clicked
+   * @param isEngineRunning observable property synchronized with the engine running state
+   * @param world world edited by the panel
+   * @param gameEngineRuntime runtime controlled by the panel
+   * @return `Left(BaseError)` if a child control cannot be built, or `Right(VBox)` with the completed panel
+   */
+  def build(
       imageConfig: ImageConfigRecord,
       onModeChange: Boolean => Unit,
-      onStopClick: () => Unit,
+      onResetClick: () => Unit,
       isEngineRunning: BooleanProperty,
       onPerformanceExperiment: () => Unit
   )(using
@@ -154,7 +182,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
         .left
         .map(error => CannotBuildPanel(error, GameEngineModePanel.toString))
 
-      stopBtn <- IconButton
+      resetBtn <- IconButton
         .build(
           StopIcon(),
           IconButtonBaseProps(
@@ -162,7 +190,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
             isDisabled = !isEngineRunning,
             onClick = isActive =>
               isEngineRunning.value = false
-              onStopClick()
+              onResetClick()
           )
         )
         .left
@@ -303,7 +331,7 @@ object GameEngineModePanel extends GameEngineModePanelBuilder:
             performanceTestBtn,
             spacer,
             playPauseBtn,
-            stopBtn
+            resetBtn
           )
         }
 

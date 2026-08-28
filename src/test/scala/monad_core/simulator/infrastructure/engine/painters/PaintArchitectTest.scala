@@ -1,98 +1,65 @@
 package monad_core.simulator.infrastructure.engine.painters
 
 import monad_core.engine.model.*
-import monad_core.simulator.application.engine.DrawCommand
-import org.scalamock.scalatest.MockFactory
+import monad_core.engine.simulator.DrawCommand
 import org.scalatest.EitherValues.convertEitherToValuable
+import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
-import org.scalatest.{BeforeAndAfterEach, Inside}
+import org.scalatest.Inside
 
 import scala.util.Random
 
-class PaintArchitectTest
-    extends AnyFunSuite
-    with Matchers
-    with Inside
-    with MockFactory
-    with BeforeAndAfterEach:
+class PaintArchitectTest extends AnyFunSuite with Matchers with Inside:
   val CircleEntity: Entity    = Entity.circle("CircleId", Vector2D(0, 0), 1).value
   val RectangleEntity: Entity = Entity.rectangle("RectangleId", Vector2D(0, 0), 10, 10).value
   val ArchitectEntityBaseColor: EngineColor = PaintArchitect.baseEntityColor.value
 
-  override def beforeEach(): Unit =
-    PaintArchitect.drainBuffer()
-
-  override def afterEach(): Unit =
-    PaintArchitect.drainBuffer()
-
   def generateRandomTeamId(): TeamId =
     TeamId(Random.nextString(5)).value
 
-  test("DrawCircle, provided with a Circle Locatable, enlists it in the drawing buffer"):
-    val expectedCommandInList = CircleEntity.shape match
-      case Shape2D.Circle(r) =>
-        DrawCommand.Circle(
-          CircleEntity.position.x,
-          CircleEntity.position.y,
-          r,
-          ArchitectEntityBaseColor
-        )
-      case _ => fail("CircleEntity is not a Circle")
+  test("drawCircle should describe a circle with an immutable command"):
+    val expectedCommand = DrawCommand.Circle(
+      CircleEntity.position.x,
+      CircleEntity.position.y,
+      1,
+      ArchitectEntityBaseColor
+    )
 
-    PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
+    PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor) shouldBe Some(expectedCommand)
 
-    val commands = PaintArchitect.drainBuffer()
-    commands.length should be(1)
-    commands.head should be(expectedCommandInList)
+  test("drawCircle should return None for a rectangle"):
+    PaintArchitect.drawCircle(RectangleEntity, ArchitectEntityBaseColor) shouldBe None
 
-  test("DrawCircle, provided with a Rectangle Locatable, does nothing"):
-    PaintArchitect.drawCircle(RectangleEntity, ArchitectEntityBaseColor)
+  test("drawRectangle should describe a rectangle with an immutable command"):
+    val expectedCommand = DrawCommand.Rectangle(
+      RectangleEntity.position.x,
+      RectangleEntity.position.y,
+      10,
+      10,
+      RectangleEntity.rotation,
+      ArchitectEntityBaseColor
+    )
 
-    PaintArchitect.drainBuffer().length should be(0)
+    PaintArchitect.drawRectangle(RectangleEntity, ArchitectEntityBaseColor) shouldBe
+      Some(expectedCommand)
 
-  test("DrawRectangle, provided with a Rectangle Locatable, enlists it in the drawing buffer"):
-    val expectedCommandInList = RectangleEntity.shape match
-      case Shape2D.Rectangle(w, h) =>
-        DrawCommand.Rectangle(
-          RectangleEntity.position.x,
-          RectangleEntity.position.y,
-          h,
-          w,
-          RectangleEntity.rotation,
-          ArchitectEntityBaseColor
-        )
-      case _ => fail("RectangleEntity is not a Rectangle")
+  test("drawRectangle should return None for a circle"):
+    PaintArchitect.drawRectangle(CircleEntity, ArchitectEntityBaseColor) shouldBe None
 
-    PaintArchitect.drawRectangle(RectangleEntity, ArchitectEntityBaseColor)
-
-    val commands = PaintArchitect.drainBuffer()
-    commands.length should be(1)
-    commands.head should be(expectedCommandInList)
-
-  test("DrawRectangle, provided with a Circle Locatable, does nothing"):
-    PaintArchitect.drawRectangle(CircleEntity, ArchitectEntityBaseColor)
-
-    PaintArchitect.drainBuffer().length should be(0)
-
-  test("DrawRectangle preserves the locatable rotation in the draw command"):
+  test("drawRectangle should preserve the locatable rotation"):
     val rotated = RectangleEntity.rotateTo(45.0).value
 
-    PaintArchitect.drawRectangle(rotated, ArchitectEntityBaseColor)
-
-    inside(PaintArchitect.drainBuffer().head):
+    inside(PaintArchitect.drawRectangle(rotated, ArchitectEntityBaseColor).value):
       case DrawCommand.Rectangle(_, _, _, _, rotation, _) => rotation shouldBe 45.0
 
-  test("drainBuffer returns accumulated commands and clears internal state"):
-    PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
-    PaintArchitect.drawRectangle(RectangleEntity, ArchitectEntityBaseColor)
+  test("drawing the same entity twice should return the same value"):
+    val first  = PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
+    val second = PaintArchitect.drawCircle(CircleEntity, ArchitectEntityBaseColor)
 
-    val extractedCommands = PaintArchitect.drainBuffer()
-    extractedCommands.length should be(2)
-
-    PaintArchitect.drainBuffer().length should be(0)
+    first shouldBe second
 
   test("A PaintArchitect can generate a random color given a TeamId"):
     val teamIds = Table(

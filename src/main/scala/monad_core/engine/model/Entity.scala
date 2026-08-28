@@ -69,6 +69,14 @@ object Entity:
     def withHealth(health: Int): Either[EngineError, Entity] =
       Health(health).map(h => entity.copy(health = Some(h)))
 
+    /**
+     * Returns a copy with validated contact damage.
+     *
+     * @param damage
+     *   non-negative damage assigned to the entity
+     * @return
+     *   the updated entity, or `DamageCannotBeNegative` for a negative value
+     */
     def withDamage(damage: Int): Either[EngineError, Entity] =
       Damage(damage).map(d => entity.copy(damage = Some(d)))
 
