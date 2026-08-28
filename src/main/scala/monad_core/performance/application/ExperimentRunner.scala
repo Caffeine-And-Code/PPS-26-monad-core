@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 /**
  * Orchestrates performance experiments and converts raw measurements into reports.
  *
- * The selected [[monad_core.performance.domain.ExperimentKind]] determines which entity counts
+ * The selected [[ExperimentKind]] determines which entity counts
  * are measured and whether execution stops when the configured p95 frame budget is exceeded.
  * Workload setup, warm-up, collection, and statistical aggregation are performed once per point.
  */
@@ -16,9 +16,10 @@ object ExperimentRunner:
   /**
    * Runs a complete performance experiment.
    *
-   * Load measures only the configured starting count; stress follows the growth sequence and stops
-   * at its first p95 budget violation; spike measures start, maximum, and start again; scalability
-   * measures the full growth sequence without early termination.
+   * - Load measures only the configured starting count
+   * - Stress follows the growth sequence and stops at its first p95 budget violation
+   * - Spike measures start, maximum, and start again
+   * - Scalability measures the full growth sequence without early termination.
    *
    * @param kind
    *   experiment strategy to execute
@@ -27,7 +28,7 @@ object ExperimentRunner:
    * @param workload
    *   workload implementation prepared for each entity count
    * @param clock
-   *   monotonic clock used to collect latency samples
+   *   clock used to collect latency samples
    * @return
    *   the completed report, or the first preparation, execution, or aggregation error
    */

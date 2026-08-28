@@ -13,71 +13,32 @@ import monad_core.performance.domain.{EnginePerformanceError, EntityCount, Perfo
  */
 object DeterministicScene:
 
-  /** Radius assigned to generated circles. */
   private val EntityRadius = 1.0
-
-  /** Side assigned to generated squares. */
   private val EntitySide = EntityRadius * 2.0
-
-  /** Fraction of one entity side separating adjacent centers. */
   private val EntitySpacingRatio = 0.75
-
-  /** Distance between adjacent grid centers, intentionally smaller than one entity side. */
   private val EntitySpacing = EntitySide * EntitySpacingRatio
-
-  /** Offset that makes edge entities cross the corresponding world border. */
   private val BorderOffset = EntityRadius / 2.0
-
-  /** Positive mass assigned to every entity. */
   private val EntityWeight = 2
-
-  /** Health high enough to survive one complete integrated tick. */
   private val EntityHealth = 100
-
-  /** Contact damage inflicted by every entity. */
   private val EntityDamage = 1
-
-  /** Magnitude used by both components of linear velocity. */
   private val LinearSpeed = 1.0
-
-  /** Number of consecutive entities sharing one vertical direction. */
   private val VerticalDirectionBlockSize = 2
-
-  /** Magnitude of angular velocity in degrees per second. */
   private val AngularSpeed = 30.0
-
-  /** Difference in degrees between consecutive initial rotations. */
   private val RotationStep = 15.0
-
-  /** Number of distinct rotation steps in one full turn. */
   private val RotationStepsPerTurn = 24
-
-  /** Stable prefix used to derive unique entity identifiers. */
   private val EntityIdPrefix = "performance-entity"
-
-  /** Stable identifier of the first opposing team. */
   private val FirstTeamId = "performance-team-a"
-
-  /** Stable identifier of the second opposing team. */
   private val SecondTeamId = "performance-team-b"
-
-  /** Stable identifier of the full-scene surface. */
   private val SurfaceId = "performance-surface"
-
-  /** Friction applied to entities by the full-scene surface. */
   private val SurfaceFriction = 0.1
-
-  /** Force applied to entities by the full-scene surface. */
   private val SurfaceForce = Vector2D(0.25, 0.5)
-
-  /** Contact damage inflicted by the full-scene surface. */
   private val SurfaceDamage = 1
 
   /**
    * Creates a deterministic scene containing exactly the requested number of entities.
    *
    * @param entityCount
-   *   validated number of entities to create
+   *   number of entities to create
    * @return
    *   the complete scene, or the first translated engine error
    */
@@ -162,7 +123,7 @@ object DeterministicScene:
       .withSpeed(speedFor(index))
       .withAngularSpeed(angularSpeedFor(index))
 
-  /** Alternates circles and squares so both engine shape families are represented. */
+  /** Alternates circles and squares so both engine shapes are represented. */
   private def entityShapeAt(
       index: Int,
       position: Vector2D,
@@ -184,7 +145,7 @@ object DeterministicScene:
   private def angularSpeedFor(index: Int): Double =
     directionFor(index) * AngularSpeed
 
-  /** Alternates entity membership between the two opposing teams. */
+  /** Alternates entity membership between two opposing teams. */
   private def teamIdFor(index: Int): String =
     if isEven(index) then FirstTeamId else SecondTeamId
 

@@ -11,10 +11,10 @@ enum ExperimentType(
     val specificArguments: Vector[String]
 ):
 
-  /** Sustained expected-load experiment; it needs only the common arguments. */
+  /** Sustained load experiment. It needs only the common arguments. */
   case Load extends ExperimentType("Load", PerformanceRoutes.Load, Vector.empty)
 
-  /** Progressive breakpoint search; it also needs maximum entities and growth factor. */
+  /** Progressive breakpoint search. It also needs maximum entities and growth factor. */
   case Stress
       extends ExperimentType(
         "Stress",
@@ -22,7 +22,7 @@ enum ExperimentType(
         Vector(PerformanceArguments.MaximumEntities, PerformanceArguments.GrowthFactor)
       )
 
-  /** Sudden maximum-load experiment; it also needs the maximum entity count. */
+  /** Sudden maximum-load experiment. It also needs the maximum entity count. */
   case Spike
       extends ExperimentType(
         "Spike",
@@ -30,7 +30,7 @@ enum ExperimentType(
         Vector(PerformanceArguments.MaximumEntities)
       )
 
-  /** Full growth experiment; it also needs maximum entities and growth factor. */
+  /** Full growth experiment. It also needs maximum entities and growth factor. */
   case Scalability
       extends ExperimentType(
         "Scalability",

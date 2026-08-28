@@ -16,16 +16,10 @@ final case class LatencyDistribution(
     p99Nanos: Long
 )
 
-/** Calculates [[LatencyDistribution]] values from raw samples. */
 object LatencyDistribution:
 
-  /** Quantile used for median latency. */
   private val MedianPercentile = 0.50
-
-  /** Quantile used for p95 latency. */
   private val NinetyFifthPercentile = 0.95
-
-  /** Quantile used for p99 latency. */
   private val NinetyNinthPercentile = 0.99
 
   /**

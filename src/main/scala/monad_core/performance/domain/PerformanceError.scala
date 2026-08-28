@@ -4,10 +4,10 @@ import monad_core.engine.model.EngineError
 import monad_core.simulator.errors.BaseError
 
 /**
- * Base type for validation, measurement, and engine failures in the performance feature.
+ * Base type for failures in the performance feature.
  *
  * @param message
- *   human-readable description inherited by [[monad_core.simulator.errors.BaseError]]
+ *   failure description inherited by [[BaseError]]
  */
 sealed abstract class PerformanceError(message: String) extends BaseError(message)
 

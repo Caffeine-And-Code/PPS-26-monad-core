@@ -39,7 +39,7 @@ object Locatable:
   private def validatePosition(position: Vector2D): Either[EngineError, Unit] =
     Either.cond(position.x >= 0 && position.y >= 0, (), PositionIsValid(position))
 
-  def validateRotation(rotation: Double): Either[EngineError, Unit] =
+  private[model] def validateRotation(rotation: Double): Either[EngineError, Unit] =
     Either.cond(rotation >= 0 && rotation <= 360, (), RotationMustBeAValidDegreeValue(rotation))
 
   def rectangle[A](

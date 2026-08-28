@@ -26,7 +26,6 @@ final case class FrameBudget private (nanos: Long):
       EmptyPerformanceSamples()
     )
 
-/** Factory methods for [[FrameBudget]]. */
 object FrameBudget:
 
   /**
@@ -35,7 +34,7 @@ object FrameBudget:
    * @param nanos
    *   candidate budget in nanoseconds
    * @return
-   *   the validated budget when `nanos` is positive, otherwise [[InvalidFrameBudget]]
+   *   the validated budget when `nanos` is strictly positive, otherwise [[InvalidFrameBudget]]
    */
   def from(nanos: Long): Either[PerformanceError, FrameBudget] =
     Either.cond(nanos > 0, FrameBudget(nanos), InvalidFrameBudget(nanos))

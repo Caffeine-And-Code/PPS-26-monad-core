@@ -9,6 +9,18 @@ object DummySurfaceHelper:
 
   private val DefaultDimension = 1.0
 
+  /**
+   * Creates a validated circular surface fixture.
+   *
+   * @param id
+   *   surface identifier
+   * @param position
+   *   world position
+   * @param radius
+   *   circle radius
+   * @return
+   *   circular surface fixture
+   */
   def makeSurfaceCircle(
       id: String = "surface",
       position: Vector2D = Vector2D(0.0, 0.0),

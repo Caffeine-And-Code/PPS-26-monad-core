@@ -33,8 +33,8 @@ object PerformanceArguments:
   /**
    * Parses all supported arguments and validates the resulting configuration.
    *
-   * If the maximum is omitted, its default is raised to the starting count when necessary. The
-   * frame-budget option is converted from milliseconds to nanoseconds before domain validation.
+   * If the maximum is omitted, its default is raised to the starting count when necessary.
+   * The frame-budget option is converted from milliseconds to nanoseconds before domain validation.
    * Unknown arguments are ignored.
    *
    * @param args

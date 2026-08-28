@@ -10,6 +10,14 @@ trait MockDetectorHelper:
 
   self: MockFactory =>
 
+  /**
+   * Creates a detector returning collisions from the supplied identifier pairs.
+   *
+   * @param collisions
+   *   contact data indexed by ordered locatable identifiers
+   * @return
+   *   configured collision-detector mock
+   */
   def detectorWithCollisions(
       collisions: Map[(String, String), (Vector2D, Double, Vector2D)]
   ): CollisionDetector =
@@ -31,6 +39,14 @@ trait MockDetectorHelper:
 
     detector
 
+  /**
+   * Creates a detector returning containment results from the supplied identifier pairs.
+   *
+   * @param contains
+   *   containment results indexed by target and container identifiers
+   * @return
+   *   configured collision-detector mock
+   */
   def detectorWithContaining(
       contains: Map[(String, String), Boolean]
   ): CollisionDetector =
