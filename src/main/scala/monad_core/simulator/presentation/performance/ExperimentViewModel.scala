@@ -1,21 +1,16 @@
-package monad_core.performance.presentation.gui
+package monad_core.simulator.presentation.performance
 
-import monad_core.engine.physics.core.PhysicsManager
-import monad_core.performance.domain.PerformanceError
+import monad_core.simulator.application.performance.{ExperimentExecutor, ExperimentRequest}
 import scalafx.beans.property.ObjectProperty
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-/** Asynchronous boundary used to execute a selected engine performance test. */
-type ExperimentExecutor =
-  (ExperimentRequest, PhysicsManager) => Future[Either[PerformanceError, String]]
-
 /** Coordinates form submission, physics snapshots, and UI-safe result publication. */
-final class ExperimentViewModel(
-                                 runner: ExperimentExecutor,
-                                 physicsManager: () => PhysicsManager,
-                                 runOnUiThread: (() => Unit) => Unit
+final class ExperimentViewModel[Snapshot](
+    runner: ExperimentExecutor[Snapshot],
+    physicsManager: () => Snapshot,
+    runOnUiThread: (() => Unit) => Unit
 ):
 
   val state: ObjectProperty[ExperimentState] =
@@ -52,9 +47,9 @@ final class ExperimentViewModel(
 object ExperimentViewModel:
 
   /** Creates a view model with explicit asynchronous and UI boundaries. */
-  def apply(
-             runner: ExperimentExecutor,
-             physicsManager: () => PhysicsManager,
-             runOnUiThread: (() => Unit) => Unit
-  ): ExperimentViewModel =
+  def apply[Snapshot](
+      runner: ExperimentExecutor[Snapshot],
+      physicsManager: () => Snapshot,
+      runOnUiThread: (() => Unit) => Unit
+  ): ExperimentViewModel[Snapshot] =
     new ExperimentViewModel(runner, physicsManager, runOnUiThread)

@@ -1,6 +1,11 @@
-package monad_core.performance.presentation.gui
+package integrations.monad_core.simulator.presentation.performance
 
 import monad_core.performance.domain.InvalidEntityCount
+import monad_core.simulator.presentation.performance.{
+  ExperimentActions,
+  ExperimentState,
+  isRunning
+}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

@@ -1,7 +1,12 @@
-package monad_core.performance.presentation.gui
+package integrations.monad_core.simulator.presentation.performance
 
-import monad_core.performance.domain.{MissingPerformanceArgument, UnknownPerformanceExperimentType}
 import monad_core.performance.presentation.{PerformanceArguments, PerformanceRoutes}
+import monad_core.simulator.application.performance.ExperimentRequest
+import monad_core.simulator.domain.performance.{
+  MissingPerformanceArgument,
+  UnknownPerformanceExperimentType
+}
+import monad_core.simulator.presentation.performance.ExperimentFormArguments
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

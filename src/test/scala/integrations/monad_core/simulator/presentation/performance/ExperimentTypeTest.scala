@@ -1,7 +1,8 @@
-package monad_core.performance.presentation.gui
+package integrations.monad_core.simulator.presentation.performance
 
-import monad_core.performance.domain.UnknownPerformanceExperimentType
 import monad_core.performance.presentation.{PerformanceArguments, PerformanceRoutes}
+import monad_core.simulator.domain.performance.UnknownPerformanceExperimentType
+import monad_core.simulator.presentation.performance.ExperimentType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

@@ -1,4 +1,4 @@
-package monad_core.performance.presentation.gui
+package monad_core.simulator.presentation.performance
 
 import integrations.monad_core.simulator.presentation.support.DialogTesting
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread

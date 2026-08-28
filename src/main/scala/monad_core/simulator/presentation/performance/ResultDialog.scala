@@ -1,4 +1,4 @@
-package monad_core.performance.presentation.gui
+package monad_core.simulator.presentation.performance
 
 import monad_core.simulator.CannotBuildDialog
 import monad_core.simulator.errors.BaseError
@@ -11,7 +11,7 @@ import scalafx.stage.{Modality, Stage, Window}
 import scala.util.Try
 
 /** Mutable handle confined to the graphical boundary of a performance result. */
-final class ResultDialogHandle private[gui](output: TextArea):
+final class ResultDialogHandle private[performance](output: TextArea):
 
   /** Replaces the content displayed by the result window. */
   def update(content: String): Unit =

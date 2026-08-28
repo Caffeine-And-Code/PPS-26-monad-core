@@ -1,15 +1,14 @@
-package integrations.monad_core.performance.presentation.gui
+package integrations.monad_core.simulator.presentation.performance
 
 import monad_core.engine.physics.core.PhysicsManager
 import monad_core.performance.domain.{
   InvalidEntityCount,
-  MissingPerformanceArgument,
   PerformanceError
 }
-import monad_core.performance.presentation.gui.{
-  ExperimentExecutor,
+import monad_core.simulator.application.performance.{ExperimentExecutor, ExperimentRequest}
+import monad_core.simulator.domain.performance.MissingPerformanceArgument
+import monad_core.simulator.presentation.performance.{
   ExperimentFormArguments,
-  ExperimentRequest,
   ExperimentState,
   ExperimentViewModel
 }
@@ -34,7 +33,7 @@ class ExperimentViewModelTest extends AnyFunSuite with Matchers with MockFactory
     val physics       = PhysicsManager.default()
     var receivedRequest: Option[ExperimentRequest] = None
     var receivedPhysics: Option[PhysicsManager] = None
-    val runner: ExperimentExecutor = (request, manager) =>
+    val runner: ExperimentExecutor[PhysicsManager] = (request, manager) =>
       receivedRequest = Some(request)
       receivedPhysics = Some(manager)
       pendingResult.future
@@ -51,7 +50,7 @@ class ExperimentViewModelTest extends AnyFunSuite with Matchers with MockFactory
     )
 
   test("an invalid form fails without starting a performance run"):
-    val runner: ExperimentExecutor =
+    val runner: ExperimentExecutor[PhysicsManager] =
       mockFunction[
         ExperimentRequest,
         PhysicsManager,
@@ -123,7 +122,7 @@ class ExperimentViewModelTest extends AnyFunSuite with Matchers with MockFactory
   test("submitting while a performance test is running does not start a second run"):
     val pendingResult = Promise[Either[PerformanceError, String]]()
     var runCount      = 0
-    val runner: ExperimentExecutor = (_, _) =>
+    val runner: ExperimentExecutor[PhysicsManager] = (_, _) =>
       runCount += 1
       pendingResult.future
     val viewModel = ExperimentViewModel(

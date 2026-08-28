@@ -1,10 +1,10 @@
-package integrations.monad_core.performance.presentation.gui
+package integrations.monad_core.simulator.presentation.performance
 
 import integrations.monad_core.simulator.presentation.support.DialogTesting
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import javafx.scene.control.{Button, TextArea}
-import monad_core.performance.presentation.gui.ResultDialog
 import monad_core.simulator.CannotBuildDialog
+import monad_core.simulator.presentation.performance.ResultDialog
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

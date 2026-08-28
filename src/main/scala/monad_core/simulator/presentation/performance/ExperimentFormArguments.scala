@@ -1,10 +1,9 @@
-package monad_core.performance.presentation.gui
+package monad_core.simulator.presentation.performance
 
-import monad_core.performance.domain.{MissingPerformanceArgument, PerformanceError}
 import monad_core.performance.presentation.PerformanceArguments
-
-/** Immutable command selected and populated by the graphical performance form. */
-final case class ExperimentRequest(route: String, arguments: Vector[String])
+import monad_core.simulator.application.performance.ExperimentRequest
+import monad_core.simulator.domain.performance.MissingPerformanceArgument
+import monad_core.simulator.errors.BaseError
 
 /** Converts graphical values into one selected performance command. */
 object ExperimentFormArguments:
@@ -28,7 +27,7 @@ object ExperimentFormArguments:
    * @return
    *   selected route and ordered command tokens, or a missing or unsupported selection error
    */
-  def from(values: Map[String, String]): Either[PerformanceError, ExperimentRequest] =
+  def from(values: Map[String, String]): Either[BaseError, ExperimentRequest] =
     for
       label <- values
         .get(PerformanceExperimentType)

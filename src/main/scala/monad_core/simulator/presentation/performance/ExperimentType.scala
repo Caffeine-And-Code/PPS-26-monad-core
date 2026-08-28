@@ -1,7 +1,8 @@
-package monad_core.performance.presentation.gui
+package monad_core.simulator.presentation.performance
 
-import monad_core.performance.domain.{PerformanceError, UnknownPerformanceExperimentType}
 import monad_core.performance.presentation.{PerformanceArguments, PerformanceRoutes}
+import monad_core.simulator.domain.performance.UnknownPerformanceExperimentType
+import monad_core.simulator.errors.BaseError
 
 /** Graphical selection of a performance command and its experiment-specific arguments. */
 enum ExperimentType(
@@ -50,5 +51,5 @@ object ExperimentType:
    * @return
    *   matching supported test type, or a validation error
    */
-  def fromLabel(label: String): Either[PerformanceError, ExperimentType] =
+  def fromLabel(label: String): Either[BaseError, ExperimentType] =
     values.find(_.label == label).toRight(UnknownPerformanceExperimentType(label))
