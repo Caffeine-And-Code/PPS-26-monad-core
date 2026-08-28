@@ -6,9 +6,9 @@ import monad_core.performance.domain.*
  * Parses command-line options into validated performance configuration.
  *
  * Options use a `--name value` representation. Missing options fall back to
- * [[PerformanceConfig]] defaults, while malformed numeric values and
+ * [[monad_core.performance.domain.PerformanceConfig]] defaults, while malformed numeric values and
  * invalid domain combinations are returned as
- * [[PerformanceError]] values.
+ * [[monad_core.performance.domain.PerformanceError]] values.
  */
 object PerformanceArguments:
 
@@ -80,7 +80,8 @@ object PerformanceArguments:
    * @param default
    *   value returned when the option is absent or lacks a following token
    * @return
-   *   the parsed integer or [[InvalidPerformanceArgument]] for a noninteger token
+   *   the parsed integer or [[monad_core.performance.domain.InvalidPerformanceArgument]] for a
+   *   noninteger token
    */
   private def integerArgument(
       args: Array[String],
@@ -101,7 +102,8 @@ object PerformanceArguments:
    * @param default
    *   value returned when the option is absent or lacks a following token
    * @return
-   *   the parsed long or [[InvalidPerformanceArgument]] for a non-long token
+   *   the parsed long or [[monad_core.performance.domain.InvalidPerformanceArgument]] for a
+   *   non-long token
    */
   private def longArgument(
       args: Array[String],

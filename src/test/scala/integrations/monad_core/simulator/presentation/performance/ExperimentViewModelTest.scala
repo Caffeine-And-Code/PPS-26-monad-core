@@ -1,10 +1,7 @@
 package integrations.monad_core.simulator.presentation.performance
 
 import monad_core.engine.physics.core.PhysicsManager
-import monad_core.performance.domain.{
-  InvalidEntityCount,
-  PerformanceError
-}
+import monad_core.performance.domain.{InvalidEntityCount, PerformanceError}
 import monad_core.simulator.application.performance.{ExperimentExecutor, ExperimentRequest}
 import monad_core.simulator.domain.performance.MissingPerformanceArgument
 import monad_core.simulator.presentation.performance.{
@@ -29,10 +26,10 @@ class ExperimentViewModelTest extends AnyFunSuite with Matchers with MockFactory
   private val Report = "performance report"
 
   test("submitting the form starts one selected run with the current physics snapshot"):
-    val pendingResult = Promise[Either[PerformanceError, String]]()
-    val physics       = PhysicsManager.default()
+    val pendingResult                              = Promise[Either[PerformanceError, String]]()
+    val physics                                    = PhysicsManager.default()
     var receivedRequest: Option[ExperimentRequest] = None
-    var receivedPhysics: Option[PhysicsManager] = None
+    var receivedPhysics: Option[PhysicsManager]    = None
     val runner: ExperimentExecutor[PhysicsManager] = (request, manager) =>
       receivedRequest = Some(request)
       receivedPhysics = Some(manager)

@@ -105,19 +105,19 @@ trait GameLoop:
 /** Validated constructors and defaults for a fixed-step game loop. */
 object GameLoop:
   /** Default fixed tick duration in nanoseconds. */
-  val DefaultTickTime                 = 16_000_000L
+  val DefaultTickTime = 16_000_000L
 
   /** Timestamp used before the first loop update. */
-  val InitialTime                     = 0L
+  val InitialTime = 0L
 
   /** Accumulated time used by a newly created loop. */
   private val InitialAccumulatorValue = 0L
 
   /** Default upper bound for elapsed frame time in nanoseconds. */
-  val DefaultMaxFrameTime             = 250_000_000L
+  val DefaultMaxFrameTime = 250_000_000L
 
   /** Interpolation ratio used while the loop is not simulating. */
-  val StaticAlpha                     = 1.0
+  val StaticAlpha = 1.0
 
   /**
    * Creates a loop after validating all timing values.

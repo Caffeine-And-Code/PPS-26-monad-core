@@ -42,9 +42,9 @@ final case class EntityGrowth private (
    */
   @tailrec
   private def loop(
-            current: Int,
-            accumulated: Vector[EntityCount]
-          ): Either[PerformanceError, Vector[EntityCount]] =
+      current: Int,
+      accumulated: Vector[EntityCount]
+  ): Either[PerformanceError, Vector[EntityCount]] =
     EntityCount.from(current) match
       case Left(error) => Left(error)
       case Right(currentCount) =>
@@ -52,7 +52,7 @@ final case class EntityGrowth private (
         if current == maximum.value then Right(nextAccumulated)
         else
           val multiplied = current.toLong * factor.toLong
-          val next = math.min(multiplied, maximum.value.toLong).toInt
+          val next       = math.min(multiplied, maximum.value.toLong).toInt
           loop(next, nextAccumulated)
 
 object EntityGrowth:

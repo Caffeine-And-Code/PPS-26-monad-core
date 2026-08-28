@@ -12,11 +12,11 @@ import java.util.Locale
  */
 object PerformanceReportFormatter:
 
-  private val PercentageFactor = 100.0
+  private val PercentageFactor   = 100.0
   private val MillisecondsFormat = "%.3f"
-  private val PercentageFormat = "%.2f"
-  private val MillisecondsUnit = " ms"
-  private val PercentageUnit = "%"
+  private val PercentageFormat   = "%.2f"
+  private val MillisecondsUnit   = " ms"
+  private val PercentageUnit     = "%"
 
   /**
    * Formats the experiment header, every measurement point, and any detected breakpoint.

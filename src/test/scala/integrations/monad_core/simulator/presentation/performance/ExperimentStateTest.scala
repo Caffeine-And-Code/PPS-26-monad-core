@@ -1,11 +1,7 @@
 package integrations.monad_core.simulator.presentation.performance
 
 import monad_core.performance.domain.InvalidEntityCount
-import monad_core.simulator.presentation.performance.{
-  ExperimentActions,
-  ExperimentState,
-  isRunning
-}
+import monad_core.simulator.presentation.performance.{ExperimentActions, ExperimentState, isRunning}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -16,7 +12,7 @@ class ExperimentStateTest extends AnyFunSuite with Matchers:
 
   test("the initial state is ready"):
     ExperimentState.initial shouldBe ExperimentState.Ready
-  
+
   test("starting a ready performance test changes its state to running"):
     val result = ExperimentActions.onStart(ExperimentState.Ready)
 

@@ -14,7 +14,7 @@ private[physics] object RayCast:
   private val WayPointDisplacement = 5.0
 
   /** Safety margin used while inflating obstacles for the ray cast. */
-  private val HunterMargin         = 1.0
+  private val HunterMargin = 1.0
 
   /**
    * Casts a ray from one entity towards another.
@@ -123,7 +123,7 @@ private[physics] object RayCast:
    *  the entity whose bounding radius is to be computed
    * @return
    *  the bounding radius required to clear the moving entity shape
-   * */
+   */
   private[pathfinding] def hunterRadius(hunter: Entity): Double =
     hunter.shape match
       case circle: Shape2D.Circle => circle.radius
@@ -141,7 +141,7 @@ private[physics] object RayCast:
    *  the amount by which to inflate each vertex
    * @return
    *  the map of inflated vertexes
-   * */
+   */
   private[pathfinding] def inflateAllVertexes(
       vertexes: Map[LocatableId, List[Vector2D]],
       entities: List[Entity],
@@ -223,7 +223,7 @@ private[physics] object RayCast:
    *  the candidate waypoint around the target entity
    * @return
    *  the waypoint adjusted for the moving entity clearance
-   * */
+   */
   private[pathfinding] def actualWaypoint(
       to: Entity,
       from: Entity,
@@ -253,7 +253,7 @@ private[physics] object RayCast:
    *  the lower-right corner of the world bounds
    * @return
    *  true if the moving entity fits inside the world when centred on the waypoint, false otherwise
-   * */
+   */
   private[pathfinding] def isValidWayPoint(
       to: Entity,
       from: Entity,

@@ -18,7 +18,7 @@ object StateInterpolator:
    * @param interpolationAlpha
    *   interpolation ratio between zero and one
    * @return
-   *   interpolated scene, or a [[EngineError]]
+   *   interpolated scene, or a [[monad_core.engine.model.EngineError]]
    */
   def apply(
       previousScene: State,
@@ -46,7 +46,7 @@ object StateInterpolator:
    * @param alpha
    *   candidate ratio
    * @return
-   *   ratio between zero and one, or a [[EngineError]]
+   *   ratio between zero and one, or a [[monad_core.engine.model.EngineError]]
    */
   private def validateAlpha(alpha: Double): Either[EngineError, Double] =
     if alpha < 0.0 || alpha > 1.0 then Left(InvalidInterpolationAlpha(alpha))
@@ -62,7 +62,7 @@ object StateInterpolator:
    * @param alpha
    *   interpolation ratio
    * @return
-   *   interpolated bounds, or a [[EngineError]]
+   *   interpolated bounds, or a [[monad_core.engine.model.EngineError]]
    */
   private def interpolateBounds(
       previousBounds: WorldBounds,
@@ -87,7 +87,7 @@ object StateInterpolator:
    * @param alpha
    *   interpolation ratio
    * @return
-   *   interpolated entities indexed by identifier, or a [[EngineError]]
+   *   interpolated entities indexed by identifier, or a [[monad_core.engine.model.EngineError]]
    */
   private def interpolateEntities(
       previousEntities: List[Entity],

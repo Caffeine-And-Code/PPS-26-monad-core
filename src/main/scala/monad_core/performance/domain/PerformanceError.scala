@@ -7,7 +7,7 @@ import monad_core.simulator.errors.BaseError
  * Base type for failures in the performance feature.
  *
  * @param message
- *   failure description inherited by [[BaseError]]
+ *   failure description inherited by [[monad_core.simulator.errors.BaseError]]
  */
 sealed abstract class PerformanceError(message: String) extends BaseError(message)
 

@@ -18,7 +18,7 @@ private[pathfinding] object CircleVertexes:
      *  number of points to generate along the circumference
      * @return
      *  a list of `vertexNumber` points along the circle circumference
-     * */
+     */
     def vertexes(position: Vector2D, vertexNumber: Int): List[Vector2D] =
       (0 until vertexNumber).map { i =>
         val angle = 2 * math.Pi * i / vertexNumber

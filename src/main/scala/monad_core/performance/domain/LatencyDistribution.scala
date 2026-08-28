@@ -18,7 +18,7 @@ final case class LatencyDistribution(
 
 object LatencyDistribution:
 
-  private val MedianPercentile = 0.50
+  private val MedianPercentile      = 0.50
   private val NinetyFifthPercentile = 0.95
   private val NinetyNinthPercentile = 0.99
 

@@ -23,7 +23,7 @@ object WorldBounds:
 
   /** Default side dimension of the world. */
   private val DefaultWorldDimension = 100.0
-  
+
   /**
    * Creates bounds starting at the origin.
    *

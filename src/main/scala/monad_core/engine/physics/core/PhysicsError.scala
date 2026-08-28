@@ -6,16 +6,14 @@ import monad_core.engine.model.EngineError
 sealed abstract class PhysicsError(message: String) extends EngineError(message)
 
 /** Indicates that a physics update received a negative nanosecond duration. */
-case class NegativeDeltaTime(dt: Long)
-  extends PhysicsError(s"Delta time cannot be negative: $dt")
+case class NegativeDeltaTime(dt: Long) extends PhysicsError(s"Delta time cannot be negative: $dt")
 
 /** Adapts a domain-model failure produced during a physics update. */
 case class PhysicsDomainError(cause: EngineError)
     extends PhysicsError(s"Physics update rejected by the domain model: $cause")
 
 /** Indicates that a physics rule failed for the supplied reason. */
-case class PhysicsRuleError(cause: String)
-  extends PhysicsError(s"Physics rule failed: $cause")
+case class PhysicsRuleError(cause: String) extends PhysicsError(s"Physics rule failed: $cause")
 
 /** Indicates that a calculation requiring mass received an entity without weight. */
 case class ZeroMassError() extends PhysicsError(s"Mass cannot be zero")

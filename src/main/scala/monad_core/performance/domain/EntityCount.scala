@@ -16,5 +16,4 @@ object EntityCount:
   def from(value: Int): Either[PerformanceError, EntityCount] =
     Either.cond(value > 0, value, InvalidEntityCount(value))
 
-  extension (entityCount: EntityCount)
-    def value: Int = entityCount
+  extension (entityCount: EntityCount) def value: Int = entityCount

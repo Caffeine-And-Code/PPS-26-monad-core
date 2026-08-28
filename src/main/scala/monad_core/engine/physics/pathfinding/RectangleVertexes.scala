@@ -17,7 +17,7 @@ private[engine] object RectangleVertexes:
      *  rotation of the rectangle in degrees
      * @return
      *  the four rectangle vertices in world coordinates
-     * */
+     */
     def vertexes(position: Vector2D, rotation: Double = 0.0): List[Vector2D] = {
       val upperRight = Vector2D(-rectangle.halfLength, -rectangle.halfHeight)
       val upperLeft  = Vector2D(rectangle.halfLength, -rectangle.halfHeight)
@@ -38,7 +38,7 @@ private[engine] object RectangleVertexes:
      *  rotation of the rectangle in degrees
      * @return
      *  the higher vertex
-     * */
+     */
     def upperVertex(position: Vector2D, rotation: Double = 0.0): Vector2D =
       vertexes(position, rotation).minBy(_.y)
 
@@ -51,7 +51,7 @@ private[engine] object RectangleVertexes:
      *  rotation of the rectangle in degrees
      * @return
      *  the lower vertex
-     * */
+     */
     def lowerVertex(position: Vector2D, rotation: Double = 0.0): Vector2D =
       vertexes(position, rotation).maxBy(_.y)
 
@@ -64,7 +64,7 @@ private[engine] object RectangleVertexes:
      *  rotation of the rectangle in degrees
      * @return
      *  the most left vertex
-     * */
+     */
     def leftVertex(position: Vector2D, rotation: Double = 0.0): Vector2D =
       vertexes(position, rotation).minBy(_.x)
 
@@ -77,7 +77,7 @@ private[engine] object RectangleVertexes:
      *  rotation of the rectangle in degrees
      * @return
      *  the most right vertex
-     * */
+     */
     def rightVertex(position: Vector2D, rotation: Double = 0.0): Vector2D =
       vertexes(position, rotation).maxBy(_.x)
 
@@ -90,7 +90,7 @@ private[engine] object RectangleVertexes:
      *  rotation of the rectangle in degrees
      * @return
      *  the width of the rotated rectangle's axis-aligned bounds
-     * */
+     */
     def horizontalSize(position: Vector2D, rotation: Double = 0.0): Double =
       val leftVertex  = rectangle.leftVertex(position, rotation)
       val rightVertex = rectangle.rightVertex(position, rotation)
@@ -105,7 +105,7 @@ private[engine] object RectangleVertexes:
      *  rotation of the rectangle in degrees
      * @return
      *  the height of the rotated rectangle's axis-aligned bounds
-     * */
+     */
     def verticalSize(position: Vector2D, rotation: Double = 0.0): Double =
       val upperVertex = rectangle.upperVertex(position, rotation)
       val lowerVertex = rectangle.lowerVertex(position, rotation)

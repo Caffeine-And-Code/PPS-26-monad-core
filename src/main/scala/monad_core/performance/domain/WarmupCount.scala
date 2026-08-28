@@ -16,5 +16,4 @@ object WarmupCount:
   def from(value: Int): Either[PerformanceError, WarmupCount] =
     Either.cond(value >= 0, value, InvalidWarmupCount(value))
 
-  extension (warmupCount: WarmupCount)
-    def value: Int = warmupCount
+  extension (warmupCount: WarmupCount) def value: Int = warmupCount
