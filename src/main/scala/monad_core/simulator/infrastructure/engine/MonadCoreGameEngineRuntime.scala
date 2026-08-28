@@ -130,6 +130,9 @@ final class MonadCoreGameEngineRuntime(
     lock.synchronized:
       physics = EngineFacade.setPhysicsRuleEnabled(physics, ruleId, isEnabled)
 
+  def physicsManagerSnapshot: PhysicsManager =
+    lock.synchronized(physics)
+
   override def resize(width: Double, height: Double): Either[BaseError, Unit] =
     lock.synchronized:
       currentDimensions = Some((width, height))

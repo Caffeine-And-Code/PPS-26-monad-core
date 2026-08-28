@@ -5,19 +5,15 @@ import monad_core.engine.simulator.EngineFacade
 import monad_core.performance.application.{PerformanceWorkload, SampleCollector}
 import monad_core.performance.domain.{EnginePerformanceError, EntityCount, PerformanceError}
 
-/**
- * Performance workload that measures one tick of the simulation engine.
- *
- * Preparation builds a deterministic scene and initializes one engine session and physics manager.
- * The returned operation reuses these dependencies so setup time is excluded from every sample.
- */
+/** Performance workload that measures one tick of the simulation engine. */
 object EngineTickWorkload extends PerformanceWorkload:
 
   /**
-   * Prepares a repeatable engine-tick operation for the requested scene size.
+   * Prepares a repeatable engine-tick operation for the requested scene size, using the default
+   * [[PhysicsManager]] implementation.
    *
    * Engine failures from scene construction and ticking are translated to
-   * [[monad_core.performance.domain.EnginePerformanceError]].
+   * [[EnginePerformanceError]].
    *
    * @param entityCount
    *   number of entities placed in the deterministic scene
@@ -28,9 +24,26 @@ object EngineTickWorkload extends PerformanceWorkload:
   override def prepare(
       entityCount: EntityCount
   ): Either[PerformanceError, SampleCollector.Operation] =
+    prepareWith(entityCount, PhysicsManager.default())
+
+  /**
+   * Creates a workload that uses the supplied immutable Physics Manager snapshot.
+   *
+   * @param physicsManager
+   *   immutable snapshot of the Physics Manager to use for the workload
+   * @return
+   *   workload retaining the supplied manager
+   */
+  def withPhysicsManager(physicsManager: PhysicsManager): PerformanceWorkload =
+    (entityCount: EntityCount) => prepareWith(entityCount, physicsManager)
+
+  /** Prepares one engine tick with the selected physics manager. */
+  private def prepareWith(
+      entityCount: EntityCount,
+      physicsManager: PhysicsManager
+  ): Either[PerformanceError, SampleCollector.Operation] =
     DeterministicScene(entityCount).map { scene =>
       val session = EngineFacade.start(EngineFacade.default)
-      val physics = PhysicsManager.default()
 
       () =>
         EngineFacade
@@ -38,7 +51,7 @@ object EngineTickWorkload extends PerformanceWorkload:
             session = session,
             state = scene,
             currentTime = EngineFacade.DefaultTickTime,
-            physics = physics
+            physics = physicsManager
           )
           .left
           .map(EnginePerformanceError.apply)

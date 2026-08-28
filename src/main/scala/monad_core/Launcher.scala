@@ -3,16 +3,14 @@ package monad_core
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.simulator.Painter
 import monad_core.performance.application.{NanoClock, PerformanceWorkload}
-import monad_core.performance.domain.ExperimentKind
 import monad_core.performance.infrastructure.SystemNanoClock
 import monad_core.performance.infrastructure.engine.EngineTickWorkload
 import monad_core.performance.presentation.{
-  PerformanceArguments,
+  PerformanceCommand,
   PerformanceConsolePrinter,
-  PerformanceReportPrinter,
-  PerformanceRoutes,
-  PerformanceRuntime
+  PerformanceRoutes
 }
+import monad_core.performance.presentation.gui.ExperimentDialog
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
@@ -97,7 +95,12 @@ object Launcher:
     val imageConfig = BaseImageConfig()
 
     val gamePanel = GameEnginePanel(
-      modePanel = GameEngineModePanel,
+      modePanel = GameEngineModePanel.withPerformanceExperiment(() =>
+        ExperimentDialog
+          .show(() => runtime.physicsManagerSnapshot)
+          .left
+          .foreach(error => NotificationManager.show(error.message, Error))
+      ),
       rendererPanel = SceneRendererPanel,
       imageConfig = imageConfig
     )
@@ -150,20 +153,20 @@ object Launcher:
     )
   }
 
-  private def runPerformance(args: Array[String], kind: ExperimentKind): RouteResponse =
-    given PerformanceWorkload      = EngineTickWorkload
-    given NanoClock                = SystemNanoClock
-    given PerformanceReportPrinter = PerformanceConsolePrinter
+  private def runPerformance(args: Array[String], route: String): RouteResponse =
+    given PerformanceWorkload = EngineTickWorkload
+    given NanoClock           = SystemNanoClock
 
-    val result = for
-      config <- PerformanceArguments.parse(args)
-      _      <- PerformanceRuntime.handle(kind, config)
-    yield ()
+    val result = PerformanceCommand.run(route, args)
 
     result match
       case Left(error) => RouteResponse(success = false, message = error.message)
-      case Right(_) =>
-        RouteResponse(success = true, message = s"Finished ${kind.toString.toLowerCase} experiment")
+      case Right(report) =>
+        PerformanceConsolePrinter.print(report)
+        RouteResponse(
+          success = true,
+          message = s"Finished ${report.kind.toString.toLowerCase} experiment"
+        )
 
   /**
    * Routes command-line arguments to model evaluation or to the default GUI application.
@@ -176,10 +179,10 @@ object Launcher:
    */
   def main(args: Array[String]): Unit =
     lazy val evaluateModelRoute          = evaluateModel(args)
-    lazy val performanceLoadRoute        = runPerformance(args, ExperimentKind.Load)
-    lazy val performanceStressRoute      = runPerformance(args, ExperimentKind.Stress)
-    lazy val performanceSpikeRoute       = runPerformance(args, ExperimentKind.Spike)
-    lazy val performanceScalabilityRoute = runPerformance(args, ExperimentKind.Scalability)
+    lazy val performanceLoadRoute        = runPerformance(args, PerformanceRoutes.Load)
+    lazy val performanceStressRoute      = runPerformance(args, PerformanceRoutes.Stress)
+    lazy val performanceSpikeRoute       = runPerformance(args, PerformanceRoutes.Spike)
+    lazy val performanceScalabilityRoute = runPerformance(args, PerformanceRoutes.Scalability)
     lazy val guiRoute                    = outcomeFor(guiApplication())
 
     val result = Router()

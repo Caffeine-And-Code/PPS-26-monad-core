@@ -67,3 +67,8 @@ class PerformanceConsolePrinterTest extends AnyFunSuite with Matchers:
     val printed = consoleOutputToString(report)
 
     printed should not include "Breakpoint:"
+
+  test("the console printer uses the shared report formatting"):
+    val printed = consoleOutputToString(BaseReport).replace("\r\n", "\n").trim
+
+    printed shouldBe PerformanceReportFormatter.format(BaseReport)

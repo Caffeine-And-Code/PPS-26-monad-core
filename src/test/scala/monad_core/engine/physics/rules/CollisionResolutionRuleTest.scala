@@ -5,16 +5,16 @@ import monad_core.engine.core.events.EngineEvent.CollisionDetected
 import monad_core.engine.core.events.CollisionTarget
 import monad_core.engine.core.traits.State
 import monad_core.engine.geometry.Collision
-import monad_core.engine.helper.DummyEntityHelper.{
+import helpers.dummies.DummyEntityHelper.{
   makeFixedEntityCircle,
   makeMovingEntityCircle,
   makeMovingEntityRectangle
 }
+import helpers.mocks.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.model.Entity.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.physics.utils.{CollisionResolver, PhysicsUtil}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
@@ -55,7 +55,7 @@ class CollisionResolutionRuleTest
 
     val state = stateWithEntities(List(entity1, entity2))
 
-    given CollisionDetector = detectorWithoutCollision()
+    given CollisionDetector = detectorWithCollisions(Map.empty)
 
     val result = Rule.apply(PhysicsContext.detect(state, DeltaTimeOneSecond)).value.state
 

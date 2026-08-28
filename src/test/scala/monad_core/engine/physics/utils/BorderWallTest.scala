@@ -1,6 +1,6 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.helper.DummyEntityHelper.{
+import helpers.dummies.DummyEntityHelper.{
   makeMovingEntityCircle,
   makeMovingEntityRectangle
 }

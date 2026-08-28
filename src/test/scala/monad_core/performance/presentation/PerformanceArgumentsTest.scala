@@ -128,11 +128,12 @@ class PerformanceArgumentsTest extends AnyFunSuite with Matchers:
 
   test("performance arguments parse the requested frame budget"):
     val requestedFrameBudgetMillis = 16
+    val expectedFrameBudgetNanos   = 16_000_000L
     val args = Array(PerformanceArguments.FrameBudgetMillis, requestedFrameBudgetMillis.toString)
 
     val result = PerformanceArguments.parse(args)
 
-    result.map(_.frameBudget.nanos) shouldBe Right(requestedFrameBudgetMillis * 1_000_000L)
+    result.map(_.frameBudget.nanos) shouldBe Right(expectedFrameBudgetNanos)
 
   test("performance arguments reject an invalid frame budget"):
     val requestedFrameBudgetMillis = 0

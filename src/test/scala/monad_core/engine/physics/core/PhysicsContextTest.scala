@@ -2,9 +2,9 @@ package monad_core.engine.physics.core
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.geometry.Collision
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
-import monad_core.engine.helper.DummySurfaceHelper.makeSurfaceCircle
-import monad_core.engine.helper.MockStateHelper
+import helpers.dummies.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import helpers.dummies.DummySurfaceHelper.makeSurfaceCircle
+import helpers.mocks.MockStateHelper
 import monad_core.engine.helper.PhysicsConstantHelper.DeltaTimeOneSecond
 import monad_core.engine.model.Vector2D
 import org.scalamock.scalatest.MockFactory

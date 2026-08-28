@@ -1,20 +1,23 @@
-package monad_core.engine.helper
+package helpers.mocks
 
+import monad_core.engine.core.traits.State
 import monad_core.engine.core.{
   CannotAddAlreadyPresentElementInMap,
   CannotAddEntity,
   CannotRemoveEntity,
   CannotRemoveNonPresentElementFromMap
 }
-import monad_core.engine.core.traits.State
 import monad_core.engine.model.{Entity, Surface, Team, WorldBounds}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 
-private[engine] trait MockStateHelper:
+/** A trait for creating mock states for testing purposes. */
+trait MockStateHelper:
 
   self: MockFactory =>
 
+  private def DefaultDimension = 100
+  
   private def mockBounds(state: State, bounds: WorldBounds): Unit =
     (() => state.bounds)
       .expects()
@@ -25,7 +28,7 @@ private[engine] trait MockStateHelper:
       entities: List[Entity],
       teams: List[Team] = List.empty,
       surfaces: List[Surface] = List.empty,
-      bounds: WorldBounds = WorldBounds(100, 100).value,
+      bounds: WorldBounds = WorldBounds(DefaultDimension, DefaultDimension).value,
       removeEntities: Boolean = true
   ): State =
     val state = mock[State]

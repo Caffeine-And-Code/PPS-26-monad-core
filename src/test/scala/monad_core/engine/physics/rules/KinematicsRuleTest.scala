@@ -2,13 +2,13 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{
+import helpers.dummies.DummyEntityHelper.{
   makeFixedEntityCircle,
   makeMovingEntityCircle,
   makeMovingEntityRectangle
 }
+import helpers.mocks.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
-import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.model.{Entity, Vector2D}
 import monad_core.engine.physics.core.*
 import monad_core.engine.physics.utils.PhysicsUtil

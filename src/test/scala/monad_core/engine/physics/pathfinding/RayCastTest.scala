@@ -3,7 +3,7 @@ package monad_core.engine.physics.pathfinding
 import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.physics.core.{RayIntersectedAMissingEntity, RayIntersectedNothing}
-import monad_core.engine.helper.DummyEntityHelper.{
+import helpers.dummies.DummyEntityHelper.{
   makeMovingEntityCircle,
   makeMovingEntityRectangle
 }

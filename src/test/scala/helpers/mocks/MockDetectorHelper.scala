@@ -1,23 +1,14 @@
-package monad_core.engine.helper
+package helpers.mocks
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.geometry.Collision
-import monad_core.engine.model.{Entity, Surface, Vector2D}
+import monad_core.engine.model.Vector2D
 import org.scalamock.scalatest.MockFactory
 
-private[engine] trait MockDetectorHelper:
+/** A trait for creating mock collision detectors for testing purposes. */
+trait MockDetectorHelper:
 
   self: MockFactory =>
-
-  def detectorWithoutCollision(): CollisionDetector =
-    val detector = mock[CollisionDetector]
-
-    detector.collision
-      .expects(*, *)
-      .returning(None)
-      .anyNumberOfTimes()
-
-    detector
 
   def detectorWithCollisions(
       collisions: Map[(String, String), (Vector2D, Double, Vector2D)]
@@ -31,6 +22,11 @@ private[engine] trait MockDetectorHelper:
           Collision(normal, depth, point)
         }
       }
+      .anyNumberOfTimes()
+    
+    detector.isInside
+      .expects(*, *)
+      .returning(false)
       .anyNumberOfTimes()
 
     detector

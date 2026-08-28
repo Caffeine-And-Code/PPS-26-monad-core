@@ -1,7 +1,7 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
-import monad_core.engine.helper.DummyTeamHelper.{addTeam, makeTeam}
+import helpers.dummies.DummyEntityHelper.makeMovingEntityCircle
+import helpers.dummies.DummyTeamHelper.{addTeam, makeTeam}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.{NegativeDeltaTime, ZeroMassError}

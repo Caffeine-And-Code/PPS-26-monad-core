@@ -3,7 +3,7 @@ package monad_core.engine.helper
 import monad_core.engine.geometry.Collision
 import monad_core.engine.model.{BorderSide, Entity, Vector2D}
 import PhysicsConstantHelper.DefaultRadius
-import DummyEntityHelper.makeMovingEntityCircle
+import helpers.dummies.DummyEntityHelper.makeMovingEntityCircle
 import monad_core.engine.physics.utils.BorderWall
 import org.scalatest.EitherValues.convertEitherToValuable
 

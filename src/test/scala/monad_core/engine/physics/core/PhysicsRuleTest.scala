@@ -1,6 +1,6 @@
 package monad_core.engine.physics.core
 
-import monad_core.engine.helper.PhysicsRuleHelper
+import helpers.dummies.PhysicsRuleHelper
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

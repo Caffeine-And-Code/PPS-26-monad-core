@@ -8,7 +8,7 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.beans.value.ObservableValue
 import scalafx.geometry.Side
 import scalafx.scene.Node
-import scalafx.scene.control.{CheckMenuItem, ContextMenu, MenuItem}
+import scalafx.scene.control.{Button, CheckMenuItem, ContextMenu, MenuItem}
 
 /**
  * Action entry displayed by a menu button.
@@ -99,8 +99,14 @@ object MenuButton:
             disable <== toggle.isDisabled
             onAction = _ => toggle.onToggle(selected.value)
 
-  private val StylesheetPath: String =
+  private[presentation] val StylesheetPath: String =
     getClass.getResource("/stylesheets/menu-button.css").toExternalForm
+
+  /** Applies the shared visual style used by icon buttons in the simulator menu bar. */
+  private[presentation] def styleIconButton(button: Button): Button =
+    button.styleClass += "menu-icon-button"
+    button.stylesheets += StylesheetPath
+    button
 
   private case class MenuButtonViewModel(side: Side):
     val isOpen: BooleanProperty = BooleanProperty(false)
@@ -162,8 +168,7 @@ object MenuButton:
 
     buttonEither
       .map { btn =>
-        btn.styleClass += "menu-icon-button"
-        btn.stylesheets += StylesheetPath
+        styleIconButton(btn)
         btn.onMouseClicked = _ => viewModel.toggle(contextMenu, btn)
         btn
       }
