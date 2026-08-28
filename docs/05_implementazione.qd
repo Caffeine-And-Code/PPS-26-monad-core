@@ -1,6 +1,13 @@
 # Implementazione
 
-## Tonelli
+## Senni Mattia
+
+.include {implementations/implementations-senni.qd}
+
+## Fattori Fabio
+
+.include {implementations/implementations-fattori.qd}
+
+## Tonelli Francesco
 
 .include {implementations/implementations-tonelli.qd}
-.include {implementations/implementations-fattori.qd}

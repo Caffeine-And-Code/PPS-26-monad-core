@@ -1,0 +1,33 @@
+Nella realizzazione del progetto le parti realizzate da Senni Mattia sono:
+- sviluppo e rappresentazione delle entità del game engine
+- sviluppo del sistema di rilevamento di collisioni del game engine
+- sviluppo del pannello chat con assistente AI per la GUI
+- sviluppo dell'applicativo di testing e valutazione dell'assistente AI
+
+Ho inoltre contribuito allo sviluppo dell'architettura dell'applicazione GUI proponendo e progettando un'architettura ispirata dalla clean architecture dato che l'applicazione averebbe usato sia risorse esterne che componenti sostituibili quali il game engine e proponendo l'utilizzo del pattern MVVM per la gestione delle interfacce grafiche di scalaFX.
+
+Alcuni elementi degni di nota legate alle implementazioni sono qui descritte.
+
+### Entità del game engine
+Nello sviluppo delle entità del game engine ho adottato degli *opaque type* per rappresentare valori di dominio quali `Health`, `Weight`, `LocatableId` e `TeamId`. La loro creazione è affidata a *smart constructor* che restituiscono `Either[EngineError, A]`, in maniera da evitare la rappresentazione di valori non validi e comporre le operazioni mediante `map`, `flatMap` e *for comprehension*, senza ricorrere a eccezioni per gli errori attesi. Entità, superfici e team sono immutabili e vengono aggiornati tramite copie validate; una factory generica permette la costruzione dei diversi `Locatable` validi, evitando di duplicare la logica di validazione.
+
+### Sistema di rilevamento collisioni
+Nel sistema di rilevamento delle collisioni ho separato gli algoritmi relativi alle diverse coppie di forme tramite le type class `Collides[A, B]` e `Contains[A]`. Le loro implementazioni vengono fornite attraverso il costrutto `given`: negli unit test posso quindi sostituire gli algoritmi reali con dei mock e verificare i componenti in modo isolato. Lo stesso meccanismo permette a un utilizzatore esterno di continuare a usare le interfacce del sistema fornendo, sempre tramite un `given`, una propria implementazione degli algoritmi di collisione o contenimento. Per le forme generiche ho utilizzato il pattern matching per individuare la combinazione corretta e richiamare l'algoritmo specifico. Le operazioni sono esposte tramite extension method, così da mantenere il loro utilizzo semplice e vicino al linguaggio del dominio. Ho inoltre introdotto `Placed[A]` per rappresentare una forma e la sua posizione indipendentemente da `Entity` e `Surface`, evitando di legare gli algoritmi geometrici al concetto di entità, in modo che un dominio abbia le sue strutture dati e i suoi concetti per funzionare. Sopra questi algoritmi ho realizzato `CollisionDetector`, che offre al resto dell'engine un'unica interfaccia basata sui `Locatable` e si occupa di convertirli nella rappresentazione geometrica richiesta. In questo modo è possibile utilizzare espressioni come `entity hasCollisionWith surface` ed `entity isInside surface` senza esporre i dettagli del rilevamento.
+
+### Pannello chat con agente AI
+Per la parte AI ho separato i layer introducendo `AiAgent` come porta applicativa, senza dipendenze da LangChain4j. Le richieste sono rappresentate da comandi applicativi, mentre l'adapter nel layer infrastructure traduce le chiamate e gli errori della libreria nelle astrazioni interne `Future`, `Either` e `AgentResponse`. Anche i tool svolgono il ruolo di adapter: convertono le richieste del modello nei comandi di `World` e `GameEngineRuntime`, lasciando ai servizi applicativi la validazione e l'esecuzione. Nel livello di infrastructure c'è inoltre una factory che fornisce un'implementazione dell'`AiAgent` che utilizza la dipendenza esterna Langchain4j, il tutto viene instazionato nel Launcher che può configurare il factory e forinre un given dell'`AiAgent` di livello applicazione in modo che l'app utilizzi l'interfaccia fornita a livello applicazione ma realmente utilizza un'implementazione con dipenze esterne che diventano quindi facili da sostituire. Ho modellato gli stati del componenente `Ready`, `Waiting` ed `Error` tramite un ADT, così che ogni evento produca una transizione tra stati immutabili e non siano rappresentabili combinazioni incoerenti.
+
+### Test dell'agente AI
+Per progettare questa parte mi sono ispirato alla documentazione di LangChain4j e all'articolo [Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/) di Hamel Husain: gli integration test riprendono il *Level 1*, mentre il programma di valutazione è ispirato al *Level 2*. Nell'evaluator ho costruito una pipeline funzionale con `Try`, `Either`, for-comprehension e collezioni immutabili, che crea un mondo isolato, esegue i prompt, confronta i tool call e usa un LLM-as-a-Judge per valutare risposta e stato finale. Tool call e risultati sono modellati come ADT, mentre un mapper converte e valida i tipi esterni di LangChain4j prima che entrino nel dominio; dataset e modalità di stampa sono inoltre trait di livello application il che semplifica una possibile sostituzione della dipendenza da Langchin4j, senza modificare il resto dell'applicazione.
+
+Negli integration test ho esteso i matcher di ScalaTest con extension method, metodi infix e builder intermedi, ottenendo una piccola DSL che rende le verifiche simili a frasi in lingua naturale. Ad esempio:
+
+```scala
+result should onlyExecuteTool("createCircleEntity")
+result should notExecuteTools
+
+val judgeCriteria = "Assistant should refuse to answer user question cause it can talk about his allowed topics"
+result judgedBy judgeAssistant shouldSatisfy judgeCriteria
+```
+
+L'espressione `judgedBy` produce un `JudgedResult`, sul quale `shouldSatisfy` costruisce ed esegue il matcher del judge.

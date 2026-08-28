@@ -1,3 +1,99 @@
-# Requirement specification
+# Requisiti
+Il presente capitolo descrive i requisiti del software finale. Il software è composto da due macroaree: un engine che gestisce entità di forme diverse e la loro interazione con l'ambiente circostante, riutilizzabile come modulo a sé stante, e un'applicazione dotata di GUI, che rappresenta graficamente l'engine e consente di interagire con esso tramite un agente AI basato su un Large Language Model.
 
-Requirement specification
+## Requisiti di business
+Dovranno essere disponibili un'applicazione dotata di GUI e una libreria utilizzabile da altri sviluppatori software nei propri progetti. I requisiti saranno quindi suddivisi tra quelli relativi alla libreria che implementa l'engine grafico 2D e quelli relativi all'applicazione dotata di GUI, attraverso la quale sarà possibile interagire graficamente con l'engine. \
+Tramite l'engine 2D dovrà essere possibile:
+- gestire entità grafiche di forma circolare o quadrata, ciascuna dotata di peso, velocità, posizione, vita e team di appartenenza
+- gestire superfici grafiche di forma circolare o quadrata, caratterizzate da una posizione e in grado di applicare attrito o forza a ogni entità che vi passa sopra
+- fare in modo che un'entità possa essere attratta dall'entità più vicina appartenente a un team diverso
+- far avanzare la simulazione tick per tick, applicando la simulazione della fisica e gestendo le reazioni alle collisioni in base al tempo trascorso tra un tick e il successivo
+- gestire una scena composta da entità, superfici e team
+
+Tramite l'applicazione dotata di GUI dovrà essere possibile:
+- visualizzare graficamente l'evoluzione della scena dell'engine 2D attraverso un'interfaccia grafica
+- interagire con gli elementi presenti nella scena dell'engine, aggiungendo, modificando e rimuovendo entità, superfici e team
+- avviare la simulazione, metterla in pausa o ripristinarne lo stato iniziale
+- interagire con un agente AI in grado di eseguire tutte le operazioni disponibili nella GUI mediante richieste formulate sotto forma di messaggi
+
+## Modelli di dominio
+
+![Diagramma dei casi d'uso](assets/monad_core_use_case_diagram.drawio.png)
+
+Glossario:
+- entità: oggetti rappresentabili dall'engine, ai quali vengono applicate le regole del motore fisico, che ne gestisce gli spostamenti in funzione del tempo e le reazioni alle collisioni con altre entità
+- superfici: zone della scena che applicano una forza alle entità che vi passano sopra, generando attrito o accelerazione in una direzione prestabilita
+- team: gruppi ai quali possono appartenere le entità. Attraverso apposite regole del motore fisico è possibile fare in modo che un'entità trovi automaticamente il percorso più breve per raggiungere l'entità più vicina di un team avversario, mediante un algoritmo di path finding, e che ne sia attratta, muovendosi verso di essa in relazione alla propria velocità
+- scena: contenitore di entità e superfici
+- simulazione: una volta popolata la scena, è possibile avviare la simulazione, durante la quale le posizioni e i dati delle entità vengono aggiornati in base alle regole fisiche applicate
+
+## Requisiti funzionali
+
+### Requisiti dello sviluppatore che utilizza l'engine 2D
+1. creare entità
+   1. specificarne la forma, scegliendo tra cerchio e rettangolo, e indicare le relative dimensioni (raggio per il cerchio; altezza e lunghezza per il rettangolo), la posizione (X e Y) e l'ID
+   2. specificarne facoltativamente il peso
+   3. specificarne facoltativamente la velocità (un vettore con componenti X e Y)
+   4. specificarne facoltativamente la vita
+   5. specificarne facoltativamente il team di appartenenza
+   6. aggiungerle alla scena
+2. creare superfici
+   1. specificarne la forma, scegliendo tra cerchio e rettangolo, e indicare le relative dimensioni (raggio per il cerchio; altezza e lunghezza per il rettangolo), la posizione (X e Y) e l'ID
+   2. specificarne facoltativamente l'attrito
+   3. specificare facoltativamente la forza applicata alle entità che vi si trovano sopra
+3. creare team
+   1. specificare i team nemici
+4. poter aggiungere entità, superfici e team alla scena
+5. poter configurare il metodo di rilevamento delle collisioni
+   1. disporre di un'implementazione predefinita
+6. poter configurare il metodo di rilevamento della presenza di un'entità su una superficie
+   1. disporre di un'implementazione predefinita
+7. poter configurare le regole fisiche da applicare alla scena a ogni tick
+   1. disporre delle regole fisiche di base predefinite
+      1. risposta alle collisioni
+      2. cinetica di base
+      3. attrazione verso i nemici
+      4. rimbalzo sui muri, ovvero sui confini della scena
+      5. applicazione alle entità delle forze e dell'attrito generati dalle superfici
+8. poter gestire il game engine
+   1. poter fornire una funzione da eseguire a ogni avanzamento dell'engine e alla conseguente applicazione della fisica; la funzione riceverà in input la scena modificata dalle regole fisiche applicate
+   2. poter impostare una scena iniziale
+
+### Requisiti dell'utente della GUI
+1. poter disegnare e visualizzare la scena in una schermata
+2. poter interagire con il game engine e con la relativa scena tramite la GUI
+   1. poter creare entità specificandone ogni parametro
+   2. poter modificare ogni parametro di ciascuna entità
+   3. poter eliminare un'entità dalla scena
+   4. poter creare superfici specificandone ogni parametro
+   5. poter modificare ogni parametro di ciascuna superficie
+   6. poter eliminare una superficie dalla scena
+   7. poter creare team specificandone ogni parametro
+   8. poter modificare ogni parametro di ciascun team
+   9. poter eliminare un team
+   10. poter avviare la simulazione
+   11. poter mettere in pausa la simulazione
+   12. poter ripristinare lo stato iniziale della simulazione
+3. poter interagire con un assistente AI
+   1. poter eseguire, mediante l'invio di messaggi testuali all'assistente AI, tutte le operazioni disponibili nella GUI
+   2. l'agente potrà conversare esclusivamente su temi riguardanti l'applicazione e non fornirà risposte a richieste relative ad altri argomenti
+4. notificare graficamente all'utente ogni errore verificatosi durante la creazione, la modifica o l'eliminazione di entità, superfici o team e causato dall'inserimento di dati non validi
+
+## Requisiti non funzionali
+Per quanto riguarda l'engine, i requisiti non funzionali riguardano il costo, in termini di prestazioni, dell'esecuzione di un ciclo di elaborazione della fisica per ogni elemento (entità, superficie e team) presente nella scena. L'applicazione dovrà mettere a disposizione strumenti, sotto forma di performance test, che consentano a ogni utente di ottenere informazioni sulle prestazioni dell'engine sul proprio hardware.
+
+Per quanto riguarda la GUI, i requisiti non funzionali riguardano la fluidità e la semplicità d'uso:
+- l'esperienza d'uso deve essere fluida
+- l'utilizzo deve essere intuitivo per l'utente
+- l'applicazione non deve presentare blocchi, malfunzionamenti o arresti anomali e inattesi durante il normale utilizzo
+
+## Requisiti di implementazione
+- raggiungere una copertura dei test superiore al 90%
+- implementare unit test per ogni logica dell'applicazione
+- implementare integration test per le parti che richiedono l'integrazione tra domini differenti
+- implementare UI test per garantire il rispetto dei requisiti funzionali della GUI
+- implementare snapshot test per i pannelli e i componenti grafici della GUI
+- implementare test architetturali sull'applicazione dotata di GUI, al fine di garantire la corretta organizzazione del codice
+- implementare mutation test per verificare l'efficacia dei test mediante la mutazione del codice sorgente
+- implementare performance test eseguibili dall'utente, affinché possa ottenere informazioni sulle prestazioni dell'engine sul proprio dispositivo
+- utilizzare il paradigma di programmazione funzionale e il linguaggio Scala sia per lo sviluppo dell'applicazione dotata di GUI sia per quello della libreria dell'engine
