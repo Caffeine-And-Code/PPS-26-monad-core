@@ -268,6 +268,16 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
 
     result should not include "Breakpoint:"
 
+  test("format separates the header from the first point"):
+    val result = PerformanceCli.format(report())
+
+    result should include("Performance experiment: Load\nEntities: 10")
+
+  test("format separates the metrics of a point"):
+    val result = PerformanceCli.format(report())
+
+    result should include("Entities: 10\np50: 1.000 ms")
+
   test("runWithClock executes a valid engine command"):
     given NanoClock = SequenceNanoClock(Vector(0L, 1_000L))
 

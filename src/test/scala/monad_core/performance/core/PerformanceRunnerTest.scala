@@ -133,6 +133,14 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     
     resultValue shouldBe Vector(2, 4, 8)
 
+  test("Stress has no breakpoint when latency equals the frame budget"):
+    val result = run(
+      PerformanceKind.Stress,
+      Vector(AtBudget, AtBudget, AtBudget)
+    ).value
+
+    result.breakpoint shouldBe None
+
   test("Load reports its selected experiment kind"):
     val result = run(PerformanceKind.Load, Vector(WithinBudget)).value
 
