@@ -4,13 +4,43 @@ import monad_core.performance.model.{EntityCount, NanoClock, PerformanceConfig, 
 
 import scala.annotation.tailrec
 
+/**
+ * Performance experiment selected for execution.
+ *
+ * @param kind
+ *   strategy used to generate the entity counts to measure
+ * @param config
+ *   shared experiment configuration
+ */
 final case class PerformanceRequest(kind: PerformanceKind, config: PerformanceConfig)
 
-/** Executes the four performance strategies over an injected workload. */
-object PerformanceRunner:
+/** Executes the selected performance strategy over an injected workload. */
+private[performance] object PerformanceRunner:
+  /** Workload operation executed during warm-ups and measured iterations. */
   type Operation       = () => Either[PerformanceError, Unit]
+
+  /** Creates a workload operation for the supplied number of entities. */
   type PrepareWorkload = EntityCount => Either[PerformanceError, Operation]
 
+  /**
+   * Runs a performance experiment and collects its measurements.
+   *
+   * Load measures the starting count, Spike measures the starting and maximum counts before
+   * returning to the starting count, while Stress and Scalability use every generated count.
+   * Stress stops at the first point whose p95 latency exceeds the frame budget.
+   *
+   * @param request
+   *   experiment strategy and configuration
+   * @param prepare
+   *   function that creates the workload for an entity count
+   * @param clock
+   *   monotonic clock used to measure each execution
+   * @return
+   *   the completed report, or the first configuration or workload error
+   * @see
+   *   [[monad_core.performance.model.PerformanceKind PerformanceKind]] and
+   *   [[monad_core.performance.model.PerformanceReport PerformanceReport]]
+   */
   def run(
       request: PerformanceRequest,
       prepare: PrepareWorkload
@@ -48,6 +78,26 @@ object PerformanceRunner:
       }
     )
 
+  /**
+   * Measures the remaining entity counts in order.
+   *
+   * @param remaining
+   *   entity counts that have not been measured yet
+   * @param request
+   *   current experiment request
+   * @param prepare
+   *   function that creates the workload for an entity count
+   * @param stopAtBreakpoint
+   *   whether collection stops when p95 exceeds the frame budget
+   * @param accumulated
+   *   points already measured
+   * @param clock
+   *   monotonic clock used to measure each execution
+   * @return
+   *   all collected points, or the first workload error
+   * @see
+   *   [[monad_core.performance.model.PerformancePoint PerformancePoint]]
+   */
   @tailrec
   private def collect(
       remaining: Vector[EntityCount],
@@ -74,6 +124,24 @@ object PerformanceRunner:
                 updated
               )
 
+  /**
+   * Prepares and measures the workload for one entity count.
+   *
+   * Warm-ups are executed before collecting the configured latency samples.
+   *
+   * @param entityCount
+   *   number of entities used by the workload
+   * @param config
+   *   experiment configuration
+   * @param prepare
+   *   function that creates the workload
+   * @param clock
+   *   monotonic clock used to measure each execution
+   * @return
+   *   the resulting performance point, or the first workload error
+   * @see
+   *   [[monad_core.performance.core.PerformanceMetrics PerformanceMetrics]]
+   */
   private def measure(
       entityCount: EntityCount,
       config: PerformanceConfig,
@@ -87,12 +155,38 @@ object PerformanceRunner:
       rate      <- PerformanceMetrics.completionRate(samples, config.frameBudget)
     yield PerformancePoint(entityCount, latency, rate)
 
+  /**
+   * Decorates a workload operation with elapsed-time measurement.
+   *
+   * @param operation
+   *   workload operation to execute
+   * @param clock
+   *   monotonic clock read before and after the operation
+   * @return
+   *   an operation producing the collected performance sample
+   * @see
+   *   [[monad_core.performance.model.NanoClock NanoClock]]
+   */
   private def measured(
       operation: Operation
   )(using clock: NanoClock): () => Either[PerformanceError, PerformanceSample] = () =>
     val startedAt = clock.now()
     operation().map(_ => PerformanceSample(clock.now() - startedAt))
 
+  /**
+   * Executes an operation a fixed number of times, stopping at the first error.
+   *
+   * @tparam A
+   *   value produced by one execution
+   * @param remaining
+   *   number of executions still required
+   * @param operation
+   *   operation to repeat
+   * @param accumulated
+   *   values produced by completed executions
+   * @return
+   *   all produced values, or the first execution error
+   */
   @tailrec
   private def repeat[A](
       remaining: Int,

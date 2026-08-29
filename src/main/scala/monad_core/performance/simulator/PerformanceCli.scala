@@ -15,20 +15,76 @@ import monad_core.performance.model.{
 
 import java.util.Locale
 
-/** Command-line adapter for parsing, running, and formatting performance experiments. */
+/**
+ * Command-line adapter for parsing, running and formatting performance experiments.
+ *
+ * @see
+ *   [[monad_core.performance.simulator.EnginePerformance EnginePerformance]]
+ */
 object PerformanceCli:
+  /** Route that runs the expected-load strategy. */
   val LoadRoute        = "performance-load-test"
+
+  /** Route that searches for the frame-budget breakpoint. */
   val StressRoute      = "performance-stress-test"
+
+  /** Route that introduces a sudden increase and recovery in entity count. */
   val SpikeRoute       = "performance-spike-test"
+
+  /** Route that measures the complete entity-count progression. */
   val ScalabilityRoute = "performance-scalability-test"
 
+  /** Argument selecting the initial number of entities. */
   val Entities          = "--entities"
+
+  /** Argument selecting the maximum number of entities. */
   val MaximumEntities   = "--max-entities"
+
+  /** Argument selecting the multiplier between entity counts. */
   val GrowthFactor      = "--growth-factor"
+
+  /** Argument selecting the measured executions for each entity count. */
   val Iterations        = "--iterations"
+
+  /** Argument selecting the unmeasured executions before collection. */
   val Warmups           = "--warmups"
+
+  /** Argument selecting the frame budget in milliseconds. */
   val FrameBudgetMillis = "--frame-budget-ms"
 
+  /** Default initial entity count exposed to command-line clients. */
+  val DefaultStartEntities: Int      = PerformanceConfig.DefaultStartEntities
+
+  /** Default maximum entity count exposed to command-line clients. */
+  val DefaultMaximumEntities: Int    = PerformanceConfig.DefaultMaximumEntities
+
+  /** Default entity growth factor exposed to command-line clients. */
+  val DefaultGrowthFactor: Int       = PerformanceConfig.DefaultGrowthFactor
+
+  /** Default measured iteration count exposed to command-line clients. */
+  val DefaultIterations: Int         = PerformanceConfig.DefaultIterations
+
+  /** Default warm-up count exposed to command-line clients. */
+  val DefaultWarmups: Int            = PerformanceConfig.DefaultWarmups
+
+  /** Default frame budget in milliseconds exposed to command-line clients. */
+  val DefaultFrameBudgetMillis: Long = PerformanceConfig.DefaultFrameBudgetMillis
+
+  /**
+   * Parses a route and its command-line arguments into a validated request.
+   *
+   * Missing arguments use their default values. A supplied argument without a following value
+   * is treated as missing.
+   *
+   * @param route
+   *   selected performance route
+   * @param arguments
+   *   command-line option and value pairs
+   * @return
+   *   the validated request, or the first route, parsing or configuration error
+   * @see
+   *   [[monad_core.performance.model.PerformanceConfig PerformanceConfig]]
+   */
   def parse(
       route: String,
       arguments: Array[String]
@@ -75,7 +131,44 @@ object PerformanceCli:
       )
     yield PerformanceRequest(kind, config)
 
+  /**
+   * Runs an engine performance command using the system monotonic clock.
+   *
+   * @param route
+   *   selected performance route
+   * @param arguments
+   *   command-line arguments
+   * @param physicsManager
+   *   physics rules applied to the deterministic scene
+   * @return
+   *   the formatted report, or the first validation or engine error
+   * @see
+   *   [[monad_core.performance.simulator.PerformanceClock PerformanceClock]]
+   */
   def run(
+      route: String,
+      arguments: Array[String],
+      physicsManager: PhysicsManager
+  ): Either[PerformanceError, String] =
+    runWithClock(route, arguments, physicsManager)(using PerformanceClock)
+
+  /**
+   * Runs an engine performance command using a specific clock.
+   *
+   * @param route
+   *   selected performance route
+   * @param arguments
+   *   command-line arguments
+   * @param physicsManager
+   *   physics rules applied to the deterministic scene
+   * @param clock
+   *   monotonic clock used for timing
+   * @return
+   *   the formatted report, or the first validation or engine error
+   * @see
+   *   [[monad_core.performance.simulator.EnginePerformance EnginePerformance]]
+   */
+  def runWithClock(
       route: String,
       arguments: Array[String],
       physicsManager: PhysicsManager
@@ -85,6 +178,14 @@ object PerformanceCli:
       report  <- EnginePerformance.run(request, physicsManager)
     yield format(report)
 
+  /**
+   * Formats a report as a line-oriented textual result.
+   *
+   * @param report
+   *   report to format
+   * @return
+   *   experiment header, measurement points and optional breakpoint
+   */
   def format(report: PerformanceReport): String =
     val header     = Vector(s"Performance experiment: ${report.kind}")
     val points     = report.points.map(formatPoint)
@@ -92,6 +193,16 @@ object PerformanceCli:
 
     (header ++ points ++ breakpoint).mkString("\n")
 
+  /**
+   * Resolves a command-line route to its performance strategy.
+   *
+   * @param route
+   *   route to resolve
+   * @return
+   *   the corresponding strategy, or an unknown-route error
+   * @see
+   *   [[monad_core.performance.model.UnknownPerformanceRoute UnknownPerformanceRoute]]
+   */
   private def kindFor(route: String): Either[PerformanceError, PerformanceKind] =
     route match
       case LoadRoute        => Right(PerformanceKind.Load)
@@ -100,6 +211,20 @@ object PerformanceCli:
       case ScalabilityRoute => Right(PerformanceKind.Scalability)
       case unknown          => Left(UnknownPerformanceRoute(unknown))
 
+  /**
+   * Reads an integer argument or returns its default value.
+   *
+   * @param arguments
+   *   command-line option and value pairs
+   * @param name
+   *   option to find
+   * @param default
+   *   value used when the option is absent
+   * @return
+   *   the parsed integer, its default, or an invalid-argument error
+   * @see
+   *   [[monad_core.performance.model.InvalidPerformanceArgument InvalidPerformanceArgument]]
+   */
   private def intArgument(
       arguments: Array[String],
       name: String,
@@ -109,6 +234,20 @@ object PerformanceCli:
       value.toIntOption.toRight(InvalidPerformanceArgument(name, value))
     }
 
+  /**
+   * Reads a long argument or returns its default value.
+   *
+   * @param arguments
+   *   command-line option and value pairs
+   * @param name
+   *   option to find
+   * @param default
+   *   value used when the option is absent
+   * @return
+   *   the parsed long, its default, or an invalid-argument error
+   * @see
+   *   [[monad_core.performance.model.InvalidPerformanceArgument InvalidPerformanceArgument]]
+   */
   private def longArgument(
       arguments: Array[String],
       name: String,
@@ -118,11 +257,29 @@ object PerformanceCli:
       value.toLongOption.toRight(InvalidPerformanceArgument(name, value))
     }
 
+  /**
+   * Finds the value immediately following the first occurrence of an option.
+   *
+   * @param arguments
+   *   command-line option and value pairs
+   * @param name
+   *   option to find
+   * @return
+   *   the following value, or `None` when the option or its value is absent
+   */
   private def argument(arguments: Array[String], name: String): Option[String] =
     arguments.indexOf(name) match
       case index if index >= 0 && index + 1 < arguments.length => Some(arguments(index + 1))
       case _                                                   => None
 
+  /**
+   * Formats every metric collected for one entity count.
+   *
+   * @param point
+   *   measurement point to format
+   * @return
+   *   multiline textual representation of the point
+   */
   private def formatPoint(point: PerformancePoint): String =
     Vector(
       s"Entities: ${point.entityCount.value}",
@@ -132,6 +289,16 @@ object PerformanceCli:
       s"Frame budget completion: ${percentage(point.frameBudgetCompletionRate)}"
     ).mkString("\n")
 
+  /**
+   * Formats a nanosecond duration as milliseconds with three decimal places.
+   *
+   * @param nanos
+   *   duration in nanoseconds
+   * @return
+   *   locale-independent millisecond representation
+   * @see
+   *   [[java.util.Locale Locale]]
+   */
   private def milliseconds(nanos: Long): String =
     String.format(
       Locale.ROOT,
@@ -139,6 +306,16 @@ object PerformanceCli:
       Double.box(nanos.toDouble / 1_000_000.0)
     )
 
+  /**
+   * Formats a completion rate as a percentage with two decimal places.
+   *
+   * @param rate
+   *   completion rate between zero and one
+   * @return
+   *   locale-independent percentage representation
+   * @see
+   *   [[java.util.Locale Locale]]
+   */
   private def percentage(rate: Double): String =
     String.format(
       Locale.ROOT,

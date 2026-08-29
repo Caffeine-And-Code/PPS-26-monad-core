@@ -5,7 +5,13 @@ import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.presentation.components.{IconButton, IconButtonBaseProps, MenuButton}
+import monad_core.simulator.presentation.components.{
+  Error,
+  IconButton,
+  IconButtonBaseProps,
+  MenuButton,
+  NotificationManager
+}
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.resources.Image.PerformanceIcon
 import monad_core.simulator.presentation.resources.ImageConfigRecord
@@ -18,7 +24,7 @@ import scala.jdk.CollectionConverters.*
  * Adds the optional performance control to an existing engine-mode panel builder.
  *
  * @param delegate
- *   base panel builder whose controls and behaviour are preserved
+ *   base panel builder whose controls and behavior are preserved
  * @param onPerformanceExperiment
  *   callback invoked when the performance control is selected
  */
@@ -79,3 +85,25 @@ final case class PerformanceGameEngineModePanel(
           _.getChildren.add(PerformanceButtonIndex, performanceButton.delegate)
         }
       panel
+
+object PerformanceGameEngineModePanel:
+
+  /**
+   * Creates a panel that opens and manages its own performance dialog.
+   *
+   * @param delegate base engine-mode panel
+   * @param runner asynchronous performance operation
+   * @return the performance-enabled panel
+   */
+  def withExperiment(
+      delegate: GameEngineModePanelBuilder,
+      runner: ExperimentDialog.RunExperiment
+  ): PerformanceGameEngineModePanel =
+    PerformanceGameEngineModePanel(
+      delegate,
+      () =>
+        ExperimentDialog
+          .show(runner)
+          .left
+          .foreach(error => NotificationManager.show(error.message, Error))
+    )
