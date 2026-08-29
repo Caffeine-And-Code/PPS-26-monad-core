@@ -2,6 +2,8 @@ package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.agent.tool.{P, Tool}
 import monad_core.engine.model.*
+import monad_core.engine.model.EntityBuilder.*
+import monad_core.engine.model.SurfaceBuilder.*
 import monad_core.simulator.application.engine.EngineControl
 import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.application.engine.world.{
@@ -11,8 +13,13 @@ import monad_core.simulator.application.engine.world.{
   World
 }
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.ai.Langchain4jToolOptions.applyTo
 import monad_core.simulator.infrastructure.ai.Langchain4jToolResponse.*
+
+final private[ai] case class IncompleteEntitySpeed()
+    extends BaseError("Both speedX and speedY must be provided together")
+
+final private[ai] case class IncompleteSurfaceAppliedForce()
+    extends BaseError("Both appliedForceX and appliedForceY must be provided together")
 
 case class Langchain4jTools()(using
     world: World,
@@ -34,143 +41,46 @@ case class Langchain4jTools()(using
   ): String =
     render(LocatableId(id).adaptError().flatMap(id => world.getEntity(id.value)))(renderEntity)
 
-  /**
-   * Completes an entity initialization by adapting construction errors and applying its optional fields.
-   *
-   * @see [[monad_core.simulator.application.engine.errors.EngineErrorAdapted]]
-   * @param previousResult the entity construction result
-   * @param optionalFields the optional properties to apply
-   * @return `Left(BaseError)` on failure, `Right(Entity)` with the initialized entity otherwise
-   */
-  private def initializeEntity(
-      previousResult: Either[EngineError, Entity],
-      optionalFields: EntityOptionalFields
+  private def optionalVector(
+      x: java.lang.Double,
+      y: java.lang.Double,
+      incompleteError: => BaseError
+  ): Either[BaseError, Option[Vector2D]] =
+    (Option(x), Option(y)) match
+      case (None, None) => Right(None)
+      case (Some(horizontal), Some(vertical)) =>
+        Right(Some(Vector2D(horizontal.doubleValue(), vertical.doubleValue())))
+      case _ => Left(incompleteError)
+
+  private def configureEntity(
+      entity: Either[EngineError, Entity],
+      speed: Option[Vector2D],
+      angularSpeed: Option[Double],
+      weight: Option[Int],
+      health: Option[Int],
+      damage: Option[Int],
+      teamId: Option[String]
   ): Either[BaseError, Entity] =
-    previousResult
+    entity
+      .withSpeed(speed)
+      .withAngularSpeed(angularSpeed)
+      .withWeight(weight)
+      .withHealth(health)
+      .withDamage(damage)
+      .withTeamId(teamId)
       .adaptError()
-      .flatMap(applyTo(_, optionalFields))
 
-  /**
-   * Initializes a rectangular entity, using the default rotation when none is provided.
-   *
-   * @param id the unique identifier of the entity
-   * @param x the horizontal position
-   * @param y the vertical position
-   * @param height the rectangle height
-   * @param length the rectangle length
-   * @param optionalFields the optional properties to apply
-   * @param rotation the initial rotation, or `null` to use the default
-   * @return `Left(BaseError)` on failure, `Right(Entity)` with the initialized entity otherwise
-   */
-  private def initializeRectangleEntity(
-      id: String,
-      x: Double,
-      y: Double,
-      height: Double,
-      length: Double,
-      optionalFields: EntityOptionalFields,
-      rotation: java.lang.Double = null
-  ): Either[BaseError, Entity] =
-    val initialRotation = rotationOrDefault(rotation)
-
-    initializeEntity(
-      Entity
-        .rectangle(id, Vector2D(x, y), height, length, initialRotation),
-      optionalFields
-    )
-
-  /**
-   * Initializes a circular entity, using the default rotation when none is provided.
-   *
-   * @param id the unique identifier of the entity
-   * @param x the horizontal position
-   * @param y the vertical position
-   * @param radius the circle radius
-   * @param optionalFields the optional properties to apply
-   * @param rotation the initial rotation, or `null` to use the default
-   * @return `Left(BaseError)` on failure, `Right(Entity)` with the initialized entity otherwise
-   */
-  private def initializeCircleEntity(
-      id: String,
-      x: Double,
-      y: Double,
-      radius: Double,
-      optionalFields: EntityOptionalFields,
-      rotation: java.lang.Double = null
-  ): Either[BaseError, Entity] =
-    val initialRotation = rotationOrDefault(rotation)
-
-    initializeEntity(
-      Entity
-        .circle(id, Vector2D(x, y), radius, initialRotation),
-      optionalFields
-    )
-
-  /**
-   * Completes a surface initialization by adapting construction errors and applying its optional fields.
-   *
-   * @see [[monad_core.simulator.application.engine.errors.EngineErrorAdapted]]
-   * @param previousResult the surface construction result
-   * @param optionalFields the optional properties to apply
-   * @return `Left(BaseError)` on failure, `Right(Surface)` with the initialized surface otherwise
-   */
-  private def initializeSurface(
-      previousResult: Either[EngineError, Surface],
-      optionalFields: SurfaceOptionalFields
+  private def configureSurface(
+      surface: Either[EngineError, Surface],
+      frictionIndex: Option[Double],
+      appliedForce: Option[Vector2D],
+      damageOverTime: Option[Int]
   ): Either[BaseError, Surface] =
-    previousResult
+    surface
+      .withFrictionIndex(frictionIndex)
+      .withAppliedForce(appliedForce)
+      .withDamageOverTime(damageOverTime)
       .adaptError()
-      .flatMap(applyTo(_, optionalFields))
-
-  /**
-   * Initializes a rectangular surface, using the default rotation when none is provided.
-   *
-   * @param id the unique identifier of the surface
-   * @param x the horizontal position
-   * @param y the vertical position
-   * @param height the rectangle height
-   * @param length the rectangle length
-   * @param optionalFields the optional properties to apply
-   * @param rotation the initial rotation, or `null` to use the default
-   * @return `Left(BaseError)` on failure, `Right(Surface)` with the initialized surface otherwise
-   */
-  private def initializeRectangleSurface(
-      id: String,
-      x: Double,
-      y: Double,
-      height: Double,
-      length: Double,
-      optionalFields: SurfaceOptionalFields,
-      rotation: java.lang.Double = null
-  ): Either[BaseError, Surface] =
-    initializeSurface(
-      Surface.rectangle(id, Vector2D(x, y), height, length, rotationOrDefault(rotation)),
-      optionalFields
-    )
-
-  /**
-   * Initializes a circular surface, using the default rotation when none is provided.
-   *
-   * @param id the unique identifier of the surface
-   * @param x the horizontal position
-   * @param y the vertical position
-   * @param radius the circle radius
-   * @param optionalFields the optional properties to apply
-   * @param rotation the initial rotation, or `null` to use the default
-   * @return `Left(BaseError)` on failure, `Right(Surface)` with the initialized surface otherwise
-   */
-  private def initializeCircleSurface(
-      id: String,
-      x: Double,
-      y: Double,
-      radius: Double,
-      optionalFields: SurfaceOptionalFields,
-      rotation: java.lang.Double = null
-  ): Either[BaseError, Surface] =
-    initializeSurface(
-      Surface.circle(id, Vector2D(x, y), radius, rotationOrDefault(rotation)),
-      optionalFields
-    )
 
   @Tool(Array("Creates a circular entity."))
   def createCircleEntity(
@@ -197,23 +107,19 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        initializeCircleEntity(
-          id,
-          x,
-          y,
-          radius,
-          EntityOptionalFields(
-            teamId = teamId,
-            weight = weight,
-            speedX = speedX,
-            speedY = speedY,
-            angularSpeed = angularSpeed,
-            health = health,
-            damage = damage
-          ),
-          rotation
-        )
-          .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
+        for
+          speed <- optionalVector(speedX, speedY, IncompleteEntitySpeed())
+          entity <- configureEntity(
+            Entity.circle(id, Vector2D(x, y), radius, rotationOrDefault(rotation)),
+            speed,
+            Option(angularSpeed).map(_.toDouble),
+            Option(weight).map(_.toInt),
+            Option(health).map(_.toInt),
+            Option(damage).map(_.toInt),
+            Option(teamId)
+          )
+          scene <- world.createEntity(SaveEntityCommand(entity))
+        yield scene,
         s"Entity '$id' created."
       )
     }
@@ -244,24 +150,19 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        initializeRectangleEntity(
-          id,
-          x,
-          y,
-          height,
-          length,
-          EntityOptionalFields(
-            teamId = teamId,
-            weight = weight,
-            speedX = speedX,
-            speedY = speedY,
-            angularSpeed = angularSpeed,
-            health = health,
-            damage = damage
-          ),
-          rotation
-        )
-          .flatMap(entity => world.createEntity(SaveEntityCommand(entity))),
+        for
+          speed <- optionalVector(speedX, speedY, IncompleteEntitySpeed())
+          entity <- configureEntity(
+            Entity.rectangle(id, Vector2D(x, y), height, length, rotationOrDefault(rotation)),
+            speed,
+            Option(angularSpeed).map(_.toDouble),
+            Option(weight).map(_.toInt),
+            Option(health).map(_.toInt),
+            Option(damage).map(_.toInt),
+            Option(teamId)
+          )
+          scene <- world.createEntity(SaveEntityCommand(entity))
+        yield scene,
         s"Entity '$id' created."
       )
     }
@@ -291,23 +192,19 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        initializeCircleEntity(
-          id,
-          x,
-          y,
-          radius,
-          EntityOptionalFields(
-            teamId = teamId,
-            weight = weight,
-            speedX = speedX,
-            speedY = speedY,
-            angularSpeed = angularSpeed,
-            health = health,
-            damage = damage
-          ),
-          rotation
-        )
-          .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
+        for
+          speed <- optionalVector(speedX, speedY, IncompleteEntitySpeed())
+          entity <- configureEntity(
+            Entity.circle(id, Vector2D(x, y), radius, rotationOrDefault(rotation)),
+            speed,
+            Option(angularSpeed).map(_.toDouble),
+            Option(weight).map(_.toInt),
+            Option(health).map(_.toInt),
+            Option(damage).map(_.toInt),
+            Option(teamId)
+          )
+          scene <- world.updateEntity(SaveEntityCommand(entity))
+        yield scene,
         s"Entity '$id' updated."
       )
     }
@@ -338,24 +235,19 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        result = initializeRectangleEntity(
-          id,
-          x,
-          y,
-          height,
-          length,
-          EntityOptionalFields(
-            teamId = teamId,
-            weight = weight,
-            speedX = speedX,
-            speedY = speedY,
-            angularSpeed = angularSpeed,
-            health = health,
-            damage = damage
-          ),
-          rotation
-        )
-          .flatMap(entity => world.updateEntity(SaveEntityCommand(entity))),
+        result = for
+          speed <- optionalVector(speedX, speedY, IncompleteEntitySpeed())
+          entity <- configureEntity(
+            Entity.rectangle(id, Vector2D(x, y), height, length, rotationOrDefault(rotation)),
+            speed,
+            Option(angularSpeed).map(_.toDouble),
+            Option(weight).map(_.toInt),
+            Option(health).map(_.toInt),
+            Option(damage).map(_.toInt),
+            Option(teamId)
+          )
+          scene <- world.updateEntity(SaveEntityCommand(entity))
+        yield scene,
         successMessage = s"Entity '$id' updated."
       )
     }
@@ -406,20 +298,20 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        initializeCircleSurface(
-          id,
-          x,
-          y,
-          radius,
-          SurfaceOptionalFields(
-            frictionIndex,
+        for
+          appliedForce <- optionalVector(
             appliedForceX,
             appliedForceY,
-            damageOverTime
-          ),
-          rotation
-        )
-          .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
+            IncompleteSurfaceAppliedForce()
+          )
+          surface <- configureSurface(
+            Surface.circle(id, Vector2D(x, y), radius, rotationOrDefault(rotation)),
+            Option(frictionIndex).map(_.toDouble),
+            appliedForce,
+            Option(damageOverTime).map(_.toInt)
+          )
+          scene <- world.createSurface(SaveSurfaceCommand(surface))
+        yield scene,
         s"Surface '$id' created."
       )
     }
@@ -450,21 +342,20 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        initializeRectangleSurface(
-          id,
-          x,
-          y,
-          height,
-          length,
-          SurfaceOptionalFields(
-            frictionIndex,
+        for
+          appliedForce <- optionalVector(
             appliedForceX,
             appliedForceY,
-            damageOverTime
-          ),
-          rotation
-        )
-          .flatMap(surface => world.createSurface(SaveSurfaceCommand(surface))),
+            IncompleteSurfaceAppliedForce()
+          )
+          surface <- configureSurface(
+            Surface.rectangle(id, Vector2D(x, y), height, length, rotationOrDefault(rotation)),
+            Option(frictionIndex).map(_.toDouble),
+            appliedForce,
+            Option(damageOverTime).map(_.toInt)
+          )
+          scene <- world.createSurface(SaveSurfaceCommand(surface))
+        yield scene,
         s"Surface '$id' created."
       )
     }
@@ -494,20 +385,20 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        initializeCircleSurface(
-          id,
-          x,
-          y,
-          radius,
-          SurfaceOptionalFields(
-            frictionIndex,
+        for
+          appliedForce <- optionalVector(
             appliedForceX,
             appliedForceY,
-            damageOverTime
-          ),
-          rotation
-        )
-          .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
+            IncompleteSurfaceAppliedForce()
+          )
+          surface <- configureSurface(
+            Surface.circle(id, Vector2D(x, y), radius, rotationOrDefault(rotation)),
+            Option(frictionIndex).map(_.toDouble),
+            appliedForce,
+            Option(damageOverTime).map(_.toInt)
+          )
+          scene <- world.updateSurface(SaveSurfaceCommand(surface))
+        yield scene,
         s"Surface '$id' updated."
       )
     }
@@ -538,21 +429,20 @@ case class Langchain4jTools()(using
   ): String =
     whileEngineStopped {
       save(
-        initializeRectangleSurface(
-          id,
-          x,
-          y,
-          height,
-          length,
-          SurfaceOptionalFields(
-            frictionIndex,
+        for
+          appliedForce <- optionalVector(
             appliedForceX,
             appliedForceY,
-            damageOverTime
-          ),
-          rotation
-        )
-          .flatMap(surface => world.updateSurface(SaveSurfaceCommand(surface))),
+            IncompleteSurfaceAppliedForce()
+          )
+          surface <- configureSurface(
+            Surface.rectangle(id, Vector2D(x, y), height, length, rotationOrDefault(rotation)),
+            Option(frictionIndex).map(_.toDouble),
+            appliedForce,
+            Option(damageOverTime).map(_.toInt)
+          )
+          scene <- world.updateSurface(SaveSurfaceCommand(surface))
+        yield scene,
         s"Surface '$id' updated."
       )
     }
