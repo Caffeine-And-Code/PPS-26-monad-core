@@ -8,10 +8,18 @@ import monad_core.simulator.presentation.performance.ResultDialog
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scalafx.Includes.{jfxNode2sfx, jfxStage2sfx}
 
 class ResultDialogTest extends AnyFunSuite with Matchers with Inside with DialogTesting:
 
-  private val Report        = "Performance experiment: Stress"
+  private val Report =
+    """Performance experiment: Stress
+      |Entities: 100
+      |p50: 1.000 ms
+      |p95: 2.000 ms
+      |p99: 3.000 ms
+      |Frame budget completion: 95.00%""".stripMargin
+
   private val UpdatedReport = "Performance experiment: Load"
 
   private def output: TextArea =
@@ -102,3 +110,28 @@ class ResultDialogTest extends AnyFunSuite with Matchers with Inside with Dialog
     inside(result):
       case Left(error: CannotBuildDialog) =>
         error.dialogId shouldBe "PerformanceResultDialog"
+
+  test("the performance result matches its architectural snapshot"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+    }
+
+    val stage = onFxThread(getRequiredActiveStage)
+
+    assertMatchesArchitecturalSnapshotOfStage(
+      "performance_test_result",
+      stage
+    )
+
+  test("the performance result matches its visual snapshot"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+    }
+
+    val root: scalafx.scene.Node = onFxThread(getRequiredActiveStage.getScene.getRoot)
+
+    assertMatchesVisualSnapshot(
+      "performance_test_result",
+      root,
+      maxDiffPercentage = 8.0
+    )

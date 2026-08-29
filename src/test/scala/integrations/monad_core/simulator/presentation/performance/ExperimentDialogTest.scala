@@ -14,6 +14,7 @@ import monad_core.simulator.presentation.performance.{
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scalafx.Includes.{jfxNode2sfx, jfxStage2sfx}
 
 import scala.concurrent.{Future, Promise}
 import scala.jdk.CollectionConverters.*
@@ -183,3 +184,26 @@ class ExperimentDialogTest extends AnyFunSuite with Matchers with DialogTesting 
     val result = ExperimentDialog.ResultTitle
 
     result shouldBe ResultDialog.Title
+
+  test("the performance form matches its architectural snapshot"):
+    val (runner, _) = pendingRunner
+    open(runner)
+
+    val stage = onFxThread(getRequiredActiveStage)
+
+    assertMatchesArchitecturalSnapshotOfStage(
+      "performance_test_dialog_initial",
+      stage
+    )
+
+  test("the performance form matches its visual snapshot"):
+    val (runner, _) = pendingRunner
+    open(runner)
+
+    val root: scalafx.scene.Node = onFxThread(getRequiredActiveStage.getScene.getRoot)
+
+    assertMatchesVisualSnapshot(
+      "performance_test_dialog_initial",
+      root,
+      maxDiffPercentage = 8.0
+    )
