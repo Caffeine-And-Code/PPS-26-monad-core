@@ -1,16 +1,16 @@
 package monad_core.simulator.presentation.performance
 
 import javafx.scene.layout.HBox as JfxHBox
+import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
-import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.{
   Error,
-  IconButton,
-  IconButtonBaseProps,
   MenuButton,
+  MenuButtonItem,
+  MenuButtonProps,
   NotificationManager
 }
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
@@ -53,6 +53,8 @@ final case class PerformanceGameEngineModePanel(
    *   runtime controlled by the base panel
    * @return
    *   decorated panel, or the first base-panel or button-building error
+   * @see
+   *   [[monad_core.simulator.presentation.components.MenuButton.build MenuButton.build]]
    */
   override def build(
       imageConfig: ImageConfigRecord,
@@ -65,16 +67,20 @@ final case class PerformanceGameEngineModePanel(
   ): Either[BaseError, VBox] =
     for
       panel <- delegate.build(imageConfig, onModeChange, onStopClick, isEngineRunning)
-      performanceButton <- IconButton
+      performanceButton <- MenuButton
         .build(
-          PerformanceIcon(),
-          IconButtonBaseProps(
+          MenuButtonProps(
             imageConfig = imageConfig,
-            onClick = _ => openExperiment(gameEngineRuntime),
+            defaultImage = PerformanceIcon(),
+            items = Seq(
+              MenuButtonItem(
+                label = "Open performance tests",
+                onSelect = () => openExperiment(gameEngineRuntime)
+              )
+            ),
             isDisabled = isEngineRunning
           )
         )
-        .map(MenuButton.styleIconButton)
         .left
         .map(error => CannotBuildPanel(error, PerformanceGameEngineModePanel.toString))
     yield

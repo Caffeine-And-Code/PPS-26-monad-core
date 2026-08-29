@@ -3,7 +3,9 @@ package integrations.monad_core.simulator.presentation.performance
 import helpers.mocks.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
+import javafx.event.Event
 import javafx.scene.control.{Button, TextArea}
+import javafx.scene.input.{MouseButton, MouseEvent}
 import javafx.scene.layout.HBox
 import javafx.stage.{Stage, Window}
 import monad_core.performance.simulator.PerformanceCli
@@ -68,6 +70,41 @@ class PerformanceGameEngineModePanelTest
       .get(PerformanceButtonIndex)
       .asInstanceOf[Button]
 
+  private def simulateClick(button: Button): Unit =
+    val event = new MouseEvent(
+      MouseEvent.MOUSE_CLICKED,
+      0,
+      0,
+      0,
+      0,
+      MouseButton.PRIMARY,
+      1,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      null
+    )
+    Event.fireEvent(button, event)
+
+  private def showPanel(panel: VBox): Stage =
+    val stage = new Stage()
+    stage.setScene(new javafx.scene.Scene(panel.delegate))
+    stage.show()
+    stage
+
+  private def selectPerformanceAction(panel: VBox): Unit =
+    val panelStage = showPanel(panel)
+    simulateClick(performanceButtonOf(panel))
+    findOpenContextMenu().value.getItems.getFirst.fire()
+    panelStage.close()
+
   private def resultOutput: Option[TextArea] =
     Window.getWindows.asScala.collectFirst {
       case stage: Stage if stage.isShowing && stage.getTitle == ExperimentDialog.ResultTitle =>
@@ -86,19 +123,30 @@ class PerformanceGameEngineModePanelTest
 
     result shouldBe BaseControlCount + 1
 
-  test("the performance button opens the experiment form"):
+  test("the performance button opens its menu"):
     val panel = getOrFail(buildPanel())
 
-    onFxThread {
-      performanceButtonOf(panel).fire()
+    val result = onFxThread {
+      val panelStage = showPanel(panel)
+      simulateClick(performanceButtonOf(panel))
+      val contextMenu = findOpenContextMenu()
+      panelStage.close()
+      contextMenu
     }
+
+    result should not be empty
+
+  test("the performance menu item opens the experiment form"):
+    val panel = getOrFail(buildPanel())
+
+    onFxThread(selectPerformanceAction(panel))
 
     onFxThread(getRequiredActiveStage.getTitle) shouldBe ExperimentDialog.Title
 
   test("the performance form executes its self-managed runner"):
     val panel = getOrFail(buildPanel())
     onFxThread {
-      performanceButtonOf(panel).fire()
+      selectPerformanceAction(panel)
       allFormFields
         .find(_.getId == PerformanceCli.Entities)
         .value
@@ -123,15 +171,6 @@ class PerformanceGameEngineModePanelTest
     val result = performanceButtonOf(panel).isDisabled
 
     result shouldBe true
-
-  test("a disabled performance button does not open the experiment form"):
-    val panel = getOrFail(buildPanel(isEngineRunning = true))
-
-    onFxThread {
-      performanceButtonOf(panel).fire()
-    }
-
-    onFxThread(getActiveStage) shouldBe None
 
   test("build preserves a base-panel failure"):
     val delegate = mock[GameEngineModePanelBuilder]

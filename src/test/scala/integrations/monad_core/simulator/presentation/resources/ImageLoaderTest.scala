@@ -1,7 +1,9 @@
 package integrations.monad_core.simulator.presentation.resources
 
+import helpers.mocks.MockImageConfig
 import monad_core.simulator.presentation.resources.Image.{
   PauseIcon,
+  PerformanceIcon,
   PhysicsIcon,
   PlayIcon,
   StopIcon,
@@ -27,7 +29,8 @@ class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFac
       StopIcon(),
       PauseIcon(),
       ToolsIcon(),
-      PhysicsIcon()
+      PhysicsIcon(),
+      PerformanceIcon()
     )
 
     forAll(cases): image =>

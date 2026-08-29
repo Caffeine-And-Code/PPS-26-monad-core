@@ -99,14 +99,8 @@ object MenuButton:
             disable <== toggle.isDisabled
             onAction = _ => toggle.onToggle(selected.value)
 
-  private[presentation] val StylesheetPath: String =
+  private val StylesheetPath: String =
     getClass.getResource("/stylesheets/menu-button.css").toExternalForm
-
-  /** Applies the shared visual style used by icon buttons in the simulator menu bar. */
-  private[presentation] def styleIconButton(button: Button): Button =
-    button.styleClass += "menu-icon-button"
-    button.stylesheets += StylesheetPath
-    button
 
   private case class MenuButtonViewModel(side: Side):
     val isOpen: BooleanProperty = BooleanProperty(false)
@@ -168,7 +162,8 @@ object MenuButton:
 
     buttonEither
       .map { btn =>
-        styleIconButton(btn)
+        btn.styleClass += "menu-icon-button"
+        btn.stylesheets += StylesheetPath
         btn.onMouseClicked = _ => viewModel.toggle(contextMenu, btn)
         btn
       }
