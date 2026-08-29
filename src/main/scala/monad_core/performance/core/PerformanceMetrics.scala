@@ -10,7 +10,7 @@ import scala.concurrent.duration.FiniteDuration
  * @param durationNanos
  *   elapsed execution time in nanoseconds
  */
-private[performance] final case class PerformanceSample(durationNanos: Long)
+final private[performance] case class PerformanceSample(durationNanos: Long)
 
 /**
  * Calculates latency percentiles and frame-budget completion rates.
@@ -38,7 +38,7 @@ private[performance] object PerformanceMetrics:
    */
   def latency(
       samples: Vector[PerformanceSample]
-  ): Either[PerformanceError, LatencyDistribution] = {
+  ): Either[PerformanceError, LatencyDistribution] =
     nonEmpty(samples).map { values =>
       val sorted = values.map(_.durationNanos).sorted
       LatencyDistribution(
@@ -47,7 +47,6 @@ private[performance] object PerformanceMetrics:
         percentile(sorted, NinetyNinth)
       )
     }
-  }
 
   /**
    * Calculates the fraction of samples completed within the supplied frame budget.
@@ -83,6 +82,7 @@ private[performance] object PerformanceMetrics:
    */
   private def percentile(sorted: Vector[Long], rank: Double): Long =
     sorted(math.ceil(rank * sorted.size).toInt - 1)
+
   /**
    * Validates a vector of samples is not empty.
    *

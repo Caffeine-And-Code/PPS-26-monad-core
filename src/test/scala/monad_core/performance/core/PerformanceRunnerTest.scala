@@ -59,9 +59,9 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
 
   test("Load measures only the starting entity count"):
     val result = run(PerformanceKind.Load, Vector(WithinBudget)).value
-    
+
     val resultValue = result.points.map(_.entityCount.value)
-    
+
     resultValue shouldBe Vector(StartEntities)
 
   test("Spike measures the starting, maximum, and recovery entity counts"):
@@ -71,7 +71,7 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     ).value
 
     val resultValue = result.points.map(_.entityCount.value)
-    
+
     resultValue shouldBe
       Vector(StartEntities, MaximumEntities, StartEntities)
 
@@ -82,7 +82,7 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     ).value
 
     val resultValue = result.points.map(_.entityCount.value)
-    
+
     resultValue shouldBe Vector(2, 4, 8)
 
   test("Stress stops after the first entity count exceeding the frame budget"):
@@ -92,7 +92,7 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     ).value
 
     val resultValues = result.points.map(_.entityCount.value)
-    
+
     resultValues shouldBe Vector(2, 4)
 
   test("Stress records the first entity count exceeding the frame budget"):
@@ -112,7 +112,7 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     ).value
 
     val resultValues = result.points.map(_.entityCount.value)
-    
+
     resultValues shouldBe Vector(2, 4, 8)
 
   test("Stress has no breakpoint when every point meets the frame budget"):
@@ -130,7 +130,7 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     ).value
 
     val resultValue = result.points.map(_.entityCount.value)
-    
+
     resultValue shouldBe Vector(2, 4, 8)
 
   test("Stress has no breakpoint when latency equals the frame budget"):
@@ -241,7 +241,7 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     resultValue shouldBe (2.0 / 3.0)
 
   test("the runner propagates a workload preparation error"):
-    val expected = InvalidPerformanceArgument("prepare", "failed")
+    val expected         = InvalidPerformanceArgument("prepare", "failed")
     val prepare: Prepare = _ => Left(expected)
 
     val result = run(PerformanceKind.Load, Vector(WithinBudget), prepare = prepare)
@@ -249,8 +249,8 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     result shouldBe Left(expected)
 
   test("the runner propagates a warm-up execution error"):
-    val expected   = InvalidPerformanceArgument("warm-up", "failed")
-    val configured = config(warmups = 1)
+    val expected         = InvalidPerformanceArgument("warm-up", "failed")
+    val configured       = config(warmups = 1)
     val prepare: Prepare = _ => Right(() => Left(expected))
 
     val result = run(PerformanceKind.Load, Vector.empty, configured, prepare)
@@ -258,7 +258,7 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
     result shouldBe Left(expected)
 
   test("the runner propagates a measured execution error"):
-    val expected = InvalidPerformanceArgument("measurement", "failed")
+    val expected         = InvalidPerformanceArgument("measurement", "failed")
     val prepare: Prepare = _ => Right(() => Left(expected))
 
     val result = run(PerformanceKind.Load, Vector(WithinBudget), prepare = prepare)

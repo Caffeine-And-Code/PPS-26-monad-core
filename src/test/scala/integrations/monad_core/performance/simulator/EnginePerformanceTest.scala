@@ -2,7 +2,14 @@ package integrations.monad_core.performance.simulator
 
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
-import monad_core.engine.physics.core.{PhysicsContext, PhysicsError, PhysicsManager, PhysicsRule, PhysicsRuleError, PhysicsRuleResult}
+import monad_core.engine.physics.core.{
+  PhysicsContext,
+  PhysicsError,
+  PhysicsManager,
+  PhysicsRule,
+  PhysicsRuleError,
+  PhysicsRuleResult
+}
 import monad_core.performance.core.PerformanceRequest
 import monad_core.performance.helpers.SequenceNanoClock
 import monad_core.performance.model.*
@@ -53,7 +60,7 @@ class EnginePerformanceTest extends AnyFunSuite with Matchers:
       override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
         Left(PhysicsRuleError("expected"))
     given NanoClock = SequenceNanoClock(Vector(0L))
-    
+
     val result = EnginePerformance.run(request(), PhysicsManager(Vector(failingRule)))
 
     result shouldBe Left(EnginePerformanceError(PhysicsRuleError("expected")))

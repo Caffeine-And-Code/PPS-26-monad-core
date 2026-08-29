@@ -22,7 +22,7 @@ sealed abstract class PerformanceError(message: String) extends BaseError(messag
  *   rejected value
  */
 final case class InvalidPositiveCount(name: String, value: Int)
-  extends PerformanceError(s"$name must be positive: $value")
+    extends PerformanceError(s"$name must be positive: $value")
 
 /**
  * Invalid number of warm-up executions.
@@ -31,7 +31,7 @@ final case class InvalidPositiveCount(name: String, value: Int)
  *   rejected negative count
  */
 final case class InvalidWarmupCount(value: Int)
-  extends PerformanceError(s"Warm-up count cannot be negative: $value")
+    extends PerformanceError(s"Warm-up count cannot be negative: $value")
 
 /**
  * Invalid multiplier for an entity-count progression.
@@ -40,7 +40,7 @@ final case class InvalidWarmupCount(value: Int)
  *   rejected factor
  */
 final case class InvalidGrowthFactor(value: Int)
-  extends PerformanceError(s"Growth factor must be greater than one: $value")
+    extends PerformanceError(s"Growth factor must be greater than one: $value")
 
 /**
  * Maximum entity count lower than the starting count.
@@ -51,7 +51,7 @@ final case class InvalidGrowthFactor(value: Int)
  *   rejected maximum entity count
  */
 final case class InvalidGrowthMaximum(start: Int, maximum: Int)
-  extends PerformanceError(s"Maximum entity count $maximum cannot be lower than start $start")
+    extends PerformanceError(s"Maximum entity count $maximum cannot be lower than start $start")
 
 /**
  * Invalid non-positive frame budget expressed in milliseconds.
@@ -60,7 +60,7 @@ final case class InvalidGrowthMaximum(start: Int, maximum: Int)
  *   rejected frame budget
  */
 final case class InvalidFrameBudget(value: Long)
-  extends PerformanceError(s"Frame budget must be positive: $value")
+    extends PerformanceError(s"Frame budget must be positive: $value")
 
 /**
  * Invalid value associated with a command-line performance argument.
@@ -71,7 +71,7 @@ final case class InvalidFrameBudget(value: Long)
  *   rejected textual value
  */
 final case class InvalidPerformanceArgument(argument: String, value: String)
-  extends PerformanceError(s"Invalid value '$value' for argument '$argument'")
+    extends PerformanceError(s"Invalid value '$value' for argument '$argument'")
 
 /**
  * Command-line route that does not identify a supported performance strategy.
@@ -80,11 +80,11 @@ final case class InvalidPerformanceArgument(argument: String, value: String)
  *   unsupported route
  */
 final case class UnknownPerformanceRoute(route: String)
-  extends PerformanceError(s"Unknown performance route: $route")
+    extends PerformanceError(s"Unknown performance route: $route")
 
 /** Missing samples when at least one measurement is required. */
 final case class EmptyPerformanceSamples()
-  extends PerformanceError("At least one performance sample is required")
+    extends PerformanceError("At least one performance sample is required")
 
 /**
  * Error raised by the engine workload executed during a performance experiment.
@@ -95,4 +95,4 @@ final case class EmptyPerformanceSamples()
  *   [[monad_core.engine.model.EngineError EngineError]]
  */
 final case class EnginePerformanceError(cause: EngineError)
-  extends PerformanceError(s"Engine workload failed: ${cause.message}")
+    extends PerformanceError(s"Engine workload failed: ${cause.message}")

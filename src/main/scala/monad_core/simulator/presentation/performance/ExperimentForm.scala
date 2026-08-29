@@ -8,12 +8,33 @@ import monad_core.simulator.presentation.components.forms.base.{
   TextFieldSpec
 }
 
-/** Command selected and populated by the graphical performance form. */
+/**
+ * Command selected and populated by the graphical performance form.
+ *
+ * @param route
+ *   performance route to execute
+ * @param arguments
+ *   command-line option and value pairs collected by the form
+ */
 final case class ExperimentCommand(route: String, arguments: Vector[String])
 
-/** Defines the performance form and converts its values into a command. */
+/**
+ * Defines the performance form and converts its values into a command.
+ *
+ * @see [[monad_core.performance.simulator.PerformanceCli PerformanceCli]]
+ */
 object ExperimentForm:
 
+  /**
+   * Test type selectable from the form.
+   *
+   * @param label
+   *   value shown by the selector
+   * @param route
+   *   command-line route associated with the choice
+   * @param specificFields
+   *   arguments displayed only for this choice
+   */
   private enum ExperimentChoice(
       val label: String,
       val route: String,
@@ -115,12 +136,40 @@ object ExperimentForm:
       argumentsFor(CommonFields ++ choice.specificFields, values)
     )
 
+  /**
+   * Creates a textual integer field with its default value.
+   *
+   * @param id
+   *  field identifier
+   * @param label
+   *  field label
+   * @param default
+   *  initial integer value
+   * @return
+   *  textual field declaration
+   */
   private def field(id: String, label: String, default: Int): TextFieldSpec =
     TextFieldSpec(id, label, Some(default.toString))
 
+  /**
+   * Resolves argument identifiers to their form-field declarations.
+   *
+   * @param arguments
+   *  argument identifiers to resolve
+   * @return
+   *  known field declarations in the supplied order
+   */
   private def fieldsFor(arguments: Vector[String]): Seq[FormFieldSpec] =
     arguments.flatMap(ArgumentFields.get)
 
+  /**
+   * Resolves the selected test type.
+   *
+   * @param values
+   *  submitted values indexed by field identifier
+   * @return
+   *  the selected choice, or an invalid-argument error
+   */
   private def experimentChoice(
       values: Map[String, String]
   ): Either[PerformanceError, ExperimentChoice] =
@@ -129,6 +178,18 @@ object ExperimentForm:
       .find(_.label == value)
       .toRight(InvalidPerformanceArgument(KindField, value))
 
+  /**
+   * Converts the available values into ordered option and value pairs.
+   *
+   * Missing values are omitted so that command-line defaults remain applicable.
+   *
+   * @param arguments
+   *  ordered argument identifiers
+   * @param values
+   *  submitted values indexed by field identifier
+   * @return
+   *  flattened command-line arguments
+   */
   private def argumentsFor(
       arguments: Vector[String],
       values: Map[String, String]

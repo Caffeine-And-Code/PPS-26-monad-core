@@ -88,10 +88,7 @@ object Launcher:
 
     val imageConfig = BaseImageConfig()
 
-    val modePanel = PerformanceMode.panelFor(
-      args,
-      () => runtime.physicsManagerSnapshot
-    )
+    val modePanel = PerformanceMode.panelFor(args)
 
     val gamePanel = GameEnginePanel(
       modePanel = modePanel,

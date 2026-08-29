@@ -1,6 +1,8 @@
 package monad_core.performance.simulator
 
 import monad_core.engine.physics.core.PhysicsManager
+import monad_core.engine.simulator.EngineFacade
+import monad_core.engine.simulator.EngineFacade.PhysicsRuleStatus
 import monad_core.performance.core.PerformanceRequest
 import monad_core.performance.model.{
   InvalidPerformanceArgument,
@@ -23,49 +25,49 @@ import java.util.Locale
  */
 object PerformanceCli:
   /** Route that runs the expected-load strategy. */
-  val LoadRoute        = "performance-load-test"
+  val LoadRoute = "performance-load-test"
 
   /** Route that searches for the frame-budget breakpoint. */
-  val StressRoute      = "performance-stress-test"
+  val StressRoute = "performance-stress-test"
 
   /** Route that introduces a sudden increase and recovery in entity count. */
-  val SpikeRoute       = "performance-spike-test"
+  val SpikeRoute = "performance-spike-test"
 
   /** Route that measures the complete entity-count progression. */
   val ScalabilityRoute = "performance-scalability-test"
 
   /** Argument selecting the initial number of entities. */
-  val Entities          = "--entities"
+  val Entities = "--entities"
 
   /** Argument selecting the maximum number of entities. */
-  val MaximumEntities   = "--max-entities"
+  val MaximumEntities = "--max-entities"
 
   /** Argument selecting the multiplier between entity counts. */
-  val GrowthFactor      = "--growth-factor"
+  val GrowthFactor = "--growth-factor"
 
   /** Argument selecting the measured executions for each entity count. */
-  val Iterations        = "--iterations"
+  val Iterations = "--iterations"
 
   /** Argument selecting the unmeasured executions before collection. */
-  val Warmups           = "--warmups"
+  val Warmups = "--warmups"
 
   /** Argument selecting the frame budget in milliseconds. */
   val FrameBudgetMillis = "--frame-budget-ms"
 
   /** Default initial entity count exposed to command-line clients. */
-  val DefaultStartEntities: Int      = PerformanceConfig.DefaultStartEntities
+  val DefaultStartEntities: Int = PerformanceConfig.DefaultStartEntities
 
   /** Default maximum entity count exposed to command-line clients. */
-  val DefaultMaximumEntities: Int    = PerformanceConfig.DefaultMaximumEntities
+  val DefaultMaximumEntities: Int = PerformanceConfig.DefaultMaximumEntities
 
   /** Default entity growth factor exposed to command-line clients. */
-  val DefaultGrowthFactor: Int       = PerformanceConfig.DefaultGrowthFactor
+  val DefaultGrowthFactor: Int = PerformanceConfig.DefaultGrowthFactor
 
   /** Default measured iteration count exposed to command-line clients. */
-  val DefaultIterations: Int         = PerformanceConfig.DefaultIterations
+  val DefaultIterations: Int = PerformanceConfig.DefaultIterations
 
   /** Default warm-up count exposed to command-line clients. */
-  val DefaultWarmups: Int            = PerformanceConfig.DefaultWarmups
+  val DefaultWarmups: Int = PerformanceConfig.DefaultWarmups
 
   /** Default frame budget in milliseconds exposed to command-line clients. */
   val DefaultFrameBudgetMillis: Long = PerformanceConfig.DefaultFrameBudgetMillis
@@ -151,6 +153,46 @@ object PerformanceCli:
       physicsManager: PhysicsManager
   ): Either[PerformanceError, String] =
     runWithClock(route, arguments, physicsManager)(using PerformanceClock)
+
+  /**
+   * Runs an engine performance command with the default physics configuration.
+   *
+   * @param route
+   *   selected performance route
+   * @param arguments
+   *   command-line arguments
+   * @return
+   *   the formatted report, or the first validation or engine error
+   */
+  def run(
+      route: String,
+      arguments: Array[String]
+  ): Either[PerformanceError, String] =
+    run(route, arguments, PhysicsManager.default())
+
+  /**
+   * Runs an engine performance command with the supplied public rule states.
+   *
+   * @param route
+   *   selected performance route
+   * @param arguments
+   *   command-line arguments
+   * @param rules
+   *   enabled state of the runtime's configurable physics rules
+   * @return
+   *   the formatted report, or the first validation or engine error
+   * @see
+   *   [[monad_core.engine.simulator.EngineFacade.PhysicsRuleStatus PhysicsRuleStatus]]
+   */
+  def runWithRules(
+      route: String,
+      arguments: Array[String],
+      rules: Vector[PhysicsRuleStatus]
+  ): Either[PerformanceError, String] =
+    val physicsManager = rules.foldLeft(PhysicsManager.default()): (physics, rule) =>
+      EngineFacade.setPhysicsRuleEnabled(physics, rule.id, rule.isEnabled)
+
+    run(route, arguments, physicsManager)
 
   /**
    * Runs an engine performance command using a specific clock.

@@ -10,10 +10,20 @@ import scalafx.stage.{Modality, Stage, Window}
 
 import scala.util.Try
 
-/** Mutable handle confined to the graphical boundary of a performance result. */
+/**
+ * Mutable handle confined to the graphical boundary of a performance result.
+ *
+ * @param output
+ *   read-only control displaying the current result
+ */
 final class ResultDialogHandle private[performance] (output: TextArea):
 
-  /** Replaces the content displayed by the result window. */
+  /**
+   * Replaces the content displayed by the result window.
+   *
+   * @param content
+   *   new result text
+   */
   def update(content: String): Unit =
     output.text = content
 
@@ -23,16 +33,12 @@ object ResultDialog:
   /** Default result-window title. */
   val Title = "Performance Test Result"
 
-  /** Preferred width of the result window. */
   private val PreferredWidth = 520.0
 
-  /** Preferred height of the result output. */
   private val PreferredOutputHeight = 360.0
 
-  /** Space between result controls. */
   private val ControlSpacing = 12.0
 
-  /** Padding around the result controls. */
   private val ContentPadding = 20.0
 
   /**
@@ -44,6 +50,7 @@ object ResultDialog:
    *   optional owner window
    * @return
    *   a handle to the shown dialog, or a translated graphical error
+   * @see [[scalafx.stage.Stage Stage]]
    */
   def open(
       content: String,
@@ -91,6 +98,8 @@ object ResultDialog:
    *   optional owner window
    * @return
    *   `Right(())` after showing the dialog, or a translated graphical error
+   * @see
+   *   [[monad_core.simulator.presentation.performance.ResultDialog.open ResultDialog.open]]
    */
   def show(content: String, owner: Option[Window] = None): Either[BaseError, Unit] =
     open(content, owner).map(_ => ())

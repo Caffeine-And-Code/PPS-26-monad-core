@@ -3,7 +3,12 @@ package monad_core.performance.simulator
 import monad_core.engine.physics.core.PhysicsManager
 import monad_core.engine.simulator.EngineFacade
 import monad_core.performance.core.{PerformanceRequest, PerformanceRunner}
-import monad_core.performance.model.{EnginePerformanceError, NanoClock, PerformanceError, PerformanceReport}
+import monad_core.performance.model.{
+  EnginePerformanceError,
+  NanoClock,
+  PerformanceError,
+  PerformanceReport
+}
 
 /**
  * Connects the generic performance runner to a real engine tick.

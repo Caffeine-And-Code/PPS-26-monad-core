@@ -4,6 +4,7 @@ import javafx.scene.layout.HBox as JfxHBox
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.{
   Error,
@@ -18,6 +19,7 @@ import monad_core.simulator.presentation.resources.ImageConfigRecord
 import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -25,12 +27,11 @@ import scala.jdk.CollectionConverters.*
  *
  * @param delegate
  *   base panel builder whose controls and behavior are preserved
- * @param onPerformanceExperiment
- *   callback invoked when the performance control is selected
+ * @see
+ *   [[monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder GameEngineModePanelBuilder]]
  */
 final case class PerformanceGameEngineModePanel(
-    delegate: GameEngineModePanelBuilder,
-    onPerformanceExperiment: () => Unit
+    delegate: GameEngineModePanelBuilder
 ) extends GameEngineModePanelBuilder:
 
   private val PerformanceButtonIndex = 2
@@ -69,7 +70,7 @@ final case class PerformanceGameEngineModePanel(
           PerformanceIcon(),
           IconButtonBaseProps(
             imageConfig = imageConfig,
-            onClick = _ => onPerformanceExperiment(),
+            onClick = _ => openExperiment(gameEngineRuntime),
             isDisabled = isEngineRunning
           )
         )
@@ -86,24 +87,31 @@ final case class PerformanceGameEngineModePanel(
         }
       panel
 
-object PerformanceGameEngineModePanel:
+  /**
+   * Opens the experiment dialog and reports an unexpected graphical failure.
+   *
+   * @param gameEngineRuntime runtime providing the currently enabled physics rules
+   * @see
+   *   [[monad_core.simulator.presentation.performance.ExperimentDialog.show ExperimentDialog.show]]
+   */
+  private def openExperiment(gameEngineRuntime: GameEngineRuntime): Unit =
+    ExperimentDialog
+      .show(runExperiment(gameEngineRuntime))
+      .left
+      .foreach(error => NotificationManager.show(error.message, Error))
 
   /**
-   * Creates a panel that opens and manages its own performance dialog.
+   * Creates an asynchronous experiment using the runtime's current rule configuration.
    *
-   * @param delegate base engine-mode panel
-   * @param runner asynchronous performance operation
-   * @return the performance-enabled panel
+   * @param gameEngineRuntime runtime providing the currently enabled physics rules
+   * @return asynchronous operation accepted by the experiment dialog
+   * @see
+   *   [[monad_core.performance.simulator.PerformanceCli.runWithRules PerformanceCli.runWithRules]]
    */
-  def withExperiment(
-      delegate: GameEngineModePanelBuilder,
-      runner: ExperimentDialog.RunExperiment
-  ): PerformanceGameEngineModePanel =
-    PerformanceGameEngineModePanel(
-      delegate,
-      () =>
-        ExperimentDialog
-          .show(runner)
-          .left
-          .foreach(error => NotificationManager.show(error.message, Error))
-    )
+  private def runExperiment(
+      gameEngineRuntime: GameEngineRuntime
+  ): ExperimentDialog.RunExperiment = command =>
+    val rules = gameEngineRuntime.physicsRules
+    Future {
+      PerformanceCli.runWithRules(command.route, command.arguments.toArray, rules)
+    }(ExecutionContext.global)

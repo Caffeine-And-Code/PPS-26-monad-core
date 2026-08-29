@@ -1,6 +1,7 @@
 package integrations.monad_core.performance.simulator
 
 import monad_core.engine.physics.core.PhysicsManager
+import monad_core.engine.simulator.EngineFacade
 import monad_core.performance.core.PerformanceRequest
 import monad_core.performance.helpers.SequenceNanoClock
 import monad_core.performance.model.*
@@ -152,7 +153,7 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
     val result = parse(PerformanceCli.LoadRoute, option(PerformanceCli.Entities, start)*)
 
     val resultValue = result.config.growth.maximum.value
-    
+
     resultValue shouldBe start
 
   test("parse uses the first occurrence of an argument"):
@@ -161,14 +162,14 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
     val result = parse(PerformanceCli.LoadRoute, arguments*)
 
     val resultValue = result.config.iterations.value
-    
+
     resultValue shouldBe 2
 
   test("parse uses the default when an argument has no following value"):
     val result = parse(PerformanceCli.LoadRoute, PerformanceCli.Iterations)
 
     val resultValue = result.config.iterations.value
-    
+
     resultValue shouldBe PerformanceCli.DefaultIterations
 
   test("parse ignores an unrelated argument"):
@@ -281,11 +282,13 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
   test("runWithClock executes a valid engine command"):
     given NanoClock = SequenceNanoClock(Vector(0L, 1_000L))
 
-    val result = PerformanceCli.runWithClock(
-      PerformanceCli.LoadRoute,
-      MinimalArguments.toArray,
-      PhysicsManager.default()
-    ).value
+    val result = PerformanceCli
+      .runWithClock(
+        PerformanceCli.LoadRoute,
+        MinimalArguments.toArray,
+        PhysicsManager.default()
+      )
+      .value
 
     result should include("Performance experiment: Load")
 
@@ -297,3 +300,28 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
     )
 
     result shouldBe Left(InvalidPerformanceArgument(PerformanceCli.Entities, "many"))
+
+  test("run executes with the default physics configuration"):
+    val result = PerformanceCli
+      .run(
+        PerformanceCli.LoadRoute,
+        MinimalArguments.toArray
+      )
+      .value
+
+    result should include("Performance experiment: Load")
+
+  test("runWithRules accepts the current public rule configuration"):
+    val rules = EngineFacade
+      .physicsRules(PhysicsManager.default())
+      .map(_.copy(isEnabled = false))
+
+    val result = PerformanceCli
+      .runWithRules(
+        PerformanceCli.LoadRoute,
+        MinimalArguments.toArray,
+        rules
+      )
+      .value
+
+    result should include("Performance experiment: Load")

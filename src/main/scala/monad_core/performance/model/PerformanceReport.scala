@@ -11,10 +11,10 @@ package monad_core.performance.model
  *   99th-percentile latency in nanoseconds
  */
 final case class LatencyDistribution(
-                                      p50Nanos: Long,
-                                      p95Nanos: Long,
-                                      p99Nanos: Long
-                                    )
+    p50Nanos: Long,
+    p95Nanos: Long,
+    p99Nanos: Long
+)
 
 /**
  * Measurements collected for one entity count.
@@ -27,10 +27,10 @@ final case class LatencyDistribution(
  *   fraction of measured executions completed within the frame budget
  */
 final case class PerformancePoint(
-                                   entityCount: EntityCount,
-                                   latency: LatencyDistribution,
-                                   frameBudgetCompletionRate: Double
-                                 )
+    entityCount: EntityCount,
+    latency: LatencyDistribution,
+    frameBudgetCompletionRate: Double
+)
 
 /**
  * Complete result of one performance experiment.
@@ -43,7 +43,7 @@ final case class PerformancePoint(
  *   first entity count whose p95 exceeded the frame budget, when found by Stress
  */
 final case class PerformanceReport(
-                                    kind: PerformanceKind,
-                                    points: Vector[PerformancePoint],
-                                    breakpoint: Option[EntityCount]
-                                  )
+    kind: PerformanceKind,
+    points: Vector[PerformancePoint],
+    breakpoint: Option[EntityCount]
+)

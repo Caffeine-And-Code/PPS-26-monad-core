@@ -41,11 +41,11 @@ object GrowthFactor:
  * @param factor
  *   multiplier applied between consecutive counts
  */
-private[performance] final case class EntityGrowth private (
-                                        start: EntityCount,
-                                        maximum: EntityCount,
-                                        factor: GrowthFactor
-                                      ):
+final private[performance] case class EntityGrowth private (
+    start: EntityCount,
+    maximum: EntityCount,
+    factor: GrowthFactor
+):
 
   /**
    * Generates every entity count from `start` to `maximum`.
@@ -70,9 +70,9 @@ private[performance] final case class EntityGrowth private (
      */
     @tailrec
     def generateGrowthCount(
-              current: Int,
-              accumulated: Vector[EntityCount]
-            ): Either[PerformanceError, Vector[EntityCount]] =
+        current: Int,
+        accumulated: Vector[EntityCount]
+    ): Either[PerformanceError, Vector[EntityCount]] =
       EntityCount.from(current) match
         case Left(error) => Left(error)
         case Right(count) =>
@@ -104,10 +104,10 @@ private[performance] object EntityGrowth:
    *   [[monad_core.performance.model.GrowthFactor GrowthFactor]]
    */
   def from(
-            start: Int,
-            maximum: Int,
-            factor: Int
-          ): Either[PerformanceError, EntityGrowth] =
+      start: Int,
+      maximum: Int,
+      factor: Int
+  ): Either[PerformanceError, EntityGrowth] =
     for
       startCount   <- EntityCount.from(start)
       maximumCount <- EntityCount.from(maximum)

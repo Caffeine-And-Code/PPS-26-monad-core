@@ -10,7 +10,14 @@ import scalafx.stage.Window
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-/** Dynamic parameter form and result orchestration for performance experiments. */
+/**
+ * Dynamic parameter form and result orchestration for performance experiments.
+ *
+ * @see
+ *   [[monad_core.simulator.presentation.performance.ExperimentForm ExperimentForm]]
+ * @see
+ *   [[monad_core.simulator.presentation.performance.ResultDialog ResultDialog]]
+ */
 object ExperimentDialog:
 
   /** Asynchronous performance operation supplied by the application entry point. */
@@ -40,12 +47,27 @@ object ExperimentDialog:
   ): Either[BaseError, Unit] =
     var resultDialog = Option.empty[ResultDialogHandle]
 
+    /**
+     * Displays content in the existing result dialog or opens one.
+     *
+     * @param content text to display
+     */
     def display(content: String): Unit =
       resultDialog = displayResult(content, owner, resultDialog)
 
+    /**
+     * Displays a message using the common failure heading.
+     *
+     * @param message failure details to display
+     */
     def displayFailure(message: String): Unit =
       display(s"$FailureHeader\n$message")
 
+    /**
+     * Validates submitted values and starts the selected asynchronous experiment.
+     *
+     * @param values submitted values indexed by field identifier
+     */
     def submit(values: Map[String, String]): Unit =
       display(RunningMessage)
 
@@ -73,7 +95,16 @@ object ExperimentDialog:
       )
     )
 
-  /** Opens or updates the result and reports an unexpected graphical failure. */
+  /**
+   * Opens or updates the result and reports an unexpected graphical failure.
+   *
+   * @param content text to display
+   * @param owner optional owner of a newly opened result dialog
+   * @param currentDialog existing dialog, when one has already been opened
+   * @return the reusable result-dialog handle, or `None` when construction fails
+   * @see
+   *   [[monad_core.simulator.presentation.performance.ResultDialog.open ResultDialog.open]]
+   */
   private def displayResult(
       content: String,
       owner: Option[Window],

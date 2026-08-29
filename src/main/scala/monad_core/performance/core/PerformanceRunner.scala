@@ -1,6 +1,14 @@
 package monad_core.performance.core
 
-import monad_core.performance.model.{EntityCount, NanoClock, PerformanceConfig, PerformanceError, PerformanceKind, PerformancePoint, PerformanceReport}
+import monad_core.performance.model.{
+  EntityCount,
+  NanoClock,
+  PerformanceConfig,
+  PerformanceError,
+  PerformanceKind,
+  PerformancePoint,
+  PerformanceReport
+}
 
 import scala.annotation.tailrec
 
@@ -17,7 +25,7 @@ final case class PerformanceRequest(kind: PerformanceKind, config: PerformanceCo
 /** Executes the selected performance strategy over an injected workload. */
 private[performance] object PerformanceRunner:
   /** Workload operation executed during warm-ups and measured iterations. */
-  type Operation       = () => Either[PerformanceError, Unit]
+  type Operation = () => Either[PerformanceError, Unit]
 
   /** Creates a workload operation for the supplied number of entities. */
   type PrepareWorkload = EntityCount => Either[PerformanceError, Operation]

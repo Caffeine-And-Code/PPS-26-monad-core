@@ -35,19 +35,19 @@ final case class PerformanceConfig private (
 /** Provides default values and validated construction for performance configurations. */
 object PerformanceConfig:
   /** Default initial number of entities. */
-  val DefaultStartEntities     = 100
+  val DefaultStartEntities = 100
 
   /** Default maximum number of entities. */
-  val DefaultMaximumEntities   = 1_600
+  val DefaultMaximumEntities = 1_600
 
   /** Default multiplier between consecutive entity counts. */
-  val DefaultGrowthFactor      = 2
+  val DefaultGrowthFactor = 2
 
   /** Default number of measured executions for each entity count. */
-  val DefaultIterations        = 20
+  val DefaultIterations = 20
 
   /** Default number of unmeasured executions before collection. */
-  val DefaultWarmups           = 5
+  val DefaultWarmups = 5
 
   /** Default frame budget expressed in milliseconds. */
   val DefaultFrameBudgetMillis = 16L
