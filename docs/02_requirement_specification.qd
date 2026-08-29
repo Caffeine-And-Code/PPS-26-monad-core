@@ -58,10 +58,10 @@ La configurazione fisica predefinita applica, nell'ordine, le seguenti regole, o
 2. `enemy-attraction`: orientamento graduale della velocità verso il nemico più vicino, usando il pathfinding per individuare una direzione raggiungibile;
 3. `collision-resolution`: separazione e risposta elastica alle collisioni tra entità;
 4. `border-contact`: risposta al contatto con i quattro confini della scena;
-5. `damage-application`: applicazione del danno tra entità a contatto e del danno delle superfici; una entità viene rimossa quando la salute diventa negativa;
+5. `damage-application`: applicazione del danno tra entità a contatto e del danno delle superfici; una entità viene rimossa quando la salute raggiunge zero o diventerebbe negativa;
 6. `kinematics`: aggiornamento di posizione e rotazione in funzione del tempo trascorso.
 
-I fixed update producono **eventi di engine** quando una entità cambia, viene rimossa oppure collide con un'altra entità o con un bordo. Nel simulatore, `WorldEditor` produce inoltre gli eventi di creazione, aggiornamento e rimozione dovuti alle operazioni dell'utente. Gli eventi descrivono transizioni già avvenute e non comandano direttamente il flusso applicativo; il simulatore li adatta a record di log testuali.
+I fixed update producono **eventi di engine** quando una entità cambia, viene rimossa oppure collide con un'altra entità o con un bordo. Il simulatore produce inoltre gli eventi di creazione, aggiornamento e rimozione dovuti alle operazioni dell'utente. Gli eventi descrivono transizioni già avvenute e non comandano direttamente il flusso applicativo; il simulatore li adatta a record di log testuali.
 
 ### Conversazione e valutazione dell'agente
 
@@ -80,9 +80,9 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 - **RU-ENG-03 — Proprietà delle superfici.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente attrito, forza applicata e danno.
 - **RU-ENG-04 — Configurazione della fisica.** Deve poter utilizzare tutte le regole predefinite, fornire una sequenza di regole diversa e sostituire il rilevatore di collisioni tramite il relativo contratto.
 - **RU-ENG-05 — Sessione.** Deve poter creare una sessione con tempi predefiniti o personalizzati, avviarla, arrestarla e interrogarne modalità e stato di esecuzione.
-- **RU-ENG-06 — Avanzamento.** Deve poter avanzare uno `State` passando sessione, tempo corrente e configurazione fisica, ricevendo un `Either` contenente errore oppure stato aggiornato, stato precedente, prossima sessione, eventi e coefficiente di interpolazione.
+- **RU-ENG-06 — Avanzamento.** Deve poter avanzare uno stato passando sessione, tempo corrente e configurazione fisica, ricevendo un risultato esplicito di errore oppure stato aggiornato, stato precedente, prossima sessione, eventi e coefficiente di interpolazione.
 - **RU-ENG-07 — Regole attive.** Deve poter ottenere l'elenco delle regole fisiche configurate e abilitarle o disabilitarle per identificatore senza mutare il manager ricevuto.
-- **RU-ENG-08 — Rendering indipendente dal backend.** Deve poter trasformare uno stato in una sequenza ordinata di comandi di disegno per cerchi e rettangoli, fornendo una strategia `Painter` per forme e colori.
+- **RU-ENG-08 — Rendering indipendente dal backend.** Deve poter trasformare uno stato in una sequenza ordinata di comandi di disegno per cerchi e rettangoli, fornendo una politica sostituibile per forme e colori.
 - **RU-ENG-09 — Osservazione.** Deve poter consumare gli eventi prodotti dagli aggiornamenti fisici senza dipendere dal simulatore.
 
 #### Utente della GUI
@@ -108,7 +108,7 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 ### Requisiti di sistema
 
 - **RS-01 — Atomicità delle modifiche.** Il sistema deve sostituire la scena corrente soltanto quando l'intera operazione di creazione, modifica, rimozione o ridimensionamento ha successo; al primo errore deve conservare la scena precedente.
-- **RS-02 — Errori tipizzati.** Le condizioni attese di dominio, fisica e applicazione devono essere rappresentate come valori `Left`; le eccezioni di librerie esterne devono essere intercettate e adattate al confine infrastrutturale quando possibile.
+- **RS-02 — Errori tipizzati.** Le condizioni attese di dominio, fisica e applicazione devono essere rappresentate come valori di errore espliciti; le eccezioni delle librerie esterne devono essere intercettate e adattate al confine infrastrutturale quando possibile.
 - **RS-03 — Passo fisso.** Una sessione in esecuzione deve applicare tanti aggiornamenti completi quanti ne ammette l'accumulatore e deve conservarne il resto; una sessione arrestata deve lasciare invariato lo stato.
 - **RS-04 — Interpolazione.** Prima del rendering il sistema deve interpolare posizione e rotazione delle entità tra gli ultimi due stati con un coefficiente compreso tra 0 e 1, senza modificare lo stato fisico definitivo.
 - **RS-05 — Piano di disegno.** Il renderer dell'engine deve produrre prima i comandi delle superfici e poi quelli delle entità; il colore di una entità deve dipendere dal team quando presente, altrimenti dal colore base.
@@ -116,9 +116,9 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 - **RS-07 — Propagazione degli eventi.** Il runtime deve inoltrare gli eventi prodotti dai fixed update e dalle modifiche di entità al formatter di log; un tick fallito deve notificare l'errore e arrestare la sessione.
 - **RS-08 — Affidabilità dell'agente.** Per domande sullo stato corrente l'agente deve usare i tool di lettura, non deve inventare il risultato di una operazione, deve chiedere i parametri obbligatori mancanti e deve riportare gli errori restituiti dai tool.
 - **RS-09 — Perimetro e lingua dell'agente.** L'agente deve rispondere in testo semplice, in modo conciso e nella lingua dell'utente; per richieste estranee a MonadCore2D deve rifiutare senza invocare tool.
-- **RS-10 — Mutua esclusione delle modifiche.** GUI e tool AI devono condividere lo stesso `World` e lo stesso stato del runtime, così che il divieto di modifica durante la simulazione sia applicato indipendentemente dal canale di ingresso.
+- **RS-10 — Mutua esclusione delle modifiche.** GUI e tool AI devono operare sul medesimo mondo applicativo e sul medesimo stato di esecuzione, così che il divieto di modifica durante la simulazione sia applicato indipendentemente dal canale di ingresso.
 - **RS-11 — Valutazione.** Il valutatore deve confrontare posizione e parametri delle chiamate tool, delegare al modello giudice le proprietà linguistiche e semantiche e registrare separatamente i casi che non producono un giudizio valido.
-- **RS-12 — Selezione della modalità.** Il launcher deve avviare la valutazione quando trova la route `evaluate-model`; in ogni altro caso deve costruire la GUI. Un errore di routing o avvio deve produrre un codice di uscita non nullo.
+- **RS-12 — Selezione della modalità.** Il punto di avvio deve selezionare la valutazione quando trova la route `evaluate-model`; in ogni altro caso deve costruire la GUI. Un errore di routing o avvio deve produrre un codice di uscita non nullo.
 
 ## Requisiti non funzionali
 
@@ -132,7 +132,7 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 - **RNF-08 — Distribuibilità.** La pipeline di release deve generare fat JAR eseguibili, relazione PDF e tag di versione; la pipeline Pages deve pubblicare relazione HTML e Scaladoc.
 - **RNF-09 — Disponibilità degradata.** L'assenza o l'irraggiungibilità di Ollama può rendere indisponibili chat e valutazione, ma non deve introdurre una dipendenza di runtime nel game engine né impedire l'uso programmatico della libreria.
 
-Non viene assunto un requisito quantitativo sulle prestazioni della fisica: la versione finale non include un benchmark utente stabile con soglie riproducibili. Tempi di tick o frame-rate dipenderebbero inoltre da numero e disposizione degli elementi e dall'hardware, perciò non vengono presentati come proprietà verificate.[[TODO Update with Tonelli part]]
+Non viene assunto un requisito quantitativo sulle prestazioni della fisica: la versione finale non include un benchmark stabile con soglie riproducibili. Tempi di tick o frame-rate dipendono da numero e disposizione degli elementi e dall'hardware, perciò non vengono presentati come proprietà verificate.
 
 ## Requisiti di implementazione
 
