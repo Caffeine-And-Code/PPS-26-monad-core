@@ -8,7 +8,7 @@ import monad_core.simulator.presentation.performance.ResultDialog
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import scalafx.Includes.jfxNode2sfx
+import scalafx.Includes.{jfxNode2sfx, jfxStage2sfx}
 
 class ResultDialogTest extends AnyFunSuite with Matchers with Inside with DialogTesting:
 
@@ -22,91 +22,116 @@ class ResultDialogTest extends AnyFunSuite with Matchers with Inside with Dialog
 
   private val UpdatedReport = "Performance experiment: Load"
 
-  test("the performance result dialog can be shown"):
-    onFxThread {
-      val result = ResultDialog.show(Report)
+  private def output: TextArea =
+    getRequiredActiveStage.getScene.getRoot
+      .lookup(".performance-result-output")
+      .asInstanceOf[TextArea]
 
-      result shouldBe Right(())
+  private def closeButton: Button =
+    getRequiredActiveStage.getScene.getRoot
+      .lookup(".performance-result-close")
+      .asInstanceOf[Button]
+
+  test("show opens the performance result dialog"):
+    val result = onFxThread {
+      ResultDialog.show(Report)
     }
 
-  test("the performance result dialog displays a read-only report"):
+    result shouldBe Right(())
+
+  test("the result dialog uses its public title"):
     onFxThread {
       getOrFail(ResultDialog.show(Report))
-      val output = getRequiredActiveStage.getScene.getRoot
-        .lookup(".performance-result-output")
-        .asInstanceOf[TextArea]
-
-      output.getText shouldBe Report
-      output.isEditable shouldBe false
     }
 
-  test("the performance result dialog does not wrap its report"):
+    onFxThread(getRequiredActiveStage.getTitle) shouldBe ResultDialog.Title
+
+  test("the result dialog displays its content"):
     onFxThread {
       getOrFail(ResultDialog.show(Report))
-      val output = getRequiredActiveStage.getScene.getRoot
-        .lookup(".performance-result-output")
-        .asInstanceOf[TextArea]
-
-      output.isWrapText shouldBe false
     }
 
-  test("the performance result dialog is resizable"):
+    onFxThread(output.getText) shouldBe Report
+
+  test("the result output is read-only"):
     onFxThread {
       getOrFail(ResultDialog.show(Report))
-
-      getRequiredActiveStage.isResizable shouldBe true
     }
 
-  test("an open performance result dialog can update its displayed content"):
-    onFxThread {
-      val dialog = getOrFail(ResultDialog.open(Report))
+    onFxThread(output.isEditable) shouldBe false
 
+  test("the result output does not wrap its content"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+    }
+
+    onFxThread(output.isWrapText) shouldBe false
+
+  test("the result dialog is resizable"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+    }
+
+    onFxThread(getRequiredActiveStage.isResizable) shouldBe true
+
+  test("the result handle updates its content"):
+    val dialog = onFxThread {
+      getOrFail(ResultDialog.open(Report))
+    }
+
+    onFxThread {
       dialog.update(UpdatedReport)
-
-      val output = getRequiredActiveStage.getScene.getRoot
-        .lookup(".performance-result-output")
-        .asInstanceOf[TextArea]
-      output.getText shouldBe UpdatedReport
     }
 
-  test("the performance result dialog closes from its close button"):
+    onFxThread(output.getText) shouldBe UpdatedReport
+
+  test("the close control uses an explicit label"):
     onFxThread {
       getOrFail(ResultDialog.show(Report))
-      val stage = getRequiredActiveStage
-      val closeButton = stage.getScene.getRoot
-        .lookup(".performance-result-close")
-        .asInstanceOf[Button]
+    }
 
+    onFxThread(closeButton.getText) shouldBe "Close"
+
+  test("the close control closes the result dialog"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+    }
+    val stage = getRequiredActiveStage
+
+    onFxThread {
       closeButton.fire()
-
-      stage.isShowing shouldBe false
     }
 
-  test("the performance result dialog uses an explicit close label"):
-    onFxThread {
-      getOrFail(ResultDialog.show(Report))
-      val closeButton = getRequiredActiveStage.getScene.getRoot
-        .lookup(".performance-result-close")
-        .asInstanceOf[Button]
+    onFxThread(stage.isShowing) shouldBe false
 
-      closeButton.getText shouldBe "Close"
-    }
-
-  test("the performance result dialog matches its visual snapshot"):
-    onFxThread {
-      getOrFail(ResultDialog.show(Report))
-      val rootNode: scalafx.scene.Node = getRequiredActiveStage.getScene.getRoot
-
-      assertMatchesVisualSnapshot(
-        "performance_test_result",
-        rootNode,
-        maxDiffPercentage = 8.0
-      )
-    }
-
-  test("the performance result dialog wraps a JavaFX thread violation"):
+  test("show translates a graphical-thread violation"):
     val result = ResultDialog.show(Report)
 
     inside(result):
       case Left(error: CannotBuildDialog) =>
         error.dialogId shouldBe "PerformanceResultDialog"
+
+  test("the performance result matches its architectural snapshot"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+    }
+
+    val stage = onFxThread(getRequiredActiveStage)
+
+    assertMatchesArchitecturalSnapshotOfStage(
+      "performance_test_result",
+      stage
+    )
+
+  test("the performance result matches its visual snapshot"):
+    onFxThread {
+      getOrFail(ResultDialog.show(Report))
+    }
+
+    val root: scalafx.scene.Node = onFxThread(getRequiredActiveStage.getScene.getRoot)
+
+    assertMatchesVisualSnapshot(
+      "performance_test_result",
+      root,
+      maxDiffPercentage = 8.0
+    )

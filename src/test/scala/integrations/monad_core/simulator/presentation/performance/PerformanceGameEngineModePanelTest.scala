@@ -2,111 +2,177 @@ package integrations.monad_core.simulator.presentation.performance
 
 import helpers.mocks.{MockImage, MockImageConfig}
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
-import integrations.monad_core.simulator.presentation.support.ScalaFxInit
-import javafx.scene.control.Button
+import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
+import javafx.event.Event
+import javafx.scene.control.{Button, TextArea}
+import javafx.scene.input.{MouseButton, MouseEvent}
 import javafx.scene.layout.HBox
+import javafx.stage.{Stage, Window}
+import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.{CannotBuildPanel, ImageResourceNotFound}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.MonadCoreGameEngineRuntime
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
-import monad_core.simulator.presentation.performance.PerformanceGameEngineModePanel
+import monad_core.simulator.presentation.performance.{
+  ExperimentDialog,
+  PerformanceGameEngineModePanel
+}
 import monad_core.simulator.presentation.resources.ImageConfigRecord
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
+import org.scalatest.OptionValues.convertOptionToValuable
+import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.prop.Tables.Table
+import org.scalatest.time.{Millis, Seconds, Span}
 import scalafx.beans.property.BooleanProperty
 import scalafx.scene.layout.VBox
 
+import scala.jdk.CollectionConverters.*
+
 class PerformanceGameEngineModePanelTest
     extends AnyFunSuite
-    with Inside
     with Matchers
+    with Inside
     with MockFactory
-    with ScalaFxInit:
+    with DialogTesting
+    with FormTesting
+    with Eventually:
 
-  given world: World               = mock[World]
-  given runtime: GameEngineRuntime = MonadCoreGameEngineRuntime()
+  given world: World                         = mock[World]
+  given gameEngineRuntime: GameEngineRuntime = MonadCoreGameEngineRuntime()
 
   private val ImageConfig                   = MockImageConfig()
   private val PerformanceButtonIndex        = 2
   private val BaseControlCount              = 5
   private val OnModeChange: Boolean => Unit = _ => ()
   private val OnStopClick: () => Unit       = () => ()
+  private val AsyncTimeout                  = Span(5, Seconds)
+  private val AsyncPollingInterval          = Span(10, Millis)
 
-  test("the performance decorator adds one control to the base mode panel"):
-    val panel = getOrFail(
-      PerformanceGameEngineModePanel(GameEngineModePanel, () => ()).build(
-        ImageConfig,
-        OnModeChange,
-        OnStopClick,
-        BooleanProperty(false)
-      )
+  private def buildPanel(
+      isEngineRunning: Boolean = false
+  ): Either[BaseError, VBox] =
+    PerformanceGameEngineModePanel(GameEngineModePanel).build(
+      ImageConfig,
+      OnModeChange,
+      OnStopClick,
+      BooleanProperty(isEngineRunning)
     )
 
-    inside(panel.children.head):
-      case buttonsRow: HBox =>
-        buttonsRow.getChildren.size shouldBe BaseControlCount + 1
-        buttonsRow.getChildren.get(PerformanceButtonIndex) shouldBe a[Button]
+  private def performanceButtonOf(panel: VBox): Button =
+    panel.delegate.getChildren.getFirst
+      .asInstanceOf[HBox]
+      .getChildren
+      .get(PerformanceButtonIndex)
+      .asInstanceOf[Button]
 
-  test("the performance control executes its configured action"):
-    var executions = 0
-    val panel = getOrFail(
-      PerformanceGameEngineModePanel(GameEngineModePanel, () => executions += 1).build(
-        ImageConfig,
-        OnModeChange,
-        OnStopClick,
-        BooleanProperty(false)
-      )
+  private def simulateClick(button: Button): Unit =
+    val event = new MouseEvent(
+      MouseEvent.MOUSE_CLICKED,
+      0,
+      0,
+      0,
+      0,
+      MouseButton.PRIMARY,
+      1,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      null
     )
+    Event.fireEvent(button, event)
 
-    onFxThread {
-      performanceButtonOf(panel).fire()
+  private def showPanel(panel: VBox): Stage =
+    val stage = new Stage()
+    stage.setScene(new javafx.scene.Scene(panel.delegate))
+    stage.show()
+    stage
 
-      executions shouldBe 1
+  private def selectPerformanceAction(panel: VBox): Unit =
+    val panelStage = showPanel(panel)
+    simulateClick(performanceButtonOf(panel))
+    findOpenContextMenu().value.getItems.getFirst.fire()
+    panelStage.close()
+
+  private def resultOutput: Option[TextArea] =
+    Window.getWindows.asScala.collectFirst {
+      case stage: Stage if stage.isShowing && stage.getTitle == ExperimentDialog.ResultTitle =>
+        stage.getScene.getRoot
+          .lookup(".performance-result-output")
+          .asInstanceOf[TextArea]
     }
 
-  test("the performance control is disabled exactly while the engine is running"):
-    val cases = Table(
-      ("isEngineRunning", "expectedDisabled"),
-      (false, false),
-      (true, true)
-    )
+  test("build adds one control to the base panel"):
+    val panel = getOrFail(buildPanel())
 
-    forAll(cases): (isEngineRunning, expectedDisabled) =>
-      val panel = getOrFail(
-        PerformanceGameEngineModePanel(GameEngineModePanel, () => ()).build(
-          ImageConfig,
-          OnModeChange,
-          OnStopClick,
-          BooleanProperty(isEngineRunning)
-        )
-      )
+    val result = panel.delegate.getChildren.getFirst
+      .asInstanceOf[HBox]
+      .getChildren
+      .size
 
-      performanceButtonOf(panel).isDisabled shouldBe expectedDisabled
+    result shouldBe BaseControlCount + 1
 
-  test("a disabled performance control does not execute its configured action"):
-    var executions = 0
-    val panel = getOrFail(
-      PerformanceGameEngineModePanel(GameEngineModePanel, () => executions += 1).build(
-        ImageConfig,
-        OnModeChange,
-        OnStopClick,
-        BooleanProperty(true)
-      )
-    )
+  test("the performance button opens its menu"):
+    val panel = getOrFail(buildPanel())
 
-    onFxThread {
-      performanceButtonOf(panel).fire()
-
-      executions shouldBe 0
+    val result = onFxThread {
+      val panelStage = showPanel(panel)
+      simulateClick(performanceButtonOf(panel))
+      val contextMenu = findOpenContextMenu()
+      panelStage.close()
+      contextMenu
     }
 
-  test("the performance decorator preserves a base-panel failure"):
+    result should not be empty
+
+  test("the performance menu item opens the experiment form"):
+    val panel = getOrFail(buildPanel())
+
+    onFxThread(selectPerformanceAction(panel))
+
+    onFxThread(getRequiredActiveStage.getTitle) shouldBe ExperimentDialog.Title
+
+  test("the performance form executes its self-managed runner"):
+    val panel = getOrFail(buildPanel())
+    onFxThread {
+      selectPerformanceAction(panel)
+      allFormFields
+        .find(_.getId == PerformanceCli.Entities)
+        .value
+        .setText("invalid")
+      formSaveButton.fire()
+    }
+
+    eventually(timeout(AsyncTimeout), interval(AsyncPollingInterval)) {
+      onFxThread(resultOutput.value.getText) should include("Invalid value")
+    }
+
+  test("the performance button is enabled while the engine is stopped"):
+    val panel = getOrFail(buildPanel())
+
+    val result = performanceButtonOf(panel).isDisabled
+
+    result shouldBe false
+
+  test("the performance button is disabled while the engine is running"):
+    val panel = getOrFail(buildPanel(isEngineRunning = true))
+
+    val result = performanceButtonOf(panel).isDisabled
+
+    result shouldBe true
+
+  test("build preserves a base-panel failure"):
     val delegate = mock[GameEngineModePanelBuilder]
     val expected = CannotBuildPanel(ImageResourceNotFound(MockImage()), "base")
     (delegate
@@ -117,7 +183,7 @@ class PerformanceGameEngineModePanelTest
       .expects(*, *, *, *, *, *)
       .returns(Left(expected))
 
-    val result = PerformanceGameEngineModePanel(delegate, () => ()).build(
+    val result = PerformanceGameEngineModePanel(delegate).build(
       ImageConfig,
       OnModeChange,
       OnStopClick,
@@ -126,7 +192,7 @@ class PerformanceGameEngineModePanelTest
 
     result shouldBe Left(expected)
 
-  test("the performance decorator reports an invalid performance icon"):
+  test("build translates a performance-icon failure"):
     val delegate           = mock[GameEngineModePanelBuilder]
     val invalidImageConfig = mock[ImageConfigRecord]
     val basePanel          = new VBox()
@@ -139,7 +205,7 @@ class PerformanceGameEngineModePanelTest
       .expects(invalidImageConfig, *, *, *, *, *)
       .returns(Right(basePanel))
 
-    val result = PerformanceGameEngineModePanel(delegate, () => ()).build(
+    val result = PerformanceGameEngineModePanel(delegate).build(
       invalidImageConfig,
       OnModeChange,
       OnStopClick,
@@ -148,10 +214,3 @@ class PerformanceGameEngineModePanelTest
 
     inside(result):
       case Left(error) => error shouldBe a[CannotBuildPanel]
-
-  private def performanceButtonOf(panel: VBox): Button =
-    panel.delegate.getChildren.getFirst
-      .asInstanceOf[HBox]
-      .getChildren
-      .get(PerformanceButtonIndex)
-      .asInstanceOf[Button]

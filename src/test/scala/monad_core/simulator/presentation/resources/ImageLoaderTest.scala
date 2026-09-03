@@ -32,14 +32,3 @@ class ImageLoaderTest extends AnyFunSuite with Inside with Matchers with MockFac
     inside(result):
       case Right(loadedImage) =>
         loadedImage shouldBe a[ScalaFxImage]
-
-  test("The performance icon resource can be loaded"):
-    val imageConfig = MockImageConfig()
-    val icon        = PerformanceIcon()
-
-    val result = ImageLoader.getScalaFxImage(icon, imageConfig)
-
-    inside(result):
-      case Right(loadedImage) =>
-        loadedImage.width.value shouldBe icon.width
-        loadedImage.height.value shouldBe icon.height

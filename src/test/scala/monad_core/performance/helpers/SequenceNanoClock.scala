@@ -1,6 +1,6 @@
 package monad_core.performance.helpers
 
-import monad_core.performance.application.NanoClock
+import monad_core.performance.model.NanoClock
 
 /** Deterministic test clock that returns the supplied nanosecond values in order. */
 final case class SequenceNanoClock(values: Vector[Long]) extends NanoClock:

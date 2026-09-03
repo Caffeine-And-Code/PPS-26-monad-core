@@ -3,269 +3,207 @@ package integrations.monad_core.simulator.presentation.performance
 import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onFxThread
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import javafx.scene.control.TextArea
-import javafx.stage.Window
-import monad_core.engine.physics.core.PhysicsManager
-import monad_core.engine.simulator.EngineFacade
-import monad_core.performance.domain.{
-  DurationConversion,
-  InvalidEntityCount,
-  PerformanceConfig,
-  PerformanceError
+import javafx.stage.{Stage, Window}
+import monad_core.performance.model.{InvalidPerformanceArgument, PerformanceError}
+import monad_core.performance.simulator.PerformanceCli
+import monad_core.simulator.presentation.performance.{
+  ExperimentCommand,
+  ExperimentDialog,
+  ResultDialog
 }
-import monad_core.performance.helpers.SequenceNanoClock
-import monad_core.performance.infrastructure.engine.EnginePerformanceExperiment
-import monad_core.performance.presentation.PerformanceArguments
-import monad_core.simulator.application.performance.{ExperimentExecutor, ExperimentRequest}
-import monad_core.simulator.infrastructure.engine.MonadCoreGameEngineRuntime
-import monad_core.simulator.infrastructure.performance.EngineExperimentExecutor.given
-import monad_core.simulator.presentation.performance.*
 import org.scalatest.OptionValues.convertOptionToValuable
-import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{Millis, Seconds, Span}
-import scalafx.Includes.jfxNode2sfx
-import scalafx.scene.control.ComboBox
+import scalafx.Includes.{jfxNode2sfx, jfxStage2sfx}
 
-import scala.concurrent.Promise
+import scala.concurrent.{Future, Promise}
 import scala.jdk.CollectionConverters.*
 
-class ExperimentDialogTest
-    extends AnyFunSuite
-    with Matchers
-    with Eventually
-    with DialogTesting
-    with FormTesting:
+class ExperimentDialogTest extends AnyFunSuite with Matchers with DialogTesting with FormTesting:
 
-  private val SingleEntityCount = 1
-  private val SingleIteration   = 1
-  private val NoWarmups         = 0
+  private def pendingRunner: (
+      ExperimentDialog.RunExperiment,
+      Promise[Either[PerformanceError, String]]
+  ) =
+    val result = Promise[Either[PerformanceError, String]]()
+    (_ => result.future, result)
 
-  private val SingleExecutionValues = Map(
-    PerformanceArguments.Entities   -> SingleEntityCount.toString,
-    PerformanceArguments.Iterations -> SingleIteration.toString,
-    PerformanceArguments.Warmups    -> NoWarmups.toString,
-    PerformanceArguments.FrameBudgetMillis ->
-      DurationConversion
-        .nanosToWholeMillis(PerformanceConfig.DefaultFrameBudgetNanos)
-        .toString
-  )
-
-  private val RunnerTimeout         = Span(5, Seconds)
-  private val RunnerPollingInterval = Span(10, Millis)
-
-  private val CommonFieldIds = Set(
-    PerformanceArguments.Entities,
-    PerformanceArguments.Iterations,
-    PerformanceArguments.Warmups,
-    PerformanceArguments.FrameBudgetMillis
-  )
-
-  private def pendingProps: ExperimentDialogProps[PhysicsManager] =
-    val pendingResult = Promise[Either[PerformanceError, String]]()
-    ExperimentDialogProps(
-      physicsManager = () => PhysicsManager.default(),
-      runner = (_, _) => pendingResult.future
-    )
-
-  private def resultStage: Option[javafx.stage.Stage] =
+  private def resultStage: Option[Stage] =
     Window.getWindows.asScala.collectFirst {
-      case stage: javafx.stage.Stage
-          if stage.isShowing && stage.getTitle == ExperimentDialog.ResultTitle =>
+      case stage: Stage if stage.isShowing && stage.getTitle == ExperimentDialog.ResultTitle =>
         stage
     }
 
-  private def select(testType: ExperimentType): Unit =
-    val selector = new ComboBox[String](allFormComboBoxes.head)
-    selector.selectionModel().select(testType.label)
+  private def resultOutput: TextArea =
+    resultStage.value.getScene.getRoot
+      .lookup(".performance-result-output")
+      .asInstanceOf[TextArea]
 
-  private def visibleFieldIds: Set[String] =
-    allFormFields.map(_.getId).toSet
-
-  test("the dialog keeps common fields and shows stress-specific fields"):
+  private def open(runner: ExperimentDialog.RunExperiment): Unit =
     onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-
-      allFormFields.map(field => field.getId -> field.getText).toMap shouldBe Map(
-        PerformanceArguments.Entities          -> "100",
-        PerformanceArguments.Iterations        -> "20",
-        PerformanceArguments.Warmups           -> "5",
-        PerformanceArguments.FrameBudgetMillis -> "16",
-        PerformanceArguments.MaximumEntities   -> "1600",
-        PerformanceArguments.GrowthFactor      -> "2"
-      )
+      getOrFail(ExperimentDialog.show(runner))
     }
 
-  test("the selector offers every supported test type"):
+  private def submit(): Unit =
     onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-
-      allFormComboBoxes.head.getItems.asScala.toSeq shouldBe
-        ExperimentType.values.map(_.label).toSeq
-    }
-
-  test("the selector starts from stress"):
-    onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-
-      allFormComboBoxes.head.getValue shouldBe ExperimentType.Stress.label
-    }
-
-  test("selecting load keeps every common field without additional fields"):
-    onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-      select(ExperimentType.Load)
-
-      visibleFieldIds shouldBe CommonFieldIds
-    }
-
-  test("selecting spike keeps common fields and adds maximum entities"):
-    onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-      select(ExperimentType.Spike)
-
-      visibleFieldIds shouldBe CommonFieldIds + PerformanceArguments.MaximumEntities
-    }
-
-  test("selecting scalability keeps common fields and adds its growth fields"):
-    onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-      select(ExperimentType.Scalability)
-
-      visibleFieldIds shouldBe CommonFieldIds ++ Set(
-        PerformanceArguments.MaximumEntities,
-        PerformanceArguments.GrowthFactor
-      )
-    }
-
-  test("the dialog can use its real asynchronous runner"):
-    onFxThread {
-      val result = ExperimentDialog.show(() => PhysicsManager.default())
-
-      result shouldBe Right(())
-    }
-
-  test("the dialog uses an explicit run action"):
-    onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-
-      formSaveButton.getText shouldBe ExperimentDialog.SubmitLabel
-    }
-
-  test("the dialog matches its initial visual snapshot"):
-    onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-      val rootNode: scalafx.scene.Node = getRequiredActiveStage.getScene.getRoot
-
-      assertMatchesVisualSnapshot(
-        "performance_test_dialog_initial",
-        rootNode,
-        maxDiffPercentage = 8.0
-      )
-    }
-
-  test("submitting a performance test immediately displays its running state"):
-    onFxThread {
-      getOrFail(ExperimentDialog.show(pendingProps))
-
-      formSaveButton.fire()
-
-      val output = resultStage.value.getScene.getRoot
-        .lookup(".performance-result-output")
-        .asInstanceOf[TextArea]
-      output.getText should include("running")
-    }
-
-  test("the GUI runs the selected test with current engine rules and displays its result"):
-    val runtime      = MonadCoreGameEngineRuntime()
-    val disabledRule = runtime.physicsRules.head
-    runtime.setPhysicsRuleEnabled(disabledRule.id, isEnabled = false)
-    val pendingResult                              = Promise[Either[PerformanceError, String]]()
-    var receivedRequest: Option[ExperimentRequest] = None
-    var receivedPhysics: Option[PhysicsManager]    = None
-    val runner: ExperimentExecutor[PhysicsManager] = (request, physics) =>
-      receivedRequest = Some(request)
-      receivedPhysics = Some(physics)
-      pendingResult.future
-    val props = ExperimentDialogProps(
-      physicsManager = () => runtime.physicsManagerSnapshot,
-      runner = runner
-    )
-
-    onFxThread {
-      getOrFail(ExperimentDialog.show(props))
-      select(ExperimentType.Load)
-      val values = Map(
-        PerformanceArguments.Entities          -> "1",
-        PerformanceArguments.Iterations        -> "1",
-        PerformanceArguments.Warmups           -> "0",
-        PerformanceArguments.FrameBudgetMillis -> "16"
-      )
-      allFormFields.foreach(field => field.setText(values(field.getId)))
       formSaveButton.fire()
     }
 
-    val runningStage    = onFxThread(resultStage.value)
-    val request         = receivedRequest.value
-    val selectedPhysics = receivedPhysics.value
-    val clock           = SequenceNanoClock(Vector(0L, 1L))
-    val result = EnginePerformanceExperiment.run(
-      request.route,
-      request.arguments,
-      selectedPhysics
-    )(using clock)
-    pendingResult.success(result)
+  test("show opens the performance form"):
+    val (runner, _) = pendingRunner
+
+    open(runner)
+
+    onFxThread(getRequiredActiveStage.getTitle) shouldBe ExperimentDialog.Title
+
+  test("the performance form uses an explicit run label"):
+    val (runner, _) = pendingRunner
+
+    open(runner)
+
+    onFxThread(formSaveButton.getText) shouldBe "Run"
+
+  test("submit immediately displays the running message"):
+    val (runner, _) = pendingRunner
+    open(runner)
+
+    submit()
+
+    onFxThread(resultOutput.getText) shouldBe "Performance test running..."
+
+  test("submit executes the selected performance route"):
+    var receivedCommand = Option.empty[ExperimentCommand]
+    val runner: ExperimentDialog.RunExperiment = command =>
+      receivedCommand = Some(command)
+      Future.successful(Right("report"))
+    open(runner)
+
+    submit()
+
+    receivedCommand.value.route shouldBe PerformanceCli.StressRoute
+
+  test("submit includes the common form arguments"):
+    var receivedCommand = Option.empty[ExperimentCommand]
+    val runner: ExperimentDialog.RunExperiment = command =>
+      receivedCommand = Some(command)
+      Future.successful(Right("report"))
+    open(runner)
+
+    submit()
+
+    receivedCommand.value.arguments should contain(PerformanceCli.Entities)
+
+  test("an invalid selection does not execute the experiment"):
+    var executions = 0
+    val runner: ExperimentDialog.RunExperiment = _ =>
+      executions += 1
+      Future.successful(Right("report"))
+    open(runner)
+    onFxThread {
+      allFormComboBoxes.head.setValue("Unknown")
+    }
+
+    submit()
+
+    executions shouldBe 0
+
+  test("an invalid selection displays its error"):
+    val runner: ExperimentDialog.RunExperiment = _ => Future.successful(Right("report"))
+    open(runner)
+    onFxThread {
+      allFormComboBoxes.head.setValue("Unknown")
+    }
+
+    submit()
+
+    onFxThread(resultOutput.getText) should include("Invalid value 'Unknown'")
+
+  test("a successful experiment displays its report"):
+    val (runner, result) = pendingRunner
+    open(runner)
+    submit()
+
+    result.success(Right("completed report"))
     drainFxQueue()
 
-    EngineFacade
-      .physicsRules(selectedPhysics)
-      .find(_.id == disabledRule.id)
-      .map(_.isEnabled) shouldBe Some(false)
-    onFxThread {
-      resultStage.value should be theSameInstanceAs runningStage
-      val output = resultStage.value.getScene.getRoot
-        .lookup(".performance-result-output")
-        .asInstanceOf[TextArea]
-      output.getText should include("Performance experiment: Load")
-    }
+    onFxThread(resultOutput.getText) shouldBe "completed report"
 
-  test("the performance-test dialog displays a validation error as a result"):
-    val error = InvalidEntityCount(0)
-    val props = ExperimentDialogProps(
-      physicsManager = () => PhysicsManager.default(),
-      runner = (_, _) => scala.concurrent.Future.successful(Left(error))
-    )
+  test("a failed experiment displays the failure heading"):
+    val error            = InvalidPerformanceArgument("argument", "value")
+    val (runner, result) = pendingRunner
+    open(runner)
+    submit()
 
-    onFxThread {
-      getOrFail(ExperimentDialog.show(props))
-      formSaveButton.fire()
-    }
+    result.success(Left(error))
     drainFxQueue()
 
-    onFxThread {
-      val output = resultStage.value.getScene.getRoot
-        .lookup(".performance-result-output")
-        .asInstanceOf[TextArea]
+    onFxThread(resultOutput.getText) should startWith("Performance test failed:\n")
 
-      output.getText should include("Performance test failed:")
-      output.getText should include(error.message)
-    }
+  test("a failed experiment displays its error message"):
+    val error            = InvalidPerformanceArgument("argument", "value")
+    val (runner, result) = pendingRunner
+    open(runner)
+    submit()
 
-  test("submitting the dialog executes the default engine runner"):
-    val physicsManager = PhysicsManager.default().disableAll
+    result.success(Left(error))
+    drainFxQueue()
 
-    val output = onFxThread {
-      getOrFail(ExperimentDialog.show(() => physicsManager))
-      select(ExperimentType.Load)
-      allFormFields.foreach(field => field.setText(SingleExecutionValues(field.getId)))
-      formSaveButton.fire()
-      resultStage.value.getScene.getRoot
-        .lookup(".performance-result-output")
-        .asInstanceOf[TextArea]
-    }
+    onFxThread(resultOutput.getText) should include(error.message)
 
-    eventually(timeout(RunnerTimeout), interval(RunnerPollingInterval)) {
-      onFxThread(output.getText) should include(
-        s"Performance experiment: ${ExperimentType.Load.label}"
-      )
-    }
+  test("an exceptional experiment displays the exception message"):
+    val runner: ExperimentDialog.RunExperiment =
+      _ => Future.failed(new IllegalStateException("unexpected failure"))
+    open(runner)
+
+    submit()
+    drainFxQueue()
+
+    onFxThread(resultOutput.getText) should include("unexpected failure")
+
+  test("an exception without a message displays its class name"):
+    val runner: ExperimentDialog.RunExperiment = _ => Future.failed(new IllegalStateException())
+    open(runner)
+
+    submit()
+    drainFxQueue()
+
+    onFxThread(resultOutput.getText) should include("IllegalStateException")
+
+  test("a completed experiment reuses the running result dialog"):
+    val (runner, result) = pendingRunner
+    open(runner)
+    submit()
+    val runningStage = onFxThread(resultStage.value)
+
+    result.success(Right("completed report"))
+    drainFxQueue()
+
+    onFxThread(resultStage.value) should be theSameInstanceAs runningStage
+
+  test("the public result title matches the result dialog"):
+    val result = ExperimentDialog.ResultTitle
+
+    result shouldBe ResultDialog.Title
+
+  test("the performance form matches its architectural snapshot"):
+    val (runner, _) = pendingRunner
+    open(runner)
+
+    val stage = onFxThread(getRequiredActiveStage)
+
+    assertMatchesArchitecturalSnapshotOfStage(
+      "performance_test_dialog_initial",
+      stage
+    )
+
+  test("the performance form matches its visual snapshot"):
+    val (runner, _) = pendingRunner
+    open(runner)
+
+    val root: scalafx.scene.Node = onFxThread(getRequiredActiveStage.getScene.getRoot)
+
+    assertMatchesVisualSnapshot(
+      "performance_test_dialog_initial",
+      root,
+      maxDiffPercentage = 8.0
+    )

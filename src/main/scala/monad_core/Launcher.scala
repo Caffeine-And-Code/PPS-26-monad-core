@@ -2,14 +2,7 @@ package monad_core
 
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.simulator.Painter
-import monad_core.performance.application.{NanoClock, PerformanceWorkload}
-import monad_core.performance.infrastructure.SystemNanoClock
-import monad_core.performance.infrastructure.engine.EngineTickWorkload
-import monad_core.performance.presentation.{
-  PerformanceCommand,
-  PerformanceConsolePrinter,
-  PerformanceRoutes
-}
+import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
@@ -26,7 +19,6 @@ import monad_core.simulator.infrastructure.logging.{
   EventLogLevel,
   mapEventsToLogEntries
 }
-import monad_core.simulator.infrastructure.performance.EngineExperimentExecutor.given
 import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluationArguments,
   AgentEvaluationRuntime,
@@ -34,17 +26,12 @@ import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluatorPrinter
 }
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
-import monad_core.simulator.presentation.performance.{
-  ExperimentDialog,
-  PerformanceGameEngineModePanel
-}
 import monad_core.simulator.presentation.panels.{
   AiModelChatPanel,
-  GameEngineModePanel,
   GameEnginePanel,
   SceneRendererPanel
 }
-import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
+import monad_core.simulator.presentation.performance.PerformanceMode
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{RouteResponse, Router}
@@ -60,27 +47,6 @@ import scala.Console.{GREEN, RESET}
  * with its optional performance control.
  */
 object Launcher:
-
-  /** Command-line option that enables graphical performance controls. */
-  private[monad_core] val PerformanceGuiArgument = "--performance"
-
-  /**
-   * Selects the standard or performance-decorated engine-mode panel.
-   *
-   * @param args
-   *   application command-line arguments
-   * @param onPerformanceExperiment
-   *   callback assigned to the optional performance control
-   * @return
-   *   decorated builder only when the performance option is present
-   */
-  private[monad_core] def modePanelFor(
-      args: Array[String],
-      onPerformanceExperiment: () => Unit
-  ): GameEngineModePanelBuilder =
-    if args.contains(PerformanceGuiArgument) then
-      PerformanceGameEngineModePanel(GameEngineModePanel, onPerformanceExperiment)
-    else GameEngineModePanel
 
   /**
    * Assembles the dependencies required by the GUI and starts the ScalaFX application.
@@ -122,14 +88,7 @@ object Launcher:
 
     val imageConfig = BaseImageConfig()
 
-    val modePanel = modePanelFor(
-      args,
-      () =>
-        ExperimentDialog
-          .show(() => runtime.physicsManagerSnapshot)
-          .left
-          .foreach(error => NotificationManager.show(error.message, Error))
-    )
+    val modePanel = PerformanceMode.panelFor(args)
 
     val gamePanel = GameEnginePanel(
       modePanel = modePanel,
@@ -162,7 +121,9 @@ object Launcher:
     val arguments = AgentEvaluationArguments.parse(args)
 
     given AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
-    given Logger                = ConsoleLogger
+
+    given Logger = ConsoleLogger
+
     given AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
       agentConfig = Langchain4jOllamaConfig(
         url = arguments.testModelUrl,
@@ -183,21 +144,6 @@ object Launcher:
     )
   }
 
-  private def runPerformance(args: Array[String], route: String): RouteResponse =
-    given PerformanceWorkload = EngineTickWorkload
-    given NanoClock           = SystemNanoClock
-
-    val result = PerformanceCommand.run(route, args)
-
-    result match
-      case Left(error) => RouteResponse(success = false, message = error.message)
-      case Right(report) =>
-        PerformanceConsolePrinter.print(report)
-        RouteResponse(
-          success = true,
-          message = s"Finished ${report.kind.toString.toLowerCase} experiment"
-        )
-
   /**
    * Routes command-line arguments to model evaluation or to the default GUI application.
    *
@@ -208,19 +154,23 @@ object Launcher:
    * @param args command-line arguments
    */
   def main(args: Array[String]): Unit =
-    lazy val evaluateModelRoute          = evaluateModel(args)
-    lazy val performanceLoadRoute        = runPerformance(args, PerformanceRoutes.Load)
-    lazy val performanceStressRoute      = runPerformance(args, PerformanceRoutes.Stress)
-    lazy val performanceSpikeRoute       = runPerformance(args, PerformanceRoutes.Spike)
-    lazy val performanceScalabilityRoute = runPerformance(args, PerformanceRoutes.Scalability)
-    lazy val guiRoute                    = outcomeFor(guiApplication(args))
+    lazy val evaluateModelRoute = evaluateModel(args)
+    lazy val performanceLoadRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.LoadRoute)
+    lazy val performanceStressRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.StressRoute)
+    lazy val performanceSpikeRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.SpikeRoute)
+    lazy val performanceScalabilityRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.ScalabilityRoute)
+    lazy val guiRoute = outcomeFor(guiApplication(args))
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)
-      .on(Route(PerformanceRoutes.Load), () => performanceLoadRoute)
-      .on(Route(PerformanceRoutes.Stress), () => performanceStressRoute)
-      .on(Route(PerformanceRoutes.Spike), () => performanceSpikeRoute)
-      .on(Route(PerformanceRoutes.Scalability), () => performanceScalabilityRoute)
+      .on(Route(PerformanceCli.LoadRoute), () => performanceLoadRoute)
+      .on(Route(PerformanceCli.StressRoute), () => performanceStressRoute)
+      .on(Route(PerformanceCli.SpikeRoute), () => performanceSpikeRoute)
+      .on(Route(PerformanceCli.ScalabilityRoute), () => performanceScalabilityRoute)
       .on(All(), () => guiRoute)
       .evaluate(args)
 
