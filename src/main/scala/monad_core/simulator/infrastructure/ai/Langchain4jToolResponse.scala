@@ -64,7 +64,7 @@ object Langchain4jToolResponse:
       s"Result: ${values.size} $elementName found.\n$renderedValues"
 
   /**
-   * Convert in plain text an [[Entity]].
+   * Convert in plain text an [[monad_core.engine.model.Entity]].
    *
    * @param entity entity to render
    * @return plain text entity description
@@ -84,7 +84,7 @@ object Langchain4jToolResponse:
     ).mkString("\n")
 
   /**
-   * Convert in plain text a [[Surface]]
+   * Convert in plain text a [[monad_core.engine.model.Surface]]
    *
    * @param surface surface to render
    * @return plain text surface description
@@ -101,7 +101,7 @@ object Langchain4jToolResponse:
     ).mkString("\n")
 
   /**
-   * Convert in plain text a [[Team]]
+   * Convert in plain text a [[monad_core.engine.model.Team]]
    *
    * @param team team to render
    * @return plain text team description

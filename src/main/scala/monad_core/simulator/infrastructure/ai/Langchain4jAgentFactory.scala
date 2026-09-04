@@ -1,7 +1,6 @@
 package monad_core.simulator.infrastructure.ai
 
 import dev.langchain4j.model.ollama.OllamaChatModel
-import monad_core.simulator.application.ai.AiAgent
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.domain.ai.AgentInfo
@@ -18,11 +17,11 @@ case class Langchain4jOllamaConfig(
     provider: String = "Ollama"
 )
 
-/** Factory for building [[AiAgent]] using Langchain4j. */
+/** Factory for building [[monad_core.simulator.application.ai.AiAgent]] using Langchain4j. */
 trait Langchain4jAgentFactory:
 
   /**
-   * Build an [[AiAgent]] using Langhchain4j with an LLM served by Ollama
+   * Build an [[monad_core.simulator.application.ai.AiAgent]] using Langhchain4j with an LLM served by Ollama
    *
    * @param config Ollama connection settings
    * @return agent connected to the configured model

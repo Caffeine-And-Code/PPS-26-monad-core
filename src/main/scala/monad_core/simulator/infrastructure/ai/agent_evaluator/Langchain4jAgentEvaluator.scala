@@ -101,7 +101,7 @@ case class Langchain4jAgentEvaluator(
     val status = if result.isRight then "success" else "failure"
     s"event=agent_evaluation_test_completed status=$status prompts=${test.prompts.length} expected_tool_calls=${test.toolCalls.length}"
 
-/** Factory for Langchain4j implementation of [[AgentEvaluator]]. */
+/** Factory for Langchain4j implementation of [[monad_core.simulator.application.ai.AgentEvaluator]]. */
 object Langchain4jAgentEvaluator:
 
   /**
