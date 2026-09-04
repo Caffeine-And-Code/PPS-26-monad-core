@@ -111,9 +111,11 @@ private[physics] object EnemyAttractionRule:
       val newAngle        = currentAngle + appliedTurn
 
       entity.withSpeed(
-        Vector2D(
-          math.cos(newAngle) * speedMagnitude,
-          math.sin(newAngle) * speedMagnitude
+        Some(
+          Vector2D(
+            math.cos(newAngle) * speedMagnitude,
+            math.sin(newAngle) * speedMagnitude
+          )
         )
       )
 

@@ -4,6 +4,7 @@ import dev.langchain4j.service.memory.ChatMemoryAccess
 import dev.langchain4j.service.{MemoryId, Result, SystemMessage, UserMessage}
 import monad_core.simulator.domain.ai.ConversationId
 
+/** LangChain4j AI service contract. */
 trait Langchain4jAssistant extends ChatMemoryAccess:
 
   @SystemMessage(
@@ -20,4 +21,11 @@ trait Langchain4jAssistant extends ChatMemoryAccess:
       "Keep responses concise, direct, and in the same language used by the user."
     )
   )
+  /**
+   * Send a prompt to the AI agent.
+   *
+   * @param memoryId conversation history identifier
+   * @param message user message
+   * @return generated text and response metadata
+   */
   def chat(@MemoryId memoryId: ConversationId, @UserMessage message: String): Result[String]

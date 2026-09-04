@@ -49,7 +49,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val judgement          = successfulJudgement
     var evaluationWorld    = Option.empty[World]
     given Logger           = logger
-    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator          = Langchain4jAgentEvaluator(assistantBuilder, judge)
 
     assistantBuilder.build
       .expects(*, *)
@@ -77,7 +77,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val test             = evaluationTest(initialScene, Seq.empty)
     val judgement        = successfulJudgement
     given Logger         = logger
-    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator        = Langchain4jAgentEvaluator(assistantBuilder, judge)
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat.expects(conversationId, prompt).returns(assistantResult(Seq.empty)).once()
@@ -100,7 +100,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val test      = evaluationTest(Scene(), Seq(expectedToolCall))
     val judgement = successfulJudgement
     given Logger  = logger
-    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, judge)
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat
@@ -127,7 +127,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     val test      = evaluationTest(Scene(), Seq(firstToolCall, secondToolCall), prompts)
     val judgement = successfulJudgement
     given Logger  = logger
-    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, judge)
 
     assistantBuilder.build.expects(*, *).returns(assistant).once()
     assistant.chat
@@ -160,7 +160,7 @@ class Langchain4jAgentEvaluatorTest extends AnyFunSuite with Matchers with MockF
     assistant.chat.expects(conversationId, prompt).throws(new RuntimeException(errorMessage)).once()
     logger.info.expects(completedLog("failure", prompts = 1, expectedToolCalls = 0)).once()
     given Logger  = logger
-    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, Langchain4jToolCallMapper(), judge)
+    val evaluator = Langchain4jAgentEvaluator(assistantBuilder, judge)
 
     val result = evaluator.evaluateCase(test)
 

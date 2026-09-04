@@ -37,13 +37,13 @@ class SurfaceDynamicsRuleTest
     val entity = makeMovingEntityCircle(
       position = Vector2D(0, 0),
       speed = Vector2D(1, 1)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val surface = makeSurfaceCircle(
       position = Vector2D(0, 0),
       radius = 5.0
     )
-      .withFrictionIndex(0.1)
+      .withFrictionIndex(Some(0.1))
       .value
 
     val expectedSpeedAfterFriction = PhysicsUtil
@@ -81,9 +81,9 @@ class SurfaceDynamicsRuleTest
       position = Vector2D(0, 0),
       radius = 5.0
     )
-      .withAppliedForce(Vector2D(10, 0))
+      .withAppliedForce(Some(Vector2D(10, 0)))
       .value
-      .withFrictionIndex(0.1)
+      .withFrictionIndex(Some(0.1))
       .value
 
     val state = stateWithSurfaces(List(fixedEntity), List(surface))
@@ -109,9 +109,9 @@ class SurfaceDynamicsRuleTest
       position = Vector2D(10, 10),
       radius = 5.0
     )
-      .withAppliedForce(Vector2D(10, 0))
+      .withAppliedForce(Some(Vector2D(10, 0)))
       .value
-      .withFrictionIndex(0.1)
+      .withFrictionIndex(Some(0.1))
       .value
 
     val state = stateWithSurfaces(List(entity), List(surface))
@@ -155,13 +155,13 @@ class SurfaceDynamicsRuleTest
     val entity = makeMovingEntityCircle(
       position = Vector2D(0, 0),
       speed = Vector2D(1, 1)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val surface = makeSurfaceCircle(
       position = Vector2D(0, 0),
       radius = 5.0
     )
-      .withAppliedForce(Vector2D(10, 0))
+      .withAppliedForce(Some(Vector2D(10, 0)))
       .value
 
     val acceleration = PhysicsUtil.acceleration(surface.appliedForce.value, entity.weight).value
@@ -185,13 +185,13 @@ class SurfaceDynamicsRuleTest
     val entity = makeMovingEntityCircle(
       position = Vector2D(0, 0),
       speed = Vector2D(1, 1)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val surface = makeSurfaceCircle(
       position = Vector2D(0, 0),
       radius = 5.0
     )
-      .withFrictionIndex(0.1)
+      .withFrictionIndex(Some(0.1))
       .value
 
     val expectedSpeedAfterFriction = PhysicsUtil
@@ -219,15 +219,15 @@ class SurfaceDynamicsRuleTest
     val entity = makeMovingEntityCircle(
       position = Vector2D(0, 0),
       speed = Vector2D(1, 1)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val surface = makeSurfaceCircle(
       position = Vector2D(0, 0),
       radius = 5.0
     )
-      .withAppliedForce(Vector2D(10, 0))
+      .withAppliedForce(Some(Vector2D(10, 0)))
       .value
-      .withFrictionIndex(0.1)
+      .withFrictionIndex(Some(0.1))
       .value
 
     val acceleration = PhysicsUtil.acceleration(surface.appliedForce.value, entity.weight).value
@@ -262,21 +262,21 @@ class SurfaceDynamicsRuleTest
       id = "entity1",
       position = Vector2D(0, 0),
       speed = Vector2D(1, 1)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val entity2 = makeMovingEntityCircle(
       id = "entity2",
       position = Vector2D(1, 1),
       speed = Vector2D(2, 2)
-    ).withWeight(2).value
+    ).withWeight(Some(2)).value
 
     val surface = makeSurfaceCircle(
       position = Vector2D(0, 0),
       radius = 5.0
     )
-      .withAppliedForce(Vector2D(10, 0))
+      .withAppliedForce(Some(Vector2D(10, 0)))
       .value
-      .withFrictionIndex(0.1)
+      .withFrictionIndex(Some(0.1))
       .value
 
     val state = stateWithSurfaces(List(entity1, entity2), List(surface))
@@ -333,7 +333,7 @@ class SurfaceDynamicsRuleTest
       position = Vector2D(0, 0),
       radius = 5.0
     )
-      .withAppliedForce(Vector2D(10, 0))
+      .withAppliedForce(Some(Vector2D(10, 0)))
       .value
 
     val state = stateWithSurfaces(List(entity), List(surface))
@@ -348,9 +348,9 @@ class SurfaceDynamicsRuleTest
 
   test("surface friction should slow down angular speed without adding linear speed"):
     val entity = makeFixedEntityCircle(id = "rotating")
-      .withAngularSpeed(90.0)
+      .withAngularSpeed(Some(90.0))
     val surface = makeSurfaceCircle(position = Vector2D(0.0, 0.0), radius = 5.0)
-      .withFrictionIndex(0.25)
+      .withFrictionIndex(Some(0.25))
       .value
 
     val result = SurfaceDynamicsRule
@@ -362,10 +362,10 @@ class SurfaceDynamicsRuleTest
 
   test("surface friction should not reverse angular speed of an entity"):
     val entity = makeFixedEntityCircle(id = "rotating")
-      .withAngularSpeed(10.0)
+      .withAngularSpeed(Some(10.0))
 
     val surface = makeSurfaceCircle(position = Vector2D(0.0, 0.0), radius = 5.0)
-      .withFrictionIndex(1.0)
+      .withFrictionIndex(Some(1.0))
       .value
 
     val result = SurfaceDynamicsRule
@@ -380,7 +380,7 @@ class SurfaceDynamicsRuleTest
     )
 
     val surface = makeSurfaceCircle(position = Vector2D(0.0, 0.0), radius = 5.0)
-      .withFrictionIndex(1.0)
+      .withFrictionIndex(Some(1.0))
       .value
 
     val result = SurfaceDynamicsRule

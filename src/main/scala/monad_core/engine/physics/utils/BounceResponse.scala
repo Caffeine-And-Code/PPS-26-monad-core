@@ -40,7 +40,7 @@ private[physics] object BounceResponse:
           other.weight
         )
 
-    newSpeed.map(entity.withSpeed)
+    newSpeed.map(speed => entity.withSpeed(Some(speed)))
 
   private def applyVelocityDelta(
       entity: Entity,
@@ -48,9 +48,7 @@ private[physics] object BounceResponse:
   ): Entity =
     val withLinearDelta =
       entity.speed.fold(entity): speed =>
-        entity.withSpeed(speed + delta.speed)
+        entity.withSpeed(Some(speed + delta.speed))
 
     entity.angularSpeed.fold(withLinearDelta): angularSpeed =>
-      withLinearDelta.withAngularSpeed(
-        angularSpeed + delta.angularSpeed
-      )
+      withLinearDelta.withAngularSpeed(Some(angularSpeed + delta.angularSpeed))

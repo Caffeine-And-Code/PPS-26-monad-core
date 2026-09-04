@@ -84,7 +84,7 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val movingEntity = getOrFail(
       Entity
         .circle("moving", Vector2D(10, 10), 1)
-        .map(_.withSpeed(Vector2D(1, 0)))
+        .map(_.withSpeed(Some(Vector2D(1, 0))))
     )
     val initialScene     = getOrFail(Scene().addEntity(movingEntity))
     val world            = MonadCoreWorld(initialScene)
@@ -107,13 +107,13 @@ class GameEngineTest extends AnyFunSuite with ScalaFxInit:
     val entity = getOrFail(
       Entity
         .circle("entity", Vector2D(10, 10), 1)
-        .flatMap(_.withHealth(5))
-        .map(_.withSpeed(Vector2D(0, 0)))
+        .flatMap(_.withHealth(Some(5)))
+        .map(_.withSpeed(Some(Vector2D(0, 0))))
     )
     val surface = getOrFail(
       Surface
         .circle("surface", Vector2D(10, 10), 10)
-        .flatMap(_.withDamageOverTime(5))
+        .flatMap(_.withDamageOverTime(Some(5)))
     )
     val initialScene = getOrFail(
       for

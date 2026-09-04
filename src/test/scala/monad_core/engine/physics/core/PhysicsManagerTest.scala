@@ -150,7 +150,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
     val mobileEntity = Entity
       .circle("mobile", Vector2D(10, 10), 2)
       .value
-      .withSpeed(Vector2D(1, 0))
+      .withSpeed(Some(Vector2D(1, 0)))
     val fixedEntity = Entity.circle("fixed", Vector2D(12, 10), 2).value
     val scene = Scene(
       entities = Map(
@@ -234,7 +234,7 @@ class PhysicsManagerTest extends AnyFunSuite with Matchers with MockFactory with
     val mobileEntity = Entity
       .circle("a-mobile", Vector2D(10, 10), 2)
       .value
-      .withSpeed(Vector2D(1, 0))
+      .withSpeed(Some(Vector2D(1, 0)))
     val fixedEntity = Entity.circle("b-fixed", Vector2D(12, 10), 2).value
     val scene = Scene(
       entities = Map(

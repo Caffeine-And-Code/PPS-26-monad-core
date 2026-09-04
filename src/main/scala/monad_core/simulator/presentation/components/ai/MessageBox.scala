@@ -7,9 +7,17 @@ import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.{Label, ScrollPane}
 import scalafx.scene.layout.{HBox, Priority, VBox}
 
+/** Builds the scrollable list of user and assistant messages. */
 object MessageBox:
+
+  /** State of the component. */
   type Model = Seq[ChatMessage]
 
+  /**
+   * Returns the message box component
+   *
+   * @return message box component and its model renderer
+   */
   def apply(): Component[Model, ScrollPane] =
     val messageList = new VBox:
       id = "chat-messages"

@@ -47,8 +47,8 @@ class RendererManagerTest extends AnyFunSuite with Matchers with MockFactory:
     val entityColor  = EngineColorArranger.arrangeWhite()
     val surfaceColor = EngineColorArranger.arrangeBlack()
 
-    val team      = Team(teamRedId).value
-    val entity    = Entity.circle("e1", ZeroVector, 5.0).value.withTeamId(teamRedId.value).value
+    val team   = Team(teamRedId).value
+    val entity = Entity.circle("e1", ZeroVector, 5.0).value.withTeamId(Some(teamRedId.value)).value
     val mockState = mock[State]
     val command   = DrawCommand.Circle(0, 0, 5, redColor)
 
