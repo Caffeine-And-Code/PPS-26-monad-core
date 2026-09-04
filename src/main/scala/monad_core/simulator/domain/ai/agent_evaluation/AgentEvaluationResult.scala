@@ -15,7 +15,7 @@ object AgentEvaluationScore:
   /**
    * @param value raw score
    * @return validated score, or [[InvalidAgentEvaluationValue]]
-   * */
+   */
   def from(value: Int): Either[InvalidAgentEvaluationValue, AgentEvaluationScore] =
     Either.cond(value >= 0 && value <= 100, value, InvalidAgentEvaluationValue(value))
 
@@ -26,7 +26,7 @@ object AgentEvaluationScore:
 /**
  * @param correctChooses number of matching choices
  * @param on total number of choices
- * */
+ */
 case class InvalidCorrectChooses(correctChooses: Int, on: Int)
     extends BaseError(
       s"correctChooses [$correctChooses] must be between 0 and on [$on]"
@@ -68,7 +68,7 @@ object AgentEvaluationResult:
    *
    * @param result boolean value
    * @return boolean evaluation result
-   * */
+   */
   def fromBool(result: Boolean): AgentEvaluationResult.Bool =
     AgentEvaluationResult.Bool(result)
 
@@ -77,7 +77,7 @@ object AgentEvaluationResult:
    *
    * @param score raw score
    * @return score result, or an error [[InvalidAgentEvaluationValue]] when the score is not in range [0, 100]
-   * */
+   */
   def fromScore(score: Int): Either[InvalidAgentEvaluationValue, AgentEvaluationResult.Score] =
     for {
       value <- AgentEvaluationScore.from(score)

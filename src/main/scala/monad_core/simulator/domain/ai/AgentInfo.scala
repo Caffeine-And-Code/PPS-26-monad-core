@@ -33,4 +33,5 @@ object AgentInfo:
     (provider.trim, modelName.trim) match
       case ("", _) => Left(InvalidProviderName())
       case (_, "") => Left(InvalidModelName())
-      case (providerTrimmed, modelNameTrimmed) => Right(AgentInfo(providerTrimmed, modelNameTrimmed))
+      case (providerTrimmed, modelNameTrimmed) =>
+        Right(AgentInfo(providerTrimmed, modelNameTrimmed))

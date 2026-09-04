@@ -22,7 +22,8 @@ enum RouteType:
   /**
    * Match a specific route
    *
-   * @param string command-line token that activates the route */
+   * @param string command-line token that activates the route
+   */
   case Route(string: String)
 
 /**

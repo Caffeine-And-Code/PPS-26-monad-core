@@ -13,7 +13,7 @@ object ChatPanelActions:
    * @param state current state
    * @param newPrompt edited text
    * @return updated state
-   * */
+   */
   def onPromptChange(state: ChatPanelState, newPrompt: String): ChatPanelState =
     state.setPrompt(newPrompt)
 
@@ -57,7 +57,7 @@ object ChatPanelActions:
    * @param state current state
    * @param result history cleanup result
    * @return cleared ready state or an error state
-   * */
+   */
   def onHistoryCleaned(
       state: ChatPanelState,
       result: Either[BaseError, Unit]

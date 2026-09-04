@@ -634,7 +634,7 @@ case class Langchain4jTools()(using
    * Return a single team
    *
    * @param id team identifier @return formatted team, or an error response
-   * */
+   */
   @Tool(Array("Gets a team by its identifier."))
   def getTeam(
       @P("Team identifier") id: String
@@ -705,7 +705,8 @@ case class Langchain4jTools()(using
   /**
    * Starts the game engine
    *
-   * @return confirmation that the engine was started */
+   * @return confirmation that the engine was started
+   */
   @Tool(Array("Starts the game engine."))
   def start(): String =
     gameEngineRuntime.start()

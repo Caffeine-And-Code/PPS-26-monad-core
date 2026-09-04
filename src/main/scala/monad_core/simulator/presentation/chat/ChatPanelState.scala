@@ -101,7 +101,7 @@ extension (model: ChatPanelState)
    *
    * @param error error description
    * @return error state preserving available input
-   * */
+   */
   def toError(error: String): ChatPanelState =
     model match
       case ChatPanelState.Ready(messages, prompt) => ChatPanelState.Error(messages, prompt, error)
