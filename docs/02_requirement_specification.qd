@@ -11,13 +11,13 @@ Il sistema è composto da due prodotti coordinati ma separabili: il **game engin
 
 ## Requisiti di business
 
-- **BR-01 — Motore riutilizzabile.** Il progetto deve fornire una libreria Scala con cui modellare ed evolvere scene fisiche bidimensionali senza dipendere dal simulatore, da ScalaFX, da LangChain4j o da Ollama.
-- **BR-02 — Simulatore interattivo.** Il progetto deve fornire un'applicazione desktop con cui creare una scena, configurare le regole fisiche, eseguirne la simulazione e osservarne l'evoluzione.
-- **BR-03 — Interazione in linguaggio naturale.** L'applicazione deve affiancare ai controlli grafici un assistente LLM capace di consultare e modificare il mondo attraverso un insieme dichiarato di operazioni applicative.
-- **BR-04 — Valutazione ripetibile dell'agente.** Il progetto deve fornire una modalità headless che esegua un dataset di conversazioni, osservi i tool invocati e produca misure aggregate sul comportamento dell'agente.
-- **BR-05 — Qualità verificabile.** Correttezza funzionale, separazione architetturale, rendering grafico e integrazione tra componenti devono essere protetti da test automatizzati eseguibili da un checkout pulito.
-- **BR-06 — Osservazione delle prestazioni.** Il progetto deve permettere di misurare il costo di un tick reale dell'engine a diversi livelli di carico, descrivendone la distribuzione delle latenze e il rapporto con un budget temporale configurabile.
-- **BR-07 — Consegna autonoma.** La GUI, la relazione e la documentazione delle API devono essere producibili dalla build e distribuibili mediante gli artefatti di release, senza richiedere file applicativi esterni al JAR. Le sole funzioni AI richiedono un endpoint Ollama raggiungibile e un modello già disponibile sul server.
+- **BR-01 - Motore riutilizzabile.** Il progetto deve fornire una libreria Scala con cui modellare ed evolvere scene fisiche bidimensionali senza dipendere dal simulatore, da ScalaFX, da LangChain4j o da Ollama.
+- **BR-02 - Simulatore interattivo.** Il progetto deve fornire un'applicazione desktop con cui creare una scena, configurare le regole fisiche, eseguirne la simulazione e osservarne l'evoluzione.
+- **BR-03 - Interazione in linguaggio naturale.** L'applicazione deve affiancare ai controlli grafici un assistente LLM capace di consultare e modificare il mondo attraverso un insieme dichiarato di operazioni applicative.
+- **BR-04 - Valutazione ripetibile dell'agente.** Il progetto deve fornire una modalità headless che esegua un dataset di conversazioni, osservi i tool invocati e produca misure aggregate sul comportamento dell'agente.
+- **BR-05 - Qualità verificabile.** Correttezza funzionale, separazione architetturale, rendering grafico e integrazione tra componenti devono essere protetti da test automatizzati eseguibili da un checkout pulito.
+- **BR-06 - Osservazione delle prestazioni.** Il progetto deve permettere di misurare il costo di un tick reale dell'engine a diversi livelli di carico, descrivendone la distribuzione delle latenze e il rapporto con un budget temporale configurabile.
+- **BR-07 - Consegna autonoma.** La GUI, la relazione e la documentazione delle API devono essere producibili dalla build e distribuibili mediante gli artefatti di release, senza richiedere file applicativi esterni al JAR. Le sole funzioni AI richiedono un endpoint Ollama raggiungibile e un modello già disponibile sul server.
 
 ## Modello di dominio
 
@@ -96,48 +96,48 @@ Il workload usa una scena deterministica costruita per esercitare le regole fisi
 
 #### Sviluppatore integratore del game engine
 
-- **RU-ENG-01 — Costruzione del modello.** Lo sviluppatore deve poter creare cerchi e rettangoli sia come entità sia come superfici, creare team e comporre una scena mediante operazioni immutabili di aggiunta, ricerca e rimozione.
-- **RU-ENG-02 — Proprietà delle entità.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente velocità lineare, velocità angolare, peso, salute, danno e team.
-- **RU-ENG-03 — Proprietà delle superfici.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente attrito, forza e danno applicati.
-- **RU-ENG-04 — Configurazione della fisica.** Deve poter utilizzare tutte le regole predefinite, fornire una sequenza di regole diversa e sostituire il rilevatore di collisioni tramite il relativo contratto.
-- **RU-ENG-05 — Sessione.** Deve poter creare una sessione con tempi predefiniti o personalizzati, avviarla, arrestarla e interrogarne modalità e stato di esecuzione.
-- **RU-ENG-06 — Avanzamento.** Deve poter avanzare uno stato passando sessione, tempo corrente e configurazione fisica, ricevendo un risultato esplicito di errore oppure stato aggiornato, stato precedente, prossima sessione, eventi e coefficiente di interpolazione.
-- **RU-ENG-07 — Regole attive.** Deve poter ottenere l'elenco delle regole fisiche configurate e abilitarle o disabilitarle per identificatore senza mutare il manager ricevuto.
-- **RU-ENG-08 — Rendering indipendente dal backend.** Deve poter trasformare uno stato in una sequenza ordinata di comandi di disegno per cerchi e rettangoli, fornendo una politica sostituibile per forme e colori.
-- **RU-ENG-09 — Osservazione.** Deve poter consumare gli eventi prodotti dagli aggiornamenti fisici senza dipendere dal simulatore.
+- **RU-ENG-01 - Costruzione del modello.** Lo sviluppatore deve poter creare cerchi e rettangoli sia come entità sia come superfici, creare team e comporre una scena mediante operazioni immutabili di aggiunta, ricerca e rimozione.
+- **RU-ENG-02 - Proprietà delle entità.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente velocità lineare, velocità angolare, peso, salute, danno e team.
+- **RU-ENG-03 - Proprietà delle superfici.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente attrito, forza e danno applicati.
+- **RU-ENG-04 - Configurazione della fisica.** Deve poter utilizzare tutte le regole predefinite, fornire una sequenza di regole diversa e sostituire il rilevatore di collisioni tramite il relativo contratto.
+- **RU-ENG-05 - Sessione.** Deve poter creare una sessione con tempi predefiniti o personalizzati, avviarla, arrestarla e interrogarne modalità e stato di esecuzione.
+- **RU-ENG-06 - Avanzamento.** Deve poter avanzare uno stato passando sessione, tempo corrente e configurazione fisica, ricevendo un risultato esplicito di errore oppure stato aggiornato, stato precedente, prossima sessione, eventi e coefficiente di interpolazione.
+- **RU-ENG-07 - Regole attive.** Deve poter ottenere l'elenco delle regole fisiche configurate e abilitarle o disabilitarle per identificatore senza mutare il manager ricevuto.
+- **RU-ENG-08 - Rendering indipendente dal backend.** Deve poter trasformare uno stato in una sequenza ordinata di comandi di disegno per cerchi e rettangoli, fornendo una politica sostituibile per forme e colori.
+- **RU-ENG-09 - Osservazione.** Deve poter consumare gli eventi prodotti dagli aggiornamenti fisici senza dipendere dal simulatore.
 
 #### Utente della GUI
 
-- **RU-GUI-01 — Visualizzazione.** L'utente deve vedere entità e superfici su un canvas ridimensionabile; i cambiamenti delle dimensioni del canvas devono aggiornare i confini del mondo.
-- **RU-GUI-02 — Creazione.** In modalità di modifica deve poter creare entità e superfici tramite form che espongono posizione, forma, dimensioni e proprietà opzionali; il sistema assegna loro un identificatore alfanumerico. Deve inoltre poter creare un team specificandone nome e nemici.
-- **RU-GUI-03 — Modifica e rimozione.** In modalità di modifica deve poter selezionare con il tasto destro entità e superfici per modificarle o rimuoverle e deve poter scegliere un team da modificare o rimuovere.
-- **RU-GUI-04 — Controllo della simulazione.** Deve poter avviare, mettere in pausa e arrestare con ripristino la simulazione. Il ripristino deve riportare la scena all'ultimo snapshot creato dopo una modifica riuscita e deve rientrare in modalità di modifica.
-- **RU-GUI-05 — Configurazione fisica.** Deve poter consultare le sei regole configurate e abilitarle o disabilitarle singolarmente dal menu dedicato.
-- **RU-GUI-06 — Vincolo di modifica.** Durante la simulazione i controlli di modifica devono essere disabilitati; un comando di modifica che raggiunga comunque il dominio deve essere rifiutato senza cambiamenti parziali.
-- **RU-GUI-07 — Errori.** Gli errori di parsing, validazione, modifica e runtime devono essere resi visibili mediante una notifica o un messaggio nel pannello interessato.
-- **RU-GUI-08 — Chat.** Deve poter inviare un messaggio non vuoto, vedere il messaggio inviato, distinguere lo stato di attesa e leggere la risposta o l'errore dell'assistente senza bloccare l'interfaccia.
-- **RU-GUI-09 — Memoria della chat.** Deve poter proseguire una conversazione multi-turno e cancellarne la cronologia quando non è in corso una risposta.
-- **RU-GUI-10 — Operazioni AI.** In linguaggio naturale deve poter richiedere la lettura, creazione, sostituzione e rimozione di entità, superfici e team e l'avvio o l'arresto dell'engine. Reset e configurazione delle regole fisiche restano operazioni esclusivamente grafiche.
+- **RU-GUI-01 - Visualizzazione.** L'utente deve osservare entità e superfici su una vista ridimensionabile. I cambiamenti delle dimensioni del pannello devono aggiornare i confini del mondo.
+- **RU-GUI-02 - Creazione.** In modalità di modifica deve poter creare entità e superfici tramite form che espongono posizione, forma, dimensioni e proprietà opzionali. Il sistema assegna loro un identificatore alfanumerico. Deve inoltre poter creare un team specificandone nome e nemici.
+- **RU-GUI-03 - Modifica e rimozione.** In modalità di modifica deve poter selezionare con il tasto destro entità e superfici per modificarle o rimuoverle, e deve poter scegliere un team da modificare o rimuovere.
+- **RU-GUI-04 - Controllo della simulazione.** Deve poter avviare, mettere in pausa e arrestare, con ripristino, la simulazione. Il ripristino deve riportare la scena all'ultimo snapshot creato dopo una modifica riuscita e deve rientrare in modalità di modifica.
+- **RU-GUI-05 - Configurazione fisica.** Deve poter consultare le sei regole configurate e abilitarle o disabilitarle singolarmente dal menu dedicato.
+- **RU-GUI-06 - Vincolo di modifica.** Durante la simulazione, i controlli di modifica devono essere disabilitati. Un comando di modifica che raggiunga comunque il dominio deve essere rifiutato senza cambiamenti parziali.
+- **RU-GUI-07 - Errori.** Gli errori di parsing, validazione, modifica e runtime devono essere resi visibili mediante una notifica o un messaggio nel pannello preposto.
+- **RU-GUI-08 - Chat.** Deve poter inviare un messaggio non vuoto, vedere il messaggio inviato, distinguere lo stato di attesa e leggere la risposta o l'errore dell'assistente senza bloccare l'interfaccia.
+- **RU-GUI-09 - Memoria della chat.** Deve poter proseguire una conversazione multi-turno e cancellarne la cronologia quando non è in corso una risposta.
+- **RU-GUI-10 - Operazioni AI.** In linguaggio naturale, deve poter richiedere lettura, creazione, sostituzione e rimozione di entità, superfici e team, e avvio o arresto dell'engine. Reset e configurazione delle regole fisiche restano operazioni esclusivamente grafiche.
 
 #### Operatore della valutazione headless
 
-- **RU-EVAL-01 — Avvio.** L'operatore deve poter selezionare la modalità `evaluate-model` da linea di comando.
-- **RU-EVAL-02 — Configurazione.** Deve poter indicare URL e nome del modello sottoposto a test e del modello giudice; in assenza di argomenti vengono usati i valori predefiniti.
-- **RU-EVAL-03 — Isolamento.** Ogni caso deve essere eseguito su una nuova copia della scena iniziale con controllo headless dell'engine, senza avviare ScalaFX.
-- **RU-EVAL-04 — Risultato.** Al termine deve ricevere su console le quattro percentuali aggregate e il numero di valutazioni fallite.
+- **RU-EVAL-01 - Avvio.** L'operatore deve poter selezionare la modalità `evaluate-model` da linea di comando.
+- **RU-EVAL-02 - Configurazione.** Deve poter indicare URL e nome del modello sottoposto a test e del modello giudice. In assenza di argomenti, vengono usati i valori predefiniti.
+- **RU-EVAL-03 - Isolamento.** Ogni caso deve essere eseguito su una nuova copia della scena iniziale con controllo headless dell'engine, senza avviare ScalaFX.
+- **RU-EVAL-04 - Risultato.** Al termine deve ricevere su console le quattro percentuali aggregate e il numero di valutazioni fallite.
 
 #### Operatore del performance testing
 
-- **RU-PERF-01 — Scelta dell'esperimento.** L'operatore deve poter selezionare Load, Stress, Spike o Scalability attraverso le route `performance-load-test`, `performance-stress-test`, `performance-spike-test` e `performance-scalability-test`.
-- **RU-PERF-02 — Configurazione comune.** Deve poter indicare entità iniziali, iterazioni, warm-up e frame budget. In assenza di opzioni devono essere usati rispettivamente 100 entità, 20 iterazioni, 5 warm-up e 16 millisecondi.
-- **RU-PERF-03 — Configurazione del carico.** Per Spike, Stress e Scalability deve poter indicare il massimo numero di entità; per Stress e Scalability deve inoltre poter indicare il fattore di crescita. I valori predefiniti sono 1600 entità massime e fattore 2.
-- **RU-PERF-04 — Risultato testuale.** Al termine deve ricevere un report contenente tipo di esperimento, numero di entità, p50, p95, p99, completion rate ed eventuale breakpoint.
-- **RU-PERF-05 — Accesso grafico opzionale.** Avviando la GUI con `--performance`, l'operatore deve poter aprire un form, scegliere uno dei quattro esperimenti, compilare i campi comuni e quelli specifici e leggere il medesimo report in una finestra dedicata. Senza tale opzione il controllo non deve essere mostrato; durante la simulazione deve invece rimanere disabilitato.
-- **RU-PERF-06 — Regole fisiche correnti.** Un esperimento avviato dalla GUI deve riprodurre lo stato di abilitazione delle regole fisiche predefinite esposto in quel momento dal runtime.
+- **RU-PERF-01 - Scelta dell'esperimento.** L'operatore deve poter selezionare Load, Stress, Spike o Scalability attraverso le route `performance-load-test`, `performance-stress-test`, `performance-spike-test` e `performance-scalability-test`.
+- **RU-PERF-02 - Configurazione comune.** Deve poter indicare entità iniziali, iterazioni, warm-up e frame budget. In assenza di opzioni, devono essere usati rispettivamente 100 entità, 20 iterazioni, 5 warm-up e 16 millisecondi.
+- **RU-PERF-03 - Configurazione del carico.** Per Spike, Stress e Scalability deve poter indicare il massimo numero di entità. Per Stress e Scalability, deve inoltre poter indicare il fattore di crescita. I valori predefiniti sono 1600 entità massime e moltiplicatore 2.
+- **RU-PERF-04 - Risultato testuale.** Al termine deve ricevere un report contenente tipo di esperimento, numero di entità, metriche di latenza, completion rate ed eventuale breakpoint.
+- **RU-PERF-05 - Accesso grafico opzionale.** Avviando la GUI con `--performance`, l'operatore deve poter aprire un form, scegliere uno dei quattro esperimenti, compilare i campi comuni e quelli specifici e leggere il medesimo report in una finestra dedicata. Senza tale opzione il controllo non deve essere mostrato. Durante la simulazione deve invece rimanere disabilitato.
+- **RU-PERF-06 - Regole fisiche correnti.** Un esperimento avviato dalla GUI deve riprodurre lo stato di abilitazione delle regole fisiche predefinite esposto in quel momento dal runtime.
 
-Dopo aver prodotto il fat JAR con `sbt assembly`, le quattro modalità sono eseguibili da PowerShell mediante:
+Dopo aver prodotto il fat JAR con `sbt assembly`, le quattro modalità sono eseguibili da linea di comando mediante:
 
-```powershell
+```bash
 $jar = "C:\percorso\MonadCore2D-assembly-<versione>.jar"
 
 java -jar $jar performance-load-test `
@@ -156,50 +156,52 @@ java -jar $jar performance-scalability-test `
   --iterations 20 --warmups 5 --frame-budget-ms 16
 ```
 
-Dalla radice del repository la stessa route può essere eseguita durante lo sviluppo con `sbt "run performance-load-test --entities 100 --iterations 20 --warmups 5"`. La GUI estesa viene invece avviata con `java -jar $jar --performance`.
+Dalla radice del repository la stessa route può essere eseguita durante lo sviluppo con `sbt "run performance-load-test --entities 100 --iterations 20 --warmups 5"`. 
+
+La GUI estesa viene invece avviata con `java -jar $jar --performance`.
 
 ### Requisiti di sistema
 
-- **RS-01 — Atomicità delle modifiche.** Il sistema deve sostituire la scena corrente soltanto quando l'intera operazione di creazione, modifica, rimozione o ridimensionamento ha successo; al primo errore deve conservare la scena precedente.
-- **RS-02 — Errori tipizzati.** Le condizioni attese di dominio, fisica e applicazione devono essere rappresentate come valori di errore espliciti; le eccezioni delle librerie esterne devono essere intercettate e adattate al confine infrastrutturale quando possibile.
-- **RS-03 — Passo fisso.** Una sessione in esecuzione deve applicare tanti aggiornamenti completi quanti ne ammette l'accumulatore e deve conservarne il resto; una sessione arrestata deve lasciare invariato lo stato.
-- **RS-04 — Interpolazione.** Prima del rendering il sistema deve interpolare posizione e rotazione delle entità tra gli ultimi due stati con un coefficiente compreso tra 0 e 1, senza modificare lo stato fisico definitivo.
-- **RS-05 — Piano di disegno.** Il renderer dell'engine deve produrre prima i comandi delle superfici e poi quelli delle entità; il colore di una entità deve dipendere dal team quando presente, altrimenti dal colore base.
-- **RS-06 — Snapshot.** Dopo ogni modifica GUI riuscita il simulatore deve aggiornare lo snapshot di ripristino; un errore non deve sostituirlo.
-- **RS-07 — Propagazione degli eventi.** Il runtime deve inoltrare gli eventi prodotti dai fixed update e dalle modifiche di entità al formatter di log; un tick fallito deve notificare l'errore e arrestare la sessione.
-- **RS-08 — Affidabilità dell'agente.** Per domande sullo stato corrente l'agente deve usare i tool di lettura, non deve inventare il risultato di una operazione, deve chiedere i parametri obbligatori mancanti e deve riportare gli errori restituiti dai tool.
-- **RS-09 — Perimetro e lingua dell'agente.** L'agente deve rispondere in testo semplice, in modo conciso e nella lingua dell'utente; per richieste estranee a MonadCore2D deve rifiutare senza invocare tool.
-- **RS-10 — Mutua esclusione delle modifiche.** GUI e tool AI devono operare sul medesimo mondo applicativo e sul medesimo stato di esecuzione, così che il divieto di modifica durante la simulazione sia applicato indipendentemente dal canale di ingresso.
-- **RS-11 — Valutazione.** Il valutatore deve confrontare posizione e parametri delle chiamate tool, delegare al modello giudice le proprietà linguistiche e semantiche e registrare separatamente i casi che non producono un giudizio valido.
-- **RS-12 — Selezione della modalità.** Il punto di avvio deve selezionare la valutazione quando trova la route `evaluate-model`, eseguire il corrispondente esperimento quando trova una route performance e costruire la GUI negli altri casi. Un errore di routing o avvio deve produrre un codice di uscita non nullo.
-- **RS-13 — Generazione dei carichi.** Stress e Scalability devono partire dal numero iniziale, moltiplicarlo per il fattore configurato e includere sempre il massimo anche quando non è una potenza esatta del fattore. Spike deve produrre nell'ordine i carichi iniziale, massimo e iniziale.
-- **RS-14 — Raccolta dei campioni.** Per ogni carico il sistema deve preparare scena e sessione prima della misura, eseguire i warm-up senza leggerne la durata e misurare successivamente il numero configurato di iterazioni mediante un clock monotono.
-- **RS-15 — Workload dell'engine.** Ogni iterazione deve eseguire un tick reale dell'engine su una scena deterministica dotata delle proprietà necessarie alle regole fisiche, senza includere rendering JavaFX e interpolazione nella misura.
-- **RS-16 — Metriche.** P50, p95 e p99 devono essere calcolati con il metodo nearest-rank; il completion rate deve considerare completata entro il budget anche una durata esattamente uguale al limite. Stress deve interrompersi soltanto quando il p95 supera il budget.
-- **RS-17 — Presentazione delle performance.** CLI e GUI devono usare la medesima validazione, esecuzione e formattazione del report. L'esecuzione richiesta dalla GUI deve avvenire fuori dal JavaFX Application Thread e il risultato deve esservi pubblicato al completamento.
+- **RS-01 - Atomicità delle modifiche.** Il sistema deve sostituire la scena corrente soltanto quando l'intera operazione di creazione, modifica, rimozione o ridimensionamento ha successo. Al primo errore deve conservare la scena precedente.
+- **RS-02 - Errori tipizzati.** Le condizioni attese di dominio, fisica e applicazione devono essere rappresentate come valori di errore espliciti. Le eccezioni delle librerie esterne devono essere intercettate e adattate al confine infrastrutturale quando possibile.
+- **RS-03 - Passo fisso.** Una sessione in esecuzione deve applicare tanti aggiornamenti completi quanti ne ammette l'accumulatore e deve conservarne il resto. Una sessione arrestata deve lasciare invariato lo stato.
+- **RS-04 - Interpolazione.** Prima del rendering il sistema deve interpolare posizione e rotazione delle entità tra gli ultimi due stati con un coefficiente compreso tra 0 e 1, senza modificare lo stato fisico definitivo.
+- **RS-05 - Piano di disegno.** Il renderer dell'engine deve produrre prima i comandi delle superfici e poi quelli delle entità. Il colore di una entità deve dipendere dal team quando presente, altrimenti dal colore base.
+- **RS-06 - Snapshot.** Dopo ogni modifica GUI riuscita il simulatore deve aggiornare lo snapshot di ripristino. Un errore non deve sostituirlo.
+- **RS-07 - Propagazione degli eventi.** Il runtime deve inoltrare gli eventi prodotti dai fixed update e dalle modifiche di entità al formatter di log. Un tick fallito deve notificare l'errore e arrestare la sessione.
+- **RS-08 - Affidabilità dell'agente.** Per domande sullo stato corrente l'agente deve usare i tool di lettura, non deve inventare il risultato di una operazione, deve chiedere i parametri obbligatori mancanti e deve riportare gli errori restituiti dai tool.
+- **RS-09 - Perimetro e lingua dell'agente.** L'agente deve rispondere in testo semplice, in modo conciso e nella lingua dell'utente. Per richieste estranee a MonadCore2D deve rifiutare senza invocare tool.
+- **RS-10 - Mutua esclusione delle modifiche.** GUI e tool AI devono operare sul medesimo mondo applicativo e sul medesimo stato di esecuzione, così che il divieto di modifica durante la simulazione sia applicato indipendentemente dal canale di ingresso.
+- **RS-11 - Valutazione.** Il valutatore deve confrontare posizione e parametri delle chiamate tool, delegare al modello giudice le proprietà linguistiche e semantiche, e registrare separatamente i casi che non producono un giudizio valido.
+- **RS-12 - Selezione della modalità.** Il punto di avvio deve selezionare la valutazione quando trova la route `evaluate-model`, eseguire il corrispondente esperimento quando trova una route performance e costruire la GUI negli altri casi. Un errore di routing o avvio deve produrre un codice di uscita non nullo.
+- **RS-13 - Generazione dei carichi.** Stress e Scalability devono partire dal numero iniziale, moltiplicarlo per il fattore configurato e includere sempre il massimo anche quando non è una potenza esatta del fattore. Spike deve produrre nell'ordine i carichi iniziale, massimo e nuovamente iniziale.
+- **RS-14 - Raccolta dei campioni.** Per ogni carico il sistema deve preparare scena e sessione prima della misura, eseguire i warm-up senza leggerne la durata e misurare successivamente il numero configurato di iterazioni mediante un clock.
+- **RS-15 - Workload dell'engine.** Ogni iterazione deve eseguire un tick reale dell'engine su una scena deterministica dotata delle proprietà necessarie alle regole fisiche, senza includere rendering JavaFX e interpolazione nella misura.
+- **RS-16 - Metriche.** Le metriche di latenza devono essere calcolate con il metodo nearest-rank. Il completion rate deve considerare completata entro il budget anche una durata esattamente uguale al limite. Stress deve interrompersi soltanto quando la metrica *p95* supera il budget.
+- **RS-17 - Presentazione delle performance.** CLI e GUI devono usare la medesima validazione, esecuzione e formattazione del report. L'esecuzione richiesta dalla GUI deve avvenire fuori dal JavaFX Application Thread e il risultato deve esservi pubblicato al completamento.
 
 ## Requisiti non funzionali
 
-- **RNF-01 — Portabilità verificata.** Il progetto deve essere compilabile con Java 21 e SBT sulle piattaforme Linux, Windows e macOS previste dalla matrice di release. Poiché JavaFX contiene componenti native, la release deve produrre un fat JAR specifico per ciascuna piattaforma; il JAR Linux è obbligatorio.
-- **RNF-02 — Indipendenza dell'engine.** Nessun sorgente sotto `monad_core.engine` deve importare `monad_core.simulator`, ScalaFX, JavaFX, LangChain4j o Ollama. Il vincolo deve essere controllato automaticamente.
-- **RNF-03 — Reattività della GUI.** L'invocazione del modello deve avvenire fuori dal JavaFX Application Thread; durante l'attesa il pannello deve impedire invii concorrenti, mostrare lo stato di caricamento e tornare in uno stato utilizzabile dopo risposta o errore.
-- **RNF-04 — Determinismo della suite standard.** `sbt test` non deve richiedere Ollama o accesso a servizi remoti. I test che usano realmente un LLM devono appartenere alla configurazione SBT separata `llmIntegrationTest`.
-- **RNF-05 — Riproducibilità grafica.** I test GUI devono poter essere eseguiti in CI Linux mediante display virtuale e font controllati; gli snapshot devono usare soglie esplicite per tollerare soltanto differenze di rasterizzazione limitate.
-- **RNF-06 — Copertura.** La suite standard deve mantenere una copertura delle righe dei sorgenti di produzione superiore al 90%, misurata sullo stesso insieme di sorgenti e test documentato nel capitolo di testing.
-- **RNF-07 — Manutenibilità architetturale.** Le direzioni di dipendenza tra engine e simulator e tra Domain, Application, Infrastructure e Presentation devono essere espresse da test architetturali che falliscano in presenza di import vietati.
-- **RNF-08 — Distribuibilità.** La pipeline di release deve generare fat JAR eseguibili, relazione PDF e tag di versione; la pipeline Pages deve pubblicare relazione HTML e Scaladoc.
-- **RNF-09 — Disponibilità degradata.** L'assenza o l'irraggiungibilità di Ollama può rendere indisponibili chat e valutazione, ma non deve introdurre una dipendenza di runtime nel game engine né impedire l'uso programmatico della libreria.
-- **RNF-10 — Separazione delle performance.** Configurazione, strategie e metriche non devono dipendere da ScalaFX o dai componenti grafici del simulatore. Clock reale, scena deterministica, integrazione con l'engine, CLI e GUI devono essere confinati ai rispettivi adapter.
+- **RNF-01 - Portabilità verificata.** Il progetto deve essere compilabile con Java 21 e SBT sulle piattaforme Linux, Windows e macOS previste dalla matrice di release. Poiché JavaFX contiene componenti native, la release deve produrre un fat JAR specifico per ciascuna piattaforma.
+- **RNF-02 - Indipendenza dell'engine.** Nessun sorgente sotto `monad_core.engine` deve importare `monad_core.simulator`, ScalaFX, JavaFX, LangChain4j o Ollama. Il vincolo deve essere controllato automaticamente.
+- **RNF-03 - Reattività della GUI.** L'invocazione del modello deve avvenire fuori dal JavaFX Application Thread; durante l'attesa il pannello deve impedire invii concorrenti, mostrare lo stato di caricamento e tornare in uno stato utilizzabile dopo risposta o errore.
+- **RNF-04 - Determinismo della suite standard.** `sbt test` non deve richiedere Ollama o accesso a servizi remoti. I test che usano realmente un LLM devono appartenere alla configurazione SBT separata `llmIntegrationTest`.
+- **RNF-05 - Riproducibilità grafica.** I test GUI devono poter essere eseguiti in CI Linux mediante display virtuale e font controllati. Gli snapshot devono usare soglie esplicite per tollerare soltanto differenze di rasterizzazione limitate.
+- **RNF-06 - Copertura.** La suite standard deve mantenere una copertura delle righe dei sorgenti di produzione superiore al 90%, misurata sullo stesso insieme di sorgenti e test documentato nel capitolo di testing.
+- **RNF-07 - Manutenibilità architetturale.** Le direzioni di dipendenza tra engine e simulator e tra Domain, Application, Infrastructure e Presentation devono essere espresse da test architetturali che falliscano in presenza di import vietati.
+- **RNF-08 - Separazione delle performance.** Configurazione, strategie e metriche non devono dipendere da ScalaFX o dai componenti grafici del simulatore. Clock reale, scena deterministica, integrazione con l'engine, CLI e GUI devono essere confinati ai rispettivi adapter.
+- **RNF-09 - Distribuibilità.** La pipeline di release deve generare fat JAR eseguibili, relazione PDF e tag di versione. La pipeline Pages deve pubblicare relazione HTML e Scaladoc.
+- **RNF-10 - Disponibilità degradata.** L'assenza o l'irraggiungibilità di Ollama può rendere indisponibili chat e valutazione, ma non deve introdurre una dipendenza di runtime nel game engine né impedire l'uso programmatico della libreria.
 
-Non viene assunto un requisito quantitativo portabile sulle prestazioni della fisica. Il frame budget guida gli esperimenti e la ricerca del breakpoint, ma tempi di tick e risultati dipendono dal numero e dalla disposizione degli elementi, dall'hardware e dal carico della macchina; non vengono quindi presentati come proprietà garantite su ogni ambiente.
+Non viene assunto un requisito quantitativo portabile sulle prestazioni della fisica. Il frame budget guida gli esperimenti e la ricerca del breakpoint, ma tempi di tick e risultati dipendono dal numero e dalla disposizione degli elementi, dall'hardware e dal carico della macchina. Non vengono quindi presentati come proprietà garantite su ogni ambiente.
 
 ## Requisiti di implementazione
 
-- **RI-01 — Linguaggio e paradigma.** Il codice di produzione deve essere scritto in Scala 3 e usare in modo significativo immutabilità, funzioni pure, ADT, opaque type, pattern matching, higher-order function, contextual abstraction ed errori rappresentati con `Either`.
-- **RI-02 — Toolchain.** La build deve usare SBT, Java 21, Scalafmt e sbt-assembly; il progetto deve essere importabile ed eseguibile direttamente dopo il clone.
-- **RI-03 — Tecnologie ai confini.** ScalaFX/JavaFX devono essere limitati alla Presentation; LangChain4j e il client Ollama agli adapter Infrastructure. L'engine non deve conoscere tali tecnologie.
-- **RI-04 — Test automatizzati.** Devono essere presenti test unitari e di integrazione per engine e simulator, test GUI e snapshot, test architetturali e mutation testing dell'engine mediante Stryker4s.
-- **RI-05 — Integrazione LLM.** I test con modello reale devono essere isolati nella configurazione `llmIntegrationTest`; il valutatore headless deve poter usare configurazioni distinte per agente e giudice.
-- **RI-06 — Continuous integration.** Ogni pull request verso `main` o `development` deve eseguire test e controllo Scalafmt; i test grafici devono essere eseguiti con Xvfb in CI.
-- **RI-07 — Documentazione.** Le API pubbliche devono essere corredate da Scaladoc e la relazione Quarkdown deve essere compilata automaticamente in HTML e PDF.
-- **RI-08 — Versionamento e release.** Ogni merge su `main` destinato a una release deve incrementare `release_version`; la pipeline deve rifiutare versioni uguali o inferiori all'ultima pubblicata.
+- **RI-01 - Linguaggio e paradigma.** Il codice di produzione deve essere scritto in Scala3 e usare in modo significativo immutabilità, funzioni pure, ADT, opaque type, pattern matching, higher-order function, contextual abstraction ed errori rappresentati con `Either`.
+- **RI-02 - Toolchain.** La build deve usare SBT, Java 21, Scalafmt e sbt-assembly. Il progetto deve essere importabile ed eseguibile direttamente dopo il clone.
+- **RI-03 - Tecnologie ai confini.** ScalaFX/JavaFX devono essere limitati alla Presentation. LangChain4j e il client Ollama agli adapter Infrastructure. L'engine non deve conoscere tali tecnologie.
+- **RI-04 - Test automatizzati.** Devono essere presenti test unitari e di integrazione per engine e simulator, test GUI e snapshot, test architetturali e mutation testing dell'engine mediante Stryker4s.
+- **RI-05 - Integrazione LLM.** I test con modello reale devono essere isolati nella configurazione `llmIntegrationTest`. Il valutatore headless deve poter usare configurazioni distinte per agente e giudice.
+- **RI-06 - Continuous integration.** Ogni pull request verso `main` o `development` deve eseguire test e controllo Scalafmt. I test grafici devono essere eseguiti con Xvfb in CI.
+- **RI-07 - Documentazione.** Le API pubbliche devono essere corredate da Scaladoc e la relazione Quarkdown deve essere compilata automaticamente in HTML e PDF.
+- **RI-08 - Versionamento e release.** Ogni merge su `main` destinato a una release deve incrementare `release_version`. La pipeline deve rifiutare versioni uguali o inferiori all'ultima pubblicata.
