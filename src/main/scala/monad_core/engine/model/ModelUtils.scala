@@ -17,5 +17,5 @@ object ModelUtils:
       toEither: A => Either[EngineError, B]
   ): Either[EngineError, Option[B]] =
     optionalValue match
-      case Some(value) => toEither(value).map(damageValue => Some(damageValue))
+      case Some(value) => toEither(value).map(Some(_))
       case None        => Right(None)
