@@ -52,18 +52,18 @@ class EnemyAttractionRuleTest
 
   test("the rule should return NegativeDeltaTime when delta time is negative"):
 
-    val scene = stateWithEntities(List.empty)
+    val state = stateWithEntities(List.empty)
 
-    val result = Rule.apply(scene, NegativeDt)(using summon[CollisionDetector])
+    val result = Rule.apply(PhysicsContext(state, NegativeDt))
 
     result shouldBe Left(NegativeDeltaTime(NegativeDt))
 
-  test("the rule should return the unchanged scene when there are no entities"):
-    val scene = stateWithTeams(List(), List())
+  test("the rule should return the unchanged state when there are no entities"):
+    val state = stateWithTeams(List(), List())
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
-    result shouldBe scene
+    result shouldBe state
 
   test("the rule should not update an entity when it has no enemy"):
 
@@ -77,9 +77,9 @@ class EnemyAttractionRuleTest
       enemies = Set("teamB")
     )
 
-    val scene = stateWithTeams(List(entity), List(entityTeam))
+    val state = stateWithTeams(List(entity), List(entityTeam))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
@@ -105,9 +105,9 @@ class EnemyAttractionRuleTest
     val fixedEntityTeam = makeTeam(fixedEntity.teamId.value.value, Set(enemy.teamId.value.value))
     val enemyTeam       = makeTeam(enemy.teamId.value.value)
 
-    val scene = stateWithTeams(List(fixedEntity, enemy), List(fixedEntityTeam, enemyTeam))
+    val state = stateWithTeams(List(fixedEntity, enemy), List(fixedEntityTeam, enemyTeam))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
 
     val resultEntity = result.allEntities.find(_.id == fixedEntity.id).value
 
@@ -139,9 +139,9 @@ class EnemyAttractionRuleTest
 
     val expectedSpeed = calculateRayCastSpeed(entity, enemy, List(entity, enemy))
 
-    val scene = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
+    val state = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result       = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
     val resultEntity = result.allEntities.find(_.id == entity.id).value
 
     resultEntity.speed.value.x shouldBe expectedSpeed.x +- Epsilon
@@ -182,9 +182,9 @@ class EnemyAttractionRuleTest
     val expectedSpeed1 = calculateRayCastSpeed(entity1, enemy, List(entity1, entity2, enemy))
     val expectedSpeed2 = calculateRayCastSpeed(entity2, enemy, List(entity1, entity2, enemy))
 
-    val scene = stateWithTeams(List(entity1, entity2, enemy), List(entityTeam, enemyTeam))
+    val state = stateWithTeams(List(entity1, entity2, enemy), List(entityTeam, enemyTeam))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value.state
+    val result        = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
     val resultEntity1 = result.allEntities.find(_.id == entity1.id).value
     val resultEntity2 = result.allEntities.find(_.id == entity2.id).value
 
@@ -241,8 +241,8 @@ class EnemyAttractionRuleTest
     )
     val entityTeam = makeTeam(entity.teamId.value.value, Set(enemy.teamId.value.value))
     val enemyTeam  = makeTeam(enemy.teamId.value.value)
-    val scene      = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
+    val state      = stateWithTeams(List(entity, enemy), List(entityTeam, enemyTeam))
 
-    val result = Rule.apply(scene, DeltaTimeOneSecond)(using summon[CollisionDetector]).value
+    val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value
 
     result.state.allEntities.find(_.id == entity.id).value.speed shouldBe entity.speed

@@ -20,8 +20,9 @@ private[pathfinding] object RayIntersection:
   ): Option[(LocatableId, Double)] =
     vertexMap
       .flatMap { case (id, vertices) =>
-        val edges =
-          vertices.zip(vertices.tail :+ vertices.head)
+        val edges = vertices match
+          case first :: remaining => vertices.zip(remaining :+ first)
+          case Nil                => List.empty
 
         val distances =
           edges.flatMap { case (a, b) =>

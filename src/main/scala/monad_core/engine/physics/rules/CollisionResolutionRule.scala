@@ -1,12 +1,15 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.EngineEvent.CollisionDetected
 import monad_core.engine.core.events.CollisionTarget
-import monad_core.engine.core.traits.State
-import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
+import monad_core.engine.physics.core.{
+  EntityCollisionContact,
+  PhysicsContext,
+  PhysicsError,
+  PhysicsRule,
+  PhysicsRuleResult
+}
 import monad_core.engine.physics.utils.{
   CollisionMap,
   CollisionResolver,
@@ -15,70 +18,50 @@ import monad_core.engine.physics.utils.{
 }
 
 private[physics] object CollisionResolutionRule:
-  private val Id              = "collision-resolution"
-  private val CombinationSize = 2
-
-  final private case class DetectedCollision(
-      first: Entity,
-      second: Entity,
-      collision: Collision
-  )
+  private val Id = "collision-resolution"
 
   given collisionResolutionRule: PhysicsRule with
 
     override val RuleId: String = CollisionResolutionRule.Id
 
-    override def apply(scene: State, dt: Long)(using
-        detector: CollisionDetector
-    ): Either[PhysicsError, PhysicsRuleResult] =
+    override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
-        _ <- PhysicsUtil.timeLongToSeconds(dt)
-        entities = scene.allEntities
-
-        detectedCollisions = findCollisions(entities)
-        activeCollisions   = toCollisionMap(detectedCollisions)
+        _ <- PhysicsUtil.timeLongToSeconds(context.dt)
+        activeCollisions = toCollisionMap(context)
 
         updatedEntities <- CollisionResolver(activeCollisions)
 
-        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)
       yield PhysicsRuleResult(
         state = updatedScene,
-        events = detectedCollisions.map(toEvent)
+        events = context.collisions.entityContacts.map(toEvent)
       )
 
-    private def findCollisions(
-        entities: List[Entity]
-    )(using detector: CollisionDetector): Vector[DetectedCollision] =
-      entities
-        .combinations(CollisionResolutionRule.CombinationSize)
-        .collect {
-          case Seq(e1, e2) if !(e1.isFixed && e2.isFixed) =>
-            detector
-              .collision(e1, e2)
-              .map(DetectedCollision(e1, e2, _))
-        }
-        .flatten
-        .toVector
+    private def toCollisionMap(context: PhysicsContext): CollisionMap =
+      val entitiesById = context.state.allEntities.map(entity => entity.id -> entity).toMap
 
-    private def toCollisionMap(collisions: Vector[DetectedCollision]): CollisionMap =
-      collisions
+      context.collisions.entityContacts
         .flatMap { detected =>
-          Vector(
-            detected.second -> (detected.first, detected.collision),
-            detected.first -> (
-              detected.second,
-              detected.collision.copy(normalVector = detected.collision.normalVector.flip)
+          for
+            first  <- entitiesById.get(detected.firstId).toVector
+            second <- entitiesById.get(detected.secondId).toVector
+            entry <- Vector(
+              second -> (first, detected.collision),
+              first -> (
+                second,
+                detected.collision.copy(normalVector = detected.collision.normalVector.flip)
+              )
             )
-          )
+          yield entry
         }
         .groupMap(_._1)(_._2)
         .view
         .mapValues(_.toList)
         .toMap
 
-    private def toEvent(detected: DetectedCollision): CollisionDetected =
+    private def toEvent(detected: EntityCollisionContact): CollisionDetected =
       CollisionDetected(
-        entityId = detected.first.id,
-        target = CollisionTarget.Entity(detected.second.id),
+        entityId = detected.firstId,
+        target = CollisionTarget.Entity(detected.secondId),
         collision = detected.collision
       )

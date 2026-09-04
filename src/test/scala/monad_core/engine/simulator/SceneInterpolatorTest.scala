@@ -10,7 +10,7 @@ import monad_core.engine.helper.DummySurfaceHelper.makeSurfaceCircle
 import monad_core.engine.helper.MockStateHelper
 import monad_core.engine.model.*
 import monad_core.engine.physics.utils.Rotation
-import monad_core.engine.simulator.SceneInterpolator
+import monad_core.engine.simulator.StateInterpolator
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -38,7 +38,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     val previous = stateWithEntities(List.empty)
     val next     = stateWithEntities(List.empty)
 
-    val result = SceneInterpolator(previous, next, -0.1)
+    val result = StateInterpolator(previous, next, -0.1)
 
     result shouldBe Left(InvalidInterpolationAlpha(-0.1))
 
@@ -46,7 +46,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     val previous = stateWithEntities(List.empty)
     val next     = stateWithEntities(List.empty)
 
-    val result = SceneInterpolator(previous, next, 1.1)
+    val result = StateInterpolator(previous, next, 1.1)
 
     result shouldBe Left(InvalidInterpolationAlpha(1.1))
 
@@ -57,7 +57,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
 
     val expected = expectedInterpolation(previousEntity, nextEntity, alpha).position
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),
       stateWithEntities(List(nextEntity)),
       alpha
@@ -69,7 +69,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     val previousSurface = makeSurfaceCircle(position = Vector2D(10.0, 20.0))
     val nextSurface     = makeSurfaceCircle(position = Vector2D(30.0, 60.0))
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithSurfaces(List.empty, List(previousSurface)),
       stateWithSurfaces(List.empty, List(nextSurface)),
       HalfAlpha
@@ -81,9 +81,9 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     val previousEntity = makeFixedEntityCircle()
     val nextEntity = previousEntity
       .moveTo(Vector2D(10.0, 10.0))
-      .withSpeed(Vector2D(4.0, 5.0))
+      .withSpeed(Some(Vector2D(4.0, 5.0)))
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),
       stateWithEntities(List(nextEntity)),
       HalfAlpha
@@ -93,7 +93,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     result.entities(previousEntity.id).shape shouldBe nextEntity.shape
 
   test("SceneInterpolator should interpolate world bounds"):
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithBounds(PreviousBounds),
       stateWithBounds(NextBounds),
       HalfAlpha
@@ -108,7 +108,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
       position = Vector2D(10.0, 10.0)
     )
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),
       stateWithEntities(List(nextEntity)),
       HalfAlpha
@@ -120,7 +120,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     val previousEntity = makeFixedEntityCircle(rotation = 30.0)
     val nextEntity     = previousEntity.moveTo(Vector2D(10.0, 15.0)).rotateTo(90.0).value
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),
       stateWithEntities(List(nextEntity)),
       StaticAlpha
@@ -135,7 +135,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     val previousEntity = makeFixedEntityCircle(rotation = 30.0)
     val nextEntity     = previousEntity.moveTo(Vector2D(10.0, 15.0)).rotateTo(90.0).value
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),
       stateWithEntities(List(nextEntity)),
       ZeroAlpha
@@ -158,7 +158,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
 
     val expected = expectedInterpolation(previousEntity, nextEntity, HalfAlpha).rotation
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),
       stateWithEntities(List(nextEntity)),
       HalfAlpha
@@ -179,7 +179,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
 
     val expected = expectedInterpolation(previousEntity, nextEntity, HalfAlpha)
 
-    val result = SceneInterpolator(
+    val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),
       stateWithEntities(List(nextEntity)),
       HalfAlpha

@@ -1,10 +1,10 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
 import monad_core.engine.model.Entity
 import monad_core.engine.physics.core.{
   PhysicsDomainError,
+  PhysicsContext,
   PhysicsError,
   PhysicsRule,
   PhysicsRuleResult
@@ -18,31 +18,28 @@ private[physics] object KinematicsRule:
 
     override val RuleId: String = KinematicsRule.Id
 
-    override def apply(scene: State, dt: Long)(using
-        detector: CollisionDetector
-    ): Either[PhysicsError, PhysicsRuleResult] =
+    override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
-        _ <- PhysicsUtil.timeLongToSeconds(dt)
-        entities = scene.allEntities.filterNot(_.isFixed)
+        entities = context.state.allEntities.filterNot(_.isFixed)
 
-        updatedEntities <- applyKinematics(scene, entities, dt)
+        updatedEntities <- applyKinematics(context.state, entities, context.dt)
 
-        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)
       yield PhysicsRuleResult(updatedScene)
 
   private def applyKinematics(
-      scene: State,
+      state: State,
       entities: List[Entity],
       dt: Long
   ): Either[PhysicsError, List[Entity]] =
     entities.foldLeft(Right(List.empty[Entity]): Either[PhysicsError, List[Entity]]) {
       case (Left(err), _) => Left(err)
       case (Right(updatedEntities), entity) =>
-        moveEntity(scene, entity, dt).map(updatedEntities :+ _)
+        moveEntity(state, entity, dt).map(updatedEntities :+ _)
     }
 
   private[physics] def moveEntity(
-      scene: State,
+      state: State,
       entity: Entity,
       dt: Long
   ): Either[PhysicsError, Entity] =

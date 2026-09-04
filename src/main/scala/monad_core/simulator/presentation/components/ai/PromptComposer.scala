@@ -4,19 +4,39 @@ import scalafx.geometry.Pos
 import scalafx.scene.control.{Button, TextField}
 import scalafx.scene.layout.{HBox, Priority}
 
+/** Builds the prompt field and submission control for the AI chat. */
 object PromptComposer:
 
+  /**
+   * Component props.
+   *
+   * @param onPromptChanged callback for text edits
+   * @param onSubmit callback for prompt submission
+   */
   final case class Props(
       onPromptChanged: String => Unit,
       onSubmit: () => Unit
   )
 
+  /**
+   * Component state.
+   *
+   * @param prompt text displayed by the field
+   * @param inputDisabled whether prompt editing is disabled
+   * @param submitDisabled whether submission is disabled
+   */
   final case class Model(
       prompt: String,
       inputDisabled: Boolean,
       submitDisabled: Boolean
   )
 
+  /**
+   * Returns the Prompt composer UI component.
+   *
+   * @param props the component prompt
+   * @return prompt component and its state renderer
+   */
   def apply(props: Props): Component[Model, HBox] =
     val field      = promptField(props.onSubmit)
     val sendButton = submitButton(props.onSubmit)

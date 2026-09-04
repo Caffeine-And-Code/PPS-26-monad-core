@@ -25,6 +25,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
   private val EntitySpeed        = Vector2D(3, 4)
   private val EntityWeight       = 10
   private val EntityHealth       = 20
+  private val EntityDamage       = 5
   private val EntityTeamId       = TeamId("teamIdValue").value
   private val EntityRotation     = 30.0
   private val EntityAngularSpeed = -45.0
@@ -36,12 +37,13 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
   private def completeEntity(entity: Entity): Entity =
     val either = for
-      withSpeed = entity.withSpeed(EntitySpeed)
-      withHealth <- withSpeed.withHealth(EntityHealth)
-      withWeight <- withHealth.withWeight(EntityWeight)
-      withTeam   <- withWeight.withTeamId(EntityTeamId.value)
+      withSpeed = entity.withSpeed(Some(EntitySpeed))
+      withHealth <- withSpeed.withHealth(Some(EntityHealth))
+      withDamage <- withHealth.withDamage(Some(EntityDamage))
+      withWeight <- withDamage.withWeight(Some(EntityWeight))
+      withTeam   <- withWeight.withTeamId(Some(EntityTeamId.value))
       rotated    <- withTeam.rotateTo(EntityRotation)
-    yield rotated.withAngularSpeed(EntityAngularSpeed)
+    yield rotated.withAngularSpeed(Some(EntityAngularSpeed))
     either.value
 
   test("buildDefaultValues should return empty defaults when no entity is provided"):
@@ -81,6 +83,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
     result.teamId should be(None)
     result.weight should be(None)
     result.health should be(None)
+    result.damage should be(None)
     result.speedX should be(None)
     result.speedY should be(None)
     result.rotation should be(Some("0.0"))
@@ -101,6 +104,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
       result.teamId should be(Some(EntityTeamId.value))
       result.weight should be(Some(EntityWeight.toString))
       result.health should be(Some(EntityHealth.toString))
+      result.damage should be(Some(EntityDamage.toString))
       result.speedX should be(Some(EntitySpeed.x.toString))
       result.speedY should be(Some(EntitySpeed.y.toString))
       result.rotation should be(Some(EntityRotation.toString))
@@ -127,6 +131,7 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
         EntityFormParser.AngularSpeedKey,
         EntityFormParser.WeightKey,
         EntityFormParser.HealthKey,
+        EntityFormParser.DamageKey,
         EntityFormParser.TeamIdKey
       )
     )
@@ -140,7 +145,8 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
       rotation = Some("30.0"),
       angularSpeed = Some("-45.0"),
       weight = Some("5.0"),
-      health = Some("6.0")
+      health = Some("6.0"),
+      damage = Some("7.0")
     )
 
     val fields = SaveEntityFormDialog.buildFields(teams, defaultValues)
@@ -168,6 +174,9 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.find(_.id == EntityFormParser.HealthKey).value):
       case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
+
+    inside(fields.find(_.id == EntityFormParser.DamageKey).value):
+      case tf: TextFieldSpec => tf.defaultValue should be(Some("7.0"))
 
   test("buildFields should build the shape field with circle and rectangle dependent fields"):
     val defaultValues = SaveEntityFormDefaultValues()

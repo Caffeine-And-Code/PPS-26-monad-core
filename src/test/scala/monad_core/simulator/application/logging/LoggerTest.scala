@@ -15,3 +15,13 @@ class LoggerTest extends AnyFunSuite with Matchers:
     logger.info(message)
 
     loggedMessage shouldBe Some(message)
+
+  test("trace does nothing when it is not overridden"):
+    var loggedMessage = Option.empty[String]
+    val logger = new Logger:
+      override def info(message: String): Unit =
+        loggedMessage = Some(message)
+
+    logger.trace("message")
+
+    loggedMessage shouldBe None

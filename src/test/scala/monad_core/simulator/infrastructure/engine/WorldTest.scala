@@ -52,7 +52,7 @@ class WorldTest extends AnyFunSuite with Matchers with MockFactory with Inside:
     val worldTest = MonadCoreWorld(
       initialScene,
       events => publishedEvents ++= events,
-      () => LoopMode.SimulationMode
+      LoopMode.SimulationMode
     )
 
     val result = worldTest.createEntity(SaveEntityCommand(baseEntity))

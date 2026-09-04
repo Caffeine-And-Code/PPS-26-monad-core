@@ -6,7 +6,7 @@ La strategia di testing di **MonadCore2D** è stata costruita su più livelli, i
 
 Il framework di riferimento è **ScalaTest**, utilizzato prevalentemente tramite `AnyFunSuite`, `Matchers` e gli helper per ispezionare valori `Either` e `Option`. **ScalaMock** permette di isolare le dipendenze e di verificare il protocollo di interazione tra componenti: chiamate effettuate, argomenti ricevuti, ordine delle operazioni e metodi che non devono essere invocati. Per insiemi di casi omogenei vengono impiegati anche i test table-driven di ScalaTest, utili soprattutto per intervalli numerici, combinazioni di forme e varianti dei componenti grafici.
 
-**SWI-Prolog** viene utilizzato per generare alcuni insiemi combinatori di dati di test. I relativi task SBT sono registrati come `Test / sourceGenerators`, così i risultati prodotti da Prolog vengono trasformati in sorgenti Scala nella directory `Test / sourceManaged` prima della compilazione della suite.
+**tuProlog** viene utilizzato per generare alcuni insiemi combinatori di dati di test. È incluso come dipendenza JVM nel solo scope `Test`: le teorie Prolog vengono caricate dal classpath e interrogate direttamente dal codice Scala, senza richiedere un runtime Prolog installato sulla macchina host.
 
 I test dell'interfaccia utilizzano direttamente **ScalaFX** e **JavaFX**, con helper dedicati all'inizializzazione del toolkit e all'esecuzione delle operazioni sul JavaFX Application Thread. Il progetto integra inoltre un sistema realizzato internamente per gli snapshot strutturali e visuali.
 
@@ -53,9 +53,9 @@ Per le regole fisiche vengono verificati sia i singoli calcoli sia la loro appli
 
 ### Generazione logica dei casi di test con Prolog
 
-Due programmi Prolog descrivono dichiarativamente i domini finiti da combinare. Il primo genera le nove coppie ordinate ottenute dai tipi di notifica `Info`, `Error` e `Success`; il secondo produce le otto combinazioni di presenza o assenza dei campi geometrici `radius`, `width` e `height`. SBT invoca SWI-Prolog durante la generazione dei sorgenti e crea gli oggetti `GeneratedNotificationCombos` e `GeneratedShapeCombos`, contenenti tabelle direttamente utilizzabili da ScalaTest tramite `forAll`.
+Due teorie Prolog descrivono dichiarativamente i domini finiti da combinare. La prima genera le nove coppie ordinate ottenute dai tipi di notifica `Info`, `Error` e `Success`; la seconda produce le otto combinazioni di presenza o assenza dei campi geometrici `radius`, `width` e `height`. Gli oggetti `GeneratedNotificationCombos` e `GeneratedShapeCombos` caricano queste teorie tramite l'API tuProlog, enumerano le soluzioni con `solve` e `solveNext` e costruiscono tabelle direttamente utilizzabili da ScalaTest tramite `forAll`.
 
-Questa integrazione evita di duplicare manualmente i prodotti cartesiani nei test e separa la definizione logica delle combinazioni dalla loro verifica. La CI installa SWI-Prolog prima di eseguire `sbt test`, garantendo che i sorgenti gestiti vengano rigenerati anche partendo da un checkout pulito.
+Questa integrazione evita di duplicare manualmente i prodotti cartesiani nei test e separa la definizione logica delle combinazioni dalla loro verifica. Poiché tuProlog è una normale dipendenza SBT, sia la CI sia un checkout pulito possono eseguire direttamente `sbt test` senza preparazione nativa del sistema operativo e senza generare sorgenti intermedi.
 
 ### Interfaccia grafica e snapshot testing
 

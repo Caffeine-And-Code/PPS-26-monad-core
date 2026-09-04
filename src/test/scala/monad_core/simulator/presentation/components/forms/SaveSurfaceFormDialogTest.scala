@@ -17,13 +17,14 @@ import org.scalatest.prop.Tables.Table
 
 class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
-  private val SurfaceId            = "id"
-  private val SurfacePosition      = Vector2D(1, 2)
-  private val SurfaceRadius        = 5.0
-  private val SurfaceHeight        = 6.0
-  private val SurfaceLength        = 7.0
-  private val SurfaceAppliedForce  = Vector2D(3, 4)
-  private val SurfaceFrictionIndex = 0.8
+  private val SurfaceId             = "id"
+  private val SurfacePosition       = Vector2D(1, 2)
+  private val SurfaceRadius         = 5.0
+  private val SurfaceHeight         = 6.0
+  private val SurfaceLength         = 7.0
+  private val SurfaceAppliedForce   = Vector2D(3, 4)
+  private val SurfaceFrictionIndex  = 0.8
+  private val SurfaceDamageOverTime = 5
 
   private def circleSurface: Surface =
     Surface.circle(SurfaceId, SurfacePosition, SurfaceRadius).value
@@ -33,12 +34,11 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
   private def completeSurface(surface: Surface): Surface =
     val either = for
-      withFriction <- surface.withFrictionIndex(SurfaceFrictionIndex)
-      withForce    <- withFriction.withAppliedForce(SurfaceAppliedForce)
-    yield withForce
+      withFriction    <- surface.withFrictionIndex(Some(SurfaceFrictionIndex))
+      withForce       <- withFriction.withAppliedForce(Some(SurfaceAppliedForce))
+      completeSurface <- withForce.withDamageOverTime(Some(SurfaceDamageOverTime))
+    yield completeSurface
     either.value
-
-  // ---- buildDefaultValues ----
 
   test("buildDefaultValues should return the default creation values when no surface is provided"):
     val result = SaveSurfaceFormDialog.buildDefaultValues(None)
@@ -77,6 +77,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
     result.frictionIndex should be(None)
     result.appliedForceX should be(None)
     result.appliedForceY should be(None)
+    result.damageOverTime should be(None)
 
   test("buildDefaultValues should map optional fields when surface has them set"):
     val cases = Table(
@@ -93,8 +94,7 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
       result.frictionIndex should be(Some(SurfaceFrictionIndex.toString))
       result.appliedForceX should be(Some(SurfaceAppliedForce.x.toString))
       result.appliedForceY should be(Some(SurfaceAppliedForce.y.toString))
-
-  // ---- buildFields ----
+      result.damageOverTime should be(Some(SurfaceDamageOverTime.toString))
 
   test("buildFields should build all fields with correct ids"):
     val defaultValues = SaveSurfaceFormDefaultValues()
@@ -109,7 +109,8 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
         SurfaceFormParser.RotationKey,
         SurfaceFormParser.AppliedForceXKey,
         SurfaceFormParser.AppliedForceYKey,
-        SurfaceFormParser.FrictionIndexKey
+        SurfaceFormParser.FrictionIndexKey,
+        SurfaceFormParser.DamageOverTimeKey
       )
     )
 
@@ -119,7 +120,8 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
       y = Some("2.0"),
       appliedForceX = Some("3.0"),
       appliedForceY = Some("4.0"),
-      frictionIndex = Some("0.5")
+      frictionIndex = Some("0.5"),
+      damageOverTime = Some("6.0")
     )
 
     val fields = SaveSurfaceFormDialog.buildFields(defaultValues)
@@ -138,6 +140,9 @@ class SaveSurfaceFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
     inside(fields.find(_.id == SurfaceFormParser.FrictionIndexKey).value):
       case tf: TextFieldSpec => tf.defaultValue should be(Some("0.5"))
+
+    inside(fields.find(_.id == SurfaceFormParser.DamageOverTimeKey).value):
+      case tf: TextFieldSpec => tf.defaultValue should be(Some("6.0"))
 
   test("buildFields should build the shape field with circle and rectangle dependent fields"):
     val defaultValues = SaveSurfaceFormDefaultValues()
