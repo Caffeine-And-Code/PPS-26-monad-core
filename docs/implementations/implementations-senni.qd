@@ -1,10 +1,11 @@
 Nella realizzazione del progetto le parti realizzate da Senni Mattia sono:
-- sviluppo e rappresentazione delle entità del game engine
+- sviluppo e rappresentazione delle entità del game engine (pacchetto `model`)
 - sviluppo del sistema di rilevamento di collisioni del game engine
 - sviluppo del pannello chat con assistente AI per la GUI
 - sviluppo dell'applicativo di testing e valutazione dell'assistente AI
 
 Ho inoltre contribuito allo sviluppo dell'architettura dell'applicazione GUI proponendo e progettando un'architettura ispirata dalla clean architecture dato che l'applicazione averebbe usato sia risorse esterne che componenti sostituibili quali il game engine e proponendo l'utilizzo del pattern MVVM per la gestione delle interfacce grafiche di scalaFX.
+Ho inoltre prototipato la gestione dei componenti della GUI tramite un pattern di iterazione basato su state e action, ispirato dalle librerie più popolari per la gestione dello stato di React JS, introducendo inoltre una via di comunicazione tra componente figlio e componente padre (ispirata dai props di react) e una via di comunicazione da componente padre a componente figlio.
 
 Alcuni elementi degni di nota legate alle implementazioni sono qui descritte.
 
