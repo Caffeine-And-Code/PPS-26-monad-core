@@ -1,6 +1,5 @@
 import java.io.FileInputStream
 import java.util.Properties
-import scala.sys.process.*
 
 lazy val releaseVersion: String = {
   val props = new Properties()
@@ -83,6 +82,7 @@ lazy val root = rootProject
       "org.scalatest"  %% "scalatest"          % "3.2.20" % "test,llmIntegrationTest",
       "org.scalamock"  %% "scalamock"          % "7.5.5"  % "test,llmIntegrationTest",
       "org.testfx"      % "testfx-core"        % "4.0.18" % Test,
+      "it.unibo.alice.tuprolog" % "tuprolog"   % "3.3.0"  % Test,
       "dev.langchain4j" % "langchain4j-ollama" % "1.17.2",
       "dev.langchain4j" % "langchain4j"        % "1.17.2",
       "org.scalafx"    %% "scalafx"            % "23.0.1-R34"
@@ -117,44 +117,6 @@ lazy val root = rootProject
     }
   )
 
-lazy val generateNotificationCombos =
-  taskKey[Seq[File]]("Generate notification type combos via Prolog")
-
-lazy val generateShapeCombos = taskKey[Seq[File]]("Generate shape field combos via Prolog")
-
-generateNotificationCombos := Def.uncached {
-  Seq(
-    generatePrologCombos(
-      scriptName = "notification_tuple_combos.pl",
-      packageName = "integrations.monad_core.simulator.presentation.components",
-      objectName = "GeneratedNotificationCombos",
-      headerTuple = """("firstMessageType", "secondMessageType")""",
-      outDir = (Test / sourceManaged).value,
-      baseDir = baseDirectory.value,
-      extraImports = Seq(
-        "java.lang.{Error => _}",
-        "monad_core.simulator.presentation.components.{Info, Error, Success, NotificationType}"
-      )
-    )
-  )
-}
-
-generateShapeCombos := Def.uncached {
-  Seq(
-    generatePrologCombos(
-      scriptName = "shape_combos.pl",
-      packageName = "monad_core.simulator.presentation.components.forms.base",
-      objectName = "GeneratedShapeCombos",
-      headerTuple = """("radius", "width", "height")""",
-      outDir = (Test / sourceManaged).value,
-      baseDir = baseDirectory.value
-    )
-  )
-}
-
-Test / sourceGenerators += generateNotificationCombos.taskValue
-Test / sourceGenerators += generateShapeCombos.taskValue
-
 ThisBuild / scalacOptions ++= Seq(
   "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
 )
@@ -166,40 +128,3 @@ strykerMutate := Seq(
 strykerTestFilter := Seq(
   "monad_core.engine.*"
 )
-
-def generatePrologCombos(
-    scriptName: String,
-    packageName: String,
-    objectName: String,
-    headerTuple: String,
-    outDir: File,
-    baseDir: File,
-    extraImports: Seq[String] = Seq.empty
-): File = {
-  val importsBlock = extraImports.map(i => s"import $i").mkString("\n")
-
-  val genDir  = outDir / "generated"
-  val outFile = genDir / s"$objectName.scala"
-  IO.createDirectory(genDir)
-
-  val plScript = baseDir / "project" / "scripts" / scriptName
-  val lines    = Process(Seq("swipl", "-q", "-g", "true", "-t", "halt", plScript.getPath)).lazyLines
-  val body     = lines.mkString("\n")
-
-  val content =
-    s"""|package $packageName
-        |
-        |$importsBlock
-        |import org.scalatest.prop.Tables.Table
-        |
-        |object $objectName {
-        |  val cases = Table(
-        |    $headerTuple,
-        |$body
-        |  )
-        |}
-        |""".stripMargin
-
-  IO.write(outFile, content)
-  outFile
-}

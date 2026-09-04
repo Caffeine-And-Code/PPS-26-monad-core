@@ -374,7 +374,7 @@ Le mutazioni esplicite delle entità effettuate tramite `MonadCoreWorld` pubblic
 
 Mi sono occupato in autonomia della progettazione e della manutenzione dell'intera pipeline CI/CD, composta da workflow GitHub Actions distinti per la verifica, il rilascio e la pubblicazione della documentazione. Ho mantenuto separate le responsabilità dei job, in modo che un errore di formattazione, un test fallito o una versione non valida interrompano la pipeline prima della produzione degli artefatti.
 
-La Continuous Integration esegue la suite Scala su ogni branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX e, in seguito all'integrazione dei generatori logici, installa SWI-Prolog prima di eseguire `sbt test`. Un workflow separato applica alle pull request il criterio di formattazione tramite `sbt scalafmtCheckAll`; la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
+La Continuous Integration esegue la suite Scala su ogni branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX. Le teorie logiche usate dai test sono valutate tramite tuProlog, incluso come dipendenza JVM di test, e non richiedono quindi l'installazione di SWI-Prolog sul runner. Un workflow separato applica alle pull request il criterio di formattazione tramite `sbt scalafmtCheckAll`; la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
 
 La Continuous Delivery viene avviata da un push su `main`. Il primo job legge `release_version` da `project/build.properties`, recupera l'ultima release tramite GitHub CLI e accetta soltanto una versione strettamente maggiore. La build utilizza quindi una matrice di runner Linux, Windows e macOS: ogni piattaforma esegue `sbt assembly`, rinomina il fat JAR includendo la versione e il sistema operativo e pubblica l'artefatto intermedio. Questa distinzione è necessaria perché la distribuzione include i moduli JavaFX specifici di ciascuna piattaforma.
 
@@ -384,7 +384,7 @@ Il workflow Pages può essere avviato anche manualmente tramite `workflow_dispat
 
 .mermaid
     flowchart TD
-        Push[Push su un branch] --> Tests[Test Scala<br/>Java 21 + Xvfb + SWI-Prolog]
+        Push[Push su un branch] --> Tests[Test Scala<br/>Java 21 + Xvfb + tuProlog JVM]
         PR[Pull request verso<br/>main o development] --> Tests
         PR --> Format[scalafmtCheckAll]
 
@@ -417,4 +417,4 @@ Oltre ai test delle funzionalità di mia competenza, ho realizzato diversi suppo
 
 Il secondo supporto rende eseguibili i vincoli architetturali. `ArchitectureChecker` analizza gli import tra i package e fornisce matcher ScalaTest con cui verifico l'indipendenza dell'engine, la direzione delle dipendenze tra domain, application, infrastructure e presentation e il confinamento di ScalaFX e JavaFX nel layer grafico. Questi controlli hanno guidato anche il refactoring dei miei componenti verso la struttura a layer condivisa con Senni.
 
-Infine, ho realizzato due generatori Prolog che producono, durante la build, tabelle ScalaTest per le combinazioni di tipi di notifica e di campi geometrici opzionali. I task SBT invocano SWI-Prolog e scrivono i sorgenti Scala nella directory gestita dei test; la pipeline CI installa quindi anche il runtime Prolog prima di eseguire la suite. Questa integrazione evita di mantenere manualmente i prodotti cartesiani dei casi e collega la generazione logica dei dati ai test automatizzati.
+Infine, ho realizzato due teorie Prolog che producono tabelle ScalaTest per le combinazioni di tipi di notifica e di campi geometrici opzionali. Il codice di test carica le teorie dal classpath e ne enumera le soluzioni tramite l'API tuProlog; la libreria è risolta da SBT nel solo scope di test, perciò la pipeline non deve installare un runtime Prolog nativo. Questa integrazione evita di mantenere manualmente i prodotti cartesiani dei casi e collega la generazione logica dei dati ai test automatizzati.
