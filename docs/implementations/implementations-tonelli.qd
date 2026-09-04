@@ -537,3 +537,79 @@ L'esperimento viene eseguito in un `Future` su `ExecutionContext.global`.
 `ExperimentDialog` mostra immediatamente il messaggio di esecuzione e pubblica
 l'esito sul JavaFX Application Thread. `ResultDialog` riutilizza la stessa finestra
 per sostituire il messaggio iniziale con report o errore.
+
+### Costrutti avanzati di Scala utilizzati
+
+Nelle parti descritte sono stati utilizzati i seguenti costrutti e meccanismi di Scala:
+
+- **Opaque type e smart constructor**: `EntityCount`, `IterationCount`, `WarmupCount`
+  e `GrowthFactor` distinguono quantità rappresentate internamente come `Int`.
+  La costruzione tramite `from` impedisce di ottenere valori non validi fuori dai
+  rispettivi companion object, senza introdurre wrapper a runtime.
+
+- **ADT tramite `enum`, gerarchie `sealed` e case class**: modalità del loop, tipi
+  di esperimento, eventi ed errori sono rappresentati con insiemi chiusi di casi.
+  Le case class modellano stati e risultati immutabili e consentono di produrne
+  versioni aggiornate tramite `copy`.
+
+- **Pattern matching**: sono state distinte in modo dichiarativo forme geometriche,
+  strategie prestazionali, risultati `Right` e `Left`, valori `Some` e `None`,
+  modalità del loop e lati dei bordi. Nei casi basati su ADT chiusi il compilatore
+  può inoltre segnalare pattern mancanti.
+
+- **Parametri contestuali con `given` e `using`**: `PhysicsEngine`,
+  `CollisionDetector` e `NanoClock` sono forniti al punto d'uso senza dipendere
+  da istanze globali. Sono così sostituibili con implementazioni controllate nei test
+  mantenendo invariata la firma logica delle operazioni principali.
+
+- **Extension method e metodi infix**: operazioni geometriche e vettoriali sono state
+  aggiunte ai tipi del dominio senza modificarne necessariamente l'interfaccia.
+  Sono state usate anche per esporre il valore validato degli opaque type e per
+  comporre regole fisiche con una sintassi vicina al dominio.
+
+- **Funzioni come valori e funzioni di ordine superiore**: una `PhysicsRule` è
+  utilizzabile come trasformazione, mentre il performance runner riceve funzioni
+  di preparazione e operazioni da eseguire. Callback e lambda sono state impiegate
+  anche per azioni dei menu, submit dei form e completamento asincrono.
+
+- **Type alias per firme funzionali**: alias come `Operation`, `PrepareWorkload`
+  e `RunExperiment` assegnano un nome al ruolo di funzioni articolate senza creare
+  gerarchie di classi prive di comportamento aggiuntivo.
+
+- **Polimorfismo parametrico**: funzioni generiche come `repeat[A]` e gli adapter
+  degli errori operano sul valore prodotto senza conoscerne il tipo concreto.
+  La stessa logica di iterazione e composizione può quindi essere riutilizzata
+  per warm-up, campioni e altri risultati.
+
+- **Composizione monadica con `Either` e `Option`**: gli errori attesi e l'assenza
+  di un valore sono rappresentati nel tipo di ritorno. `map`, `flatMap`, `fold`
+  e for-comprehension concatenano le operazioni senza eccezioni per il normale
+  controllo di flusso e preservano lo short-circuit al primo errore.
+
+- **Combinatori sulle collezioni immutabili**: `map`, `flatMap`, `filter`,
+  `collect`, `foldLeft`, `zip`, `minByOption` e `sortBy` sono stati usati per
+  trasformare entità, contatti, vertici, regole e campioni. Lo stato intermedio
+  viene trasportato dall'accumulatore invece che da collezioni mutate sul posto.
+
+- **Ricorsione in coda con `@tailrec`**: il consumo dei fixed update, la generazione
+  della crescita e la ripetizione dei workload sono stati espressi ricorsivamente.
+  L'annotazione richiede al compilatore di verificare che le chiamate possano essere
+  trasformate in un ciclo senza crescita dello stack.
+
+- **Visibilità qualificata dei package**: modificatori come `private[physics]`,
+  `private[pathfinding]` e `private[performance]` espongono helper e modelli soltanto
+  al sottosistema che ne ha bisogno, senza renderli parte dell'API pubblica.
+
+- **Companion object, metodi `apply` e parametri di default**: costruzione validata,
+  configurazioni predefinite e factory sono state collocate accanto ai rispettivi
+  tipi. Questo consente una sintassi di creazione uniforme senza introdurre stato
+  globale modificabile.
+
+- **`Try` per il confine con API che lanciano eccezioni**: la costruzione dei dialoghi
+  JavaFX viene adattata a `Either`, mantenendo le eccezioni della libreria esterna
+  fuori dal contratto usato dal resto dell'applicazione.
+
+- **`Future` ed `ExecutionContext` per l'esecuzione asincrona**: gli esperimenti
+  prestazionali vengono eseguiti fuori dal JavaFX Application Thread. Il risultato
+  viene poi riportato sul thread grafico tramite `Platform.runLater`, separando
+  il lavoro computazionale dall'aggiornamento dell'interfaccia.
