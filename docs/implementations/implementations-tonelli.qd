@@ -1,8 +1,539 @@
-### Game Loop
+### Ambiti di competenza e collaborazioni
 
-Per garantire il corretto funzionamento del sistema, sono definite delle caratteristiche che il Game Loop deve rispettare, per garantire una simulazione corretta.
-- **Configurazione e Indipendenza del Tick-Time**: il motore deve aggiornare la fisica a intervalli di tempo costanti e prefissati, indipendentemente da quanti frame al secondo il computer riesca effettivamente a renderizzare. Viene così garantito il **determinismo della simulazione**, a priori delle capacità computazionali della macchina su cui viene eseguito.
-- **Accumulo del Tempo Reale**: il loop deve misurare il tempo reale trascorso tra il frame precedente e quello corrente e aggiungerlo a un contatore interno, così da non perdere frazioni di tempo.
-- **Clamp del frame time**: il tempo massimo registrabile da un singolo frame deve essere limitato superiormente. Se il sistema subisce un blocco improvviso (es. caricamento pesante o lag della GUI), l'accumulatore non deve sovraccaricarsi. Senza questo blocco, al riavvio il motore cercherebbe di calcolare centinaia di tick fisici tutti insieme, causando ulteriore lag.
-- **Consumo dei Tick Fisici (Fixed Update)**: un ciclo interno che consuma l'accumulatore a passi di lunghezza esattamente pari al Tick-Time. Ad ogni ciclo viene invocata la funzione pura di aggiornamento dello stato fisico del mondo. Garantisce un rilevamento delle collisioni accurato. Impedisce il fenomeno del _tunneling_ (oggetti veloci che attraversano le pareti perché il frame ci ha messo troppo tempo ad aggiornarsi).
-- **Calcolo dell'Alpha di Interpolazione (Variable Render)**: il loop deve calcolare il rapporto $\alpha$ tra il tempo rimasto nell'accumulatore e il passo del tick. Questo valore (compreso tra $0.0$ e $1.0$) deve essere passato alla funzione di rendering. Se lo schermo renderizza a frequenze diverse rispetto alla fisica, il renderer usa l'alfa per stimare la posizione visiva corretta di un solido tra il tick precedente e il successivo, eliminando _stuttering_ (scatti).
+Il mio contributo si concentra sul comportamento dinamico dell'engine e sugli strumenti
+con cui osservarne le prestazioni. Ho realizzato il game loop a passo fisso,
+l'interpolazione dello stato, la quasi totalità della pipeline delle regole fisiche, con la risposta alle
+collisioni e il pathfinding locale basato su ray casting. Ho inoltre sviluppato
+il sottosistema di performance testing, sia nella modalità a riga di comando sia
+nell'estensione opzionale dell'interfaccia grafica.
+
+Nel nucleo dell'engine ho realizzato in misura prevalente `GameLoop`,
+`GameLoopImpl`, `GameLoopError`, `LoopMode`, `StateInterpolator` e `WorldBounds`.
+Per la fisica, ho sviluppato l'intero package di `physics` (fatta eccezione per `PhysicsContext` e `DamageApplicationRule`, aggiunte da Fattori ed integrate nella mia struttura), ove risiedono la logica delle regole fisiche, l'algoritmo di pathfinding e le funzioni di utility utilizzate in quel package. La parte prestazionale comprende l'intero package `performance` e i componenti in
+`simulator.presentation.performance`.
+
+Nella sezione del modello ho contribuito a `Entity`, `Surface`, `Locatable`, `Vector2D`,
+`Collision` e `ShapeCollision` per introdurre rotazione, velocità angolare e punti
+di contatto. Ho propagato rotazione e velocità angolare anche attraverso `ToolCall`
+e il relativo mapper, così queste proprietà possono essere impostate anche dal client LLM.
+
+Le implementazioni seguono prevalentemente un modello funzionale: lo stato evolve
+producendo nuovi valori, mentre gli errori attesi sono rappresentati con `Either`
+e le proprietà opzionali con `Option`. Ho usato `given` e `using` per fornire
+collaboratori sostituibili, opaque type per i parametri prestazionali validati,
+ADT e pattern matching per distinguere i casi del dominio, e combinatori come
+`map`, `flatMap`, `foldLeft` e for-comprehension per comporre le trasformazioni.
+Gli effetti inevitabili, come clock, console, `Future` e JavaFX, rimangono ai
+confini dei rispettivi sottosistemi.
+
+### Game loop e interpolazione
+
+#### Aggiornamento a passo fisso
+
+`GameLoop` controlla il tempo della simulazione senza dipendere dalla frequenza con
+cui il renderer richiede i frame. Se la fisica usasse direttamente la durata variabile
+di ogni frame, lo stesso scenario verrebbe integrato con passi diversi in funzione
+del carico della macchina. Il loop conserva invece il tempo trascorso in un
+accumulatore ed esegue soltanto aggiornamenti di durata costante.
+
+Il loop è immutabile. `start`, `stop` e `withMode` restituiscono una nuova
+configurazione, mentre `withTickTime` restituisce un `Either` perché deve validare
+la nuova durata. Anche il costruttore controlla che il tick sia positivo, che timestamp
+e accumulatore non siano negativi e che il tempo massimo ammesso per un frame non sia
+inferiore al tick. Il clock non viene letto internamente: `tick` riceve il timestamp
+corrente, rendendo il comportamento temporale deterministico nei test.
+
+Dato il timestamp corrente $ t_n $ e quello precedente $ t_{n-1} $, il tempo
+considerato per il frame è limitato superiormente:
+
+$ \Delta t_f=\min(t_n-t_{n-1},\Delta t_{max}) $
+
+Con $ A $ accumulatore precedente e $ h $ durata del passo fisico, ottengo:
+
+$ A'=A+\Delta t_f $
+
+$ N=\left\lfloor\frac{A'}{h}\right\rfloor,\qquad A_r=A'-Nh $
+
+`GameLoopImpl.runFixedUpdate` esegue quindi $ N $ chiamate a
+`PhysicsEngine.step`. Ogni chiamata usa lo stesso $ h $, ma riceve lo stato prodotto
+dalla precedente. La funzione è ricorsiva in coda (identificata dal tag `@tailrec`): non richiede un contatore mutabile
+condiviso e conserva esplicitamente stato precedente, stato aggiornato, resto
+temporale ed eventi. Se una chiamata restituisce `Left`, le successive non vengono
+eseguite. Il limite $ \Delta t_{max} $ impedisce che una pausa molto lunga si trasformi in una
+quantità incontrollata di aggiornamenti da recuperare. 
+
+Quando il loop è fermo o si trova in `EditMode`, la fisica non viene invocata.
+Il timestamp viene comunque aggiornato, così il tempo trascorso durante la modifica
+non viene accumulato alla successiva ripartenza. Durante la simulazione, invece,
+`tick` restituisce `GameLoopTickResult` con stato precedente, stato corrente,
+nuovo loop, eventi e coefficiente di interpolazione.
+
+![gameloop-sequence.png](../assets/gameloop-sequence.png)
+
+#### Interpolazione per il rendering
+
+Dopo gli aggiornamenti completi rimane $ A_r<h $. Il rapporto
+
+$ \alpha=\frac{A_r}{h},\qquad 0\leq\alpha<1 $
+
+indica quanto il tempo di rendering si trovi tra gli ultimi due stati fisici.
+`StateInterpolator` usa questo valore per costruire una scena visiva intermedia,
+senza modificare lo stato che verrà usato dal tick successivo. Per la posizione
+applica una interpolazione lineare:
+
+$ x_{render}=x_{previous}+\alpha(x_{next}-x_{previous}) $
+
+Per gli angoli non è sufficiente interpolare direttamente i valori numerici.
+Nel passaggio da $ 350^\circ $ a $ 10^\circ $, per esempio, l'arco corretto è di
+$ 20^\circ $ e non di $ -340^\circ $. `Rotation.interpolate` normalizza la
+differenza in $ [-180^\circ,180^\circ) $ e applica:
+
+$ \theta_{render}=normalize(\theta_{previous}+\alpha\Delta\theta_{shortest}) $
+
+Le entità dei due stati vengono associate per identificatore. Quelle presenti in
+entrambi vengono interpolate; quelle apparse nello stato successivo vengono mantenute
+così come sono, mentre quelle rimosse non vengono reintrodotte. Anche le dimensioni
+del mondo sono interpolate, necessità introdotta dalla possibilità di modificare le dimensioni della scena visibile. Superfici, team e proprietà non temporali provengono
+invece dallo stato successivo.
+
+Il percorso complessivo è quindi:
+
+![interpolator-flow.png](../assets/interpolator-flow.png)
+
+### PhysicsManager e regole fisiche
+
+#### Composizione ed estensibilità
+
+`PhysicsRule` è il contratto comune delle regole. Ogni implementazione espone un
+identificatore e si comporta come una trasformazione fallibile:
+
+$ PhysicsContext\longrightarrow Either[PhysicsError,PhysicsRuleResult] $
+
+`PhysicsContext` contiene lo stato iniziale del passo, il delta temporale e uno
+snapshot immutabile delle collisioni. `PhysicsRuleResult` contiene il nuovo stato
+e gli eventi prodotti. Una regola non aggiorna un singleton e non chiama direttamente
+la GUI: riceve tutti i dati necessari e restituisce un valore.
+
+`RuleCombinator.sequence` compone una sequenza di regole mediante `foldLeft`.
+Il `flatMap` consegna a ogni regola lo stato prodotto dalla precedente e interrompe
+il calcolo al primo errore; il `map` concatena gli eventi in un `Vector`,
+preservandone l'ordine. Il contesto viene copiato aggiornando soltanto lo stato,
+mentre lo snapshot dei contatti resta quello rilevato all'inizio del passo.
+
+`PhysicsManager` conserva due informazioni distinte: una `Seq` con l'ordine delle
+regole e un `Set` con quelle abilitate. Le operazioni `enable`, `disable`,
+`enableAll` e `disableAll` producono un nuovo manager. L'estensione non richiede
+quindi di modificare il manager: è sufficiente implementare `PhysicsRule` e inserire
+la nuova regola nella sequenza. Lo stesso manager può inoltre essere costruito con
+una sequenza personalizzata e un `CollisionDetector` fornito tramite `using`.
+
+All'inizio di `step` il manager costruisce una sola volta `PhysicsContext` attraverso
+il detector, evitando la costruzione di collisioni per ogni punto che ne necessitava, poi filtra le regole abilitate e le compone. Al termine confronta le
+entità prima e dopo la pipeline e produce `EntityUpdated` e `EntityRemoved` in ordine
+di identificatore.
+
+La configurazione predefinita usa questo ordine:
+
+![physics-flow.png](../assets/physics-flow.png)
+
+L'ordine è parte del comportamento: forze, attrito, sterzata e rimbalzi modificano
+le velocità prima che la cinematica calcoli il nuovo spostamento.
+Come da introduzione, la `DamageApplicationRule` non verrà descritta qui, in quanto solamente integrata.
+
+#### SurfaceDynamicsRule
+
+`SurfaceDynamicsRule` applica alle entità in contatto con una superficie le proprietà
+fisiche che essa espone. Le proprietà sono opzionali, quindi una superficie priva di
+forza o attrito lascia invariata la componente corrispondente.
+
+Il calcolo dell'accelerazione condiviso da `PhysicsUtil` è:
+
+$ a=\frac{F}{m} $
+
+Nel codice attuale `applyForce` aggiunge direttamente questo valore alla velocità:
+
+$ v_{force}=v+\frac{F}{m} $
+
+L'attrito lineare e quello angolare dipendono invece dalla durata del passo.
+Con $ \mu $ indice di attrito e $ \Delta t $ espresso in secondi:
+
+$ k_f=\max(0,1-\mu\Delta t) $
+
+$ v'=k_f v_{force},\qquad\omega'=k_f\omega $
+
+Il limite inferiore impedisce che un attrito elevato inverta artificialmente il
+movimento. Una massa assente quando è richiesta per la forza e un delta negativo
+sono rappresentati come `PhysicsError`.
+
+#### EnemyAttractionRule
+
+`EnemyAttractionRule` orienta ogni entità mobile verso il nemico più vicino.
+`PhysicsUtil.nearestEnemy` usa le relazioni tra team e la distanza euclidea;
+le entità fisse e quelle senza un nemico valido non vengono modificate.
+
+La regola non ruota istantaneamente la velocità. Dopo aver determinato una destinazione
+diretta o un waypoint tramite il sottosistema di ray casting, normalizza la differenza
+angolare:
+
+$ \Delta\theta=normalize_{[-\pi,\pi)}(\theta_{target}-\theta_{current}) $
+
+La rotazione ammessa nel passo è limitata da $ \omega_{max}\Delta t $:
+
+$ \theta'=\theta_{current}+clamp(\Delta\theta,-\omega_{max}\Delta t,\omega_{max}\Delta t) $
+
+Ricostruisce quindi il vettore velocità usando il nuovo angolo e lo stesso modulo.
+Una velocità nulla o una direzione target nulla restano invariate. La costruzione
+della destinazione è descritta nella sezione dedicata al ray casting.
+
+#### CollisionResolutionRule
+
+`CollisionResolutionRule` trasforma i contatti tra entità in una `CollisionMap`
+e delega a `CollisionResolver` due operazioni distinte: prima elimina le
+sovrapposizioni, poi aggiorna velocità lineare e angolare.
+
+Per le collisioni rettangolo-rettangolo, `ShapeCollision` usa il Separating Axis
+Theorem sugli assi locali ruotati. Se $ a,b $ sono le semidimensioni,
+$ u,v $ gli assi locali e $ n $ un asse unitario,
+il raggio di proiezione è:
+
+$ r(n)=a|u\cdot n|+b|v\cdot n| $
+
+Con $ d $ vettore tra i centri, l'overlap lungo l'asse vale:
+
+$ o(n)=r_1(n)+r_2(n)-|d\cdot n| $
+
+Un valore negativo individua un asse separatore. Se tutti i valori sono non negativi,
+l'asse con overlap minimo determina normale e profondità di penetrazione.
+Il punto di contatto viene stimato intersecando i rettangoli tramite clipping e
+calcolando la media dei vertici ottenuti: non coincide necessariamente con il
+baricentro areale del poligono.
+
+Per cerchio-rettangolo porta il centro del cerchio nel riferimento locale del
+rettangolo e individuo il punto più vicino con un `clamp`. Per due cerchi,
+indicando con $ c_1,c_2 $ i centri:
+
+$ d_p=r_1+r_2-\|c_2-c_1\| $
+
+La correzione della posizione precede il rimbalzo. Contro un corpo fisso,
+con normale $ n $ orientata verso la separazione e penetrazione $ d $:
+
+$ p'=p+d n $
+
+Tra due corpi mobili ripartisco la correzione in base alle masse. Per il primo:
+
+$ p'_1=p_1+d\frac{m_2}{m_1+m_2}n $
+
+Il corpo più leggero viene spostato maggiormente. Nel caso puramente lineare,
+`BounceResponse` conserva solo la velocità entrante lungo la normale:
+
+$ v_n=\min(v\cdot n,0) $
+
+Contro un fisso la riflessione è:
+
+$ v'=v-2v_n n $
+
+Tra due corpi mobili uso la velocità relativa e un urto perfettamente elastico:
+
+$ j=\frac{-2\min((v_1-v_2)\cdot n,0)}{m_1^{-1}+m_2^{-1}} $
+
+$ v'_1=v_1+jm_1^{-1} n $
+
+Quando è presente una velocità angolare, `CollisionVelocityDelta` include il braccio
+$ r=p_{contact}-p_{center} $. La velocità nel punto
+di contatto diventa:
+
+$ v_{contact}=v+\omega(-r_y,r_x) $
+
+In questa formula $ \omega $ è espresso in radianti al secondo. Il modello conserva
+gradi al secondo, perciò il codice converte in ingresso e in uscita.
+I momenti d'inerzia impiegati sono:
+
+$ I_{circle}=\frac12mr^2,\qquad I_{rectangle}=\frac1{12}m(h^2+l^2) $
+
+L'inverso della massa effettiva comprende traslazione e rotazione:
+
+$ M^{-1}_{eff}=m_1^{-1}+m_2^{-1}+\frac{(r_1\times n)^2}{I_1}+\frac{(r_2\times n)^2}{I_2} $
+
+Con $ J=j n $ applico:
+
+$ \Delta v =m^{-1} J,\qquad\Delta\omega=\frac{r \times J}{I} $
+
+`VelocityDelta` mantiene separata questa matematica dalla modifica dell'entità.
+`BounceResponse` sceglie il caso lineare o rotazionale e aggiorna soltanto le
+componenti effettivamente presenti.
+
+#### BorderContactRule
+
+`WorldBounds` rappresenta gli spigoli superiore sinistro e inferiore destro del rettangolo valido della scena.
+`BorderContactRule` individua le entità che ne oltrepassano uno o più lati e
+`BorderWall` rappresenta ogni contatto come un corpo fisso temporaneo, dotato
+di normale e punto di contatto coerenti.
+
+Il muro viene passato allo stesso `CollisionResolver` usato per le entità.
+Correzione della penetrazione, riflessione e risposta angolare non sono quindi
+duplicate in una seconda implementazione.
+
+#### KinematicsRule
+
+`KinematicsRule` conclude la pipeline e integra velocità lineare e angolare.
+`PhysicsUtil` converte il delta dai nanosecondi ai secondi. 
+Con velocità costanti durante il passo:
+
+$ p'=p+v\Delta t $
+
+$ \theta'=normalize(\theta+\omega\Delta t) $
+
+Una velocità assente non equivale a una velocità pari a zero: `None` indica che
+l'entità non supporta quella componente, mentre `Some(0)` la rende presente ma
+momentaneamente nulla. La distinzione viene conservata anche nelle collisioni
+e nell'attrito.
+
+### Ray casting e pathfinding locale
+
+#### Rappresentazione geometrica
+
+Il ray casting è usato da `EnemyAttractionRule` per decidere se un'entità può
+dirigersi direttamente verso il nemico o deve aggirare il primo ostacolo.
+`VertexFinder` trasforma le forme nella loro rappresentazione in coordinate globali.
+Per i rettangoli considera posizione, semidimensioni e rotazione, mentre per i cerchi produce
+punti distribuiti sulla circonferenza.
+
+Prima dell'intersezione, `RayCast` espande gli ostacoli in funzione dell'ingombro
+dell'entità che si muove e di un margine di sicurezza. Per un cerchio usa il raggio,
+per un rettangolo usa la semidiagonale. È un'approssimazione conservativa della
+somma di Minkowski: permette di trattare il movimento come un raggio puntiforme,
+ma può escludere passaggi che una rappresentazione più precisa riterrebbe validi.
+
+#### Intersezione tra raggio e ostacoli
+
+`RayIntersection` considera ogni contorno come una sequenza di segmenti.
+Il raggio di origine $ o $ e direzione $ d $ è:
+
+$ R(t)=o+t d,\qquad t\geq0 $
+
+Un segmento tra $ a $ e $ b $ è invece:
+
+$ S(u)=a+u(b-a),\qquad0\leq u\leq1 $
+
+Ponendo $ s=b-a $ e
+$ q=a-o $, i parametri dell'intersezione sono:
+
+$ t=\frac{q\times s}{d\times s},\qquad u=\frac{q \times d}{d}\times s $
+
+`RayCast` usa una direzione normalizzata, quindi $ t $ rappresenta anche la distanza.
+Se $ |d\times s|<\varepsilon $, le rette sono considerate parallele.
+Negli altri casi accetta soltanto $ t\geq0 $ e $ u\in[0,1] $.
+Dopo aver scartato le distanze inferiori alla tolleranza, sceglie l'intersezione
+positiva più vicina.
+
+Ho aggiunto un controllo separato per i vertici allineati con il raggio.
+Questo evita che un punto esattamente condiviso da due segmenti venga perso a causa
+della tolleranza o della condizione di parallelismo. Se il primo oggetto individuato
+non corrisponde a un'entità esistente, restituisco un `PhysicsError` esplicito.
+Anche l'assenza completa di intersezioni è rappresentata come errore del ray cast, in quanto significherebbe che il raggio ricevuto a monte non puntava in direzione dell'obiettivo originale.
+
+#### Costruzione e scelta dei waypoint
+
+Se il primo oggetto incontrato è il nemico, il suo centro rimane la destinazione.
+Se è un ostacolo, `WaypointFinder` produce due candidati.
+
+Per un cerchio di centro $ c $ e raggio $ r $, osservato da un punto esterno
+$ s $, calcolo i punti di tangenza:
+
+$ \theta=atan2(y_s-y_c,x_s-x_c) $
+
+$ \alpha=acos\left(\frac{r}{\|s-c\|}\right) $
+
+$ w_{1,2}=c+r(\cos(\theta\pm\alpha),\sin(\theta\pm\alpha)) $
+
+La costruzione richiede che il punto iniziale sia esterno al cerchio. 
+Da un punto interno non esistono due tangenti reali. Per un rettangolo calcolo invece l'angolo
+orientato di ogni vertice rispetto alla direzione del centro e scelgo i due estremi visibili.
+
+I candidati vengono spostati verso l'esterno per includere l'ingombro dell'entità.
+`SizeHelper` verifica poi che essa rimanga interamente dentro `WorldBounds`.
+Tra i waypoint validi scelgo quello più vicino al bersaglio originale.
+La strategia è locale, in maniera tale da ridurre il costo in maniera greedy e adattarsi ad una scena dinamica.
+
+![raycast-flow.png](../assets/raycast-flow.png)
+
+### Performance testing
+
+#### Obiettivo e struttura attuale
+
+Ho realizzato il performance testing per misurare il costo di un tick reale
+dell'engine a diversi livelli di carico e confrontarlo con un budget temporale.
+
+- `performance.model` contiene configurazione, conteggi validati, report, errori
+  e il contratto del clock;
+- `performance.core` contiene `PerformanceRunner` e `PerformanceMetrics`;
+- `performance.simulator` collega il core alla scena, alla facade, al clock reale
+  e alla CLI.
+
+La GUI non appartiene al package prestazionale puro, perché dipende da ScalaFX:
+`PerformanceMode`, `PerformanceGameEngineModePanel`, `ExperimentForm`,
+`ExperimentDialog` e `ResultDialog` sono collocati in
+`simulator.presentation.performance`.
+
+`PerformanceRunner` riceve un workload come funzione. `PrepareWorkload` associa
+un `EntityCount` alla preparazione fallibile di una `Operation`, cioè:
+
+`EntityCount => Either[PerformanceError, () => Either[PerformanceError, Unit]]`
+
+Questa firma è sufficiente a sostituire il workload nei test e evita un'interfaccia
+per ogni fase. Il runner sa come scegliere i carichi, ripetere l'operazione e
+misurarla; non conosce scene, regole fisiche o output. `PerformanceMetrics` opera
+soltanto sui campioni e rimane completamente puro.
+
+Nel model, `EntityCount` e `IterationCount` sono opaque type distinti ma condividono
+la validazione di `PositiveCount`. `WarmupCount` ammette anche zero e
+`GrowthFactor` richiede un valore maggiore di uno. Gli smart constructor `from`
+restituiscono `Either`. Il frame budget è una `FiniteDuration` costruita dai
+millisecondi, evitando tipi e funzioni di conversione duplicati.
+
+#### Pipeline di esecuzione
+
+`PerformanceCli.parse` traduce la route e gli argomenti in una
+`PerformanceRequest` validata. `PerformanceRunner.run` determina la sequenza dei
+carichi e, per ognuno, chiama il workload. `EnginePerformance` prepara una
+`DeterministicScene` e una sessione avviata, poi restituisce l'operazione che invoca
+`EngineFacade.tick`. Gli errori dell'engine sono adattati a
+`EnginePerformanceError`.
+
+La scena è deterministica: con $ n $ entità usa una griglia di dimensione
+
+$ columns=\lceil\sqrt{n}\rceil,\qquad rows=\left\lceil\frac{n}{columns}\right\rceil $
+
+e alterna cerchi e rettangoli, team, velocità lineari, rotazioni e velocità
+angolari. Ogni entità possiede massa, salute e danno. Due team reciprocamente
+nemici permettono di esercitare l'attrazione; una superficie estesa sul mondo
+fornisce forza, attrito e danno. Non introducendo casualità, ripetizioni con la
+stessa configurazione eseguono lo stesso scenario logico.
+
+Per ogni carico, scena e sessione sono preparate prima della misura.
+Il runner esegue i warm-up senza leggere il clock e misura poi `iterations` (numero di campioni per ciascun carico)
+esecuzioni. Se $ t_{before,i} $ e
+$ t_{after,i} $ sono le due letture del `NanoClock`:
+
+$ L_i=t_{after,i}-t_{before,i} $
+
+`NanoClock` è una dipendenza contestuale. In produzione `PerformanceClock` usa
+`System.nanoTime()`; nei test `SequenceNanoClock` restituisce valori predefiniti.
+`collect` e `repeat` sono ricorsive in coda e interrompono immediatamente
+l'esperimento se preparazione, warm-up o campione restituiscono un errore.
+
+![performance-flow.png](../assets/performance-flow.png)
+
+#### Strategie e metriche
+
+I quattro esperimenti condividono configurazione e metriche, ma generano carichi
+differenti:
+
+| Esperimento | Carichi misurati | Parametri specifici | Criterio di termine |
+| ----------- | ---------------- | ------------------- | ------------------- |
+| Load | Solo il valore iniziale | Nessuno | Dopo un punto |
+| Stress | Crescita fino al massimo | Massimo e fattore | Primo p95 oltre budget, oppure massimo |
+| Spike | Iniziale, massimo, iniziale | Massimo | Dopo tre punti |
+| Scalability | Crescita fino al massimo | Massimo e fattore | Dopo il massimo |
+
+Stress e Scalability usano `EntityGrowth`:
+
+$ n_0=start,\qquad n_{k+1}=\min(n_k\cdot factor,maximum) $
+
+Il massimo viene incluso anche se non è una potenza esatta del fattore.
+La moltiplicazione avviene in `Long` prima del limite, evitando l'overflow
+intermedio di `Int`.
+
+`PerformanceMetrics` ordina le latenze e usa il nearest rank. Per $ N $ campioni,
+indicizzati da uno:
+
+$ P_p=L_{\lceil pN\rceil},\qquad p\in\{0.50,0.95,0.99\} $
+
+Il completion rate indica la frazione di campioni non superiori al budget $ B $:
+
+$ completionRate=\frac{|\{i\mid L_i\leq B\}|}{N} $
+
+L'uguaglianza rispetta il budget. Stress si interrompe invece soltanto quando
+$ p95>B $ e registra il primo `EntityCount` che supera la soglia. Gli altri esperimenti raccolgono
+tutti i punti previsti.
+
+La misura comprende il tick dell'engine, non rendering JavaFX e interpolazione.
+
+#### Utilizzo da riga di comando
+
+Il launcher registra le quattro route nel router dell'applicazione:
+
+- `performance-load-test`;
+- `performance-stress-test`;
+- `performance-spike-test`;
+- `performance-scalability-test`.
+
+Le opzioni comuni sono `--entities`, `--iterations`, `--warmups` e
+`--frame-budget-ms`. `--max-entities` serve a Spike, Stress e Scalability;
+`--growth-factor` determina la progressione di Stress e Scalability.
+In assenza di opzioni, vengono utilizzati dei valori default, quindi 100 entità iniziali, massimo 1600, fattore 2,
+20 iterazioni, 5 warm-up e budget di 16 ms.
+
+Dopo aver prodotto il fat JAR con `sbt assembly`, in PowerShell è possibile eseguire:
+
+```powershell
+$jar = "C:\percorso\MonadCore2D-assembly-<versione>.jar"
+
+java -jar $jar performance-load-test `
+  --entities 100 --iterations 20 --warmups 5 --frame-budget-ms 16
+
+java -jar $jar performance-stress-test `
+  --entities 100 --max-entities 1600 --growth-factor 2 `
+  --iterations 20 --warmups 5 --frame-budget-ms 16
+
+java -jar $jar performance-spike-test `
+  --entities 100 --max-entities 1600 `
+  --iterations 20 --warmups 5 --frame-budget-ms 16
+
+java -jar $jar performance-scalability-test `
+  --entities 100 --max-entities 1600 --growth-factor 2 `
+  --iterations 20 --warmups 5 --frame-budget-ms 16
+```
+
+Dalla radice del repository è possibile richiamare la stessa route durante lo sviluppo:
+
+```powershell
+sbt "run performance-load-test --entities 100 --iterations 20 --warmups 5"
+```
+
+`PerformanceCli.format` produce una rappresentazione line-oriented con tipo di
+esperimento, entità, p50, p95, p99, completion rate ed eventuale breakpoint.
+La locale esplicita rende stabile il formato decimale. La CLI stampa questo testo. La GUI usa lo stesso risultato senza avviare una shell o duplicare il formatter.
+
+#### Utilizzo dalla GUI opzionale
+
+Il launcher normale non mostra i controlli prestazionali. L'opzione
+`--performance` seleziona invece `PerformanceGameEngineModePanel`:
+
+```powershell
+java -jar $jar --performance
+```
+
+`PerformanceMode.panelFor` sceglie il builder standard o il decorator.
+Il decorator costruisce prima il pannello originale e aggiunge un terzo
+`MenuButton` con la stessa API usata dai controlli di creazione e fisica.
+Il pulsante è disabilitato mentre la simulazione è in esecuzione.
+
+La voce del menu apre `ExperimentDialog`. `ExperimentForm` descrive tramite
+`FormFieldSpec` un selettore e i campi comuni. 
+- Load non aggiunge campi specifici;
+- Spike richiede il massimo; 
+- Stress e Scalability richiedono massimo e fattore.
+
+Il form produce `ExperimentCommand` con route e coppie opzione-valore:
+parsing e validazione restano in `PerformanceCli`.
+
+Al submit, il decorator legge dal runtime gli stati pubblici delle regole.
+`PerformanceCli.runWithRules` ricostruisce il manager predefinito applicando
+quelle abilitazioni. Viene quindi riprodotta la configurazione delle
+regole predefinite che la GUI espone in quel momento.
+
+L'esperimento viene eseguito in un `Future` su `ExecutionContext.global`.
+`ExperimentDialog` mostra immediatamente il messaggio di esecuzione e pubblica
+l'esito sul JavaFX Application Thread. `ResultDialog` riutilizza la stessa finestra
+per sostituire il messaggio iniziale con report o errore.
