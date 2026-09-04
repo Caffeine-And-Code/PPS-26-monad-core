@@ -1,93 +1,128 @@
 # Design architetturale
 
-## Obiettivi architetturali
+L'architettura di MonadCore2D deriva da quattro esigenze principali: rendere il motore utilizzabile come libreria autonoma, offrire modalità interattiva e headless, isolare GUI e servizi LLM e mantenere verificabili le dipendenze tra sottosistemi. Il deployment produce un'unica applicazione, ma il codice conserva due confini logici: `monad_core.engine`, nucleo riusabile, e `monad_core.simulator`, applicazione client del motore.
 
-L'architettura di MonadCore2D è stata progettata con i seguenti obiettivi:
+Le decisioni architetturali principali sono:
 
-- separare il motore di simulazione dalle modalità con cui viene utilizzato;
-- mantenere la logica fisica e il modello indipendenti dalla GUI e dai servizi di intelligenza artificiale;
-- isolare le dipendenze esterne, in particolare ScalaFX, LangChain4j e Ollama;
-- permettere l'esecuzione sia interattiva, tramite GUI, sia headless, per la valutazione degli agenti;
-- rendere sostituibili le implementazioni del motore, dell'agente AI, del logging e del dataset di valutazione;
-- rappresentare gli errori attesi mediante tipi espliciti, principalmente `Either`, evitando di affidare il normale flusso applicativo alle eccezioni.
+- mantenere modello, fisica, game loop e piano di rendering indipendenti dal simulator, in risposta a **BR-01** e **RNF-02**;
+- esporre i casi d'uso tramite porte e confinare tecnologie esterne negli adapter, in risposta a **RNF-07** e **RI-03**;
+- fare convergere GUI e agente sul medesimo mondo applicativo, come richiesto da **RS-01** e **RS-10**;
+- separare stato fisico definitivo e rappresentazione interpolata, in risposta a **RS-03** e **RS-04**;
+- comporre dal medesimo punto di avvio la GUI oppure la valutazione headless, in risposta a **BR-04** e **RS-12**;
+- rappresentare gli errori attesi come valori e adattare le eccezioni presso i confini esterni, in risposta a **RS-02**.
 
-Il sistema è organizzato in due macrocomponenti: il **game engine**, utilizzabile come libreria autonoma, e il **simulatore**, che integra il motore con interfaccia grafica e agenti AI.
+## Contesto e ambiente di esecuzione
 
-## Ambiente di esecuzione
+Il sistema interagisce con quattro attori o servizi esterni:
 
-L'ambiente di esecuzione dell'applicazione è descritto dal seguente deployment diagram.
+- lo sviluppatore integratore, che usa direttamente l'API Scala dell'engine;
+- l'utente desktop, che interagisce con GUI e assistente;
+- l'operatore, che avvia la valutazione da linea di comando e ne legge il riepilogo;
+- Ollama, che espone gli endpoint usati dal modello agente e dal modello giudice.
 
-![deployment-diagram-pps.png](assets/deployment-diagram-pps.png)
+Il diagramma rappresenta la configurazione interattiva minima.
 
-- **Personal computer**: esegue la JVM contenente il simulatore. Nella modalità interattiva ospita anche la GUI ScalaFX; nella modalità di valutazione esegue invece il processo headless da linea di comando.
-- **Server Ollama**: espone via rete i modelli utilizzati da LangChain4j. Può essere eseguito sullo stesso computer del simulatore oppure su una macchina distinta.
+![Deployment del simulatore e di Ollama](assets/deployment-diagram-pps.png)
 
-La GUI utilizza un agente configurato tramite URL del server e nome del modello.
+Sul personal computer una JVM Java 21 esegue il fat JAR. In modalità interattiva la stessa JVM ospita GUI, runtime del motore, mondo e adapter AI; in modalità di valutazione ospita dataset, runner, mondi isolati e aggregatore dei risultati senza inizializzare ScalaFX. Non sono presenti database né stato applicativo remoto.
 
-Il collegamento a Ollama è necessario per le funzionalità AI, ma il game engine non dipende da Ollama e può essere utilizzato autonomamente.
+Ollama è l'unico componente distribuito. Comunica tramite richieste di rete e può risiedere sulla macchina locale o su un host differente; agente e giudice possono inoltre usare endpoint distinti. La sua indisponibilità limita chat e valutazione, ma non impedisce l'uso programmatico dell'engine. Poiché JavaFX include librerie native, la pipeline produce artefatti distinti per Linux, Windows e macOS.
 
-## Vista dei componenti
+## Vista complessiva dei componenti
 
-Il seguente component diagram mostra i principali componenti del sistema e le loro dipendenze logiche.
+Il diagramma mostra i componenti principali e la direzione delle dipendenze a compile time.
 
-![component-diagram-pps.png](assets/component-diagram-pps.png)
+![Componenti principali e dipendenze](assets/component-diagram-pps.png)
 
-Le dipendenze esterne sono confinate, per quanto possibile, ai bordi del sistema:
+L'architettura è composta dagli undici componenti seguenti.
 
-- ScalaFX è utilizzato dalla Presentation.
-- LangChain4j è utilizzato dagli adattatori AI nel livello Infrastructure;
-- Ollama rimane un servizio esterno e viene raggiunto esclusivamente attraverso LangChain4j.
+### 1. Engine Model
 
-L'oggetto `Launcher` costituisce il **composition root** dell'applicazione: seleziona la modalità di esecuzione, costruisce le implementazioni concrete delle entità di livello Infrastructure e le collega alle rispettive interfacce definite nel livello Application.
+Definisce scene, entità, superfici, team, forme, vettori, colori e confini. Riceve valori primitivi e produce valori validi oppure errori di dominio; le trasformazioni restituiscono nuove scene. Costituisce il vocabolario condiviso dagli altri componenti dell'engine.
 
-## Architettura del simulatore
+### 2. Geometry e Collision Detection
 
-L'architettura del simulatore è ispirata alla **Clean Architecture** e applica anche il principio **Ports and Adapters**. L'applicazione è suddivisione nei seguenti package `presentation`, `application`, `domain` e `infrastructure`.
+Geometry implementa collisione e contenimento tra forme posizionate; Collision Detection presenta tali operazioni al resto del motore tramite un contratto sugli elementi della scena. Riceve elementi geometrici e restituisce informazioni di collisione o contenimento, senza conoscere regole fisiche e interfacce utente.
 
-### Domain
+### 3. Physics
 
-Il livello Domain contiene i tipi che descrivono i concetti propri delle funzionalità AI e della loro valutazione.
-Si intende parte del livello di dominio anche i modelli descritti nel package `model` dell'engine, in quanto sono semplici rappresentazioni di forme geometriche e sono coerenti con il modo di rappresentare e di intendere le forme geometriche del simulatore.
-Il livello Domain non ha dipendenze esterne ad eccezione di quella sopra citata
+Orchestra le regole fisiche configurate. Riceve stato, intervallo temporale e contatti geometrici; restituisce uno stato successivo con gli eventi prodotti oppure un errore. Include dinamiche delle superfici, attrazione, collisioni, bordi, danno e cinematica.
 
-### Application
+### 4. Engine Core
 
-Il livello Application definisce i casi d'uso e le porte necessarie per realizzarli.
-Il livello Application dipende dai tipi del livello Domain e nient'altro.
+Definisce l'astrazione dello stato e il ciclo temporale a passo fisso. Coordina zero o più aggiornamenti fisici e conserva le informazioni necessarie all'interpolazione, senza possedere globalmente la scena.
 
-### Infrastructure
+### 5. Engine Integration API
 
-Il livello Infrastructure contiene gli adattatori concreti delle porte applicative.
-Questo livello dipende sia dalle porte definite in Application sia dalle librerie esterne. Le implementazioni possono quindi essere sostituite senza modificare i contratti applicativi: ad esempio è possibile introdurre un altro provider AI, un dataset caricato da file o una diversa implementazione del game engine.
-Il livello di Infrastructure dipende dai livelli di Application, Domain e dalle librerie esterne necessarie per le implementazioni delle porte di Application.
+Costituisce il confine pubblico del motore. Espone sessione, avanzamento, configurazione delle regole, interpolazione e produzione di comandi di disegno backend-neutral. I client non dipendono così dall'organizzazione interna di core e physics.
 
-### Presentation
+### 6. Simulator Domain
 
-Il livello Presentation contiene le due interfacce di ingresso dell'applicazione:
+Contiene conversazioni, prompt, risposte e tipi della valutazione dell'agente. Dipende da valori Scala e dai soli dati dell'engine necessari a descrivere il mondo iniziale e finale, senza conoscere interfacce o librerie AI.
 
-- la GUI ScalaFX, composta da stage, pannelli, componenti, form e painter;
-- il comando `evaluate-model`, che esegue la valutazione e presenta il risultato su console.
+### 7. Simulator Application
 
-La Presentation invoca le porte di Application e usa i tipi di dominio necessari per mostrare o raccogliere dati. Non può usare in maniera diretta le dipendenze esterne come LangChain4j.
-Per interagire con le dipendenze esterne dovrà riferire alla loro implementazione fornitagli tramite dependency injection dal composition root, tramite le port definite nel livello Application.
-Il livello di Presentation dipende dal livello di Application, di Domain e dalla libreria `ScalaFX` per la GUI.
+Definisce casi d'uso e porte per mondo, controllo e runtime dell'engine, agente, valutatore, dataset e logging. Riceve comandi dai componenti di ingresso e scambia scene, risultati tipizzati, eventi, frame di disegno e riepiloghi di valutazione con gli adapter.
 
-## Interazione con la GUI: MVVM
+### 8. Engine e Logging Adapters
 
-Per l’interazione con la GUI è stato scelto di utilizzare il pattern MVVM.
-- Componente GUI: definisce i componenti `ScalaFx` del componente, attacca gli handler dei suoi componenti con gli handler del ViewModel, inoltre ha un listener sullo stato per cui ogni volta che si aggiorna lo stato, aggiorna la GUI 
-- ViewModel: inizializza lo stato iniziale, mette gli handler a disposizione del Componente GUI, associa a ogni handler l’Action corrispondente e aggiorna lo stato. 
-- Action: presenta una serie di metodi che ritornano lo stato aggiornato 
-- State: rappresenta lo stato del componente
+Adatta la scena e l'API dell'engine alle porte applicative del mondo e del runtime. Custodisce lo stato necessario all'esecuzione, coordina snapshot e frame e traduce eventi ed errori nel vocabolario del simulator. Il logging converte gli eventi in record destinati alla console.
 
-![mvvm-gui.png](assets/mvvm-gui.png)
+### 9. AI Adapters
 
-## Architettura del game engine
+Confina LangChain4j e la comunicazione con Ollama. Traduce prompt, risposte e tool tra rappresentazioni esterne e porte applicative; comprende inoltre l'esecuzione isolata dei casi di valutazione e l'uso del modello giudice.
 
-Il game engine è progettato come libreria indipendente dal simulatore e non dipende da LangChain4j o Ollama o ScalaFX. Al suo interno i file sono raggrupati in base al dominio di appartenenza:
+### 10. Presentation
 
-- `model` contiene gli oggetti del dominio fisico;
-- `geometry` e `collision_detection` contengono le operazioni geometriche e il rilevamento delle collisioni;
-- `physics` contiene regole, combinatori, risoluzione delle collisioni e pathfinding;
-- `core` contiene `GameLoop`, lo stato e i contratti di rendering e fisica;
-- `public_api` raccoglie `EngineFacade` e il contratto `Painter`, cioè il principale punto di integrazione con i client del motore.
+Comprende due inbound adapter: la GUI ScalaFX e la modalità di valutazione da linea di comando. La GUI traduce eventi dell'utente in comandi applicativi e interpreta i comandi di disegno; il runner headless analizza gli argomenti e presenta i risultati senza dipendere dal toolkit grafico.
+
+### 11. Launcher
+
+È il composition root. Seleziona la modalità di esecuzione, costruisce gli adapter concreti e li collega alle porte. È l'unico punto applicativo che conosce contemporaneamente Presentation e Infrastructure.
+
+## Interazioni principali
+
+Uno sviluppatore usa l'Engine Integration API passando stato, sessione e configurazione fisica. Core richiede gli aggiornamenti a Physics e restituisce stato precedente e corrente, eventi e coefficiente di interpolazione; il piano di rendering trasforma poi lo stato visuale in comandi indipendenti dalla GUI.
+
+Nel simulator, GUI e tool AI convertono le richieste in comandi delle porte Application. Gli adapter del mondo e del runtime applicano le operazioni all'engine e restituiscono un risultato tipizzato; gli eventi prodotti vengono inoltrati al logging e i comandi grafici alla Presentation. La provenienza della richiesta non modifica le regole di autorizzazione o atomicità.
+
+Per una conversazione, Presentation invia prompt e identificatore alla porta dell'agente. L'adapter AI comunica con Ollama e può invocare le porte del mondo e del controllo; la risposta testuale o l'errore tornano al chiamante in modo asincrono. In modalità headless il valutatore crea invece un mondo isolato per caso, raccoglie risposte e tool e consegna al printer un riepilogo aggregato.
+
+## Regole di dipendenza
+
+L'engine può dipendere soltanto dai propri sottopackage e dalla libreria standard. Nel simulator, Domain non dipende dagli altri layer; Application dipende da Domain e dai contratti pubblici dell'engine; Infrastructure dipende da Application, Domain, engine e librerie esterne; Presentation dipende da Application, Domain e tecnologie di interfaccia, ma non dagli adapter concreti. Il Launcher rimane esterno ai layer e realizza il wiring.
+
+L'engine costituisce uno **shared kernel interno e stabile**: i suoi tipi pubblici possono attraversare i layer del simulator quando rappresentano direttamente il mondo, evitando copie di DTO equivalenti. Questa è un'eccezione esplicita alla variante più rigida della Clean Architecture, non una dipendenza del motore dall'applicazione.
+
+Test architetturali verificano tali direzioni, l'indipendenza dell'engine e il confinamento di ScalaFX e JavaFX. Le regole strutturali diventano così vincoli eseguibili e non semplici convenzioni.
+
+## Pattern architetturali
+
+### Ports and Adapters
+
+Application definisce le porte richieste dai casi d'uso; GUI e runner costituiscono adapter di ingresso, mentre engine, LangChain4j, dataset e logger costituiscono adapter di uscita. Il composition root sceglie le implementazioni senza far dipendere i casi d'uso dalle tecnologie.
+
+### Functional Core, Imperative Shell
+
+Modello e trasformazioni deterministiche appartengono al nucleo funzionale. Mutabilità necessaria all'esecuzione, sincronizzazione, rete, console e JavaFX sono confinate nei gusci esterni. Il pattern riduce la superficie soggetta a race condition e rende direttamente verificabili le transizioni.
+
+### Layered Architecture con shared kernel
+
+Domain, Application, Infrastructure e Presentation organizzano il simulator secondo responsabilità crescentemente esterne. L'engine resta un nucleo separato condiviso, più interno di tutti i layer applicativi. Questa combinazione conserva la riusabilità del motore senza duplicare il suo modello nel simulator.
+
+## Scelte tecnologiche cruciali
+
+- **Scala 3** supporta ADT, opaque type, pattern matching, funzioni di ordine superiore e contextual abstraction usati per mantenere esplicite invarianti e dipendenze;
+- **SBT** coordina compilazione, suite separate, assembly e Scaladoc e seleziona le dipendenze JavaFX specifiche della piattaforma;
+- **ScalaFX/JavaFX** fornisce canvas e proprietà osservabili, introducendo un thread grafico e dipendenze native confinati alla Presentation;
+- **LangChain4j** fornisce astrazione del modello, memoria e tool calling, restando confinato agli adapter AI;
+- **Ollama** rende configurabili modelli locali o remoti senza introdurre credenziali cloud nel progetto;
+- **Quarkdown e Scaladoc** mantengono relazione e API insieme ai sorgenti e ne permettono la produzione automatica.
+
+## Concorrenza, consistenza ed errori
+
+Eventi della GUI e completamenti asincroni dell'agente possono raggiungere il mondo da thread differenti. Gli adapter stateful serializzano quindi le transizioni critiche, mentre scene e risultati restano immutabili. Un nuovo stato diventa osservabile soltanto al termine di un'operazione riuscita; frame, sessione, snapshot ed eventi vengono coordinati dallo stesso confine applicativo.
+
+Gli errori di dominio, fisica e applicazione attraversano i componenti come valori. Le eccezioni vengono ammesse soltanto presso librerie che le impongono e sono convertite prima di raggiungere i casi d'uso. Presentation decide se mostrare una notifica, un messaggio, una riga di console o un exit code senza modificare il significato dell'errore.
+
+Non sono previsti replica, persistenza o retry distribuiti: l'unico collegamento remoto è la chiamata stateless a Ollama. L'architettura non attribuisce quindi al sistema proprietà di scalabilità o disponibilità non richieste e non verificate.
