@@ -21,6 +21,12 @@ final private[ai] case class IncompleteEntitySpeed()
 final private[ai] case class IncompleteSurfaceAppliedForce()
     extends BaseError("Both appliedForceX and appliedForceY must be provided together")
 
+/**
+ * LangChain4j tools for querying and modifying a world and controlling its engine.
+ *
+ * @param world world queried and modified by the tools
+ * @param gameEngineRuntime engine control
+ */
 case class Langchain4jTools()(using
     world: World,
     gameEngineRuntime: EngineControl
@@ -31,10 +37,21 @@ case class Langchain4jTools()(using
   private val rotationOrDefault: java.lang.Double => Double =
     rotation => Option(rotation).fold(defaultRotation)(_.doubleValue())
 
+  /**
+   * gets all entities.
+   *
+   * @return formatted list of all entities in the current world
+   */
   @Tool(Array("Lists all entities in the world."))
   def getAllEntities: String =
     renderList(world.getAllEntities, "entities")(renderEntity)
 
+  /**
+   * Get a single entity.
+   *
+   * @param id entity identifier
+   * @return formatted entity, or an error response
+   */
   @Tool(Array("Gets an entity by its identifier."))
   def getEntity(
       @P("Entity identifier") id: String
@@ -82,6 +99,23 @@ case class Langchain4jTools()(using
       .withDamageOverTime(damageOverTime)
       .adaptError()
 
+  /**
+   * Creates a circular entity while the engine is stopped.
+   *
+   * @param id unique entity identifier
+   * @param x horizontal position
+   * @param y vertical position
+   * @param radius strictly positive radius
+   * @param teamId optional team identifier
+   * @param weight optional strictly positive weight
+   * @param speedX optional horizontal speed, supplied together with `speedY`
+   * @param speedY optional vertical speed, supplied together with `speedX`
+   * @param rotation optional rotation in degrees; defaults to zero
+   * @param angularSpeed optional angular speed
+   * @param health optional strictly positive health
+   * @param damage optional non-negative contact damage
+   * @return formatted success or validation error response
+   */
   @Tool(Array("Creates a circular entity."))
   def createCircleEntity(
       @P("Unique entity identifier") id: String,
@@ -124,6 +158,24 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Creates a rectangular entity while the engine is stopped.
+   *
+   * @param id unique entity identifier
+   * @param x horizontal position
+   * @param y vertical position
+   * @param height strictly positive height
+   * @param length strictly positive length
+   * @param teamId optional team identifier
+   * @param weight optional strictly positive weight
+   * @param speedX optional horizontal speed, supplied together with `speedY`
+   * @param speedY optional vertical speed, supplied together with `speedX`
+   * @param rotation optional rotation in degrees; defaults to zero
+   * @param angularSpeed optional angular speed
+   * @param health optional strictly positive health
+   * @param damage optional non-negative contact damage
+   * @return formatted success or validation error response
+   */
   @Tool(Array("Creates a rectangular entity."))
   def createRectangleEntity(
       @P("Unique entity identifier") id: String,
@@ -167,6 +219,23 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Replaces an entity with a circular entity while the engine is stopped.
+   *
+   * @param id identifier of the entity to replace
+   * @param x new horizontal position
+   * @param y new vertical position
+   * @param radius new strictly positive radius
+   * @param rotation optional new rotation; defaults to zero
+   * @param angularSpeed optional new angular speed
+   * @param teamId optional new team identifier
+   * @param weight optional new strictly positive weight
+   * @param speedX optional new horizontal speed, supplied with `speedY`
+   * @param speedY optional new vertical speed, supplied with `speedX`
+   * @param health optional new strictly positive health
+   * @param damage optional new non-negative contact damage
+   * @return formatted success or error response
+   */
   @Tool(Array("Replaces an entity with a circular entity having the same identifier."))
   def updateCircleEntity(
       @P("Identifier of the entity to update") id: String,
@@ -209,6 +278,24 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Replaces an entity with a rectangular entity while the engine is stopped.
+   *
+   * @param id identifier of the entity to replace
+   * @param x new horizontal position
+   * @param y new vertical position
+   * @param height new strictly positive height
+   * @param length new strictly positive length
+   * @param rotation optional new rotation; defaults to zero
+   * @param angularSpeed optional new angular speed
+   * @param teamId optional new team identifier
+   * @param weight optional new strictly positive weight
+   * @param speedX optional new horizontal speed, supplied with `speedY`
+   * @param speedY optional new vertical speed, supplied with `speedX`
+   * @param health optional new strictly positive health
+   * @param damage optional new non-negative contact damage
+   * @return formatted success or error response
+   */
   @Tool(Array("Replaces an entity with a rectangular entity having the same identifier."))
   def updateRectangleEntity(
       @P("Identifier of the entity to update") id: String,
@@ -252,6 +339,12 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Remove an entity form the world while the engine is stopped.
+   *
+   * @param id entity identifier
+   * @return formatted success or error response
+   */
   @Tool(Array("Removes an entity by its identifier."))
   def removeEntity(
       @P("Entity identifier") id: String
@@ -263,16 +356,36 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Return all the surfaces in current world
+   *
+   * @return formatted list of all surfaces in the current world
+   */
   @Tool(Array("Lists all surfaces in the world."))
   def getAllSurfaces: String =
     renderList(world.getAllSurfaces, "surfaces")(renderSurface)
 
+  /** @param id surface identifier @return formatted surface, or an error response */
   @Tool(Array("Gets a surface by its identifier."))
   def getSurface(
       @P("Surface identifier") id: String
   ): String =
     render(LocatableId(id).adaptError().flatMap(id => world.getSurface(id.value)))(renderSurface)
 
+  /**
+   * Creates a circular surface while the engine is stopped.
+   *
+   * @param id unique surface identifier
+   * @param x horizontal position
+   * @param y vertical position
+   * @param radius strictly positive radius
+   * @param rotation optional rotation; defaults to zero
+   * @param frictionIndex optional friction coefficient
+   * @param appliedForceX optional horizontal force, supplied with `appliedForceY`
+   * @param appliedForceY optional vertical force, supplied with `appliedForceX`
+   * @param damageOverTime optional non-negative periodic damage
+   * @return formatted success or error response
+   */
   @Tool(Array("Creates a circular surface."))
   def createCircleSurface(
       @P("Unique surface identifier") id: String,
@@ -316,6 +429,21 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Creates a rectangular surface while the engine is stopped.
+   *
+   * @param id unique surface identifier
+   * @param x horizontal position
+   * @param y vertical position
+   * @param height strictly positive height
+   * @param length strictly positive length
+   * @param rotation optional rotation; defaults to zero
+   * @param frictionIndex optional friction coefficient
+   * @param appliedForceX optional horizontal force, supplied with `appliedForceY`
+   * @param appliedForceY optional vertical force, supplied with `appliedForceX`
+   * @param damageOverTime optional non-negative periodic damage
+   * @return formatted success or error response
+   */
   @Tool(Array("Creates a rectangular surface."))
   def createRectangleSurface(
       @P("Unique surface identifier") id: String,
@@ -360,6 +488,20 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Replaces a surface with a circular surface while the engine is stopped.
+   *
+   * @param id identifier of the surface to replace
+   * @param x new horizontal position
+   * @param y new vertical position
+   * @param radius new strictly positive radius
+   * @param rotation optional new rotation; defaults to zero
+   * @param frictionIndex optional new friction coefficient
+   * @param appliedForceX optional new horizontal force, supplied with `appliedForceY`
+   * @param appliedForceY optional new vertical force, supplied with `appliedForceX`
+   * @param damageOverTime optional new non-negative periodic damage
+   * @return formatted success or error response
+   */
   @Tool(Array("Replaces a surface with a circular surface having the same identifier."))
   def updateCircleSurface(
       @P("Identifier of the surface to update") id: String,
@@ -403,6 +545,21 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Replaces a surface with a rectangular surface while the engine is stopped.
+   *
+   * @param id identifier of the surface to replace
+   * @param x new horizontal position
+   * @param y new vertical position
+   * @param height new strictly positive height
+   * @param length new strictly positive length
+   * @param rotation optional new rotation; defaults to zero
+   * @param frictionIndex optional new friction coefficient
+   * @param appliedForceX optional new horizontal force, supplied with `appliedForceY`
+   * @param appliedForceY optional new vertical force, supplied with `appliedForceX`
+   * @param damageOverTime optional new non-negative periodic damage
+   * @return formatted success or error response
+   */
   @Tool(Array("Replaces a surface with a rectangular surface having the same identifier."))
   def updateRectangleSurface(
       @P("Identifier of the surface to update") id: String,
@@ -447,6 +604,12 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Remove a surface while the engine is stopped.
+   *
+   * @param id surface identifier
+   * @return formatted success or error response
+   */
   @Tool(Array("Removes a surface by its identifier."))
   def removeSurface(
       @P("Surface identifier") id: String
@@ -458,16 +621,33 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Return all teams.
+   *
+   * @return formatted list of all teams in the current world
+   */
   @Tool(Array("Lists all teams in the world."))
   def getAllTeams: String =
     renderList(world.getAllTeams, "teams")(renderTeam)
 
+  /**
+   * Return a single team
+   *
+   * @param id team identifier @return formatted team, or an error response
+   * */
   @Tool(Array("Gets a team by its identifier."))
   def getTeam(
       @P("Team identifier") id: String
   ): String =
     render(TeamId(id).adaptError().flatMap(id => world.getTeam(id.value)))(renderTeam)
 
+  /**
+   * creates a team while engine is stopped.
+   *
+   * @param id unique team identifier
+   * @param enemies comma-separated enemy identifiers
+   * @return formatted success or error response
+   */
   @Tool(Array("Creates a team and optionally assigns enemy teams."))
   def createTeam(
       @P("Unique team identifier") id: String,
@@ -483,6 +663,13 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Replaces a team with the given enemies while engine is stopped.
+   *
+   * @param id team identifier
+   * @param enemies new comma-separated enemy identifiers
+   * @return formatted success or error response
+   */
   @Tool(Array("Replaces a team's enemy list."))
   def updateTeam(
       @P("Identifier of the team to update") id: String,
@@ -498,6 +685,12 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Removes a team while engine is stopped.
+   *
+   * @param id team identifier
+   * @return formatted success or error response
+   */
   @Tool(Array("Removes a team by its identifier."))
   def removeTeam(
       @P("Team identifier") id: String
@@ -509,11 +702,20 @@ case class Langchain4jTools()(using
       )
     }
 
+  /**
+   * Starts the game engine
+   *
+   * @return confirmation that the engine was started */
   @Tool(Array("Starts the game engine."))
   def start(): String =
     gameEngineRuntime.start()
     "Game engine started."
 
+  /**
+   * Stops the game engine
+   *
+   * @return confirmation that the engine was stopped
+   */
   @Tool(Array("Stops the game engine."))
   def stop(): String =
     gameEngineRuntime.stop()

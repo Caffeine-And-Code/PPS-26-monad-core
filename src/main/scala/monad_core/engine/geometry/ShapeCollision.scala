@@ -4,6 +4,9 @@ import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
 
+/**
+ * Collision algorithms for every pairing of the engine's circle and rectangle shapes.
+ */
 object ShapeCollision:
 
   private val Epsilon = 1e-9
@@ -101,6 +104,7 @@ object ShapeCollision:
       worldPoint(nearestEdge._3, rectangle)
     )
 
+  /** Collision implementation for two circles. */
   given circleCollidesWithCircle: Collides[Circle, Circle] with
 
     override def checkCollision(first: Placed[Circle], second: Placed[Circle]): Option[Collision] =
@@ -116,6 +120,9 @@ object ShapeCollision:
 
         Collision(normal, penetrationDepth, (firstContact + secondContact) * 0.5)
 
+  /**
+   * Collision implementation for two rectangles
+   */
   given rectangleCollidesWithRectangle: Collides[Rectangle, Rectangle] with
 
     override def checkCollision(
@@ -137,6 +144,9 @@ object ShapeCollision:
 
         Collision(normal, penetrationDepth, collisionPoint)
 
+  /**
+   * Collision implementation for a circle and a rectangle.
+   */
   given circleCollidesWithRectangle: Collides[Circle, Rectangle] with
 
     override def checkCollision(
@@ -162,6 +172,9 @@ object ShapeCollision:
           )
       else Some(collisionFromCircleInsideRectangle(circle, rectangle, localCircle))
 
+  /**
+   * Collision implementation for a rectangle and a circle.
+   */
   given rectangleCollidesWithCircle: Collides[Rectangle, Circle] with
 
     override def checkCollision(
@@ -172,6 +185,9 @@ object ShapeCollision:
         .checkCollision(circle, rectangle)
         .map(collision => collision.copy(normalVector = collision.normalVector.flip))
 
+  /**
+   * Dispatches collision checks according to the types of [[monad_core.engine.model.Shape2D]] values.
+   */
   given shapeCollidesWithShape: Collides[Shape2D, Shape2D] with
 
     override def checkCollision(

@@ -8,13 +8,26 @@ import monad_core.simulator.errors.BaseError
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
+/**
+ * Raised when the tool call has not been recognized
+ *
+ * @param toolName tool that could not be mapped
+ * @param reason failure description
+ */
 case class InvalidToolCall(toolName: String, reason: String)
     extends BaseError(s"Cannot map tool '$toolName': $reason")
 
+/** Converts LangChain4j executed tools into typed evaluation tool calls. */
 case class Langchain4jToolCallMapper():
 
   private val defaultRotation = 0.0
 
+  /**
+   * Maps a request using its name and its arguments.
+   *
+   * @param request LangChain4j tool execution request
+   * @return typed tool call, or [[InvalidToolCall]] for unknown tools and malformed arguments
+   */
   def from(request: ToolExecutionRequest): Either[BaseError, ToolCall] =
     request.name() match
       case "getAllEntities" => Right(ToolCall.GetAllEntities)

@@ -5,8 +5,15 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 
 import scala.jdk.CollectionConverters.*
 
+/** ScalaTest matchers for assertions on tool executions in LangChain4j results. */
 object ToolExecutionMatchers:
 
+  /**
+   * Creates a matcher that requires exactly one execution of the named tool.
+   *
+   * @param expectedTool name of the tool to be executed
+   * @return matcher that succeeds when the model executed only the provided tool
+   */
   def onlyExecuteTool(expectedTool: String): Matcher[Result[?]] =
     Matcher {
       result =>
@@ -20,6 +27,12 @@ object ToolExecutionMatchers:
         )
     }
 
+  /**
+   * Creates a matcher that check that only the provided tools are called.
+   *
+   * @param expectedTools tool names expected to be called
+   * @return matcher that succeeds when every expected tool name occurs in the result, and nothing else
+   */
   def executeOnlyTheseTools(expectedTools: List[String]): Matcher[Result[?]] =
     Matcher {
       result =>
@@ -41,6 +54,11 @@ object ToolExecutionMatchers:
         )
     }
 
+  /**
+   * Creates a matcher that rejects if there has been a tool execution.
+   *
+   * @return matcher that succeeds when the result contains no tool executions
+   */
   def notExecuteTools: Matcher[Result[?]] =
     Matcher {
       result =>
@@ -54,18 +72,18 @@ object ToolExecutionMatchers:
         )
     }
 
-  extension (result: Result[?]) {
+  extension (result: Result[?])
 
-    def getExecutedToolNameList: List[String] =
+    private def getExecutedToolNameList: List[String] =
       result
         .toolExecutions()
         .asScala
         .map(_.request().name())
         .toList
-  }
 
-  extension (stringList: List[String]) {
 
-    def formatForLogging(): String =
+  extension (stringList: List[String])
+
+    private def formatForLogging(): String =
       stringList.mkString("[", ", ", "]")
-  }
+

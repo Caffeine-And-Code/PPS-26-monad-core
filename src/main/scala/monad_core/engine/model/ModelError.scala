@@ -4,7 +4,11 @@ package monad_core.engine.model
 case class CannotApplyDamageToNoneHealthEntity()
     extends EngineError("Cannot apply damage to none health entity")
 
-/** Raised when health is initialized or reduced to a non-positive value. */
+/**
+ * Raised when health is initialized or reduced to a non-positive value.
+ *
+ * @param health invalid health value
+ */
 case class HealthCannotBeNegativeOrZero(health: Double)
     extends EngineError(s"health cannot be negative or zero, health = $health")
 
@@ -17,13 +21,21 @@ case class HealthCannotBeNegativeOrZero(health: Double)
 case class CannotApplyNegativeDamage(damage: Double)
     extends EngineError(s"Cannot apply negative damage, damage = $damage")
 
-/** Raised when a position contains a negative coordinate. */
+/**
+ * Raised when a position contains a negative coordinate.
+ *
+ * @param position invalid position
+ */
 case class PositionIsValid(position: Vector2D)
     extends EngineError(
       s"Position is invalid, x and y should be greater then 0, x = ${position.x}, y = ${position.y}"
     )
 
-/** Raised when a rotation falls outside the inclusive range `[0, 360]`. */
+/**
+ * Raised when a rotation falls outside the inclusive range `[0, 360]`.
+ *
+ * @param rotation invalid rotation in degrees
+ */
 case class RotationMustBeAValidDegreeValue(rotation: Double)
     extends EngineError(s"Rotation must be between 0 and 360 degrees, rotation = $rotation")
 

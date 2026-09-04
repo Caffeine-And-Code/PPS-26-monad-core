@@ -3,6 +3,7 @@ package monad_core.engine.model
 /** Validated, non-empty identifier of a [[Locatable]]. */
 opaque type LocatableId = String
 
+/** Creates and exposes validated [[LocatableId]] values. */
 object LocatableId:
 
   /**
@@ -17,5 +18,9 @@ object LocatableId:
     Either.cond(locatableId.trim.nonEmpty, locatableId.trim, LocatableIdCannotBeEmpty())
 
   extension (locatableId: LocatableId)
-    /** Returns the underlying identifier. */
+    /**
+     * Returns the underlying identifier.
+     *
+     * @return trimmed, non-empty identifier
+     */
     def value: String = locatableId

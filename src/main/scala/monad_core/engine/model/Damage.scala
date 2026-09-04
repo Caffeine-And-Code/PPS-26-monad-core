@@ -20,10 +20,11 @@ object Damage:
     Either.cond(damage >= 0, damage, DamageCannotBeNegative())
 
   /**
-   * Creates an optioinal damage value when the provided amount is non-negative.
+   * Returns an optional raw damage amount.
    *
-   * @param optionalDamage raw damage amount or empty
-   * @return `Right(optionalDamage)` for a non-negative amount, or `Left(DamageCannotBeNegative)` otherwise
+   * @param optionalDamage raw damage amount, or `None` when damage is not configured
+   * @return `Right(None)` when absent, `Right(Some(Damage))` for a non-negative amount, or
+   *   `Left(DamageCannotBeNegative)` for a negative amount
    */
   def fromOption(optionalDamage: Option[Int]): Either[EngineError, Option[Damage]] =
     ModelUtils.optionalize(optionalDamage, Damage(_))

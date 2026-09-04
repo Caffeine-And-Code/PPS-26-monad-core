@@ -3,6 +3,7 @@ package monad_core.engine.model
 /** Strictly positive health value associated with an [[Entity]]. */
 opaque type Health = Int
 
+/** Creates, converts, and updates validated [[Health]] values. */
 object Health:
 
   /**
@@ -14,12 +15,23 @@ object Health:
   def apply(h: Int): Either[EngineError, Health] =
     Either.cond(h > 0, h, HealthCannotBeNegativeOrZero(h))
 
+  /**
+   * Returns an optional raw health value.
+   *
+   * @param optionalHealth raw health, or `None` when health is not configured
+   * @return `Right(None)` when absent, `Right(Some(Health))` for a positive value, or
+   *   [[HealthCannotBeNegativeOrZero]] for a non-positive value
+   */
   def fromOption(optionalHealth: Option[Int]): Either[EngineError, Option[Health]] =
     ModelUtils.optionalize(optionalHealth, Health(_))
 
   extension (h: Health)
 
-    /** Returns the underlying health points. */
+    /**
+     * Returns the underlying health points.
+     *
+     * @return strictly positive health value
+     */
     def value: Int = h
 
     private infix def inflict(damage: Int): Either[EngineError, Health] =
