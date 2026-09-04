@@ -12,7 +12,7 @@ Nel nucleo dell'engine ho realizzato in misura prevalente `GameLoop`,
 Per la fisica, ho sviluppato l'intero package di `physics` (fatta eccezione per `PhysicsContext` e `DamageApplicationRule`, aggiunte da Fattori ed integrate nella mia struttura), ove risiedono la logica delle regole fisiche, l'algoritmo di pathfinding e le funzioni di utility utilizzate in quel package. La parte prestazionale comprende l'intero package `performance` e i componenti in
 `simulator.presentation.performance`.
 
-Nella sezione del modello ho contribuito a `Entity`, `Surface`, `Locatable`, `Vector2D`,
+Sul modello sviluppato prevalentemente da Senni ho contribuito a `Entity`, `Surface`, `Locatable`, `Vector2D`,
 `Collision` e `ShapeCollision` per introdurre rotazione, velocità angolare e punti
 di contatto. Ho propagato rotazione e velocità angolare anche attraverso `ToolCall`
 e il relativo mapper, così queste proprietà possono essere impostate anche dal client LLM.
@@ -290,23 +290,10 @@ e nell'attrito.
 
 ### Ray casting e pathfinding locale
 
-#### Rappresentazione geometrica
-
-Il ray casting è usato da `EnemyAttractionRule` per decidere se un'entità può
-dirigersi direttamente verso il nemico o deve aggirare il primo ostacolo.
-`VertexFinder` trasforma le forme nella loro rappresentazione in coordinate globali.
-Per i rettangoli considera posizione, semidimensioni e rotazione, mentre per i cerchi produce
-punti distribuiti sulla circonferenza.
-
-Prima dell'intersezione, `RayCast` espande gli ostacoli in funzione dell'ingombro
-dell'entità che si muove e di un margine di sicurezza. Per un cerchio usa il raggio,
-per un rettangolo usa la semidiagonale. È un'approssimazione conservativa della
-somma di Minkowski: permette di trattare il movimento come un raggio puntiforme,
-ma può escludere passaggi che una rappresentazione più precisa riterrebbe validi.
-
 #### Intersezione tra raggio e ostacoli
 
-`RayIntersection` considera ogni contorno come una sequenza di segmenti.
+Nel flusso descritto dal design, `RayIntersection` considera ogni contorno come
+una sequenza di segmenti.
 Il raggio di origine $ o $ e direzione $ d $ è:
 
 $ R(t)=o+t d,\qquad t\geq0 $
@@ -334,10 +321,8 @@ Anche l'assenza completa di intersezioni è rappresentata come errore del ray ca
 
 #### Costruzione e scelta dei waypoint
 
-Se il primo oggetto incontrato è il nemico, il suo centro rimane la destinazione.
-Se è un ostacolo, `WaypointFinder` produce due candidati.
-
-Per un cerchio di centro $ c $ e raggio $ r $, osservato da un punto esterno
+Per costruire i due candidati attorno a un cerchio di centro $ c $ e raggio $ r $,
+osservato da un punto esterno
 $ s $, calcolo i punti di tangenza:
 
 $ \theta=atan2(y_s-y_c,x_s-x_c) $
@@ -350,193 +335,67 @@ La costruzione richiede che il punto iniziale sia esterno al cerchio.
 Da un punto interno non esistono due tangenti reali. Per un rettangolo calcolo invece l'angolo
 orientato di ogni vertice rispetto alla direzione del centro e scelgo i due estremi visibili.
 
-I candidati vengono spostati verso l'esterno per includere l'ingombro dell'entità.
-`SizeHelper` verifica poi che essa rimanga interamente dentro `WorldBounds`.
-Tra i waypoint validi scelgo quello più vicino al bersaglio originale.
-La strategia è locale, in maniera tale da ridurre il costo in maniera greedy e adattarsi ad una scena dinamica.
-
-![raycast-flow.png](../assets/raycast-flow.png)
+L'offset verso l'esterno usa il raggio per le entità circolari e la semidiagonale
+per quelle rettangolari. Questa approssimazione può escludere un passaggio che una
+somma di Minkowski più precisa considererebbe valido, ma evita che il solo centro
+dell'entità superi un ostacolo lasciando la forma in collisione.
 
 ### Performance testing
 
-#### Obiettivo e struttura attuale
+Ho realizzato il sottosistema descritto nel design mantenendo il runner indipendente
+dall'engine e dalle modalità di presentazione. La separazione è ottenuta soprattutto
+attraverso tipi validati, funzioni ricevute come valori e collaboratori contestuali,
+senza introdurre una gerarchia di servizi per ogni fase dell'esperimento.
 
-Ho realizzato il performance testing per misurare il costo di un tick reale
-dell'engine a diversi livelli di carico e confrontarlo con un budget temporale.
+#### Validazione e nucleo funzionale
 
-- `performance.model` contiene configurazione, conteggi validati, report, errori
-  e il contratto del clock;
-- `performance.core` contiene `PerformanceRunner` e `PerformanceMetrics`;
-- `performance.simulator` collega il core alla scena, alla facade, al clock reale
-  e alla CLI.
+`EntityCount` e `IterationCount` sono opaque type distinti, pur condividendo la
+validazione di `PositiveCount`. `WarmupCount` conserva separatamente il caso zero,
+mentre `GrowthFactor` accetta soltanto valori maggiori di uno. Gli smart constructor
+`from` restituiscono `Either`, e `PerformanceConfig` conserva il frame budget come
+`FiniteDuration`; in questo modo il core riceve soltanto configurazioni già valide.
 
-La GUI non appartiene al package prestazionale puro, perché dipende da ScalaFX:
-`PerformanceMode`, `PerformanceGameEngineModePanel`, `ExperimentForm`,
-`ExperimentDialog` e `ResultDialog` sono collocati in
-`simulator.presentation.performance`.
+Ho rappresentato il workload attraverso i type alias funzionali `Operation` e
+`PrepareWorkload`. `PerformanceRunner` può quindi preparare, ripetere e misurare
+un'operazione senza conoscere il tipo di scena o l'output finale. Le funzioni
+`collect` e `repeat` sono ricorsive in coda e terminano al primo `PerformanceError`.
+Nella generazione della crescita la moltiplicazione viene eseguita in `Long` prima
+del limite, evitando l'overflow intermedio del valore `Int`.
 
-`PerformanceRunner` riceve un workload come funzione. `PrepareWorkload` associa
-un `EntityCount` alla preparazione fallibile di una `Operation`, cioè:
+`NanoClock` viene risolto tramite `using`: `PerformanceClock` adatta
+`System.nanoTime()` in produzione, mentre `SequenceNanoClock` fornisce timestamp
+predefiniti nei test. La misurazione rimane così parte del comportamento osservabile,
+ma la sorgente del tempo non diventa una dipendenza globale del runner.
 
-`EntityCount => Either[PerformanceError, () => Either[PerformanceError, Unit]]`
+#### Adapter dell'engine e CLI
 
-Questa firma è sufficiente a sostituire il workload nei test e evita un'interfaccia
-per ogni fase. Il runner sa come scegliere i carichi, ripetere l'operazione e
-misurarla; non conosce scene, regole fisiche o output. `PerformanceMetrics` opera
-soltanto sui campioni e rimane completamente puro.
+`EnginePerformance` prepara una `DeterministicScene` e una sessione avviata, poi
+costruisce l'operazione che invoca `EngineFacade.tick`. Ho mantenuto la costruzione
+della scena fallibile e priva di casualità e ho adattato gli errori dell'engine a
+`EnginePerformanceError`, così il chiamante conserva un unico tipo di fallimento.
 
-Nel model, `EntityCount` e `IterationCount` sono opaque type distinti ma condividono
-la validazione di `PositiveCount`. `WarmupCount` ammette anche zero e
-`GrowthFactor` richiede un valore maggiore di uno. Gli smart constructor `from`
-restituiscono `Either`. Il frame budget è una `FiniteDuration` costruita dai
-millisecondi, evitando tipi e funzioni di conversione duplicati.
+`PerformanceCli` concentra parsing, valori predefiniti, esecuzione e formattazione.
+Le opzioni vengono convertite nella stessa `PerformanceRequest` usata dal core e il
+report viene prodotto come testo line-oriented. L'uso esplicito di `Locale.ROOT`
+rende stabili separatore decimale, millisecondi e percentuali tra ambienti diversi.
 
-#### Pipeline di esecuzione
+#### Estensione grafica opzionale
 
-`PerformanceCli.parse` traduce la route e gli argomenti in una
-`PerformanceRequest` validata. `PerformanceRunner.run` determina la sequenza dei
-carichi e, per ognuno, chiama il workload. `EnginePerformance` prepara una
-`DeterministicScene` e una sessione avviata, poi restituisce l'operazione che invoca
-`EngineFacade.tick`. Gli errori dell'engine sono adattati a
-`EnginePerformanceError`.
+Per non modificare il pannello standard, `PerformanceGameEngineModePanel` implementa
+lo stesso builder e decora il risultato prodotto da `GameEngineModePanel`. Il
+controllo viene scelto da `PerformanceMode` soltanto in presenza di `--performance`;
+il decorator aggiunge un `MenuButton` attraverso la stessa API usata dai controlli
+di creazione e fisica. Form e dialoghi restano nel layer Presentation perché
+dipendono da ScalaFX.
 
-La scena è deterministica: con $ n $ entità usa una griglia di dimensione
-
-$ columns=\lceil\sqrt{n}\rceil,\qquad rows=\left\lceil\frac{n}{columns}\right\rceil $
-
-e alterna cerchi e rettangoli, team, velocità lineari, rotazioni e velocità
-angolari. Ogni entità possiede massa, salute e danno. Due team reciprocamente
-nemici permettono di esercitare l'attrazione; una superficie estesa sul mondo
-fornisce forza, attrito e danno. Non introducendo casualità, ripetizioni con la
-stessa configurazione eseguono lo stesso scenario logico.
-
-Per ogni carico, scena e sessione sono preparate prima della misura.
-Il runner esegue i warm-up senza leggere il clock e misura poi `iterations` (numero di campioni per ciascun carico)
-esecuzioni. Se $ t_{before,i} $ e
-$ t_{after,i} $ sono le due letture del `NanoClock`:
-
-$ L_i=t_{after,i}-t_{before,i} $
-
-`NanoClock` è una dipendenza contestuale. In produzione `PerformanceClock` usa
-`System.nanoTime()`; nei test `SequenceNanoClock` restituisce valori predefiniti.
-`collect` e `repeat` sono ricorsive in coda e interrompono immediatamente
-l'esperimento se preparazione, warm-up o campione restituiscono un errore.
-
-![performance-flow.png](../assets/performance-flow.png)
-
-#### Strategie e metriche
-
-I quattro esperimenti condividono configurazione e metriche, ma generano carichi
-differenti:
-
-| Esperimento | Carichi misurati | Parametri specifici | Criterio di termine |
-| ----------- | ---------------- | ------------------- | ------------------- |
-| Load | Solo il valore iniziale | Nessuno | Dopo un punto |
-| Stress | Crescita fino al massimo | Massimo e fattore | Primo p95 oltre budget, oppure massimo |
-| Spike | Iniziale, massimo, iniziale | Massimo | Dopo tre punti |
-| Scalability | Crescita fino al massimo | Massimo e fattore | Dopo il massimo |
-
-Stress e Scalability usano `EntityGrowth`:
-
-$ n_0=start,\qquad n_{k+1}=\min(n_k\cdot factor,maximum) $
-
-Il massimo viene incluso anche se non è una potenza esatta del fattore.
-La moltiplicazione avviene in `Long` prima del limite, evitando l'overflow
-intermedio di `Int`.
-
-`PerformanceMetrics` ordina le latenze e usa il nearest rank. Per $ N $ campioni,
-indicizzati da uno:
-
-$ P_p=L_{\lceil pN\rceil},\qquad p\in\{0.50,0.95,0.99\} $
-
-Il completion rate indica la frazione di campioni non superiori al budget $ B $:
-
-$ completionRate=\frac{|\{i\mid L_i\leq B\}|}{N} $
-
-L'uguaglianza rispetta il budget. Stress si interrompe invece soltanto quando
-$ p95>B $ e registra il primo `EntityCount` che supera la soglia. Gli altri esperimenti raccolgono
-tutti i punti previsti.
-
-La misura comprende il tick dell'engine, non rendering JavaFX e interpolazione.
-
-#### Utilizzo da riga di comando
-
-Il launcher registra le quattro route nel router dell'applicazione:
-
-- `performance-load-test`;
-- `performance-stress-test`;
-- `performance-spike-test`;
-- `performance-scalability-test`.
-
-Le opzioni comuni sono `--entities`, `--iterations`, `--warmups` e
-`--frame-budget-ms`. `--max-entities` serve a Spike, Stress e Scalability;
-`--growth-factor` determina la progressione di Stress e Scalability.
-In assenza di opzioni, vengono utilizzati dei valori default, quindi 100 entità iniziali, massimo 1600, fattore 2,
-20 iterazioni, 5 warm-up e budget di 16 ms.
-
-Dopo aver prodotto il fat JAR con `sbt assembly`, in PowerShell è possibile eseguire:
-
-```powershell
-$jar = "C:\percorso\MonadCore2D-assembly-<versione>.jar"
-
-java -jar $jar performance-load-test `
-  --entities 100 --iterations 20 --warmups 5 --frame-budget-ms 16
-
-java -jar $jar performance-stress-test `
-  --entities 100 --max-entities 1600 --growth-factor 2 `
-  --iterations 20 --warmups 5 --frame-budget-ms 16
-
-java -jar $jar performance-spike-test `
-  --entities 100 --max-entities 1600 `
-  --iterations 20 --warmups 5 --frame-budget-ms 16
-
-java -jar $jar performance-scalability-test `
-  --entities 100 --max-entities 1600 --growth-factor 2 `
-  --iterations 20 --warmups 5 --frame-budget-ms 16
-```
-
-Dalla radice del repository è possibile richiamare la stessa route durante lo sviluppo:
-
-```powershell
-sbt "run performance-load-test --entities 100 --iterations 20 --warmups 5"
-```
-
-`PerformanceCli.format` produce una rappresentazione line-oriented con tipo di
-esperimento, entità, p50, p95, p99, completion rate ed eventuale breakpoint.
-La locale esplicita rende stabile il formato decimale. La CLI stampa questo testo. La GUI usa lo stesso risultato senza avviare una shell o duplicare il formatter.
-
-#### Utilizzo dalla GUI opzionale
-
-Il launcher normale non mostra i controlli prestazionali. L'opzione
-`--performance` seleziona invece `PerformanceGameEngineModePanel`:
-
-```powershell
-java -jar $jar --performance
-```
-
-`PerformanceMode.panelFor` sceglie il builder standard o il decorator.
-Il decorator costruisce prima il pannello originale e aggiunge un terzo
-`MenuButton` con la stessa API usata dai controlli di creazione e fisica.
-Il pulsante è disabilitato mentre la simulazione è in esecuzione.
-
-La voce del menu apre `ExperimentDialog`. `ExperimentForm` descrive tramite
-`FormFieldSpec` un selettore e i campi comuni. 
-- Load non aggiunge campi specifici;
-- Spike richiede il massimo; 
-- Stress e Scalability richiedono massimo e fattore.
-
-Il form produce `ExperimentCommand` con route e coppie opzione-valore:
-parsing e validazione restano in `PerformanceCli`.
-
-Al submit, il decorator legge dal runtime gli stati pubblici delle regole.
-`PerformanceCli.runWithRules` ricostruisce il manager predefinito applicando
-quelle abilitazioni. Viene quindi riprodotta la configurazione delle
-regole predefinite che la GUI espone in quel momento.
-
-L'esperimento viene eseguito in un `Future` su `ExecutionContext.global`.
-`ExperimentDialog` mostra immediatamente il messaggio di esecuzione e pubblica
-l'esito sul JavaFX Application Thread. `ResultDialog` riutilizza la stessa finestra
-per sostituire il messaggio iniziale con report o errore.
+`ExperimentForm` descrive selettore e campi tramite `FormFieldSpec`, riusa le
+costanti e le route della CLI e produce un `ExperimentCommand` composto da coppie
+opzione-valore, evitando una seconda validazione grafica. Il decorator legge dal
+runtime gli stati pubblici delle regole e `PerformanceCli.runWithRules` ricostruisce
+la configurazione fisica da applicare alla scena. L'esperimento viene eseguito in un
+`Future` su `ExecutionContext.global`; il messaggio iniziale e l'esito vengono
+mostrati nella stessa finestra e gli aggiornamenti grafici vengono riportati sul
+JavaFX Application Thread.
 
 ### Costrutti avanzati di Scala utilizzati
 

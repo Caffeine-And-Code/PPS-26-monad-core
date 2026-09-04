@@ -46,6 +46,16 @@ Ogni `PhysicsRule` trasforma un `PhysicsContext` in `Either[PhysicsError, Physic
 
 Le regole mantengono una responsabilità fisica ciascuna: dinamiche delle superfici, attrazione, risoluzione delle collisioni, contatto con i bordi, danno e cinematica. Algoritmi e calcoli specifici restano interni alle rispettive implementazioni e non modificano il protocollo comune.
 
+### Ray casting e pathfinding locale
+
+`EnemyAttractionRule` delega al sottosistema di ray casting la scelta tra una direzione diretta verso il nemico e un percorso locale attorno al primo ostacolo. `VertexFinder` trasforma cerchi e rettangoli nelle rispettive rappresentazioni in coordinate globali, considerando posizione, dimensioni e rotazione. `RayCast` espande poi gli ostacoli in funzione dell'ingombro dell'entità in movimento e di un margine di sicurezza, adottando un'approssimazione conservativa della somma di Minkowski che consente di trattare il moto come quello di un punto.
+
+`RayIntersection` interpreta ciascun contorno come una sequenza di segmenti, calcola le intersezioni positive con il raggio e seleziona quella più vicina oltre la tolleranza. Se il primo elemento incontrato è il bersaglio, il suo centro rimane la destinazione; in presenza di un ostacolo, `WaypointFinder` produce invece due candidati laterali. Per un cerchio usa i punti di tangenza, mentre per un rettangolo seleziona i due vertici estremi rispetto alla direzione di osservazione.
+
+I candidati vengono spostati verso l'esterno per includere l'ingombro dell'entità e `SizeHelper` elimina quelli che non consentirebbero di rimanere interamente dentro `WorldBounds`. Tra i waypoint validi viene scelto quello più vicino al bersaglio originale. La strategia è intenzionalmente locale e greedy: riduce il costo e può reagire a una scena dinamica senza mantenere un percorso globale.
+
+![Flusso del ray casting](assets/raycast-flow.png)
+
 ### Sessione, rendering ed eventi
 
 Il game loop separa frequenza della simulazione e frequenza di visualizzazione. Una sessione conserva configurazione temporale e accumulatore; a ogni chiamata consuma zero o più passi completi e mantiene il resto. Il risultato distingue stato precedente e corrente e fornisce `alpha`, usato per interpolare posizione e rotazione del frame senza modificare lo stato fisico definitivo.
@@ -141,21 +151,72 @@ Il valutatore separa definizione del caso, esecuzione e giudizio. Ogni caso rice
 
 Gli errori seguono il confine che li produce: `EngineError` per modello e core, `PhysicsError` per la pipeline e `BaseError` per i casi d'uso del simulator. `ErrorsAdapter` traduce il vocabolario dell'engine quando attraversa una porta applicativa. Le funzioni pure usano `Either`; `Try` è confinato ai punti in cui dialoghi, rete o parsing delle librerie possono sollevare eccezioni. Presentation sceglie la rappresentazione dell'errore senza cambiarne il significato.
 
+### Performance testing
+
+Il sottosistema prestazionale è separato in `performance.model`, `performance.core` e `performance.simulator`. Il model contiene strategie, configurazione, conteggi validati, report, errori e il contratto del clock. Il core contiene `PerformanceRunner` e `PerformanceMetrics` e non conosce scene, regole fisiche, CLI o interfacce grafiche. Gli adapter simulator costruiscono il workload concreto attraverso `EngineFacade`, preparano la scena deterministica, forniscono il clock reale e traducono route, argomenti e report nel formato testuale.
+
+`PerformanceRunner` riceve la preparazione del workload come funzione. `PrepareWorkload` associa un `EntityCount` alla costruzione fallibile di una `Operation`, rappresentando il contratto:
+
+`EntityCount => Either[PerformanceError, () => Either[PerformanceError, Unit]]`
+
+Il runner determina la sequenza dei carichi, prepara un'operazione per ciascuno, esegue i warm-up e raccoglie le iterazioni misurate. Il workload concreto rimane così sostituibile, mentre `PerformanceMetrics` opera soltanto sui campioni e conserva una responsabilità pura.
+
+`PerformanceConfig` raccoglie la progressione delle entità, il numero di iterazioni, i warm-up e il frame budget. `EntityCount` e `IterationCount` sono conteggi positivi distinti che condividono la stessa validazione; `WarmupCount` ammette anche zero e `GrowthFactor` richiede un valore maggiore di uno. Il frame budget è una `FiniteDuration` costruita dai millisecondi. Gli smart constructor restituiscono `Either`, così una richiesta non valida non raggiunge il runner.
+
+I quattro esperimenti condividono configurazione e metriche, ma interpretano la progressione in modo diverso:
+
+| Esperimento | Carichi misurati | Parametri specifici | Criterio di termine |
+| ----------- | ---------------- | ------------------- | ------------------- |
+| Load | Solo il valore iniziale | Nessuno | Dopo un punto |
+| Stress | Crescita fino al massimo | Massimo e fattore | Primo p95 oltre budget, oppure massimo |
+| Spike | Iniziale, massimo, iniziale | Massimo | Dopo tre punti |
+| Scalability | Crescita fino al massimo | Massimo e fattore | Dopo il massimo |
+
+Stress e Scalability usano `EntityGrowth`. Dati il numero iniziale $ n_0 $, il massimo e il fattore, la progressione è:
+
+$ n_{k+1} = \min(n_k \cdot factor, maximum) $
+
+Il massimo viene incluso anche quando non è una potenza esatta del fattore. La moltiplicazione viene eseguita in `Long` prima di applicare il limite, evitando un overflow intermedio di `Int`.
+
+Per ogni carico `EnginePerformance` costruisce una `DeterministicScene` e una sessione avviata, poi restituisce l'operazione che invoca `EngineFacade.tick`. Con $ n $ entità, la scena usa una griglia di dimensione:
+
+$ columns = \lceil\sqrt{n}\rceil,\qquad rows = \left\lceil\frac{n}{columns}\right\rceil $
+
+La scena alterna cerchi e rettangoli, team, velocità lineari, rotazioni e velocità angolari. Ogni entità possiede massa, salute e danno; due team reciprocamente nemici esercitano l'attrazione e una superficie estesa sul mondo fornisce forza, attrito e danno. La struttura non introduce casualità, quindi la stessa configurazione esercita lo stesso scenario logico.
+
+Scena e sessione vengono preparate prima della misura. I warm-up eseguono l'operazione senza leggere il clock; per ogni iterazione misurata, dati $ t_{before,i} $ e $ t_{after,i} $, la latenza raccolta è:
+
+$ L_i = t_{after,i} - t_{before,i} $
+
+Il clock è una dipendenza sostituibile. L'adapter di produzione usa `System.nanoTime()`, mentre un clock a sequenza consente ai test di fornire timestamp deterministici. Un errore durante preparazione, warm-up o misura interrompe la pipeline e viene restituito come `PerformanceError`; gli errori prodotti dal tick vengono adattati a `EnginePerformanceError`.
+
+`PerformanceMetrics` ordina le latenze e usa il metodo nearest-rank. Per $ N $ campioni indicizzati da uno:
+
+$ P_p = L_{\lceil pN\rceil},\qquad p\in\{0.50,0.95,0.99\} $
+
+Il completion rate rappresenta la frazione di campioni non superiori al budget $ B $:
+
+$ completionRate = \frac{|\{i\mid L_i\leq B\}|}{N} $
+
+L'uguaglianza rispetta il budget. Stress si interrompe invece soltanto quando $ p95>B $ e conserva il primo `EntityCount` che supera la soglia; gli altri esperimenti raccolgono tutti i punti previsti. La misura comprende il tick dell'engine, ma non il rendering JavaFX e l'interpolazione.
+
+`PerformanceCli` costituisce l'ingresso condiviso. Traduce route e coppie opzione-valore in una `PerformanceRequest`, delega l'esecuzione e formatta un risultato line-oriented indipendente dalla locale. La GUI rimane in `simulator.presentation.performance`: `PerformanceMode` abilita il relativo decorator soltanto con `--performance`, `ExperimentForm` traduce i campi nello stesso comando testuale e `ExperimentDialog` esegue l'operazione fuori dal thread grafico. La configurazione fisica viene ricostruita dagli stati pubblici delle regole del runtime; `ResultDialog` presenta il medesimo testo prodotto dalla CLI.
+
 ## Pattern di progettazione
 
 La tabella collega ogni pattern alla decisione in cui viene applicato, evitando di ripeterne il funzionamento.
 
 | Pattern o idioma | Applicazione | Motivazione |
 | ---------------- | ------------ | ----------- |
-| Smart Constructor | opaque type e aggregati del modello | impedire la costruzione di valori non validi |
+| Smart Constructor | opaque type, aggregati del modello e configurazione performance | impedire la costruzione di valori non validi |
 | Lens | collezioni interne di `Scene` | riusare lookup e aggiornamenti immutabili |
 | Strategy e Type Class | collisioni, contenimento e `Painter` | sostituire una politica senza modificare l'orchestrazione |
-| Pipeline | sequenza delle `PhysicsRule` | evolvere stato ed eventi in ordine con short-circuit |
+| Pipeline | sequenza delle `PhysicsRule` ed esperimenti prestazionali | evolvere stato, eventi e misure in ordine con short-circuit |
 | Facade | `EngineFacade` | nascondere game loop e sessione concreta ai client |
 | Command con Interpreter | `WorldEdit` e `DrawCommand` | separare descrizione di un'operazione dalla sua esecuzione |
 | MVVM con Reducer | pannello chat | rendere espliciti stato, transizioni pure ed effetti |
 | Adapter | engine, errori, LangChain4j e tool | tradurre contratti e confinare rappresentazioni esterne |
-| Dependency Injection | porte e component builder | comporre collaboratori senza service locator globale |
+| Dependency Injection | porte, component builder, workload e clock | comporre collaboratori senza service locator globale |
 | Observer leggero | callback degli eventi e proprietà ScalaFX | notificare cambiamenti senza introdurre un event bus generale |
 
 ## Organizzazione del codice
@@ -178,19 +239,26 @@ monad_core
 │   │   ├── traits
 │   │   └── events
 │   └── simulator
+├── performance
+│   ├── model
+│   ├── core
+│   └── simulator
 ├── simulator
 │   ├── domain
 │   ├── application
 │   ├── infrastructure
 │   ├── presentation
+│   │   └── performance
 │   └── errors
 └── Launcher.scala
 ```
 
 Nell'engine, `model` contiene dati e invarianti; `geometry` gli algoritmi indipendenti dalla scena; `collision_detection` il contratto sugli elementi del dominio; `physics` contesto, manager, combinazione e regole; `core` il ciclo temporale e le astrazioni consumate dagli altri sottosistemi; `engine.simulator` la facade e i dati dell'API di integrazione. Le implementazioni non destinate ai client sono ristrette con visibilità di package.
 
-Nel simulator, `domain` contiene i concetti AI indipendenti dalle librerie; `application` porte e comandi; `infrastructure` gli adapter per engine, AI, dataset e logging; `presentation` GUI e ingresso headless; `errors` il vocabolario applicativo comune. Il `Launcher` rimane esterno ai layer perché ne costituisce il composition root.
+Nel sottosistema performance, `model` raccoglie dati validati e contratti, `core` genera i carichi e calcola le metriche e `simulator` collega tali funzioni all'engine, al clock di sistema e alla CLI. La sola interfaccia ScalaFX risiede nel sottopackage `simulator.presentation.performance`.
+
+Nel simulator, `domain` contiene i concetti AI indipendenti dalle librerie; `application` porte e comandi; `infrastructure` gli adapter per engine, AI, dataset e logging; `presentation` GUI e ingressi headless; `errors` il vocabolario applicativo comune. Il `Launcher` rimane esterno ai layer perché ne costituisce il composition root.
 
 Un tipo viene collocato in base alla responsabilità: un comando del caso d'uso appartiene ad Application, un concetto AI indipendente al Domain, il codice che importa LangChain4j a Infrastructure e quello che importa ScalaFX a Presentation. I tipi pubblici dell'engine attraversano il simulator come shared kernel, ma la dipendenza inversa non è consentita.
 
-Questi confini definiscono anche i punti di estensione: una nuova regola implementa `PhysicsRule`, una diversa politica grafica implementa `Painter`, un nuovo provider implementa `AiAgent` e un nuovo dataset implementa la relativa porta. Il composition root può sostituire tali collaboratori senza modificare i casi d'uso o il nucleo dell'engine.
+Questi confini definiscono anche i punti di estensione: una nuova regola implementa `PhysicsRule`, una diversa politica grafica implementa `Painter`, un nuovo provider implementa `AiAgent`, un nuovo dataset implementa la relativa porta e un diverso workload può essere fornito al runner prestazionale. Il composition root può sostituire tali collaboratori senza modificare i casi d'uso o il nucleo dell'engine.

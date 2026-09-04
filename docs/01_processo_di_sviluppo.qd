@@ -10,7 +10,7 @@ L'assegnazione iniziale ha individuato tre aree prevalenti:
 
 - Senni: modello delle entità, collision detection, chat e integrazione con l'agente;
 - Fattori: scena, CI/CD, eventi, runtime e interfaccia grafica;
-- Tonelli: game loop, fisica, modalità di esecuzione e successive estensioni fisiche.
+- Tonelli: game loop, applicazione della fisica, test sulle performance.
 
 La divisione non ha costituito un confine rigido. Durante gli sprint i task incompleti sono stati riportati nel backlog successivo, nuove attività sono state assegnate in base alle dipendenze emerse e le interfacce condivise sono state discusse o sviluppate congiuntamente. Il backlog e i report degli incontri sono rimasti file testuali versionati insieme al codice, rendendo ricostruibili pianificazione e variazioni.
 
@@ -20,7 +20,7 @@ Il repository ha adottato un flusso basato su branch dedicati alle funzionalità
 
 Ogni sprint è iniziato con uno Sprint Planning dedicato a revisione del backlog, selezione dell'incremento, stima e assegnazione dei task. Gli incontri giornalieri hanno condiviso attività concluse, lavoro immediatamente successivo e impedimenti; quando una decisione coinvolgeva più sottosistemi, il confronto è proseguito tramite pair programming o revisione congiunta delle interfacce.
 
-La Sprint Review ha verificato l'incremento prodotto, lo stato dei task e le attività da riportare nell'iterazione seguente. Planning e review hanno avuto una durata massima rispettivamente di due ore e un'ora; i daily sono rimasti incontri brevi di coordinamento.
+La Sprint Review ha verificato l'incremento prodotto, lo stato dei task e le attività da riportare nell'iterazione seguente. Planning e review hanno avuto una durata massima rispettivamente di due ore e un'ora; i daily sono rimasti incontri brevi di coordinamento, anche a distanza.
 
 ## Revisione e qualità in itinere
 
@@ -35,6 +35,6 @@ Lo sviluppo ha seguito il ciclo Red–Green–Refactor del Test-Driven Developme
 - **Stryker4s** ha verificato l'efficacia delle asserzioni dell'engine mediante mutation testing;
 - **ScalaFX/JavaFX**, helper dedicati e snapshot strutturali e visuali hanno verificato la GUI;
 - **GitHub** ha ospitato repository, pull request, branch policy e release;
-- **GitHub Actions** ha eseguito formattazione e suite automatizzata, usando Xvfb per i test grafici, e ha prodotto fat JAR, relazione e documentazione delle API.
+- **GitHub Actions** ha eseguito controlli su formattazione e suite automatizzata, usando Xvfb per i test grafici, e ha prodotto fat JAR, relazione e documentazione delle API.
 
 La suite standard è rimasta indipendente da Ollama; le verifiche con un modello reale sono state collocate nella configurazione separata `llmIntegrationTest`. In questo modo una pull request ha potuto ricevere un esito deterministico, mentre il comportamento emergente dell'assistente è stato controllato esplicitamente negli ambienti predisposti.

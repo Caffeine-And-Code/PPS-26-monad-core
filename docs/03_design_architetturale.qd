@@ -9,32 +9,34 @@ Le decisioni architetturali principali sono:
 - fare convergere GUI e agente sul medesimo mondo applicativo, come richiesto da **RS-01** e **RS-10**;
 - separare stato fisico definitivo e rappresentazione interpolata, in risposta a **RS-03** e **RS-04**;
 - comporre dal medesimo punto di avvio la GUI oppure la valutazione headless, in risposta a **BR-04** e **RS-12**;
+- separare runner e metriche prestazionali dal workload concreto, dalla CLI e dalla GUI, in risposta a **BR-07** e **RNF-10**;
 - rappresentare gli errori attesi come valori e adattare le eccezioni presso i confini esterni, in risposta a **RS-02**.
 
 ## Contesto e ambiente di esecuzione
 
-Il sistema interagisce con quattro attori o servizi esterni:
+Il sistema interagisce con cinque attori o servizi esterni:
 
 - lo sviluppatore integratore, che usa direttamente l'API Scala dell'engine;
 - l'utente desktop, che interagisce con GUI e assistente;
 - l'operatore, che avvia la valutazione da linea di comando e ne legge il riepilogo;
+- l'operatore delle performance, che avvia uno dei quattro esperimenti dalla CLI o dalla GUI estesa;
 - Ollama, che espone gli endpoint usati dal modello agente e dal modello giudice.
 
 Il diagramma rappresenta la configurazione interattiva minima.
 
 ![Deployment del simulatore e di Ollama](assets/deployment-diagram-pps.png)
 
-Sul personal computer una JVM Java 21 esegue il fat JAR. In modalità interattiva la stessa JVM ospita GUI, runtime del motore, mondo e adapter AI; in modalità di valutazione ospita dataset, runner, mondi isolati e aggregatore dei risultati senza inizializzare ScalaFX. Non sono presenti database né stato applicativo remoto.
+Sul personal computer una JVM Java 21 esegue il fat JAR. In modalità interattiva la stessa JVM ospita GUI, runtime del motore, mondo e adapter AI; l'opzione `--performance` estende questa composizione con il controllo grafico degli esperimenti. In modalità di valutazione ospita dataset, runner, mondi isolati e aggregatore dei risultati senza inizializzare ScalaFX. Le route performance eseguono analogamente scena deterministica, runner e formatter senza costruire la GUI. Non sono presenti database né stato applicativo remoto.
 
 Ollama è l'unico componente distribuito. Comunica tramite richieste di rete e può risiedere sulla macchina locale o su un host differente; agente e giudice possono inoltre usare endpoint distinti. La sua indisponibilità limita chat e valutazione, ma non impedisce l'uso programmatico dell'engine. Poiché JavaFX include librerie native, la pipeline produce artefatti distinti per Linux, Windows e macOS.
 
 ## Vista complessiva dei componenti
 
-Il diagramma mostra i componenti principali e la direzione delle dipendenze a compile time.
+Il diagramma mostra i componenti principali dell'engine e del simulator e la direzione delle dipendenze a compile time.
 
 ![Componenti principali e dipendenze](assets/component-diagram-pps.png)
 
-L'architettura è composta dagli undici componenti seguenti.
+L'architettura è composta dai dodici componenti seguenti.
 
 ### 1. Engine Model
 
@@ -80,6 +82,10 @@ Comprende due inbound adapter: la GUI ScalaFX e la modalità di valutazione da l
 
 È il composition root. Seleziona la modalità di esecuzione, costruisce gli adapter concreti e li collega alle porte. È l'unico punto applicativo che conosce contemporaneamente Presentation e Infrastructure.
 
+### 12. Performance Testing
+
+Misura il costo di un tick reale dell'Engine Integration API senza introdurre dipendenze nel motore. Il model definisce configurazioni, strategie, report, errori e il contratto del clock; il core riceve un workload funzionale, genera i carichi e calcola le metriche; gli adapter simulator preparano la scena deterministica, collegano `EngineFacade`, il clock reale e la CLI. L'estensione in Presentation riusa lo stesso ingresso testuale e lo stesso report, aggiungendo soltanto form ed esecuzione asincrona ScalaFX.
+
 ## Interazioni principali
 
 Uno sviluppatore usa l'Engine Integration API passando stato, sessione e configurazione fisica. Core richiede gli aggiornamenti a Physics e restituisce stato precedente e corrente, eventi e coefficiente di interpolazione; il piano di rendering trasforma poi lo stato visuale in comandi indipendenti dalla GUI.
@@ -88,9 +94,13 @@ Nel simulator, GUI e tool AI convertono le richieste in comandi delle porte Appl
 
 Per una conversazione, Presentation invia prompt e identificatore alla porta dell'agente. L'adapter AI comunica con Ollama e può invocare le porte del mondo e del controllo; la risposta testuale o l'errore tornano al chiamante in modo asincrono. In modalità headless il valutatore crea invece un mondo isolato per caso, raccoglie risposte e tool e consegna al printer un riepilogo aggregato.
 
+Per un esperimento prestazionale, CLI o form grafico producono una richiesta validata. Il runner genera i carichi e chiede all'adapter dell'engine di preparare per ciascuno una scena e una sessione; il workload esegue i tick, il clock produce i campioni e il core restituisce un report. Il formatter genera infine la medesima rappresentazione testuale per console e finestra grafica. In GUI, l'adapter ricostruisce inoltre la configurazione fisica a partire dagli stati pubblici delle regole del runtime.
+
+![Flusso del performance testing](assets/performance-flow.png)
+
 ## Regole di dipendenza
 
-L'engine può dipendere soltanto dai propri sottopackage e dalla libreria standard. Nel simulator, Domain non dipende dagli altri layer; Application dipende da Domain e dai contratti pubblici dell'engine; Infrastructure dipende da Application, Domain, engine e librerie esterne; Presentation dipende da Application, Domain e tecnologie di interfaccia, ma non dagli adapter concreti. Il Launcher rimane esterno ai layer e realizza il wiring.
+L'engine può dipendere soltanto dai propri sottopackage e dalla libreria standard. Model e core delle performance non dipendono da ScalaFX: il primo descrive dati e contratti, mentre il secondo conosce soltanto workload e campioni. Gli adapter in `performance.simulator` dipendono dall'API pubblica dell'engine; la relativa GUI appartiene invece alla Presentation del simulator. Nel simulator, Domain non dipende dagli altri layer; Application dipende da Domain e dai contratti pubblici dell'engine; Infrastructure dipende da Application, Domain, engine e librerie esterne; Presentation dipende da Application, Domain e tecnologie di interfaccia, ma non dagli adapter concreti. Il Launcher rimane esterno ai layer e realizza il wiring.
 
 L'engine costituisce uno **shared kernel interno e stabile**: i suoi tipi pubblici possono attraversare i layer del simulator quando rappresentano direttamente il mondo, evitando copie di DTO equivalenti. Questa è un'eccezione esplicita alla variante più rigida della Clean Architecture, non una dipendenza del motore dall'applicazione.
 
@@ -104,7 +114,7 @@ Application definisce le porte richieste dai casi d'uso; GUI e runner costituisc
 
 ### Functional Core, Imperative Shell
 
-Modello e trasformazioni deterministiche appartengono al nucleo funzionale. Mutabilità necessaria all'esecuzione, sincronizzazione, rete, console e JavaFX sono confinate nei gusci esterni. Il pattern riduce la superficie soggetta a race condition e rende direttamente verificabili le transizioni.
+Modello e trasformazioni deterministiche appartengono al nucleo funzionale. Lo stesso vale per la generazione dei carichi e il calcolo delle metriche prestazionali, che ricevono workload e clock come dipendenze sostituibili. Mutabilità necessaria all'esecuzione, sincronizzazione, rete, console e JavaFX sono confinate nei gusci esterni. Il pattern riduce la superficie soggetta a race condition e rende direttamente verificabili le transizioni.
 
 ### Layered Architecture con shared kernel
 
@@ -121,7 +131,7 @@ Domain, Application, Infrastructure e Presentation organizzano il simulator seco
 
 ## Concorrenza, consistenza ed errori
 
-Eventi della GUI e completamenti asincroni dell'agente possono raggiungere il mondo da thread differenti. Gli adapter stateful serializzano quindi le transizioni critiche, mentre scene e risultati restano immutabili. Un nuovo stato diventa osservabile soltanto al termine di un'operazione riuscita; frame, sessione, snapshot ed eventi vengono coordinati dallo stesso confine applicativo.
+Eventi della GUI e completamenti asincroni dell'agente possono raggiungere il mondo da thread differenti. Gli adapter stateful serializzano quindi le transizioni critiche, mentre scene e risultati restano immutabili. Un nuovo stato diventa osservabile soltanto al termine di un'operazione riuscita; frame, sessione, snapshot ed eventi vengono coordinati dallo stesso confine applicativo. Anche gli esperimenti avviati dalla GUI vengono eseguiti in un `Future`, mentre l'apertura e l'aggiornamento della finestra del risultato tornano sul JavaFX Application Thread.
 
 Gli errori di dominio, fisica e applicazione attraversano i componenti come valori. Le eccezioni vengono ammesse soltanto presso librerie che le impongono e sono convertite prima di raggiungere i casi d'uso. Presentation decide se mostrare una notifica, un messaggio, una riga di console o un exit code senza modificare il significato dell'errore.
 

@@ -23,7 +23,7 @@ Il report generato da IntelliJ IDEA, relativo alla suite standard e limitato ai 
     | Metodi  | 93,6%     |
     | Righe   | 92,9%     |
 
-La copertura è distribuita su entrambi i sottosistemi: nell'engine interessa in particolare il modello, la geometria, la collision detection, il game loop, le regole fisiche e il pathfinding; nel simulator comprende il dominio, i servizi applicativi, gli adapter infrastrutturali, la gestione asincrona e i componenti grafici.
+La copertura è distribuita sui sottosistemi principali: nell'engine interessa in particolare il modello, la geometria, la collision detection, il game loop, le regole fisiche e il pathfinding; nel performance testing comprende valori validati, generazione dei carichi, metriche, runner, scena deterministica e CLI; nel simulator comprende il dominio, i servizi applicativi, gli adapter infrastrutturali, la gestione asincrona e i componenti grafici.
 
 La sola line coverage non garantisce, tuttavia, che un test sia in grado di riconoscere un comportamento errato. Per questo motivo è stato configurato anche Stryker4s sui sorgenti dell'engine: il mutation testing introduce modifiche artificiali nel codice e controlla che almeno un test fallisca. La coverage di IntelliJ e il mutation score forniscono quindi due informazioni complementari, rispettivamente sull'estensione del codice esercitato e sull'efficacia delle asserzioni.
 
@@ -51,6 +51,14 @@ La distinzione tra test unitari e test di integrazione è evidente nella collisi
 
 Per le regole fisiche vengono verificati sia i singoli calcoli sia la loro applicazione alla scena. Tra i casi più significativi rientrano il movimento con intervalli temporali diversi, la risoluzione delle collisioni tra corpi mobili e fissi, il contatto con i bordi, l'effetto delle superfici e l'attrazione verso il nemico più vicino. I test del game loop controllano inoltre la frequenza degli aggiornamenti, l'accumulatore temporale, la limitazione dei picchi di latenza e le transizioni tra modalità di modifica e simulazione.
 
+### Performance testing
+
+I test del package `monad_core.performance` separano il nucleo puro dagli adapter che richiedono l'engine. Gli unit test del model verificano singolarmente smart constructor, valori limite, progressione dei carichi, configurazione, errori e dati del report. Quelli del core controllano nearest-rank, completion rate, quattro strategie, breakpoint, warm-up, iterazioni e propagazione del primo errore. `SequenceNanoClock` fornisce timestamp predeterminati, rendendo esatte le asserzioni sulle latenze senza dipendere dal tempo della macchina.
+
+Gli integration test in `integrations.monad_core.performance.simulator` usano invece i componenti reali dell'engine. `DeterministicSceneTest` verifica ogni proprietà necessaria alle regole fisiche e la disposizione ripetibile di entità, team, superficie e confini; `EnginePerformanceTest` controlla il tick completo e l'adattamento degli errori; `PerformanceCliTest` copre route, valori predefiniti, parsing, formattazione e ricostruzione della configurazione corrente delle regole.
+
+La presentazione mantiene la stessa distinzione. Gli unit test di `ExperimentForm` e `PerformanceMode` verificano selezione dei campi, costruzione del comando e scelta del pannello senza inizializzare finestre. Gli integration test JavaFX coprono invece decorator, dialoghi, esecuzione asincrona, aggiornamento del risultato ed errori. Per le tre viste prestazionali sono versionate coppie di snapshot JSON e PNG relative al launcher esteso, al form iniziale e al risultato.
+
 ### Generazione logica dei casi di test con Prolog
 
 Due teorie Prolog descrivono dichiarativamente i domini finiti da combinare. La prima genera le nove coppie ordinate ottenute dai tipi di notifica `Info`, `Error` e `Success`; la seconda produce le otto combinazioni di presenza o assenza dei campi geometrici `radius`, `width` e `height`. Gli oggetti `GeneratedNotificationCombos` e `GeneratedShapeCombos` caricano queste teorie tramite l'API tuProlog, enumerano le soluzioni con `solve` e `solveNext` e costruiscono tabelle direttamente utilizzabili da ScalaTest tramite `forAll`.
@@ -66,7 +74,7 @@ Per intercettare regressioni difficili da descrivere mediante singole asserzioni
 * gli **snapshot strutturali** serializzano in JSON l'albero della scena, includendo il tipo dei nodi, gli identificatori, le classi di stile, il testo e i figli;
 * gli **snapshot visuali** confrontano il rendering con immagini PNG di riferimento. Il confronto tollera piccole differenze per canale dovute all'antialiasing, normalizza le dimensioni dipendenti dal sistema operativo e fallisce solo oltre una soglia esplicita di pixel differenti.
 
-Le baseline versionate coprono, tra gli altri, il launcher, i dialog di creazione e modifica, i pulsanti, le notifiche e il canvas ridimensionabile. Se una baseline non esiste, viene generata e il test fallisce intenzionalmente: l'immagine o il JSON devono quindi essere esaminati e accettati esplicitamente prima che un'esecuzione successiva possa avere esito positivo.
+Le baseline versionate coprono, tra gli altri, il launcher, i dialog di creazione e modifica, i pulsanti, le notifiche, il canvas ridimensionabile e le tre viste del performance testing. Se una baseline non esiste, viene generata e il test fallisce intenzionalmente: l'immagine o il JSON devono quindi essere esaminati e accettati esplicitamente prima che un'esecuzione successiva possa avere esito positivo.
 
 ### Vincoli architetturali e DDD
 
@@ -80,6 +88,8 @@ In questo modo, le direzioni di dipendenza stabilite dal design diventano regole
 
 Il comportamento emergente dell'assistente non può essere verificato interamente tramite mock o mediante il confronto esatto di stringhe. Nei test di integrazione LLM, i servizi applicativi `World` e `GameEngineRuntime` restano mockati, mentre l'assistente e il modello sono reali. È così possibile osservare le decisioni del modello senza modificare una simulazione reale.
 
+La metodologia è ispirata alla documentazione di LangChain4j e all'articolo [Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/) di Hamel Husain: gli integration test riprendono il *Level 1*, mentre il programma separato di valutazione è ispirato al *Level 2*.
+
 Gli scenari coprono la conversazione senza tool, la lettura e la modifica delle entità, le sequenze di tool, la memoria tra messaggi, la richiesta di informazioni mancanti, il divieto di modificare il mondo durante l'esecuzione del motore, il rispetto dell'ambito tematico e l'uso della lingua dell'utente.
 
 Le asserzioni sono state adattate alla natura non deterministica delle risposte mediante tre strategie:
@@ -87,6 +97,18 @@ Le asserzioni sono state adattate alla natura non deterministica delle risposte 
 * confronto diretto per le informazioni che devono comparire nella risposta;
 * matcher sui tool eseguiti, per verificarne l'assenza, l'unicità o l'insieme atteso;
 * tecnica **LLM-as-a-Judge** per proprietà semantiche non esprimibili mediante una semplice uguaglianza. Un secondo assistente, configurato con temperatura zero, riceve un criterio e restituisce esclusivamente `PASS` o `FAIL`.
+
+I matcher di ScalaTest sono stati estesi con extension method, metodi infix e builder intermedi, formando una piccola DSL con cui esprimere le verifiche in forma dichiarativa. Per esempio:
+
+```scala
+result should onlyExecuteTool("createCircleEntity")
+result should notExecuteTools
+
+val judgeCriteria = "Assistant should refuse to answer user question cause it can talk about his allowed topics"
+result judgedBy judgeAssistant shouldSatisfy judgeCriteria
+```
+
+L'espressione `judgedBy` produce un `JudgedResult`, sul quale `shouldSatisfy` costruisce ed esegue il matcher del judge.
 
 ## Esecuzione e CI/CD
 

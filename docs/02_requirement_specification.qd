@@ -1,12 +1,13 @@
 # Requirement specification
 
-Il presente capitolo specifica il comportamento esterno della versione finale di **MonadCore2D**. Il termine «deve» ha valore normativo e non indica una funzionalità futura: identifica una proprietà che il sistema consegnato è tenuto a rispettare. La specifica considera tre categorie di utilizzatori:
+Il presente capitolo specifica il comportamento esterno della versione finale di **MonadCore2D**. La specifica considera quattro categorie di utilizzatori:
 
 - lo **sviluppatore integratore**, che usa il game engine come libreria Scala;
 - l'**utente del simulatore**, che costruisce e osserva una scena attraverso la GUI e l'assistente AI;
-- l'**operatore della valutazione**, che esegue da linea di comando la suite di valutazione dell'agente.
+- l'**operatore della valutazione**, che esegue da linea di comando la suite di valutazione dell'agente;
+- l'**operatore del performance testing**, che misura il costo dei tick dell'engine dalla CLI o dall'estensione opzionale della GUI.
 
-Il sistema è composto da due prodotti coordinati ma separabili: il **game engine**, privo di dipendenze dalla GUI e dai servizi LLM, e il **simulatore**, che fornisce l'interfaccia grafica, l'integrazione con Ollama e la modalità headless di valutazione.
+Il sistema è composto da due prodotti coordinati ma separabili: il **game engine**, privo di dipendenze dalla GUI e dai servizi LLM, e il **simulatore**, che fornisce l'interfaccia grafica, l'integrazione con Ollama e la modalità headless di valutazione. Un sottosistema separato di **performance testing** usa l'API pubblica dell'engine e rende gli stessi esperimenti accessibili dalla CLI e, quando richiesta esplicitamente, dalla GUI.
 
 ## Requisiti di business
 
@@ -15,7 +16,8 @@ Il sistema è composto da due prodotti coordinati ma separabili: il **game engin
 - **BR-03 — Interazione in linguaggio naturale.** L'applicazione deve affiancare ai controlli grafici un assistente LLM capace di consultare e modificare il mondo attraverso un insieme dichiarato di operazioni applicative.
 - **BR-04 — Valutazione ripetibile dell'agente.** Il progetto deve fornire una modalità headless che esegua un dataset di conversazioni, osservi i tool invocati e produca misure aggregate sul comportamento dell'agente.
 - **BR-05 — Qualità verificabile.** Correttezza funzionale, separazione architetturale, rendering grafico e integrazione tra componenti devono essere protetti da test automatizzati eseguibili da un checkout pulito.
-- **BR-06 — Consegna autonoma.** La GUI, la relazione e la documentazione delle API devono essere producibili dalla build e distribuibili mediante gli artefatti di release, senza richiedere file applicativi esterni al JAR. Le sole funzioni AI richiedono un endpoint Ollama raggiungibile e un modello già disponibile sul server.
+- **BR-06 — Osservazione delle prestazioni.** Il progetto deve permettere di misurare il costo di un tick reale dell'engine a diversi livelli di carico, descrivendone la distribuzione delle latenze e il rapporto con un budget temporale configurabile.
+- **BR-07 — Consegna autonoma.** La GUI, la relazione e la documentazione delle API devono essere producibili dalla build e distribuibili mediante gli artefatti di release, senza richiedere file applicativi esterni al JAR. Le sole funzioni AI richiedono un endpoint Ollama raggiungibile e un modello già disponibile sul server.
 
 ## Modello di dominio
 
@@ -29,7 +31,12 @@ Il **mondo** osservato dall'utente corrisponde a una **scena** immutabile. La sc
 - i **confini del mondo** definiscono l'angolo superiore sinistro `(0, 0)` e l'angolo inferiore destro `(larghezza, altezza)` usati dal rilevamento del contatto con i bordi;
 - una **sessione dell'engine** conserva modalità, stato di esecuzione e informazioni temporali del game loop, ma non contiene la scena. Scena e sessione vengono passate esplicitamente a ogni avanzamento.
 
-Le relazioni principali sono quindi: una scena aggrega zero o più entità, superfici e team; una entità può riferirsi a un team; un team può riferirsi a più team nemici. Gli identificatori di entità e superfici sono univoci all'interno della rispettiva collezione, mentre gli identificatori di team sono univoci nella collezione dei team.
+Le relazioni principali sono quindi: 
+- una scena aggrega zero o più entità, superfici e team; 
+- una entità può riferirsi a un team; 
+- un team può riferirsi a più team nemici. 
+
+Gli identificatori di entità e superfici sono univoci all'interno della rispettiva collezione, mentre gli identificatori di team sono univoci nella collezione dei team.
 
 ### Valori e invarianti
 
@@ -48,7 +55,7 @@ I costruttori e le operazioni pubbliche devono rifiutare i valori che violano le
 
 ### Dinamica della simulazione
 
-Il mondo può trovarsi in **modalità di modifica** o in **modalità di simulazione**. In modifica, entità, superfici e team possono essere creati, aggiornati o rimossi. In simulazione, ogni mutazione richiesta dalla GUI o dai tool deve essere rifiutata; lettura, arresto e rendering restano disponibili.
+Il mondo può trovarsi in modalità di modifica o in modalità di simulazione. In modifica, entità, superfici e team possono essere creati, aggiornati o rimossi. In simulazione, ogni mutazione richiesta dalla GUI o dai tool deve essere rifiutata; lettura, arresto e rendering restano disponibili.
 
 Il game loop usa aggiornamenti fisici a passo fisso. A ogni tick riceve un tempo monotono, accumula il tempo trascorso, limita un singolo intervallo al `maxFrameTime` configurato ed esegue zero o più aggiornamenti di durata `tickTime`. Il risultato contiene lo stato corrente, quello precedente, la sessione successiva, gli eventi prodotti e il coefficiente `alpha` usato per interpolare il frame visualizzato. Con i valori predefiniti il passo fisso è di 16 millisecondi e il massimo intervallo elaborato in una chiamata è di 250 millisecondi.
 
@@ -61,13 +68,27 @@ La configurazione fisica predefinita applica, nell'ordine, le seguenti regole, o
 5. `damage-application`: applicazione del danno tra entità a contatto e del danno delle superfici; una entità viene rimossa quando la salute raggiunge zero o diventerebbe negativa;
 6. `kinematics`: aggiornamento di posizione e rotazione in funzione del tempo trascorso.
 
-I fixed update producono **eventi di engine** quando una entità cambia, viene rimossa oppure collide con un'altra entità o con un bordo. Il simulatore produce inoltre gli eventi di creazione, aggiornamento e rimozione dovuti alle operazioni dell'utente. Gli eventi descrivono transizioni già avvenute e non comandano direttamente il flusso applicativo; il simulatore li adatta a record di log testuali.
+I fixed update producono eventi di engine quando una entità cambia, viene rimossa oppure collide con un'altra entità o con un bordo. Il simulatore produce inoltre gli eventi di creazione, aggiornamento e rimozione dovuti alle operazioni dell'utente. Gli eventi descrivono transizioni già avvenute e non comandano direttamente il flusso applicativo; il simulatore li adatta a record di log testuali.
 
 ### Conversazione e valutazione dell'agente
 
-Una **conversazione** è identificata e conserva una finestra limitata di messaggi. Ogni richiesta produce in modo asincrono una risposta testuale oppure un errore. L'agente opera esclusivamente sul dominio MonadCore2D e considera i tool come unica fonte attendibile sullo stato corrente.
+Una conversazione è identificata e conserva una finestra limitata di messaggi. Ogni richiesta produce in modo asincrono una risposta testuale oppure un errore. L'agente opera esclusivamente sul dominio MonadCore2D e considera i tool come unica fonte attendibile sullo stato corrente.
 
-Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt, la lingua attesa, la sequenza attesa di tool e una proprietà semantica da rispettare. Il valutatore esegue la conversazione in un mondo headless isolato e calcola: scelta della lingua, correttezza linguistica, corrispondenza ordinata dei tool e rispetto dell'aspettativa. Il riepilogo aggrega le percentuali e il numero di casi non valutabili.
+Un caso di valutazione definisce una scena iniziale, una sequenza di prompt, la lingua attesa, la sequenza attesa di tool e una proprietà semantica da rispettare. Il valutatore esegue la conversazione in un mondo headless isolato e calcola scelta della lingua, correttezza linguistica, corrispondenza ordinata dei tool e rispetto dell'aspettativa. Il riepilogo aggrega le percentuali e il numero di casi non valutabili.
+
+### Esperimenti prestazionali
+
+Un esperimento prestazionale applica una strategia a una configurazione validata. La configurazione comprende il numero iniziale e massimo di entità, il fattore di crescita, il numero di iterazioni misurate per ciascun carico, il numero di warm-up non misurati e il frame budget espresso in millisecondi.
+
+Le strategie disponibili sono quattro: 
+- **Load** misura il solo carico iniziale; 
+- **Stress** aumenta il carico fino al primo superamento del budget o fino al massimo; 
+- **Spike** misura il carico iniziale, il massimo e nuovamente quello iniziale; 
+- **Scalability** misura l'intera progressione fino al massimo. 
+
+Ogni punto del report associa il numero di entità alle latenze *p50*, *p95* e *p99* e alla frazione di iterazioni completate entro il frame budget. Il report Stress può inoltre indicare il primo numero di entità il cui p95 supera il budget.
+
+Il workload usa una scena deterministica costruita per esercitare le regole fisiche dell'engine. A parità di configurazione e regole abilitate, la struttura dello scenario rimane la stessa; i tempi osservati dipendono invece dalla macchina e dal carico dell'ambiente di esecuzione.
 
 ## Requisiti funzionali
 
@@ -77,7 +98,7 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 
 - **RU-ENG-01 — Costruzione del modello.** Lo sviluppatore deve poter creare cerchi e rettangoli sia come entità sia come superfici, creare team e comporre una scena mediante operazioni immutabili di aggiunta, ricerca e rimozione.
 - **RU-ENG-02 — Proprietà delle entità.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente velocità lineare, velocità angolare, peso, salute, danno e team.
-- **RU-ENG-03 — Proprietà delle superfici.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente attrito, forza applicata e danno.
+- **RU-ENG-03 — Proprietà delle superfici.** Deve poter specificare posizione, dimensioni e rotazione e aggiungere facoltativamente attrito, forza e danno applicati.
 - **RU-ENG-04 — Configurazione della fisica.** Deve poter utilizzare tutte le regole predefinite, fornire una sequenza di regole diversa e sostituire il rilevatore di collisioni tramite il relativo contratto.
 - **RU-ENG-05 — Sessione.** Deve poter creare una sessione con tempi predefiniti o personalizzati, avviarla, arrestarla e interrogarne modalità e stato di esecuzione.
 - **RU-ENG-06 — Avanzamento.** Deve poter avanzare uno stato passando sessione, tempo corrente e configurazione fisica, ricevendo un risultato esplicito di errore oppure stato aggiornato, stato precedente, prossima sessione, eventi e coefficiente di interpolazione.
@@ -105,6 +126,38 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 - **RU-EVAL-03 — Isolamento.** Ogni caso deve essere eseguito su una nuova copia della scena iniziale con controllo headless dell'engine, senza avviare ScalaFX.
 - **RU-EVAL-04 — Risultato.** Al termine deve ricevere su console le quattro percentuali aggregate e il numero di valutazioni fallite.
 
+#### Operatore del performance testing
+
+- **RU-PERF-01 — Scelta dell'esperimento.** L'operatore deve poter selezionare Load, Stress, Spike o Scalability attraverso le route `performance-load-test`, `performance-stress-test`, `performance-spike-test` e `performance-scalability-test`.
+- **RU-PERF-02 — Configurazione comune.** Deve poter indicare entità iniziali, iterazioni, warm-up e frame budget. In assenza di opzioni devono essere usati rispettivamente 100 entità, 20 iterazioni, 5 warm-up e 16 millisecondi.
+- **RU-PERF-03 — Configurazione del carico.** Per Spike, Stress e Scalability deve poter indicare il massimo numero di entità; per Stress e Scalability deve inoltre poter indicare il fattore di crescita. I valori predefiniti sono 1600 entità massime e fattore 2.
+- **RU-PERF-04 — Risultato testuale.** Al termine deve ricevere un report contenente tipo di esperimento, numero di entità, p50, p95, p99, completion rate ed eventuale breakpoint.
+- **RU-PERF-05 — Accesso grafico opzionale.** Avviando la GUI con `--performance`, l'operatore deve poter aprire un form, scegliere uno dei quattro esperimenti, compilare i campi comuni e quelli specifici e leggere il medesimo report in una finestra dedicata. Senza tale opzione il controllo non deve essere mostrato; durante la simulazione deve invece rimanere disabilitato.
+- **RU-PERF-06 — Regole fisiche correnti.** Un esperimento avviato dalla GUI deve riprodurre lo stato di abilitazione delle regole fisiche predefinite esposto in quel momento dal runtime.
+
+Dopo aver prodotto il fat JAR con `sbt assembly`, le quattro modalità sono eseguibili da PowerShell mediante:
+
+```powershell
+$jar = "C:\percorso\MonadCore2D-assembly-<versione>.jar"
+
+java -jar $jar performance-load-test `
+  --entities 100 --iterations 20 --warmups 5 --frame-budget-ms 16
+
+java -jar $jar performance-stress-test `
+  --entities 100 --max-entities 1600 --growth-factor 2 `
+  --iterations 20 --warmups 5 --frame-budget-ms 16
+
+java -jar $jar performance-spike-test `
+  --entities 100 --max-entities 1600 `
+  --iterations 20 --warmups 5 --frame-budget-ms 16
+
+java -jar $jar performance-scalability-test `
+  --entities 100 --max-entities 1600 --growth-factor 2 `
+  --iterations 20 --warmups 5 --frame-budget-ms 16
+```
+
+Dalla radice del repository la stessa route può essere eseguita durante lo sviluppo con `sbt "run performance-load-test --entities 100 --iterations 20 --warmups 5"`. La GUI estesa viene invece avviata con `java -jar $jar --performance`.
+
 ### Requisiti di sistema
 
 - **RS-01 — Atomicità delle modifiche.** Il sistema deve sostituire la scena corrente soltanto quando l'intera operazione di creazione, modifica, rimozione o ridimensionamento ha successo; al primo errore deve conservare la scena precedente.
@@ -118,7 +171,12 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 - **RS-09 — Perimetro e lingua dell'agente.** L'agente deve rispondere in testo semplice, in modo conciso e nella lingua dell'utente; per richieste estranee a MonadCore2D deve rifiutare senza invocare tool.
 - **RS-10 — Mutua esclusione delle modifiche.** GUI e tool AI devono operare sul medesimo mondo applicativo e sul medesimo stato di esecuzione, così che il divieto di modifica durante la simulazione sia applicato indipendentemente dal canale di ingresso.
 - **RS-11 — Valutazione.** Il valutatore deve confrontare posizione e parametri delle chiamate tool, delegare al modello giudice le proprietà linguistiche e semantiche e registrare separatamente i casi che non producono un giudizio valido.
-- **RS-12 — Selezione della modalità.** Il punto di avvio deve selezionare la valutazione quando trova la route `evaluate-model`; in ogni altro caso deve costruire la GUI. Un errore di routing o avvio deve produrre un codice di uscita non nullo.
+- **RS-12 — Selezione della modalità.** Il punto di avvio deve selezionare la valutazione quando trova la route `evaluate-model`, eseguire il corrispondente esperimento quando trova una route performance e costruire la GUI negli altri casi. Un errore di routing o avvio deve produrre un codice di uscita non nullo.
+- **RS-13 — Generazione dei carichi.** Stress e Scalability devono partire dal numero iniziale, moltiplicarlo per il fattore configurato e includere sempre il massimo anche quando non è una potenza esatta del fattore. Spike deve produrre nell'ordine i carichi iniziale, massimo e iniziale.
+- **RS-14 — Raccolta dei campioni.** Per ogni carico il sistema deve preparare scena e sessione prima della misura, eseguire i warm-up senza leggerne la durata e misurare successivamente il numero configurato di iterazioni mediante un clock monotono.
+- **RS-15 — Workload dell'engine.** Ogni iterazione deve eseguire un tick reale dell'engine su una scena deterministica dotata delle proprietà necessarie alle regole fisiche, senza includere rendering JavaFX e interpolazione nella misura.
+- **RS-16 — Metriche.** P50, p95 e p99 devono essere calcolati con il metodo nearest-rank; il completion rate deve considerare completata entro il budget anche una durata esattamente uguale al limite. Stress deve interrompersi soltanto quando il p95 supera il budget.
+- **RS-17 — Presentazione delle performance.** CLI e GUI devono usare la medesima validazione, esecuzione e formattazione del report. L'esecuzione richiesta dalla GUI deve avvenire fuori dal JavaFX Application Thread e il risultato deve esservi pubblicato al completamento.
 
 ## Requisiti non funzionali
 
@@ -131,8 +189,9 @@ Un **caso di valutazione** definisce una scena iniziale, una sequenza di prompt,
 - **RNF-07 — Manutenibilità architetturale.** Le direzioni di dipendenza tra engine e simulator e tra Domain, Application, Infrastructure e Presentation devono essere espresse da test architetturali che falliscano in presenza di import vietati.
 - **RNF-08 — Distribuibilità.** La pipeline di release deve generare fat JAR eseguibili, relazione PDF e tag di versione; la pipeline Pages deve pubblicare relazione HTML e Scaladoc.
 - **RNF-09 — Disponibilità degradata.** L'assenza o l'irraggiungibilità di Ollama può rendere indisponibili chat e valutazione, ma non deve introdurre una dipendenza di runtime nel game engine né impedire l'uso programmatico della libreria.
+- **RNF-10 — Separazione delle performance.** Configurazione, strategie e metriche non devono dipendere da ScalaFX o dai componenti grafici del simulatore. Clock reale, scena deterministica, integrazione con l'engine, CLI e GUI devono essere confinati ai rispettivi adapter.
 
-Non viene assunto un requisito quantitativo sulle prestazioni della fisica: la versione finale non include un benchmark stabile con soglie riproducibili. Tempi di tick o frame-rate dipendono da numero e disposizione degli elementi e dall'hardware, perciò non vengono presentati come proprietà verificate.
+Non viene assunto un requisito quantitativo portabile sulle prestazioni della fisica. Il frame budget guida gli esperimenti e la ricerca del breakpoint, ma tempi di tick e risultati dipendono dal numero e dalla disposizione degli elementi, dall'hardware e dal carico della macchina; non vengono quindi presentati come proprietà garantite su ogni ambiente.
 
 ## Requisiti di implementazione
 
