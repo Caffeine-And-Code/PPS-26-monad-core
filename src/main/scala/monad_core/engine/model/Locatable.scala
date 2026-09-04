@@ -62,7 +62,7 @@ object Locatable:
    * @param rotation rotation in degrees
    * @return `Right(())` when the rotation is in `[0, 360]`, or [[RotationMustBeAValidDegreeValue]] otherwise
    */
-  def validateRotation(rotation: Double): Either[EngineError, Unit] =
+  private[model] def validateRotation(rotation: Double): Either[EngineError, Unit] =
     Either.cond(rotation >= 0 && rotation <= 360, (), RotationMustBeAValidDegreeValue(rotation))
 
   /**

@@ -44,7 +44,7 @@ final private[forms] class FormDialogBuilder(props: FormDialogProps):
       onAction = _ => stage.close()
     }
 
-    val saveBtn = new Button("Save") {
+    val saveBtn = new Button(props.submitLabel) {
       styleClass += "form-dialog-save"
       onAction = _ =>
         props.onSubmit(fieldsState.currentValues)

@@ -8,8 +8,8 @@ import monad_core.engine.core.{
 }
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.PhysicsDomainError
-import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
-import monad_core.engine.helper.MockStateHelper
+import helpers.dummies.DummyEntityHelper.makeMovingEntityCircle
+import helpers.mocks.MockStateHelper
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable

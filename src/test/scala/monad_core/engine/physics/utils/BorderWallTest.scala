@@ -1,9 +1,6 @@
 package monad_core.engine.physics.utils
 
-import monad_core.engine.helper.DummyEntityHelper.{
-  makeMovingEntityCircle,
-  makeMovingEntityRectangle
-}
+import helpers.dummies.DummyEntityHelper.{makeMovingEntityCircle, makeMovingEntityRectangle}
 import monad_core.engine.model.{BorderSide, Vector2D}
 import monad_core.engine.helper.PhysicsConstantHelper.DefaultRadius
 import monad_core.engine.model.Shape2D.Rectangle

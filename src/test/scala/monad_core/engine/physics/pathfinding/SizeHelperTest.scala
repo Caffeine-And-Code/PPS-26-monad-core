@@ -5,7 +5,7 @@ import monad_core.engine.model.{Entity, Vector2D}
 import CircleVertexes.*
 import RectangleVertexes.*
 import SizeHelper.*
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
+import helpers.dummies.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
 import monad_core.engine.physics.pathfinding.CircleVertexes.*
 import monad_core.engine.physics.pathfinding.RectangleVertexes.*
 import monad_core.engine.physics.pathfinding.SizeHelper.*
