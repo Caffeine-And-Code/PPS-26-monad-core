@@ -72,35 +72,24 @@ object EntityFormParser:
       rotation         <- BaseFormParser.parseOptionalDouble(values, RotationKey)
       entity <- buildByShape(shapeValue, generateId(), position, values, rotation.getOrElse(0.0))
 
-      entityWithSpeed = BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey) match
-        case Some(vector) => entity.withSpeed(vector)
-        case _            => entity
+      entityWithSpeed = entity.withSpeed(
+        BaseFormParser.getOptionalVector2D(values, SpeedXKey, SpeedYKey)
+      )
 
       angularSpeed <- BaseFormParser.parseOptionalDouble(values, AngularSpeedKey)
-      entityWithAngularSpeed = angularSpeed.fold(entityWithSpeed)(entityWithSpeed.withAngularSpeed)
+      entityWithAngularSpeed = entityWithSpeed.withAngularSpeed(angularSpeed)
 
-      health <- BaseFormParser.parseOptionalInt(values, HealthKey)
-      entityWithHealth <- health match
-        case Some(h) => entityWithAngularSpeed.withHealth(h).adaptError()
-        case None    => Right(entityWithAngularSpeed)
+      health           <- BaseFormParser.parseOptionalInt(values, HealthKey)
+      entityWithHealth <- entityWithAngularSpeed.withHealth(health).adaptError()
 
-      damage <- BaseFormParser.parseOptionalInt(values, DamageKey)
-      entityWithDamage <- damage match
-        case Some(value) => entityWithHealth.withDamage(value).adaptError()
-        case None        => Right(entityWithHealth)
+      damage           <- BaseFormParser.parseOptionalInt(values, DamageKey)
+      entityWithDamage <- entityWithHealth.withDamage(damage).adaptError()
 
-      weight <- BaseFormParser.parseOptionalInt(values, WeightKey)
-      entityWithWeight <- weight match
-        case Some(w) => entityWithDamage.withWeight(w).adaptError()
-        case None    => Right(entityWithDamage)
+      weight           <- BaseFormParser.parseOptionalInt(values, WeightKey)
+      entityWithWeight <- entityWithDamage.withWeight(weight).adaptError()
 
       teamId = values.get(TeamIdKey)
-      finalEntity <- teamId match
-        case Some(id) =>
-          if id.isEmpty then Right(entityWithWeight)
-          else entityWithWeight.withTeamId(id).adaptError()
-
-        case None => Right(entityWithWeight)
+      finalEntity <- entityWithWeight.withTeamId(teamId.filter(_.nonEmpty)).adaptError()
     yield finalEntity
 
   /**

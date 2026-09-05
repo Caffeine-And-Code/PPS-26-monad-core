@@ -45,11 +45,11 @@ class SaveEntityFormDialogTest
   private def buildCompleteEntity(eitherEntity: Either[EngineError, Entity]): Entity =
     val either = for
       entity           <- eitherEntity
-      entityWithHealth <- entity.withHealth(10)
-      entityWithDamage <- entityWithHealth.withDamage(5)
-      entityWithWeight <- entityWithDamage.withWeight(11)
-      entityWithTeam   <- entityWithWeight.withTeamId(testTeams.head.id.value)
-      finalEntity = entityWithTeam.withSpeed(Vector2D(12, 13))
+      entityWithHealth <- entity.withHealth(Some(10))
+      entityWithDamage <- entityWithHealth.withDamage(Some(5))
+      entityWithWeight <- entityWithDamage.withWeight(Some(11))
+      entityWithTeam   <- entityWithWeight.withTeamId(Some(testTeams.head.id.value))
+      finalEntity = entityWithTeam.withSpeed(Some(Vector2D(12, 13)))
     yield finalEntity
 
     either.value

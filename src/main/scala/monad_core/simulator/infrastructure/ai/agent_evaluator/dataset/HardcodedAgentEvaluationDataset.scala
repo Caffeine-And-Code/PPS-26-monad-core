@@ -8,6 +8,7 @@ import monad_core.simulator.domain.ai.agent_evaluation.{
   ToolCall
 }
 
+/** Built-in conversations covering normal and ambiguous agent requests. */
 object HardcodedAgentEvaluationDataset extends AgentEvaluationDataset:
 
   private val redTeamId   = "red"
@@ -41,6 +42,7 @@ object HardcodedAgentEvaluationDataset extends AgentEvaluationDataset:
       scene             <- sceneWithZone.addSurface(gate)
     yield scene
 
+  /** Evaluation cases in their execution order. */
   override val tests: Seq[AgentEvaluationTest] = Seq(
     AgentEvaluationTest(
       initialScene = populatedScene,

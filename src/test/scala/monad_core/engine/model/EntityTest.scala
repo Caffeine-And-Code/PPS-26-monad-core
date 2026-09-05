@@ -112,7 +112,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("can create an entity and give it a speed"):
     val speed = Vector2D(3, 4)
 
-    val entityWithSpeed = ValidEntity.map(_.withSpeed(speed))
+    val entityWithSpeed = ValidEntity.map(_.withSpeed(Some(speed)))
 
     inside(entityWithSpeed):
       case Right(entity) => entity.speed shouldBe Some(speed)
@@ -120,7 +120,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("can create an entity and give it a weight"):
     val weight = 5
 
-    val entityWithWeight = ValidEntity.flatMap(_.withWeight(weight))
+    val entityWithWeight = ValidEntity.flatMap(_.withWeight(Some(weight)))
 
     inside(entityWithWeight):
       case Right(entity) => entity.weight shouldBe Some(weight)
@@ -128,14 +128,14 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("cannot create an entity and give it an invalid weight"):
     val invalidWeight = -1
 
-    val entityWithWeight = ValidEntity.flatMap(_.withWeight(invalidWeight))
+    val entityWithWeight = ValidEntity.flatMap(_.withWeight(Some(invalidWeight)))
 
     entityWithWeight shouldBe Left(WeightCannotBeNegativeOrZero())
 
   test("can create an entity and give it a health"):
     val health = 5
 
-    val entityWithHealth = ValidEntity.flatMap(_.withHealth(health))
+    val entityWithHealth = ValidEntity.flatMap(_.withHealth(Some(health)))
 
     inside(entityWithHealth):
       case Right(entity) => entity.health shouldBe Some(health)
@@ -143,14 +143,14 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("cannot create an entity and give it an invalid health"):
     val invalidHealth = -1
 
-    val entityWithHealth = ValidEntity.flatMap(_.withHealth(invalidHealth))
+    val entityWithHealth = ValidEntity.flatMap(_.withHealth(Some(invalidHealth)))
 
     entityWithHealth shouldBe Left(HealthCannotBeNegativeOrZero(invalidHealth))
 
   test("can create an entity and give it damage"):
     val damage = 5
 
-    val entityWithDamage = ValidEntity.flatMap(_.withDamage(damage))
+    val entityWithDamage = ValidEntity.flatMap(_.withDamage(Some(damage)))
 
     inside(entityWithDamage):
       case Right(entity) => entity.damage.map(_.value) shouldBe Some(damage)
@@ -158,7 +158,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("cannot create an entity and give it negative damage"):
     val invalidDamage = -1
 
-    val entityWithDamage = ValidEntity.flatMap(_.withDamage(invalidDamage))
+    val entityWithDamage = ValidEntity.flatMap(_.withDamage(Some(invalidDamage)))
 
     entityWithDamage shouldBe Left(DamageCannotBeNegative())
 
@@ -168,7 +168,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entity = for {
       entity <- ValidEntity
-      entity <- entity.withHealth(health)
+      entity <- entity.withHealth(Some(health))
       entity <- entity.applyDamage(damage)
     } yield entity
 
@@ -188,7 +188,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entity = for {
       entity <- ValidEntity
-      entity <- entity.withHealth(health)
+      entity <- entity.withHealth(Some(health))
       entity <- entity.applyDamage(damage)
     } yield entity
 
@@ -199,7 +199,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entity = for {
       entity <- ValidEntity
-      entity <- entity.withHealth(health)
+      entity <- entity.withHealth(Some(health))
       entity <- entity.applyDamage(health)
     } yield entity
 
@@ -211,7 +211,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val entity = for {
       entity <- ValidEntity
-      entity <- entity.withHealth(health)
+      entity <- entity.withHealth(Some(health))
       entity <- entity.applyDamage(damage)
     } yield entity
 
@@ -220,7 +220,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
   test("can add a teamId to an entity"):
     val teamId = "team1"
 
-    val entityWithHealth = ValidEntity.flatMap(_.withTeamId(teamId))
+    val entityWithHealth = ValidEntity.flatMap(_.withTeamId(Some(teamId)))
 
     inside(entityWithHealth):
       case Right(entity) => entity.teamId shouldBe Some(teamId)
@@ -235,8 +235,8 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
 
     val withoutSpeedEntity = for {
       validEntity <- ValidEntity
-      entity = validEntity.withSpeed(speed)
-    } yield entity.withoutSpeed
+      entity = validEntity.withSpeed(Some(speed))
+    } yield entity.withSpeed(None)
 
     inside(withoutSpeedEntity):
       case Right(entity) => entity.isFixed shouldBe true
@@ -290,7 +290,7 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val entity       = ValidEntity.value
     val angularSpeed = -45
 
-    val rotatingEntity = entity.withAngularSpeed(angularSpeed)
+    val rotatingEntity = entity.withAngularSpeed(Some(angularSpeed))
 
     rotatingEntity.angularSpeed shouldBe Some(angularSpeed)
     rotatingEntity.isFixed shouldBe false
@@ -299,8 +299,8 @@ class EntityTest extends AnyFunSuite with Inside with Matchers:
     val entity       = ValidEntity.value
     val angularSpeed = -45
 
-    val rotatingEntity = entity.withAngularSpeed(angularSpeed)
-    val stoppedEntity  = entity.withoutAngularSpeed
+    val rotatingEntity = entity.withAngularSpeed(Some(angularSpeed))
+    val stoppedEntity  = entity.withAngularSpeed(None)
 
     stoppedEntity.angularSpeed shouldBe None
     stoppedEntity.isFixed shouldBe true

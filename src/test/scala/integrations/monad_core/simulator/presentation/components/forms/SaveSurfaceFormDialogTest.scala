@@ -38,9 +38,9 @@ class SaveSurfaceFormDialogTest
   private def buildCompleteSurface(eitherSurface: Either[EngineError, Surface]): Surface =
     val either = for
       surface                  <- eitherSurface
-      surfaceWithFrictionIndex <- surface.withFrictionIndex(10)
-      surfaceWithAppliedForce  <- surfaceWithFrictionIndex.withAppliedForce(Vector2D(12, 13))
-      finalSurface             <- surfaceWithAppliedForce.withDamageOverTime(5)
+      surfaceWithFrictionIndex <- surface.withFrictionIndex(Some(10))
+      surfaceWithAppliedForce  <- surfaceWithFrictionIndex.withAppliedForce(Some(Vector2D(12, 13)))
+      finalSurface             <- surfaceWithAppliedForce.withDamageOverTime(Some(5))
     yield finalSurface
 
     either.value
