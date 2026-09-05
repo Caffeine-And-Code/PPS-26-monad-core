@@ -1,0 +1,38 @@
+### Sprint Review 4
+
+**Data**: 5/08/2026
+
+**Durata**: 1 ora
+
+#### Incremento prodotto
+
+Lo sprint ha completato tutte le attività pianificate:
+
+- completamento della collision detection con l'individuazione del punto di collisione;
+- completamento dei tool, della comunicazione e dei test dell'agente LLM;
+- introduzione del vincolo che impedisce all'agente di modificare la scena mentre l'engine è in esecuzione;
+- completamento del sistema degli eventi e del Game Engine Runtime;
+- completamento delle operazioni di creazione e modifica delle entità tramite GUI;
+- completamento della gestione della fisica e delle modalità Edit e Simulation;
+- introduzione della rotazione delle entità nel Physics Engine;
+- completamento dello stress testing.
+
+#### Stato dei task
+
+| Area | Responsabile | Stato |
+|-|-|-|
+| Collision Detection, agente LLM e relativi test | Senni | Completata |
+| Sistema degli eventi, GUI e Game Engine Runtime | Fattori | Completata |
+| Fisica, modalità di esecuzione, rotazione e stress testing | Tonelli | Completata |
+
+#### Scostamento rispetto al planning
+
+Tutte le attività dello Sprint Planning 4 sono state completate entro la fine dello sprint. Nessun task è stato eliminato o rinviato.
+
+#### Problemi riscontrati
+
+Lo sprint non ha incontrato impedimenti bloccanti.
+
+#### Stato finale del backlog
+
+Alla chiusura dello sprint, tutti i task del progetto risultano completati e nessuna attività è stata rinviata.
