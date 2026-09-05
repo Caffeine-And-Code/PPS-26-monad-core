@@ -17,7 +17,7 @@ object DummyTeamHelper:
    *   entity assigned to the team
    */
   def addTeam(entity: Entity, teamId: String): Entity =
-    entity.withTeamId(teamId).value
+    entity.withTeamId(Some(teamId)).value
 
   /**
    * Creates a validated team with the supplied enemy identifiers.

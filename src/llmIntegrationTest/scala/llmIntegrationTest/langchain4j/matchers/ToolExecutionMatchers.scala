@@ -77,5 +77,3 @@ object ToolExecutionMatchers:
         .asScala
         .map(_.request().name())
         .toList
-
-  }

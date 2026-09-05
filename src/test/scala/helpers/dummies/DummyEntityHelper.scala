@@ -58,7 +58,7 @@ object DummyEntityHelper:
       rotation: Double = 0.0
   ): Entity =
     makeFixedEntityCircle(id = id, position = position, radius = radius, rotation = rotation)
-      .withSpeed(speed)
+      .withSpeed(Some(speed))
 
   /**
    * Creates a validated fixed rectangular entity.
@@ -127,4 +127,4 @@ object DummyEntityHelper:
       height = height,
       rotation = rotation
     )
-      .withSpeed(speed)
+      .withSpeed(Some(speed))
