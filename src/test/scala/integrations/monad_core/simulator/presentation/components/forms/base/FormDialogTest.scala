@@ -90,6 +90,21 @@ class FormDialogTest
       "radius" -> "5.0"
     )
 
+  test("FormDialog uses the requested submit button label"):
+    val submitLabel = "Run Stress Test"
+    val props = FormDialogProps(
+      title = "Custom Submit Label",
+      fields = defaultFields,
+      onSubmit = _ => (),
+      submitLabel = submitLabel
+    )
+
+    onFxThread {
+      getOrFail(FormDialog.show(props))
+
+      formSaveButton.getText shouldBe submitLabel
+    }
+
   test("FormDialog updates dependent fields dynamically when changing select option"):
     var submittedValues: Map[String, String] = Map.empty
     val props = FormDialogProps(

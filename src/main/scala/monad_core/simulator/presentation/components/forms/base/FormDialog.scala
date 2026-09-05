@@ -30,7 +30,8 @@ final case class FormDialogProps(
     fields: Seq[FormFieldSpec],
     onSubmit: Map[String, String] => Unit,
     owner: Option[Window] = None,
-    minWidth: Double = 500
+    minWidth: Double = 500,
+    submitLabel: String = "Save"
 )
 
 /** Entry point for rendering and submitting declarative ScalaFX forms. */

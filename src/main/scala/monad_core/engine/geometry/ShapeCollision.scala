@@ -31,6 +31,17 @@ object ShapeCollision:
   private def worldPoint(point: Vector2D, reference: Placed[?]): Vector2D =
     reference.center + point.rotated(reference.rotation)
 
+  /**
+   * Clips a polygon against one boundary represented by a signed-distance function.
+   * Each edge crossing is replaced by its linearly interpolated boundary intersection.
+   *
+   * @param polygon
+   *   ordered polygon vertices
+   * @param signedDistance
+   *   negative-or-zero test for the retained half-plane
+   * @return
+   *   vertices of the clipped polygon
+   */
   private def clipPolygon(
       polygon: List[Vector2D],
       signedDistance: Vector2D => Double
@@ -53,6 +64,17 @@ object ShapeCollision:
       else if nextInside then List(intersection, next)
       else List.empty
 
+  /**
+   * Calculates the center of the intersection polygon between two rectangles.
+   * The first rectangle is clipped in the second rectangle's local coordinate system.
+   *
+   * @param first
+   *   first placed rectangle
+   * @param second
+   *   clipping rectangle and local reference frame
+   * @return
+   *   intersection centroid in world coordinates
+   */
   private[geometry] def intersectionCenter(
       first: Placed[Rectangle],
       second: Placed[Rectangle]
@@ -70,6 +92,19 @@ object ShapeCollision:
     if clipped.isEmpty then (first.center + second.center) * 0.5
     else worldPoint(clipped.reduce(_ + _) * (1.0 / clipped.size), second)
 
+  /**
+   * Resolves contact data when a circle center lies inside a rectangle.
+   * The nearest rectangle edge determines the normal, depth, and contact point.
+   *
+   * @param circle
+   *   placed circle inside the rectangle
+   * @param rectangle
+   *   containing rectangle
+   * @param localCircle
+   *   circle center expressed in rectangle-local coordinates
+   * @return
+   *   collision directed towards the nearest rectangle edge
+   */
   private def collisionFromCircleInsideRectangle(
       circle: Placed[Circle],
       rectangle: Placed[Rectangle],

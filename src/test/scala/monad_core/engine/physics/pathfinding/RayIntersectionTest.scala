@@ -1,7 +1,7 @@
 package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.{LocatableId, Vector2D}
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
+import helpers.dummies.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite

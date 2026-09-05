@@ -2,6 +2,7 @@ package monad_core
 
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.simulator.Painter
+import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
@@ -27,10 +28,10 @@ import monad_core.simulator.presentation.agent_evaluation.{
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.panels.{
   AiModelChatPanel,
-  GameEngineModePanel,
   GameEnginePanel,
   SceneRendererPanel
 }
+import monad_core.simulator.presentation.performance.PerformanceMode
 import monad_core.simulator.presentation.resources.BaseImageConfig
 import monad_core.simulator.presentation.routes.RouteType.{All, Route}
 import monad_core.simulator.presentation.routes.{RouteResponse, Router}
@@ -42,7 +43,8 @@ import scala.Console.{GREEN, RESET}
  * Application entry point and command-line router.
  *
  * It starts the model-evaluation suite when the `evaluate-model` argument is present;
- * otherwise, it launches the default GUI application.
+ * otherwise, it launches the GUI application. The `--performance` option decorates the GUI
+ * with its optional performance control.
  */
 object Launcher:
 
@@ -52,9 +54,10 @@ object Launcher:
    * The runtime, world, painter, AI agent, and panels are wired before control is delegated
    * to [[monad_core.simulator.presentation.stages.ScalaFxLauncher ScalaFxLauncher]].
    *
+   * @param args application command-line arguments controlling optional GUI features
    * @return `Left(BaseError)` if the UI cannot be initialized, or `Right(Unit)` once it is started
    */
-  private def guiApplication(): Either[BaseError, Unit] =
+  private def guiApplication(args: Array[String]): Either[BaseError, Unit] =
     given Logger = ConsoleLogger
 
     val logger = summon[Logger]
@@ -85,8 +88,10 @@ object Launcher:
 
     val imageConfig = BaseImageConfig()
 
+    val modePanel = PerformanceMode.panelFor(args)
+
     val gamePanel = GameEnginePanel(
-      modePanel = GameEngineModePanel,
+      modePanel = modePanel,
       rendererPanel = SceneRendererPanel,
       imageConfig = imageConfig
     )
@@ -116,7 +121,9 @@ object Launcher:
     val arguments = AgentEvaluationArguments.parse(args)
 
     given AgentEvaluatorPrinter = AgentEvaluatorConsolePrinter
-    given Logger                = ConsoleLogger
+
+    given Logger = ConsoleLogger
+
     given AgentEvaluator = Langchain4jAgentEvaluator.buildOllama(
       agentConfig = Langchain4jOllamaConfig(
         url = arguments.testModelUrl,
@@ -148,10 +155,22 @@ object Launcher:
    */
   def main(args: Array[String]): Unit =
     lazy val evaluateModelRoute = evaluateModel(args)
-    lazy val guiRoute           = outcomeFor(guiApplication())
+    lazy val performanceLoadRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.LoadRoute)
+    lazy val performanceStressRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.StressRoute)
+    lazy val performanceSpikeRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.SpikeRoute)
+    lazy val performanceScalabilityRoute =
+      PerformanceMode.runCommand(args, PerformanceCli.ScalabilityRoute)
+    lazy val guiRoute = outcomeFor(guiApplication(args))
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)
+      .on(Route(PerformanceCli.LoadRoute), () => performanceLoadRoute)
+      .on(Route(PerformanceCli.StressRoute), () => performanceStressRoute)
+      .on(Route(PerformanceCli.SpikeRoute), () => performanceSpikeRoute)
+      .on(Route(PerformanceCli.ScalabilityRoute), () => performanceScalabilityRoute)
       .on(All(), () => guiRoute)
       .evaluate(args)
 

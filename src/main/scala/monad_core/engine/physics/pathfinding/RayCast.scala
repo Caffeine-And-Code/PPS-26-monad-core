@@ -7,11 +7,34 @@ import monad_core.engine.physics.core.{
   RayIntersectedNothing
 }
 
+/** Resolves direct visibility and detour waypoints between two entities. */
 private[physics] object RayCast:
 
+  /** Extra clearance applied after accounting for the moving entity radius. */
   private val WayPointDisplacement = 5.0
-  private val HunterMargin         = 1.0
 
+  /** Safety margin used while inflating obstacles for the ray cast. */
+  private val HunterMargin = 1.0
+
+  /**
+   * Casts a ray from one entity towards another.
+   *
+   * @param to
+   *  the entity towards which the ray is cast
+   * @param from
+   *  the entity from which the ray is cast
+   * @param entities
+   *  the list of all entities in the world
+   * @param entitiesVertexes
+   *  the precomputed world-space vertices of all entities in the world
+   * @param upperLeftSceneCorner
+   *  the upper-left corner of the world bounds
+   * @param lowerRightSceneCorner
+   *  the lower-right corner of the world bounds
+   * @return
+   *   the target position when visible, a valid detour waypoint when obstructed,
+   *   or a [[PhysicsError]] when the ray cannot be resolved
+   */
   def apply(
       to: Entity,
       from: Entity,
@@ -48,6 +71,24 @@ private[physics] object RayCast:
           )
       case None => Left(RayIntersectedNothing(from.id.value, to.id.value))
 
+  /**
+   * Selects the best valid waypoint around the first entity hit by the ray.
+   *
+   * @param firstEncounteredEntity
+   *  the entity that was first hit by the ray
+   * @param originalTarget
+   *  the original target entity
+   * @param from
+   *  the entity from which the ray is cast
+   * @param entities
+   *  the list of all entities in the world
+   * @param upperLeftSceneCorner
+   *  the upper-left corner of the world bounds
+   * @param lowerRightSceneCorner
+   *  the lower-right corner of the world bounds
+   * @return
+   *  the selected waypoint, no waypoint when none is valid, or a [[RayIntersectedAMissingEntity]] error
+   */
   private def findEncounteredEntityWayPoint(
       firstEncounteredEntity: LocatableId,
       originalTarget: Entity,
@@ -75,12 +116,32 @@ private[physics] object RayCast:
         Right(bestWaypoint)
       case None => Left(RayIntersectedAMissingEntity(firstEncounteredEntity.value))
 
+  /**
+   * Returns the bounding radius required to clear the moving entity shape.
+   *
+   * @param hunter
+   *  the entity whose bounding radius is to be computed
+   * @return
+   *  the bounding radius required to clear the moving entity shape
+   */
   private[pathfinding] def hunterRadius(hunter: Entity): Double =
     hunter.shape match
       case circle: Shape2D.Circle => circle.radius
       case rectangle: Shape2D.Rectangle =>
         Vector2D(rectangle.halfLength, rectangle.halfHeight).magnitude
 
+  /**
+   * Inflates every known obstacle by the supplied clearance.
+   *
+   * @param vertexes
+   *  the map of vertexes to inflate
+   * @param entities
+   *  the list of all entities in the world
+   * @param inflation
+   *  the amount by which to inflate each vertex
+   * @return
+   *  the map of inflated vertexes
+   */
   private[pathfinding] def inflateAllVertexes(
       vertexes: Map[LocatableId, List[Vector2D]],
       entities: List[Entity],
@@ -94,6 +155,18 @@ private[physics] object RayCast:
       }
     }
 
+  /**
+   * Inflates all vertices belonging to one entity.
+   *
+   * @param originalVertexes
+   *   original world-space vertices
+   * @param entity
+   *   entity defining the obstacle shape and placement
+   * @param inflation
+   *   outward displacement
+   * @return
+   *   inflated world-space vertices
+   */
   private def inflateVertexes(
       originalVertexes: List[Vector2D],
       entity: Entity,
@@ -107,6 +180,19 @@ private[physics] object RayCast:
       )
     }
 
+  /**
+   * Moves one obstacle vertex outward according to its shape.
+   * Circles use the radial direction, rectangles inflate along their rotated local axes.
+   *
+   * @param originalVertex
+   *   vertex to move
+   * @param entity
+   *   entity defining the obstacle shape and placement
+   * @param inflation
+   *   outward displacement
+   * @return
+   *   inflated world-space vertex
+   */
   private def inflateSingleVertex(
       originalVertex: Vector2D,
       entity: Entity,
@@ -126,6 +212,18 @@ private[physics] object RayCast:
         originalVertex + localInflation.rotated(entity.rotation)
   }
 
+  /**
+   * Applies the moving entity clearance to a candidate obstacle waypoint.
+   *
+   * @param to
+   *  target entity associated with the waypoint calculation
+   * @param from
+   *  the entity from which the waypoint is to be computed
+   * @param waypoint
+   *  the candidate waypoint around the target entity
+   * @return
+   *  the waypoint adjusted for the moving entity clearance
+   */
   private[pathfinding] def actualWaypoint(
       to: Entity,
       from: Entity,
@@ -140,6 +238,22 @@ private[physics] object RayCast:
       inflation = clearance
     )
 
+  /**
+   * Checks whether the moving entity fits inside the world when centred on a waypoint.
+   *
+   * @param to
+   *  the entity around which the waypoint is to be computed
+   * @param from
+   *  the entity from which the waypoint is to be computed
+   * @param waypoint
+   *  the candidate waypoint around the target entity
+   * @param upperLeftSceneCorner
+   *  the upper-left corner of the world bounds
+   * @param lowerRightSceneCorner
+   *  the lower-right corner of the world bounds
+   * @return
+   *  true if the moving entity fits inside the world when centred on the waypoint, false otherwise
+   */
   private[pathfinding] def isValidWayPoint(
       to: Entity,
       from: Entity,
@@ -156,6 +270,24 @@ private[physics] object RayCast:
     waypoint.x + horizontal <= lowerRightSceneCorner.x &&
     waypoint.y + vertical <= lowerRightSceneCorner.y
 
+  /**
+   * Selects the valid waypoint nearest to the original target.
+   *
+   * @param to
+   *   obstacle around which candidate waypoints are inflated
+   * @param originalTarget
+   *   destination used to rank valid waypoints
+   * @param from
+   *   moving entity whose clearance must be respected
+   * @param waypoints
+   *   candidate obstacle-edge points
+   * @param upperLeftSceneCorner
+   *   upper-left world boundary
+   * @param lowerRightSceneCorner
+   *   lower-right world boundary
+   * @return
+   *   nearest valid waypoint, or `None` when every candidate is outside the world
+   */
   private def findBestWaypoint(
       to: Entity,
       originalTarget: Entity,

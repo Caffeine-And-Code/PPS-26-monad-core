@@ -2,12 +2,12 @@ package monad_core.engine.physics.rules
 
 import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.traits.State
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
-import monad_core.engine.helper.DummyTeamHelper.{addTeam, makeTeam}
+import helpers.dummies.DummyEntityHelper.{makeFixedEntityCircle, makeMovingEntityCircle}
+import helpers.dummies.DummyTeamHelper.{addTeam, makeTeam}
+import helpers.mocks.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.helper.PhysicsConstantHelper.{DeltaTimeOneSecond, NegativeDt}
 import monad_core.engine.model.*
 import monad_core.engine.physics.core.*
-import monad_core.engine.helper.{MockDetectorHelper, MockStateHelper}
 import monad_core.engine.physics.pathfinding.{RayCast, VertexFinder}
 import monad_core.engine.physics.rules.EnemyAttractionRule
 import org.scalamock.scalatest.MockFactory

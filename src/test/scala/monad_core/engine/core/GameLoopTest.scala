@@ -1,5 +1,6 @@
 package monad_core.engine.core
 
+import helpers.mocks.MockStateHelper
 import monad_core.engine.core.LoopMode.{EditMode, SimulationMode}
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.core.traits.{PhysicsEngine, PhysicsStep, State}
@@ -12,7 +13,6 @@ import monad_core.engine.core.{
   InvalidTickTime,
   LoopMode
 }
-import monad_core.engine.helper.MockStateHelper
 import monad_core.engine.simulator.Painter
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable

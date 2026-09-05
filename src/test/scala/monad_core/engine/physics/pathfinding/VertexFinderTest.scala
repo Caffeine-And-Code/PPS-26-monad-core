@@ -2,7 +2,7 @@ package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.{Entity, Shape2D, Vector2D, euclideanDistance}
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
+import helpers.dummies.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
 import monad_core.engine.physics.pathfinding.CircleVertexes.vertexes
 import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
 import org.scalatest.EitherValues.convertEitherToValuable

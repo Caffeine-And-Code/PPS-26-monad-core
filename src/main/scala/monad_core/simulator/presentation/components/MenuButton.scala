@@ -8,7 +8,7 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.beans.value.ObservableValue
 import scalafx.geometry.Side
 import scalafx.scene.Node
-import scalafx.scene.control.{CheckMenuItem, ContextMenu, MenuItem}
+import scalafx.scene.control.{Button, CheckMenuItem, ContextMenu, MenuItem}
 
 /**
  * Action entry displayed by a menu button.
