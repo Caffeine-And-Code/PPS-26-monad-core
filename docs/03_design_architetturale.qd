@@ -58,6 +58,12 @@ Definisce l'astrazione dello stato e il ciclo temporale a passo fisso. Coordina 
 
 Costituisce il confine pubblico del motore. Espone sessione, avanzamento, configurazione delle regole, interpolazione e produzione di comandi di disegno backend-neutral. I client non dipendono così dall'organizzazione interna di core e physics.
 
+#### 5.1 Engine Facade
+
+Il seguente diagramma descrive come una applicazione client comunica con l'engine estraendo e masquerando il gameloop, evitando l'utilizzo dello stesso, garantendo un utilizzo il più semplice possibile per un eventuale utilizzatore di libreria.
+
+![api-use-case.png](assets/api-use-case.png)
+
 ### 6. Simulator Domain
 
 Contiene conversazioni, prompt, risposte e tipi della valutazione dell'agente. Dipende da valori Scala e dai soli dati dell'engine necessari a descrivere il mondo iniziale e finale, senza conoscere interfacce o librerie AI.
