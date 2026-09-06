@@ -19,7 +19,7 @@ object GrowthFactor:
    */
   def from(value: Int): Either[PerformanceError, GrowthFactor] =
     Either.cond(value > 1, value, InvalidGrowthFactor(value))
-    
+
   extension (factor: GrowthFactor) def value: Int = factor
 
 /**

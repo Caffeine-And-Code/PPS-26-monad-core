@@ -234,6 +234,15 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
 
     resultValue shouldBe start
 
+  test("parse raises the default growth maximum to a larger starting count"):
+    val start = PerformanceCli.DefaultMaximumEntities + 1
+
+    val result = parse(PerformanceCli.StressRoute, option(PerformanceCli.Entities, start)*)
+
+    val resultValue = entityGrowth(result).maximum.value
+
+    resultValue shouldBe start
+
   test("parse uses the first occurrence of an argument"):
     val arguments = option(PerformanceCli.Iterations, 2) ++ option(PerformanceCli.Iterations, 3)
 
@@ -271,7 +280,9 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
       option(PerformanceCli.MaximumEntities, InvalidArgument).toArray
     )
 
-    result shouldBe Left(InvalidPerformanceArgument(PerformanceCli.MaximumEntities, InvalidArgument))
+    result shouldBe Left(
+      InvalidPerformanceArgument(PerformanceCli.MaximumEntities, InvalidArgument)
+    )
 
   test("parse rejects a non-numeric growth factor"):
     val result = PerformanceCli.parse(
@@ -287,7 +298,9 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
       option(PerformanceCli.MaximumEntities, InvalidArgument).toArray
     )
 
-    result shouldBe Left(InvalidPerformanceArgument(PerformanceCli.MaximumEntities, InvalidArgument))
+    result shouldBe Left(
+      InvalidPerformanceArgument(PerformanceCli.MaximumEntities, InvalidArgument)
+    )
 
   test("parse ignores the maximum entity count for load"):
     val result = PerformanceCli.parse(
@@ -335,7 +348,9 @@ class PerformanceCliTest extends AnyFunSuite with Matchers:
       option(PerformanceCli.FrameBudgetMillis, InvalidArgument).toArray
     )
 
-    result shouldBe Left(InvalidPerformanceArgument(PerformanceCli.FrameBudgetMillis, InvalidArgument))
+    result shouldBe Left(
+      InvalidPerformanceArgument(PerformanceCli.FrameBudgetMillis, InvalidArgument)
+    )
 
   test("format includes the experiment kind"):
     val result = PerformanceCli.format(report(PerformanceKind.Stress))
