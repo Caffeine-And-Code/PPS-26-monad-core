@@ -21,21 +21,32 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
   private val AboveBudget     = 2_000_000L
 
   private def config(
-      start: Int = StartEntities,
-      maximum: Int = MaximumEntities,
       iterations: Int = 1,
       warmups: Int = 0,
       budgetMillis: Long = OneMillisecond
   ): PerformanceConfig =
     PerformanceConfig
-      .from(start, maximum, GrowthFactor, iterations, warmups, budgetMillis)
+      .from(iterations, warmups, budgetMillis)
       .value
+
+  private def plan(kind: PerformanceKind): PerformancePlan =
+    val result = kind match
+      case PerformanceKind.Load =>
+        PerformancePlan.load(StartEntities)
+      case PerformanceKind.Spike =>
+        PerformancePlan.spike(StartEntities, MaximumEntities)
+      case PerformanceKind.Stress =>
+        PerformancePlan.stress(StartEntities, MaximumEntities, GrowthFactor)
+      case PerformanceKind.Scalability =>
+        PerformancePlan.scalability(StartEntities, MaximumEntities, GrowthFactor)
+
+    result.value
 
   private def request(
       kind: PerformanceKind,
       performanceConfig: PerformanceConfig = config()
   ): PerformanceRequest =
-    PerformanceRequest(kind, performanceConfig)
+    PerformanceRequest(plan(kind), performanceConfig)
 
   private def clockFor(durations: Vector[Long]): SequenceNanoClock =
     SequenceNanoClock(durations.flatMap(duration => Vector(0L, duration)))
@@ -56,6 +67,11 @@ class PerformanceRunnerTest extends AnyFunSuite with Matchers:
   ): Either[PerformanceError, PerformanceReport] =
     given NanoClock = clockFor(durations)
     PerformanceRunner.run(request(kind, performanceConfig), prepare)
+
+  test("a performance request reports its plan kind"):
+    val result = request(PerformanceKind.Load)
+
+    result.kind shouldBe PerformanceKind.Load
 
   test("Load measures only the starting entity count"):
     val result = run(PerformanceKind.Load, Vector(WithinBudget)).value

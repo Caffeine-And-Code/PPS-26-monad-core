@@ -5,7 +5,6 @@ import scala.annotation.tailrec
 /** Multiplicative factor used to increase an entity count. */
 opaque type GrowthFactor = Int
 
-/** Provides validated construction and operations for growth factors. */
 object GrowthFactor:
 
   /**
@@ -20,32 +19,27 @@ object GrowthFactor:
    */
   def from(value: Int): Either[PerformanceError, GrowthFactor] =
     Either.cond(value > 1, value, InvalidGrowthFactor(value))
-
-  /**
-   * Returns the integer represented by a validated growth factor.
-   *
-   * @param factor
-   *   validated growth factor
-   * @return
-   *   underlying integer value
-   */
+    
   extension (factor: GrowthFactor) def value: Int = factor
 
 /**
  * Defines the entity-count progression of a performance experiment.
  *
- * @param start
- *   first entity count
- * @param maximum
- *   greatest entity count
+ * @param range
+ *   interval containing the first and greatest entity counts
  * @param factor
  *   multiplier applied between consecutive counts
  */
-final private[performance] case class EntityGrowth private (
-    start: EntityCount,
-    maximum: EntityCount,
+final case class EntityGrowth private (
+    range: EntityRange,
     factor: GrowthFactor
 ):
+
+  /** First entity count in the progression. */
+  def start: EntityCount = range.start
+
+  /** Greatest entity count in the progression. */
+  def maximum: EntityCount = range.maximum
 
   /**
    * Generates every entity count from `start` to `maximum`.
@@ -85,8 +79,7 @@ final private[performance] case class EntityGrowth private (
 
     generateGrowthCount(start.value, Vector.empty)
 
-/** Provides validated construction for entity-count progressions. */
-private[performance] object EntityGrowth:
+object EntityGrowth:
 
   /**
    * Creates an entity-count progression.
@@ -100,7 +93,7 @@ private[performance] object EntityGrowth:
    * @return
    *   the validated progression, or the first invalid argument
    * @see
-   *   [[monad_core.performance.model.EntityCount EntityCount]] and
+   *   [[monad_core.performance.model.EntityRange EntityRange]] and
    *   [[monad_core.performance.model.GrowthFactor GrowthFactor]]
    */
   def from(
@@ -109,12 +102,6 @@ private[performance] object EntityGrowth:
       factor: Int
   ): Either[PerformanceError, EntityGrowth] =
     for
-      startCount   <- EntityCount.from(start)
-      maximumCount <- EntityCount.from(maximum)
-      _ <- Either.cond(
-        maximumCount.value >= startCount.value,
-        (),
-        InvalidGrowthMaximum(start, maximum)
-      )
+      range        <- EntityRange.from(start, maximum)
       growthFactor <- GrowthFactor.from(factor)
-    yield EntityGrowth(startCount, maximumCount, growthFactor)
+    yield EntityGrowth(range, growthFactor)
