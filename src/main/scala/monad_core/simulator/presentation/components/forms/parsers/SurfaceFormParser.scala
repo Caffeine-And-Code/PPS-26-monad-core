@@ -64,19 +64,13 @@ object SurfaceFormParser {
       surface <- buildByShape(shapeValue, generateId(), position, values, rotation.getOrElse(0.0))
 
       frictionIndex = values.get(FrictionIndexKey).flatMap(_.toDoubleOption)
-      surfaceWithFriction <- frictionIndex match
-        case Some(friction) => surface.withFrictionIndex(friction).adaptError()
-        case None           => Right(surface)
+      surfaceWithFriction <- surface.withFrictionIndex(frictionIndex).adaptError()
 
       appliedForce = BaseFormParser.getOptionalVector2D(values, AppliedForceXKey, AppliedForceYKey)
-      surfaceWithAppliedForce <- appliedForce match
-        case Some(force) => surfaceWithFriction.withAppliedForce(force).adaptError()
-        case None        => Right(surfaceWithFriction)
+      surfaceWithAppliedForce <- surfaceWithFriction.withAppliedForce(appliedForce).adaptError()
 
-      damageOverTime <- BaseFormParser.parseOptionalInt(values, DamageOverTimeKey)
-      completeSurface <- damageOverTime match
-        case Some(damage) => surfaceWithAppliedForce.withDamageOverTime(damage).adaptError()
-        case None         => Right(surfaceWithAppliedForce)
+      damageOverTime  <- BaseFormParser.parseOptionalInt(values, DamageOverTimeKey)
+      completeSurface <- surfaceWithAppliedForce.withDamageOverTime(damageOverTime).adaptError()
     yield completeSurface
 
   /**

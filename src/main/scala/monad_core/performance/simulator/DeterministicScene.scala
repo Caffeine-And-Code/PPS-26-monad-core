@@ -122,9 +122,9 @@ object DeterministicScene:
     fromEngine(
       for
         surface      <- Surface.rectangle(SurfaceId, center, height, width)
-        withFriction <- surface.withFrictionIndex(SurfaceFriction)
-        withForce    <- withFriction.withAppliedForce(SurfaceForce)
-        withDamage   <- withForce.withDamageOverTime(SurfaceDamage)
+        withFriction <- surface.withFrictionIndex(Some(SurfaceFriction))
+        withForce    <- withFriction.withAppliedForce(Some(SurfaceForce))
+        withDamage   <- withForce.withDamageOverTime(Some(SurfaceDamage))
       yield withDamage
     )
 
@@ -175,13 +175,13 @@ object DeterministicScene:
 
     for
       entity       <- fromEngine(entityShapeAt(index, position, rotation))
-      weighted     <- fromEngine(entity.withWeight(EntityWeight))
-      healthy      <- fromEngine(weighted.withHealth(EntityHealth))
-      damaging     <- fromEngine(healthy.withDamage(EntityDamage))
-      assignedTeam <- fromEngine(damaging.withTeamId(teamIdFor(index)))
+      weighted     <- fromEngine(entity.withWeight(Some(EntityWeight)))
+      healthy      <- fromEngine(weighted.withHealth(Some(EntityHealth)))
+      damaging     <- fromEngine(healthy.withDamage(Some(EntityDamage)))
+      assignedTeam <- fromEngine(damaging.withTeamId(Some(teamIdFor(index))))
     yield assignedTeam
-      .withSpeed(speedFor(index))
-      .withAngularSpeed(angularSpeedFor(index))
+      .withSpeed(Some(speedFor(index)))
+      .withAngularSpeed(Some(angularSpeedFor(index)))
 
   /**
    * Alternates circular and rectangular entity shapes.

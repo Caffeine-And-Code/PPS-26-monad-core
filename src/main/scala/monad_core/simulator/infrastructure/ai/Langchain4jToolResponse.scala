@@ -3,8 +3,15 @@ package monad_core.simulator.infrastructure.ai
 import monad_core.engine.model.*
 import monad_core.simulator.errors.BaseError
 
+/** Formats world operations as stable plain text responses for the assistant. */
 object Langchain4jToolResponse:
 
+  /**
+   * Convert in plain text a save operation result or an error.
+   *
+   * @param result operation result
+   * @param successMessage description used on success @return formatted success or error response
+   */
   def save(
       result: Either[BaseError, Unit],
       successMessage: String
@@ -15,6 +22,14 @@ object Langchain4jToolResponse:
       case Right(_) =>
         s"Success: $successMessage"
 
+  /**
+   * Convert in plain text a value of type `A` or an error.
+   *
+   * @tparam A successful value type
+   * @param result operation result
+   * @param format successful value renderer
+   * @return formatted result or error response
+   */
   def render[A](
       result: Either[BaseError, A]
   )(
@@ -25,6 +40,15 @@ object Langchain4jToolResponse:
       value => s"Result:\n${format(value)}"
     )
 
+  /**
+   * Convert in plain text a list of values.
+   *
+   * @tparam A element type
+   * @param values elements to render
+   * @param elementName plural display name
+   * @param format element renderer
+   * @return plain text list
+   */
   def renderList[A](
       values: List[A],
       elementName: String
@@ -39,6 +63,12 @@ object Langchain4jToolResponse:
 
       s"Result: ${values.size} $elementName found.\n$renderedValues"
 
+  /**
+   * Convert in plain text an [[monad_core.engine.model.Entity]].
+   *
+   * @param entity entity to render
+   * @return plain text entity description
+   */
   def renderEntity(entity: Entity): String =
     List(
       s"id: ${entity.id.value}",
@@ -53,6 +83,12 @@ object Langchain4jToolResponse:
       s"team: ${entity.teamId.fold("none")(_.value)}"
     ).mkString("\n")
 
+  /**
+   * Convert in plain text a [[monad_core.engine.model.Surface]]
+   *
+   * @param surface surface to render
+   * @return plain text surface description
+   */
   def renderSurface(surface: Surface): String =
     List(
       s"id: ${surface.id.value}",
@@ -64,6 +100,12 @@ object Langchain4jToolResponse:
       s"damageOverTime: ${surface.damageOverTime.fold("none")(_.value.toString)}"
     ).mkString("\n")
 
+  /**
+   * Convert in plain text a [[monad_core.engine.model.Team]]
+   *
+   * @param team team to render
+   * @return plain text team description
+   */
   def renderTeam(team: Team): String =
     val enemies =
       if team.enemies.isEmpty then "none"

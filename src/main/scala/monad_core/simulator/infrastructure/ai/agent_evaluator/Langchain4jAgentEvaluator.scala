@@ -22,12 +22,23 @@ import monad_core.simulator.infrastructure.engine.{HeadlessEngineControl, MonadC
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
+/**
+ * Raised when agent evaluation fails
+ *
+ * @param reason description of the failure encountered while executing a test
+ */
 case class AgentEvaluationExecutionError(reason: String)
     extends BaseError(s"Agent evaluation failed: $reason")
 
+/**
+ * Agent evaluation implementation, executes each evaluation case in isolated worlds.
+ *
+ * @param assistantBuilder builder used to create a new AI assistant per case
+ * @param evaluationJudge judge used for each case evaluation
+ * @param logger System logger
+ */
 case class Langchain4jAgentEvaluator(
     assistantBuilder: Langchain4jAssistantBuilder,
-    toolCallMapper: Langchain4jToolCallMapper,
     evaluationJudge: Langchain4jAgentEvaluationJudge
 )(using logger: Logger)
     extends AgentEvaluator:
@@ -65,6 +76,7 @@ case class Langchain4jAgentEvaluator(
     ConversationId.from("agent-evaluation")
 
   private def mapToolCalls(executions: Seq[ToolExecution]): Either[BaseError, Seq[ToolCall]] =
+    val toolCallMapper = Langchain4jToolCallMapper()
     executions.foldLeft(Right(Seq.empty): Either[BaseError, Seq[ToolCall]]): (result, execution) =>
       for
         mappedCalls <- result
@@ -89,8 +101,16 @@ case class Langchain4jAgentEvaluator(
     val status = if result.isRight then "success" else "failure"
     s"event=agent_evaluation_test_completed status=$status prompts=${test.prompts.length} expected_tool_calls=${test.toolCalls.length}"
 
+/** Factory for Langchain4j implementation of [[monad_core.simulator.application.ai.AgentEvaluator]]. */
 object Langchain4jAgentEvaluator:
 
+  /**
+   * Builds an evaluator using separate Ollama models for the agent and judge.
+   *
+   * @param agentConfig tested agent configuration
+   * @param judgeConfig evaluation judge configuration
+   * @return configured evaluator
+   */
   def buildOllama(
       agentConfig: Langchain4jOllamaConfig,
       judgeConfig: Langchain4jOllamaConfig
@@ -100,6 +120,5 @@ object Langchain4jAgentEvaluator:
 
     Langchain4jAgentEvaluator(
       assistantBuilder = Langchain4jAssistantFactory(agentModel),
-      toolCallMapper = Langchain4jToolCallMapper(),
       evaluationJudge = Langchain4jAgentEvaluationJudge.build(judgeModel)
     )

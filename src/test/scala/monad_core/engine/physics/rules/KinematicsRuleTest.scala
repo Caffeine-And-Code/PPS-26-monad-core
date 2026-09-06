@@ -109,7 +109,7 @@ class KinematicsRuleTest
 
   test("the rule should rotate an entity using angular speed"):
     val rotatingEntity = makeFixedEntityCircle(id = "rotating")
-      .withAngularSpeed(90.0)
+      .withAngularSpeed(Some(90.0))
     val state = stateWithEntities(List(rotatingEntity))
 
     val result = Rule.apply(PhysicsContext(state, DeltaTimeOneSecond)).value.state
@@ -124,7 +124,7 @@ class KinematicsRuleTest
       width = 10.0,
       height = 5.0,
       rotation = 350.0
-    ).withAngularSpeed(20.0)
+    ).withAngularSpeed(Some(20.0))
 
     val state = stateWithEntities(List(rotatingEntity))
 

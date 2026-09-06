@@ -12,6 +12,7 @@ import scalafx.scene.layout.VBox
 
 import scala.concurrent.ExecutionContext
 
+/** Builds the ScalaFX panel used to interact with the AI agent. */
 object AiModelChatPanel extends AiModelChatPanelBuilder:
 
   final private case class ViewState(
@@ -20,6 +21,13 @@ object AiModelChatPanel extends AiModelChatPanelBuilder:
       prompt: PromptComposer.Model
   )
 
+  /**
+   * Ai chat panel model UI component.
+   *
+   * @param aiAgent agent used by the panel
+   * @param executionContext execution context for asynchronous agent calls
+   * @return the initialized panel, or error if something fails
+   */
   override def build(aiAgent: AiAgent)(using
       executionContext: ExecutionContext
   ): Either[BaseError, VBox] =

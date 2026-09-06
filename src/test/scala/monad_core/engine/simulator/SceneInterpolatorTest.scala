@@ -81,7 +81,7 @@ class SceneInterpolatorTest extends AnyFunSuite with Matchers with MockFactory w
     val previousEntity = makeFixedEntityCircle()
     val nextEntity = previousEntity
       .moveTo(Vector2D(10.0, 10.0))
-      .withSpeed(Vector2D(4.0, 5.0))
+      .withSpeed(Some(Vector2D(4.0, 5.0)))
 
     val result = StateInterpolator(
       stateWithEntities(List(previousEntity)),

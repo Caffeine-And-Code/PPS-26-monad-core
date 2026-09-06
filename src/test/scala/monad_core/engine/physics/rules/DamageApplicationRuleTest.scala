@@ -37,9 +37,10 @@ class DamageApplicationRuleTest extends AnyFunSuite with Matchers:
     healthOf(result, second) shouldBe 15
 
   test("the rule should compose entity and surface damage from the same snapshot"):
-    val first   = entityWithStats("first", health = 20, damage = 2)
-    val second  = entityWithStats("second", health = 20, damage = 3)
-    val surface = Surface.circle("surface", Vector2D(0, 0), 10).value.withDamageOverTime(4).value
+    val first  = entityWithStats("first", health = 20, damage = 2)
+    val second = entityWithStats("second", health = 20, damage = 3)
+    val surface =
+      Surface.circle("surface", Vector2D(0, 0), 10).value.withDamageOverTime(Some(4)).value
     val state = Scene(
       entities = Map(first.id -> first, second.id -> second),
       surfaces = Map(surface.id -> surface)
@@ -59,8 +60,9 @@ class DamageApplicationRuleTest extends AnyFunSuite with Matchers:
     healthOf(result, second) shouldBe 18
 
   test("the rule should ignore damage when the target has no health"):
-    val entity  = Entity.circle("entity", Vector2D(0, 0), 1).value
-    val surface = Surface.circle("surface", Vector2D(0, 0), 10).value.withDamageOverTime(4).value
+    val entity = Entity.circle("entity", Vector2D(0, 0), 1).value
+    val surface =
+      Surface.circle("surface", Vector2D(0, 0), 10).value.withDamageOverTime(Some(4)).value
     val state = Scene(
       entities = Map(entity.id -> entity),
       surfaces = Map(surface.id -> surface)
@@ -91,8 +93,9 @@ class DamageApplicationRuleTest extends AnyFunSuite with Matchers:
     healthOf(result, attacker) shouldBe 20
 
   test("the rule should remove an entity killed by surface damage"):
-    val entity  = entityWithStats("entity", health = 4, damage = 0)
-    val surface = Surface.circle("surface", Vector2D(0, 0), 10).value.withDamageOverTime(5).value
+    val entity = entityWithStats("entity", health = 4, damage = 0)
+    val surface =
+      Surface.circle("surface", Vector2D(0, 0), 10).value.withDamageOverTime(Some(5)).value
     val state = Scene(
       entities = Map(entity.id -> entity),
       surfaces = Map(surface.id -> surface)
@@ -111,8 +114,8 @@ class DamageApplicationRuleTest extends AnyFunSuite with Matchers:
   private def entityWithStats(id: String, health: Int, damage: Int): Entity =
     (for
       entity     <- Entity.circle(id, Vector2D(0, 0), 1)
-      withHealth <- entity.withHealth(health)
-      withDamage <- withHealth.withDamage(damage)
+      withHealth <- entity.withHealth(Some(health))
+      withDamage <- withHealth.withDamage(Some(damage))
     yield withDamage).value
 
   private def sceneWith(entities: Entity*): Scene =

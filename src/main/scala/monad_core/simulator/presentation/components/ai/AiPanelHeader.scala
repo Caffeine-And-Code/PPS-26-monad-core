@@ -5,15 +5,33 @@ import scalafx.geometry.Pos
 import scalafx.scene.control.{Button, Label}
 import scalafx.scene.layout.{HBox, Priority, VBox}
 
+/** Builds the title and history controls displayed above the AI chat. */
 object AiPanelHeader:
 
+  /**
+   * [[AiPanelHeader]] params.
+   *
+   * @param onClear callback invoked by the clear button
+   * @param modelName model name displayed below the title
+   */
   final case class Props(
       onClear: () => Unit,
       modelName: String
   )
 
+  /**
+   * The current state of the component.
+   *
+   * @param clearDisabled whether the clear-history action is disabled
+   */
   final case class Model(clearDisabled: Boolean)
 
+  /**
+   * Returns the AI panel header UI components
+   *
+   * @param props stable callbacks and labels
+   * @return header component and its state renderer
+   */
   def apply(props: Props): Component[Model, HBox] =
     val clearButton = new Button("CLEAR"):
       id = "chat-clear"

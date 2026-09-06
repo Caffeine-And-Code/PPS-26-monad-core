@@ -45,11 +45,11 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
     BounceResponse(entity, wall, HorizontalCollision).value.speed shouldBe entity.speed
 
   test("two linear entities with equal masses should exchange normal speeds"):
-    val entity = makeMovingEntityCircle(speed = Vector2D(-1.0, 2.0)).withWeight(1).value
+    val entity = makeMovingEntityCircle(speed = Vector2D(-1.0, 2.0)).withWeight(Some(1)).value
     val other = makeMovingEntityCircle(
       id = "other",
       speed = Vector2D(1.0, 3.0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val result = BounceResponse(entity, other, HorizontalCollision).value
 
@@ -60,7 +60,7 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
     val other = makeMovingEntityCircle(
       id = "other",
       speed = Vector2D(1.0, 0.0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     BounceResponse(entity, other, HorizontalCollision) shouldBe Left(ZeroMassError())
 
@@ -68,14 +68,14 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
     val entity = makeMovingEntityCircle(
       position = Vector2D(0.0, 0.0),
       speed = Vector2D(1.0, 0.0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val other = makeFixedEntityRectangle(
       id = "rotating",
       position = Vector2D(2.0, 0.0),
       width = 2.0,
       height = 2.0
-    ).withWeight(1).value.withAngularSpeed(360.0)
+    ).withWeight(Some(1)).value.withAngularSpeed(Some(360.0))
 
     val collision = Collision(
       normalVector = Vector2D(-1.0, 0.0),
@@ -95,7 +95,7 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       width = 4.0,
       height = 2.0,
       speed = Vector2D(-1.0, 0.0)
-    ).withWeight(1).value.withAngularSpeed(0.0)
+    ).withWeight(Some(1)).value.withAngularSpeed(Some(0.0))
 
     val wall = makeFixedEntityCircle(id = "wall")
 
@@ -119,7 +119,7 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
     val entity = makeMovingEntityRectangle(
       position = Vector2D(0.0, 0.0),
       speed = Vector2D(-2.0, 0.0)
-    ).withWeight(1).value.withAngularSpeed(15.0)
+    ).withWeight(Some(1)).value.withAngularSpeed(Some(15.0))
 
     val wall = makeFixedEntityRectangle(id = "wall")
 
@@ -135,13 +135,13 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       position = Vector2D(0.0, 0.0),
       width = 2.0,
       height = 2.0
-    ).withWeight(1).value.withAngularSpeed(0.0)
+    ).withWeight(Some(1)).value.withAngularSpeed(Some(0.0))
 
     val other = makeMovingEntityCircle(
       id = "other",
       position = Vector2D(-2.0, 0.0),
       speed = Vector2D(1.0, 0.0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, 1.0))
 
@@ -154,14 +154,14 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
 
   test("a rotation-only entity should remain unchanged when contact points are separating"):
     val entity = makeFixedEntityRectangle()
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
-      .withAngularSpeed(0.0)
+      .withAngularSpeed(Some(0.0))
 
     val other = makeMovingEntityCircle(
       id = "other",
       speed = Vector2D(-1.0, 0.0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, 1.0))
 
@@ -170,7 +170,7 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
     result shouldBe entity
 
   test("a rotating entity should require a mass"):
-    val entity = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0)).withAngularSpeed(0.0)
+    val entity = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0)).withAngularSpeed(Some(0.0))
     val wall   = makeFixedEntityRectangle(id = "wall")
 
     BounceResponse(entity, wall, HorizontalCollision) shouldBe Left(ZeroMassError())
@@ -180,7 +180,7 @@ class BounceResponseTest extends AnyFunSuite with Matchers:
       position = Vector2D(3.0, 4.0),
       speed = Vector2D(-1.0, 0.0),
       rotation = 25.0
-    ).withWeight(2).value.withAngularSpeed(10.0)
+    ).withWeight(Some(2)).value.withAngularSpeed(Some(10.0))
 
     val wall = makeFixedEntityRectangle(id = "wall")
 

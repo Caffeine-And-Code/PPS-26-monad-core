@@ -18,7 +18,7 @@ class ResultDialogTest extends AnyFunSuite with Matchers with Inside with Dialog
       |p50: 1.000 ms
       |p95: 2.000 ms
       |p99: 3.000 ms
-      |Frame budget completion: 95.00%""".stripMargin
+      |Frame budget completion: 95.00%""".stripMargin.replace("\r\n", "\n")
 
   private val UpdatedReport = "Performance experiment: Load"
 
@@ -51,7 +51,7 @@ class ResultDialogTest extends AnyFunSuite with Matchers with Inside with Dialog
       getOrFail(ResultDialog.show(Report))
     }
 
-    onFxThread(output.getText) shouldBe Report
+    onFxThread(output.getText).replace("\r\n", "\n") shouldBe Report
 
   test("the result output is read-only"):
     onFxThread {

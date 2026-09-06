@@ -64,7 +64,7 @@ class ShapePainterTest extends AnyFunSuite with ScalaFxInit with Matchers with S
   test(
     "paint draws the Circle Commands that contains a Circle Entity with the corresponding Team Color"
   ):
-    val entityWithATeam = BaseCircleEntity.withTeamId("TestTeam").value
+    val entityWithATeam = BaseCircleEntity.withTeamId(Some("TestTeam")).value
     val teamColor       = PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get).value
 
     onFxThread:
@@ -82,7 +82,7 @@ class ShapePainterTest extends AnyFunSuite with ScalaFxInit with Matchers with S
   test(
     "paint draws the Rectangle Commands that contains a Rectangle Entity with the corresponding Team Color"
   ):
-    val entityWithATeam = BaseRectangleEntity.withTeamId("TestTeam").value
+    val entityWithATeam = BaseRectangleEntity.withTeamId(Some("TestTeam")).value
     val teamColor       = PaintArchitect.teamIdColorRelation(entityWithATeam.teamId.get).value
 
     onFxThread:

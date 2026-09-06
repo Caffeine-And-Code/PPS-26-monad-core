@@ -101,7 +101,7 @@ private[physics] object SurfaceDynamicsRule:
       case (Some(speed), Some(force)) =>
         PhysicsUtil
           .acceleration(force, entity.weight)
-          .map(acceleration => entity.withSpeed(speed + acceleration))
+          .map(acceleration => entity.withSpeed(Some(speed + acceleration)))
       case _ =>
         Right(entity)
 
@@ -126,7 +126,7 @@ private[physics] object SurfaceDynamicsRule:
       case (Some(speed), Some(friction)) =>
         PhysicsUtil
           .applyFriction(speed, friction, dt)
-          .map(entity.withSpeed)
+          .map(speed => entity.withSpeed(Some(speed)))
       case _ => Right(entity)
 
   /**
@@ -150,5 +150,5 @@ private[physics] object SurfaceDynamicsRule:
       case (Some(angularSpeed), Some(friction)) =>
         PhysicsUtil
           .applyAngularFriction(angularSpeed, friction, dt)
-          .map(entity.withAngularSpeed)
+          .map(angularSpeed => entity.withAngularSpeed(Some(angularSpeed)))
       case _ => Right(entity)

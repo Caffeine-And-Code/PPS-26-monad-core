@@ -37,13 +37,13 @@ class SaveEntityFormDialogTest extends AnyFunSuite with Inside with Matchers:
 
   private def completeEntity(entity: Entity): Entity =
     val either = for
-      withSpeed = entity.withSpeed(EntitySpeed)
-      withHealth <- withSpeed.withHealth(EntityHealth)
-      withDamage <- withHealth.withDamage(EntityDamage)
-      withWeight <- withDamage.withWeight(EntityWeight)
-      withTeam   <- withWeight.withTeamId(EntityTeamId.value)
+      withSpeed = entity.withSpeed(Some(EntitySpeed))
+      withHealth <- withSpeed.withHealth(Some(EntityHealth))
+      withDamage <- withHealth.withDamage(Some(EntityDamage))
+      withWeight <- withDamage.withWeight(Some(EntityWeight))
+      withTeam   <- withWeight.withTeamId(Some(EntityTeamId.value))
       rotated    <- withTeam.rotateTo(EntityRotation)
-    yield rotated.withAngularSpeed(EntityAngularSpeed)
+    yield rotated.withAngularSpeed(Some(EntityAngularSpeed))
     either.value
 
   test("buildDefaultValues should return empty defaults when no entity is provided"):

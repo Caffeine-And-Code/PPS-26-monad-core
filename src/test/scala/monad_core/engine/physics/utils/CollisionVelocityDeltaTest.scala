@@ -62,7 +62,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     val entity = makeMovingEntityCircle(
       position = Vector2D(1.0, 1.0),
       speed = Vector2D(2.0, 3.0)
-    ).withAngularSpeed(90.0)
+    ).withAngularSpeed(Some(90.0))
     val expectedSpeed = PointSpeed(entity, collisionPoint)
 
     val result = CollisionVelocityDelta.speedAtPoint(entity, collisionPoint)
@@ -75,7 +75,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
       position = Vector2D(5.0, 5.0),
       width = 4.0,
       height = 2.0
-    ).withSpeed(Vector2D(-1.0, 0.0)).withAngularSpeed(0.0).withWeight(1).value
+    ).withSpeed(Some(Vector2D(-1.0, 0.0))).withAngularSpeed(Some(0.0)).withWeight(Some(1)).value
 
     val wall = makeFixedEntityRectangle(id = "wall")
 
@@ -109,7 +109,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     val entity = makeMovingEntityCircle(
       position = Vector2D(2.0, 3.0),
       speed = Vector2D(4.0, 5.0)
-    ).withAngularSpeed(180.0)
+    ).withAngularSpeed(Some(180.0))
 
     CollisionVelocityDelta.speedAtPoint(entity, entity.position) shouldBe Vector2D(4.0, 5.0)
 
@@ -119,7 +119,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     CollisionVelocityDelta.speedAtPoint(entity, Vector2D(10.0, 10.0)) shouldBe Vector2D(0.0, 0.0)
 
   test("speedAtPoint should compute speed for a rotation-only entity"):
-    val entity         = makeFixedEntityCircle().withAngularSpeed(90.0)
+    val entity         = makeFixedEntityCircle().withAngularSpeed(Some(90.0))
     val collisionPoint = Vector2D(0.0, 2.0)
     val expectedSpeed  = PointSpeed(entity, collisionPoint)
 
@@ -129,7 +129,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     result.y shouldBe expectedSpeed.y +- Epsilon
 
   test("speedAtPoint should respect clockwise rotation"):
-    val entity         = makeFixedEntityCircle().withAngularSpeed(-90.0)
+    val entity         = makeFixedEntityCircle().withAngularSpeed(Some(-90.0))
     val collisionPoint = Vector2D(2.0, 0.0)
     val expectedSpeed  = PointSpeed(entity, collisionPoint)
 
@@ -139,16 +139,16 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     result.y shouldBe expectedSpeed.y +- Epsilon
 
   test("this function should return an error when entity mass is missing"):
-    val entity = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0)).withAngularSpeed(0.0)
+    val entity = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0)).withAngularSpeed(Some(0.0))
     val wall   = makeFixedEntityRectangle(id = "wall")
 
     CollisionVelocityDelta(entity, wall, HorizontalCollision) shouldBe Left(ZeroMassError())
 
   test("this function should return no impulse for separating contact points"):
     val entity = makeMovingEntityRectangle(speed = Vector2D(1.0, 0.0))
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
-      .withAngularSpeed(0.0)
+      .withAngularSpeed(Some(0.0))
 
     val wall = makeFixedEntityRectangle(id = "wall")
 
@@ -159,7 +159,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     val entity = makeMovingEntityRectangle(
       position = Vector2D(0.0, 0.0),
       speed = Vector2D(-1.0, 0.0)
-    ).withWeight(1).value.withAngularSpeed(0.0)
+    ).withWeight(Some(1)).value.withAngularSpeed(Some(0.0))
 
     val wall = makeFixedEntityRectangle(id = "wall")
 
@@ -173,14 +173,14 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
 
   test("this function should respect a locked translation degree of freedom"):
     val entity = makeFixedEntityRectangle()
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
-      .withAngularSpeed(0.0)
+      .withAngularSpeed(Some(0.0))
 
     val other = makeMovingEntityCircle(
       id = "other",
       speed = Vector2D(1.0, 0.0)
-    ).withWeight(1).value
+    ).withWeight(Some(1)).value
 
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, 1.0))
 
@@ -191,7 +191,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     angularSpeedChange should not be 0.0
 
   test("this function should respect a locked rotation degree of freedom"):
-    val entity    = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0)).withWeight(1).value
+    val entity    = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0)).withWeight(Some(1)).value
     val wall      = makeFixedEntityRectangle(id = "wall")
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, 2.0))
 
@@ -201,9 +201,9 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
 
   test("this function should support a fixed other entity without mass"):
     val entity = makeMovingEntityRectangle(speed = Vector2D(-1.0, 0.0))
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
-      .withAngularSpeed(0.0)
+      .withAngularSpeed(Some(0.0))
 
     val wall = makeFixedEntityRectangle(id = "wall")
 
@@ -215,7 +215,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
       width = 4.0,
       height = 2.0,
       speed = Vector2D(-1.0, 0.0)
-    ).withWeight(1).value.withAngularSpeed(0.0)
+    ).withWeight(Some(1)).value.withAngularSpeed(Some(0.0))
 
     val wall = makeFixedEntityRectangle(id = "wall")
 
@@ -236,11 +236,11 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
 
   test("this function should include both entities' translational inverse masses"):
     val entity = makeMovingEntityCircle(speed = Vector2D(-1.0, 0.0))
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
 
     val other = makeMovingEntityCircle(id = "other", speed = Vector2D(1.0, 0.0))
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
 
     val (speedChange, _) =
@@ -252,8 +252,8 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     val radius = 1.0
 
     val entity = makeFixedEntityCircle(radius = radius)
-      .withAngularSpeed(0.0)
-      .withWeight(1)
+      .withAngularSpeed(Some(0.0))
+      .withWeight(Some(1))
       .value
 
     val other = makeMovingEntityCircle(
@@ -261,7 +261,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
       radius = radius,
       speed = Vector2D(1.0, 0.0)
     )
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
 
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, radius))
@@ -292,7 +292,7 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     val radius = 1.0
 
     val entity = makeMovingEntityCircle(radius = radius, speed = Vector2D(-1.0, 0.0))
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
 
     val other = makeFixedEntityCircle(id = "other", radius = radius)
@@ -309,12 +309,12 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
     val radius = 1.0
 
     val entity = makeMovingEntityCircle(radius = radius, speed = Vector2D(-1.0, 0.0))
-      .withWeight(1)
+      .withWeight(Some(1))
       .value
 
     val other = makeFixedEntityCircle(id = "other", radius = radius)
-      .withAngularSpeed(0.0)
-      .withWeight(1)
+      .withAngularSpeed(Some(0.0))
+      .withWeight(Some(1))
       .value
 
     val collision = HorizontalCollision.copy(collisionPoint = Vector2D(0.0, radius))
@@ -339,8 +339,8 @@ class CollisionVelocityDeltaTest extends AnyFunSuite with Matchers:
 
   test("this function should return zero when all effective inverse masses are zero"):
     val entity = makeFixedEntityCircle()
-      .withAngularSpeed(0.0)
-      .withWeight(1)
+      .withAngularSpeed(Some(0.0))
+      .withWeight(Some(1))
       .value
 
     val other = makeFixedEntityCircle(id = "other")
