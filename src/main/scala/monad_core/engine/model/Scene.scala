@@ -52,7 +52,7 @@ case class Scene(
    *   the entity, or `EntityNotFound` when absent
    */
   def getEntity(id: LocatableId): Either[EngineError, Entity] =
-    getFromMap(Scene.entitiesLens, this, id, EntityNotFound(id))
+    getFromMap(Scene.entitiesLens, this, id)(EntityNotFound(id))
 
   /**
    * Retrieves a team by identifier.
@@ -63,7 +63,7 @@ case class Scene(
    *   the team, or `TeamNotFound` when absent
    */
   def getTeam(id: TeamId): Either[EngineError, Team] =
-    getFromMap(Scene.teamsLens, this, id, TeamNotFound(id))
+    getFromMap(Scene.teamsLens, this, id)(TeamNotFound(id))
 
   /**
    * Retrieves a surface by identifier.
@@ -74,7 +74,7 @@ case class Scene(
    *   the surface, or `SurfaceNotFound` when absent
    */
   def getSurface(id: LocatableId): Either[EngineError, Surface] =
-    getFromMap(Scene.surfacesLens, this, id, SurfaceNotFound(id))
+    getFromMap(Scene.surfacesLens, this, id)(SurfaceNotFound(id))
 
   /**
    * Returns a scene containing the supplied entity.
@@ -85,7 +85,7 @@ case class Scene(
    *   the updated scene, or `CannotAddEntity` when its identifier already exists
    */
   def addEntity(entity: Entity): Either[EngineError, Scene] =
-    addToMap(Scene.entitiesLens, this, entity.id, entity, CannotAddEntity(_))
+    addToMap(Scene.entitiesLens, this, entity.id, entity)(CannotAddEntity(_))
 
   /**
    * Returns a scene containing the supplied team.
@@ -96,7 +96,7 @@ case class Scene(
    *   the updated scene, or `CannotAddTeam` when its identifier already exists
    */
   def addTeam(team: Team): Either[EngineError, Scene] =
-    addToMap(Scene.teamsLens, this, team.id, team, CannotAddTeam(_))
+    addToMap(Scene.teamsLens, this, team.id, team)(CannotAddTeam(_))
 
   /**
    * Returns a scene containing the supplied surface.
@@ -107,7 +107,7 @@ case class Scene(
    *   the updated scene, or `CannotAddSurface` when its identifier already exists
    */
   def addSurface(surface: Surface): Either[EngineError, Scene] =
-    addToMap(Scene.surfacesLens, this, surface.id, surface, CannotAddSurface(_))
+    addToMap(Scene.surfacesLens, this, surface.id, surface)(CannotAddSurface(_))
 
   /**
    * Returns a scene without the supplied entity identifier.
@@ -118,7 +118,7 @@ case class Scene(
    *   the updated scene, or `CannotRemoveEntity` when its identifier is absent
    */
   def removeEntity(entity: Entity): Either[EngineError, Scene] =
-    removeFromMap(Scene.entitiesLens, this, entity.id, CannotRemoveEntity(_))
+    removeFromMap(Scene.entitiesLens, this, entity.id)(CannotRemoveEntity(_))
 
   /**
    * Returns a scene without the supplied team identifier.
@@ -129,7 +129,7 @@ case class Scene(
    *   the updated scene, or `CannotRemoveTeam` when its identifier is absent
    */
   def removeTeam(team: Team): Either[EngineError, Scene] =
-    removeFromMap(Scene.teamsLens, this, team.id, CannotRemoveTeam(_))
+    removeFromMap(Scene.teamsLens, this, team.id)(CannotRemoveTeam(_))
 
   /**
    * Returns a scene without the supplied surface identifier.
@@ -140,7 +140,7 @@ case class Scene(
    *   the updated scene, or `CannotRemoveSurface` when its identifier is absent
    */
   def removeSurface(surface: Surface): Either[EngineError, Scene] =
-    removeFromMap(Scene.surfacesLens, this, surface.id, CannotRemoveSurface(_))
+    removeFromMap(Scene.surfacesLens, this, surface.id)(CannotRemoveSurface(_))
 
   /** @return all entities in this scene, with no ordering guarantee */
   override def allEntities: List[Entity] = entities.map((id, entity) => entity).toList
@@ -190,18 +190,16 @@ object Scene:
   private def getFromMap[K, V](
       lens: Lens[Scene, Map[K, V]],
       scene: Scene,
-      key: K,
-      error: => EngineError
-  ): Either[EngineError, V] =
+      key: K
+  )(error: => EngineError): Either[EngineError, V] =
     lens.get(scene).get(key).toRight(error)
 
   private def addToMap[K, V](
       lens: Lens[Scene, Map[K, V]],
       scene: Scene,
       key: K,
-      value: V,
-      error: CannotAddAlreadyPresentElementInMap[K] => EngineError
-  ): Either[EngineError, Scene] =
+      value: V
+  )(error: CannotAddAlreadyPresentElementInMap[K] => EngineError): Either[EngineError, Scene] =
     val m = lens.get(scene)
     if m.contains(key) then Left(error(CannotAddAlreadyPresentElementInMap(key)))
     else Right(lens.set(scene, m + (key -> value)))
@@ -209,9 +207,8 @@ object Scene:
   private def removeFromMap[K, V](
       lens: Lens[Scene, Map[K, V]],
       scene: Scene,
-      key: K,
-      error: CannotRemoveNonPresentElementFromMap[K] => EngineError
-  ): Either[EngineError, Scene] =
+      key: K
+  )(error: CannotRemoveNonPresentElementFromMap[K] => EngineError): Either[EngineError, Scene] =
     val m = lens.get(scene)
     if m.contains(key) then Right(lens.set(scene, m - key))
     else Left(error(CannotRemoveNonPresentElementFromMap(key)))
