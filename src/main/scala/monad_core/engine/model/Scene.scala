@@ -143,13 +143,13 @@ case class Scene(
     removeFromMap(Scene.surfacesLens, this, surface.id)(CannotRemoveSurface(_))
 
   /** @return all entities in this scene, with no ordering guarantee */
-  override def allEntities: List[Entity] = entities.map((id, entity) => entity).toList
+  def allEntities: List[Entity] = entities.map((id, entity) => entity).toList
 
   /** @return all teams in this scene, with no ordering guarantee */
-  override def allTeams: List[Team] = teams.map((id, team) => team).toList
+  def allTeams: List[Team] = teams.map((id, team) => team).toList
 
   /** @return all surfaces in this scene, with no ordering guarantee */
-  override def allSurfaces: List[Surface] = surfaces.map((id, surfaces) => surfaces).toList
+  def allSurfaces: List[Surface] = surfaces.map((id, surfaces) => surfaces).toList
 
   /**
    * Returns a scene with updated spatial boundaries.
