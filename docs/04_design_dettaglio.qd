@@ -46,6 +46,22 @@ Ogni `PhysicsRule` trasforma un `PhysicsContext` in `Either[PhysicsError, Physic
 
 Le regole mantengono una responsabilità fisica ciascuna: dinamiche delle superfici, attrazione, risoluzione delle collisioni, contatto con i bordi, danno e cinematica. Algoritmi e calcoli specifici restano interni alle rispettive implementazioni e non modificano il protocollo comune.
 
+#### Regola d'applicazione del danno e riconoscimento della "morte"
+
+La `DamageApplicationRule` gestisce l'applicazione del danno in seguito a una collisione. Le collisioni possono avvenire tra due entità oppure tra un'entità e una superficie; in entrambi i casi, il danno viene applicato tramite la funzione `applyDamage` dell'entità coinvolta.
+
+L'applicazione può produrre tre risultati:
+
+- l'entità conserva una quantità di vita maggiore di zero e viene aggiornata nello `State`;
+- la vita raggiunge zero o un valore inferiore e l'entità viene rimossa dalla scena;
+- l'entità non possiede una salute a cui applicare il danno e rimane quindi invariata.
+
+La "morte" di un'entità viene quindi rappresentata direttamente dalla sua rimozione dallo `State`, senza introdurre uno stato o un flag aggiuntivo.
+
+Al termine della regola, il confronto tra lo stato iniziale e quello risultante permette di generare l'`EngineEvent` appropriato: `EntityUpdated` se l'entità è stata modificata, `EntityRemoved` se è stata eliminata, oppure nessun evento se è rimasta invariata.
+
+![Flusso della regola di applicazione del danno](assets/damage-rule.png)
+
 ### Ray casting e pathfinding locale
 
 `EnemyAttractionRule` delega al sottosistema di ray casting la scelta tra una direzione diretta verso il nemico e un percorso locale attorno al primo ostacolo. `VertexFinder` trasforma cerchi e rettangoli nelle rispettive rappresentazioni in coordinate globali, considerando posizione, dimensioni e rotazione. `RayCast` espande poi gli ostacoli in funzione dell'ingombro dell'entità in movimento e di un margine di sicurezza, adottando un'approssimazione conservativa della somma di Minkowski che consente di trattare il moto come quello di un punto.
@@ -58,13 +74,17 @@ I candidati vengono spostati verso l'esterno per includere l'ingombro dell'entit
 
 ### Sessione, rendering ed eventi
 
-Il game loop separa frequenza della simulazione e frequenza di visualizzazione. Una sessione conserva configurazione temporale e accumulatore; a ogni chiamata consuma zero o più passi completi e mantiene il resto. Il risultato distingue stato precedente e corrente e fornisce `alpha`, usato per interpolare posizione e rotazione del frame senza modificare lo stato fisico definitivo.
+`EngineFacade` nasconde il game loop e permette al client di ragionare per sessioni. È una facade funzionale per la quale ogni operazione riceve una sessione e restituisce quella successiva, senza stato globale. Il client vede un solo risultato contenente i valori che deve adottare e non dipende dai dettagli interni.
 
-`EngineFacade` nasconde game loop e rappresentazione concreta della sessione. È una facade funzionale: creazione, avvio, arresto e tick ricevono una sessione e restituiscono quella successiva, senza stato globale. Il client vede un solo risultato contenente i valori che deve adottare e non dipende dai dettagli temporali interni.
+![facade-flux.png](assets/engine-facade-operative-flux.png)
 
 Il rendering è diviso in pianificazione pura e interpretazione grafica. `RendererManager` legge uno stato e, tramite un `Painter` sostituibile, produce un `Vector[DrawCommand]` ordinato con superfici prima delle entità. `DrawCommand` è un ADT backend-neutral; soltanto `ShapePainter`, nel layer Presentation, lo interpreta su ScalaFX. Un backend alternativo può quindi riusare stato e piano di disegno senza importare JavaFX nell'engine.
 
-Gli `EngineEvent` percorrono la pipeline insieme ai risultati. Le regole accumulano eventi senza pubblicare side effect, il game loop unisce quelli dei diversi fixed update e mondo e runtime li inoltrano al callback scelto dal composition root. Formatter e logger restano esterni all'engine; non è necessario un event bus globale.
+![renderer-architecture.png](assets/renderer-architecture.png)
+
+Gli `EngineEvent` percorrono la pipeline insieme ai risultati. Le regole accumulano eventi senza pubblicare side effect, il game loop unisce quelli dei diversi fixed update e mondo e runtime li inoltrano al callback scelto dal composition root. Formatter e logger restano esterni all'engine.
+
+![event-system.png](assets/log-system.png)
 
 ### Modifiche del mondo e consistenza del runtime
 

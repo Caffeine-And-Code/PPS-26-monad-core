@@ -1,6 +1,6 @@
 Mi sono occupato principalmente del modello e della gestione della scena, della progettazione dell'API pubblica e dell'integrazione tra engine e applicazione, dell'interfaccia grafica ScalaFX, del sistema di eventi e di alcune infrastrutture di test; nello specifico possiamo individuare i seguenti gruppi di sorgenti:
 
-- `engine/model/Scene.scala`, `engine/core/traits/State.scala`, `EngineFacade.scala`, `RendererManager.scala`, `DrawCommand.scala`, `EngineColor.scala` e l'astrazione `Painter`;
+- `Scene.scala`, `State.scala`, `EngineFacade.scala`, `RendererManager.scala`, `DrawCommand.scala`, `EngineColor.scala` e l'astrazione `Painter`;
 - il valore di dominio `Damage`, l'estensione di entità e superfici e la regola fisica `DamageApplicationRule`, insieme al contesto condiviso delle collisioni;
 - gli adapter `MonadCoreWorld`, `MonadCoreGameEngineRuntime` e `PaintArchitect`, insieme all'ADT `WorldEdit`, al relativo interprete `WorldEditor` e alle operazioni applicative su entità, superfici e team;
 - gli stage e i pannelli ScalaFX del motore, i componenti `IconButton`, `MenuButton`, `ResizableCanvas` e `NotificationManager`, il sistema di form e i relativi parser;
@@ -11,49 +11,33 @@ Diverse parti sono state realizzate in collaborazione con tutto il team, come ad
 
 ### Modello funzionale della scena
 
-Ho implementato `Scene` come aggregato immutabile contenente tre mappe: due indicizzate tramite `LocatableId`, rispettivamente per entità e superfici, e una indicizzata tramite `TeamId`, destinata ai team. Le operazioni di lettura restituiscono un valore, mentre quelle di inserimento e rimozione producono una nuova scena; in entrambi i casi, il risultato è rappresentato tramite `Either[EngineError, A]`. Gli errori di dominio rimangono quindi valori espliciti e componibili, senza ricorrere a eccezioni o valori sentinella.
+Ho implementato `Scene` come un aggregato immutabile che contiene tre mappe: entità e superfici sono indicizzate tramite `LocatableId`, mentre i team tramite `TeamId`.
 
-Per evitare di duplicare la stessa logica nelle tre mappe ho adottato il **Lens pattern**, un'ottica funzionale che consente di leggere e sostituire una parte di una struttura immutabile. Ho implementato una versione minimale di `Lens[S, A]`, composta da una funzione `get` e da una funzione `set`. Le tre istanze per entità, superfici e team sono fornite come `given`; le funzioni generiche `getFromMap`, `addToMap` e `removeFromMap` operano sulla lens ricevuta. Questa soluzione concentra in un unico punto il controllo della presenza delle chiavi e la costruzione degli errori specifici, preservando la tipizzazione delle API pubbliche. Le operazioni più articolate sono concatenate tramite for-comprehension, sfruttando l'interruzione anticipata di `Either`.
+Per evitare di ripetere la stessa logica sulle tre mappe ho utilizzato il **Lens pattern**. Una `Lens[S, A]` permette di leggere (`get`) e aggiornare (`set`) una parte di una struttura immutabile. Per ogni mappa di `Scene` è definita una lens specifica, mentre funzioni generiche come `getFromMap`, `addToMap` e `removeFromMap` raccolgono la logica comune di accesso e modifica.
 
-Il trait `State` espone al game loop e al sottosistema fisico soltanto le operazioni necessarie sullo stato del mondo. `Scene` ne costituisce l'implementazione concreta; insieme a Tonelli ho integrato la gestione dei limiti del mondo e l'interpolazione senza alterare la semantica immutabile dell'aggregato.
+In questo modo il codice risulta più compatto e riutilizzabile, mantenendo comunque una gestione tipizzata degli errori, di seguito sono rappresentate le operazioni specifiche per le entities e le funzioni generiche nominate in precedenza:
 
-### Danno come valore e regola fisica pura
+![scene-code.png](../assets/scene-code.png)
 
-Ho introdotto il concetto di danno come opaque type `Damage`, la cui costruzione restituisce `Either[EngineError, Damage]` e impedisce di rappresentare valori negativi. Un'entità può possedere opzionalmente sia `Health` sia il danno inflitto durante un contatto; i metodi `withDamage` e `applyDamage` non modificano l'istanza ricevuta, ma restituiscono una copia validata. Analogamente, una superficie può dichiarare un `damageOverTime`, applicato alle entità rilevate al suo interno durante un aggiornamento fisico. L'assenza di salute o di danno è espressa tramite `Option`, senza valori sentinella.
+### Danno come valore e regole fisiche con contesto condiviso
 
-Per evitare che ogni regola fisica ripetesse la collision detection ho introdotto `PhysicsContext`, composto dallo stato iniziale, dal delta temporale e da un `CollisionSnapshot`. Lo snapshot raccoglie separatamente i contatti tra entità e quelli tra entità e superfici e viene calcolato una sola volta da `PhysicsManager`, prima della composizione delle regole. `DamageApplicationRule` interpreta questi contatti mediante due `foldLeft` su mappe immutabili: nei contatti tra entità applica il danno in entrambe le direzioni, mentre nei contatti con una superficie applica il relativo `damageOverTime` alla sola entità.
+Ho introdotto il concetto di danno come opaque type `Damage`, seguendo lo stesso modello di implementazione di Senni applicata per `Health`,`Weight`, ecc.
 
-La regola restituisce lo `State` risultante all'interno di `Either[PhysicsError, PhysicsRuleResult]`. Se la salute rimane valida, una copia aggiornata dell'entità sostituisce quella precedente; se il danno esaurisce la salute, l'entità viene rimossa dalla scena. Quando il contatto non comporta un danno applicabile, per esempio perché manca `Damage` oppure `Health`, l'entità rimane invariata. Al termine dell'intero aggiornamento `PhysicsManager` confronta lo stato iniziale con quello finale: produce `EntityUpdated` per un'entità modificata ancora presente, `EntityRemoved` per un'entità non più presente e nessun evento di stato per un'entità invariata. Il comportamento è stato integrato anche nei form e nei parser ScalaFX e nei tool dell'agente, mantenendo i costruttori del modello come unico punto di validazione.
+Per evitare che ogni regola fisica ripetesse la collision detection ho introdotto `PhysicsContext`, record fornito ad ogni rule prima della sua esecuzione. `CollisionSnapshot` raccoglie separatamente i contatti tra entità e quelli tra entità e superfici e viene calcolato una sola volta da `PhysicsManager`, prima della composizione delle regole.
 
-![damage-rule.png](../assets/damage-rule.png)
+![context-code.png](../assets/context-code.png)
 
 ### API pubblica e integrazione applicativa
 
-L'engine è stato progettato come pacchetto installabile e riutilizzabile anche da applicazioni diverse dal simulator incluso nel progetto. A tale scopo ho applicato il **Facade Pattern** attraverso `EngineFacade`, che costituisce il punto di ingresso pubblico al ciclo di vita del game loop. La facade espone le operazioni `default`, `create`, `start`, `stop`, `mode`, `isRunning` e `tick`, ma nasconde la rappresentazione concreta del loop dietro l'opaque type `Session`. Un client esterno può quindi creare ed evolvere una sessione senza dipendere direttamente da `GameLoop` e `GameLoopTickResult`.
+Ho adattato il facade pattern alla natura funzionale dell'engine, evitando di trasformare la stessa in un servizio globale dotato di stato mutabile. Le operazioni di transizione `start`, `stop` e `tick` ricevono una `Session` e restituiscono una nuova sessione, direttamente oppure all'interno del risultato del tick. Il risultato pubblico contiene il nuovo `State`, la sessione successiva `nextSession`, gli eventi e il coefficiente di interpolazione `alpha`. La facade nasconde quindi i dettagli di orchestrazione, mantenendo esplicite l'evoluzione dello stato e la gestione degli errori.
 
-Ho adattato il pattern alla natura funzionale dell'engine, evitando di trasformare la facade in un servizio globale dotato di stato mutabile. Le operazioni di transizione `start`, `stop` e `tick` ricevono una `Session` e restituiscono una nuova sessione, direttamente oppure all'interno del risultato del tick. Quest'ultimo può essere interpretato come una trasformazione `Session × State × Time × PhysicsManager → Either[EngineError, TickResult]`. Il risultato pubblico contiene il nuovo `State`, la sessione successiva `nextSession`, gli eventi e il coefficiente di interpolazione `alpha`. La facade nasconde quindi i dettagli di orchestrazione, mantenendo esplicite l'evoluzione dello stato e la gestione degli errori.
+La facade è focalizzata sul caso d'uso temporale e non nasconde tutti i tipi del dominio: `State`, `EngineError`, `EngineEvent` e `PhysicsManager` rimangono intenzionalmente visibili come contratti di scambio e configurazione dell'engine.
 
-La facade è focalizzata sul caso d'uso temporale e non nasconde tutti i tipi del dominio: `State`, `EngineError`, `EngineEvent` e `PhysicsManager` rimangono intenzionalmente visibili come contratti di scambio e configurazione dell'engine installabile. Questa scelta definisce un confine stabile rispetto all'implementazione del game loop senza sacrificare componibilità, sostituibilità e trasparenza delle trasformazioni.
-
-#### Casi d'uso dell'API
-
-Dal punto di vista di un'applicazione client, l'API consente di gestire il ciclo di vita della simulazione senza conoscere la rappresentazione del game loop. I casi d'uso sono suddivisi tra gestione della sessione e avanzamento del mondo: la configurazione personalizzata dei tempi estende la creazione, mentre il risultato viene elaborato dopo ogni tick completato con successo.
-
-![api-use-case.png](../assets/api-use-case.png)
-
-#### Struttura e flusso operativo della facade
-
-La vista strutturale evidenzia il confine di astrazione: il client conosce `Session` e `TickResult`, mentre `GameLoop` rimane un dettaglio nascosto. `TickResult` rende espliciti tutti i valori che il client deve propagare al passo successivo, evitando aggiornamenti impliciti all'interno della facade.
-
-![engine-facade-operative-flux.png](../assets/engine-facade-operative-flux.png)
-
-Il diagramma di sequenza mostra invece che la facade non conserva lo stato del client. Anche dopo `start` e `tick`, le istanze ricevute non vengono mutate: è l'applicazione a decidere quando adottare la nuova `Session` e il nuovo `State` restituiti.
-
-![facade-sequence.png](../assets/facade-sequence.png)
+![facade-code.png](../assets/facade-code.png)
 
 #### Integrazione nel simulator
 
-Nel simulator ho progettato con Senni la porta applicativa `World` e il relativo adapter `MonadCoreWorld`. Su questo confine condiviso ho poi progettato autonomamente `WorldEditor`, l'interprete che governa le modifiche rappresentate dall'ADT `WorldEdit`. L'interprete è una funzione pura che mappa `LoopMode`, `Scene` e `WorldEdit` in `Either[BaseError, WorldEditResult]`: in `EditMode` produce una nuova scena immutabile e gli eventuali eventi, mentre in `SimulationMode` termina immediatamente con `SceneEditingNotAllowed`. Le nove operazioni di creazione, modifica e rimozione di entità, superfici e team rimangono atomiche. Anche le modifiche composte, realizzate tramite lettura, rimozione e inserimento, non pubblicano alcuno stato intermedio.
+Nel simulator ho progettato con Senni la porta applicativa `World` e il relativo adapter `MonadCoreWorld`. Su questo confine condiviso ho poi progettato autonomamente `WorldEditor`, l'interprete che governa le modifiche rappresentate dall'ADT `WorldEdit`. L'interprete è un mapper da `LoopMode`, `Scene` e `WorldEdit` a `Either[BaseError, WorldEditResult]`: in `EditMode` produce una nuova scena immutabile e gli eventuali eventi, mentre in `SimulationMode` termina immediatamente con `SceneEditingNotAllowed`.
 
 `MonadCoreWorld` costituisce il guscio imperativo di questo nucleo funzionale: conserva sotto sincronizzazione la scena e la modalità correnti, invoca `WorldEditor` e, soltanto in caso di `Right`, sostituisce la scena e pubblica gli eventi. Il runtime mantiene coerente la modalità dell'adapter attraverso le operazioni `enterEditMode` ed `enterSimulationMode`; le decisioni relative all'accettazione di un comando rimangono invece nell'interprete puro. Ho centralizzato in `ErrorsAdapter` le conversioni tra `EngineError` e `BaseError`, affinché i layer esterni non dipendano dalla gerarchia di errore interna al motore. Il risultato è un'architettura **functional core–imperative shell**, nella quale decisioni, transizioni ed errori sono valori puri, mentre la mutazione necessaria all'esecuzione è confinata negli adapter.
 
@@ -70,8 +54,6 @@ Ho modellato il rendering in due fasi distinte: la **descrizione pura** dell'imm
 `DrawCommand` è l'ADT con cui l'engine rappresenta il disegno come dato. I casi `Circle` e `Rectangle` contengono geometria, posizione, rotazione e `EngineColor`, ma non eseguono direttamente alcuna operazione grafica. Anche `Painter` è un contratto orientato alla produzione di valori: `drawCircle` e `drawRectangle` restituiscono `Option[DrawCommand]`, consentendo a un'implementazione di produrre un comando oppure omettere l'elemento senza ricorrere a `null`, eccezioni o buffer condivisi. Di conseguenza, a parità di `State` e implementazione del `Painter`, il piano di rendering ottenuto è deterministico e testabile come un normale valore immutabile.
 
 Il `Painter` viene risolto tramite `using`, così chi installa il pacchetto engine può fornire la propria implementazione senza modificare `RendererManager`. Il simulator usa `PaintArchitect`, che definisce colori e traduzione delle forme in modo puro e deterministico; un client esterno può invece scegliere una diversa politica cromatica o di produzione dei comandi. L'unico passaggio necessariamente effectful è l'interpretazione finale: nell'applicazione ScalaFX, `ShapePainter` consuma il `Vector[DrawCommand]` e applica le operazioni al `GraphicsContext`. Un altro client può interpretare gli stessi valori con un backend grafico differente oppure in modalità headless, mantenendo invariato il nucleo dell'engine.
-
-![renderer-architecture.png](../assets/renderer-architecture.png)
 
 ### Interfaccia grafica e form dichiarativi
 
@@ -98,8 +80,6 @@ Per la propagazione ho adottato uno schema analogo a un writer, senza introdurre
 Nel game loop, lavorando sulla base sviluppata con Tonelli, ho introdotto `GameLoopTickResult`: oltre al nuovo stato e al loop aggiornato, il risultato trasporta il coefficiente di interpolazione `alpha` e tutti gli eventi accumulati nei fixed update eseguiti durante un frame. `EngineFacade` adatta questo tipo interno nel proprio `TickResult`, sostituendo il loop concreto con la sessione opaca `nextSession`. Il rendering è esterno al loop ed è orchestrato dal runtime; il core temporale rimane quindi indipendente dagli effetti grafici e gli eventi non vengono persi quando un frame richiede più aggiornamenti fisici.
 
 Le mutazioni esplicite delle entità effettuate tramite `MonadCoreWorld` pubblicano gli eventi di creazione, rimozione e aggiornamento, mentre `MonadCoreGameEngineRuntime` inoltra quelli prodotti dal sottosistema fisico. Nel composition root ho collegato entrambi allo stesso callback. `EventLogFormatter` trasforma infine ciascun caso dell'ADT in un `EventLogEntry` strutturato, con livello `Info` o `Trace`, consumato attraverso la porta applicativa `Logger`. Engine, formattazione e destinazione del log restano pertanto disaccoppiati.
-
-![event-system.png](../assets/log-system.png)
 
 ### Continuous Integration e Continuous Delivery
 
