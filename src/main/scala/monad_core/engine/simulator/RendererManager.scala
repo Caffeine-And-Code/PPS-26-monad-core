@@ -1,8 +1,8 @@
 package monad_core.engine.simulator
 
 import monad_core.engine.core.traits.{RenderEngine, State}
+import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
-import monad_core.engine.model.{EngineColor, EngineError, TeamId}
 
 /**
  * Pure renderer that converts an engine state into backend-independent drawing commands.
@@ -11,6 +11,17 @@ import monad_core.engine.model.{EngineColor, EngineError, TeamId}
  * color otherwise.
  */
 object RendererManager extends RenderEngine:
+
+  private def determineCommand(
+                                shape: Shape2D,
+                                color: EngineColor,
+                                locatable: Locatable
+                              )(using
+                                painter: Painter
+                              ): Option[DrawCommand] =
+    shape match
+      case _: Circle    => painter.drawCircle(locatable, color)
+      case _: Rectangle => painter.drawRectangle(locatable, color)
 
   /**
    * Produces the ordered drawing plan for a state.
@@ -25,7 +36,7 @@ object RendererManager extends RenderEngine:
    *   the ordered drawing commands, or the first color-construction error
    */
   override def render(state: State)(using
-      painter: Painter
+                                    painter: Painter
   ): Either[EngineError, Vector[DrawCommand]] =
     for
       entityBaseColor <- painter.baseEntityColor
@@ -39,21 +50,14 @@ object RendererManager extends RenderEngine:
         yield map + (team.id -> color)
       }
     yield
-      def getTeamColorOrDefault(optionalTeamId: Option[TeamId]): EngineColor =
-        optionalTeamId.flatMap(teamsMap.get).getOrElse(entityBaseColor)
-
-      val surfaceCommands = state.allSurfaces.flatMap { surface =>
-        surface.shape match
-          case _: Circle    => painter.drawCircle(surface, surfacesColor)
-          case _: Rectangle => painter.drawRectangle(surface, surfacesColor)
-      }
+      val surfaceCommands = state.allSurfaces.flatMap(surface =>
+        determineCommand(surface.shape, surfacesColor, surface)
+      )
 
       val entityCommands = state.allEntities.flatMap { entity =>
-        entity.shape match
-          case _: Circle =>
-            painter.drawCircle(entity, getTeamColorOrDefault(entity.teamId))
-          case _: Rectangle =>
-            painter.drawRectangle(entity, getTeamColorOrDefault(entity.teamId))
+        val teamColor = entity.teamId.flatMap(teamsMap.get).getOrElse(entityBaseColor)
+
+        determineCommand(entity.shape, teamColor, entity)
       }
 
       (surfaceCommands ++ entityCommands).toVector
