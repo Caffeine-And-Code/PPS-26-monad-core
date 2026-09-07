@@ -6,6 +6,7 @@ import monad_core.engine.core.events.EngineEvent.{EntityRemoved, EntityUpdated}
 import monad_core.engine.core.traits.{PhysicsEngine, PhysicsStep, State}
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
+import monad_core.engine.model.{Entity, LocatableId}
 import monad_core.engine.physics.combinators.RuleCombinator
 import monad_core.engine.physics.rules.*
 
@@ -108,8 +109,11 @@ final case class PhysicsManager private (
    *   deterministic sequence of removal and update events
    */
   private def detectEntityStateEvents(before: State, after: State): Vector[EngineEvent] =
-    val previousEntities = before.allEntities.map(entity => entity.id -> entity).toMap
-    val currentEntities  = after.allEntities.map(entity => entity.id -> entity).toMap
+    val generateEntityMap: List[Entity] => Map[LocatableId, Entity] =
+      _.map(entity => entity.id -> entity).toMap
+
+    val previousEntities = generateEntityMap(before.allEntities)
+    val currentEntities  = generateEntityMap(after.allEntities)
 
     previousEntities.keys.toVector
       .sortBy(_.value)
