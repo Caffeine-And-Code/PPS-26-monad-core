@@ -1,8 +1,8 @@
 package monad_core.engine.simulator
 
 import monad_core.engine.core.traits.{RenderEngine, State}
-import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.model.*
+import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 
 /**
  * Pure renderer that converts an engine state into backend-independent drawing commands.
@@ -13,12 +13,12 @@ import monad_core.engine.model.*
 object RendererManager extends RenderEngine:
 
   private def determineCommand(
-                                shape: Shape2D,
-                                color: EngineColor,
-                                locatable: Locatable
-                              )(using
-                                painter: Painter
-                              ): Option[DrawCommand] =
+      shape: Shape2D,
+      color: EngineColor,
+      locatable: Locatable
+  )(using
+      painter: Painter
+  ): Option[DrawCommand] =
     shape match
       case _: Circle    => painter.drawCircle(locatable, color)
       case _: Rectangle => painter.drawRectangle(locatable, color)
@@ -36,7 +36,7 @@ object RendererManager extends RenderEngine:
    *   the ordered drawing commands, or the first color-construction error
    */
   override def render(state: State)(using
-                                    painter: Painter
+      painter: Painter
   ): Either[EngineError, Vector[DrawCommand]] =
     for
       entityBaseColor <- painter.baseEntityColor
