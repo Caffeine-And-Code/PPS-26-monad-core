@@ -142,6 +142,4 @@ onFxThread { messageTexts(panel) should contain allOf ("Hello", "Hi!") }
 
 I test standard vengono eseguiti da SBT in processi JVM separati per classe e senza parallelismo tra i processi forkati. Questa scelta riduce le interferenze dovute allo stato globale del toolkit JavaFX e rende più riproducibili i test grafici. Le attese asincrone sono inoltre limitate da timeout, in modo che un malfunzionamento non possa bloccare indefinitamente la suite.
 
-A ogni pull request verso `main` o `development` e a ogni push su qualsiasi branch, GitHub Actions esegue `sbt test` su Java 21. I test grafici vengono avviati in un display virtuale **Xvfb**, con font controllati, per consentire la verifica di JavaFX anche in un ambiente Linux headless. La pipeline impedisce quindi l'integrazione di modifiche che introducano regressioni funzionali, grafiche o architetturali nella suite standard.
-
 I test che dipendono da Ollama vengono eseguiti separatamente tramite `sbt "llmIntegrationTest / test"`. La loro esclusione dalla pipeline standard evita che la disponibilità del modello, la latenza e la variabilità generativa rendano instabile la continuous integration. Costituiscono quindi un controllo end-to-end da eseguire in un ambiente preparato esplicitamente, in particolare prima delle release o dopo modifiche a prompt, tool e memoria conversazionale.
