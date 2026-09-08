@@ -51,12 +51,54 @@ L'architettura del simulatore è ispirata alla Clean Architecture e applica anch
 
 Il livello Domain contiene i tipi che descrivono i concetti propri delle funzionalità gestite dall'applicazione.
 Si intende parte del livello di dominio anche i modelli descritti nel package `model` dell'engine, in quanto sono semplici rappresentazioni di forme geometriche e sono coerenti con il modo di rappresentare e di intendere le forme geometriche del simulatore.
-Il livello Domain non ha dipendenze esterne ad eccezione di quella sopra citata
+Il livello Domain non ha dipendenze esterne ad eccezione di quella sopra citata.
+In particolare contiene rappresentazioni dei concetti di:
+- AI agent
+    - informazioni su provider e modello dell'LLM
+    - risposta dell'agente AI
+    - prompt dell'utente
+    - test di valutazione
+    - risultati di un test di valutazione
+    - risposta ad un test di valutazione
+    - aggregazione dei risultati dei test di valutazione
+    - chiamata ad un tool
+- valutazione delle performance:
+    - fattore di scala con minimo e massimo
+    - impostazioni delle valutazioni
+    - aggregazione dei risultati delle performance
 
 ### Application
 
 Il livello Application definisce i casi d'uso dell'applicazione e le porte necessarie per realizzarli, questo rende l'applicazione indipendente dalle implementazioni delle dipendeze esterne, in quanto al cambiamento di uno dipendenza esterna sarà sufficiente sostituire il relativo adattatore mentre il resto dell'applicazione continuerà a funzionare in quanto si basa sull'interfaccia fornita dal livello application.
 Il livello Application dipende dal livello Domain e nient'altro.
+In particolare il livello application definisce come interagire con:
+- La scena del game engine
+    - permette di effettuare il CRUD sulle entità nella scena
+    - permette di effettuare il CRUD sulle superfici nella scena
+    - permette di effettuare il CRUD sui team nella scena
+- Il runtime del game engine
+    - permette di avviare la simulazione
+    - permette di stoppare la simulazione
+    - permette di sapere se la simulazione è in esecuzione
+    - permette di ridimensionare la finestra della simulazione
+    - permette di avanzare la simulazione di un tick
+    - permette di creare uno snapshot della scena
+    - permette di tornare ad uno specifico snapshot
+    - permette di inizializzare la scena
+    - permette di avere l'ultimo errore rilasciato dall'engine se presente
+    - permette di avere tutte le regole di fisica applicate alla scena
+    - permette di sovrascrivere tutte le regole di fisica applicate alla scena
+- L'agente AI
+    - permette di mandare un prompt all'agente AI
+    - permette di avere provider e nome dell'LLM in utilizzo
+    - permette di cancellare la cronologia della chat dell'agente AI
+- Lo script per valutare l'agente
+    - permette di valutare un LLM su una lista di test
+- Il dataset per valutare l'agente AI
+    - permettere di ottenere una lista di test da eseguire
+- Il logger
+    - permettere di loggare informazioni
+    - permettere di tenere traccia di eventi
 
 ### Infrastructure
 

@@ -1,264 +1,34 @@
 # Design di dettaglio
 
-Il presente capitolo espande i componenti architetturali descrivendone responsabilità interne, collaborazioni e criteri di estensione. Il livello scelto permette di riprodurre l'organizzazione del software senza anticipare algoritmi, costrutti Scala e contributi personali trattati nell'implementazione.
+...
 
-## Scelte rilevanti di design
+## Modelli dell'engine
 
-### Modello valido e stato immutabile
+I modelli dell'engine seguono il principio di rendere gli stati illegali non rappresentabili, codificando nei tipi gli invarianti dei valori di dominio. Gli opaque type `LocatableId`, `TeamId`, `Weight`, `Health` e `Damage` applicano il pattern Value Object e vengono creati tramite smart constructor che validano i valori, restituendo gli errori attesi con `Either`; allo stesso modo i costruttori non pubblici di `Shape2D`, `Entity`, `Surface`, `Team` e `WorldBounds` controllano la creazione dei relativi oggetti. Le enum e le case class modellano i dati come Algebraic Data Type immutabili, ad esempio `Shape2D` ammette solamente `Circle` e `Rectangle`, mentre `Option` rappresenta esplicitamente le proprietà che possono essere assenti. `EntityBuilder` e `SurfaceBuilder` applicano il pattern Builder componendo con `map` e `flatMap` le funzioni pure di costruzione e interrompendo la catena al primo errore. `Scene` svolge il ruolo di Aggregate Root immutabile e utilizza `Lens` fornite tramite `given` per riusare le operazioni di lettura e aggiornamento sulle diverse mappe, restituendo a ogni modifica una nuova scena e rendendo ogni trasformazione deterministica, testabile e immutabile.
 
-Il modello respinge i valori non validi nel punto di ingresso al dominio. Identificatori, peso, salute, danno e componenti di colore sono rappresentati mediante opaque type; i relativi smart constructor restituiscono `Either[EngineError, A]`. Anche entità, superfici, team, forme e confini centralizzano le proprie invarianti e producono un errore esplicito quando non possono essere costruiti.
+![entity_model_class_diagram.mermaid.png](assets/entity_model_class_diagram.mermaid.png)
 
-L'assenza di una proprietà è espressa con `Option`, evitando valori sentinella. Gli ADT `Shape2D`, `EngineColor`, `BorderSide` e `LoopMode` delimitano invece insiemi chiusi di alternative. Le operazioni di aggiornamento non espongono setter: restituiscono una copia validata, così un valore già entrato nel modello continua a rispettare le invarianti.
+## Rilevamento delle collisioni
 
-`State` è il contratto minimo consumato da game loop, fisica e renderer. `Scene` lo implementa con mappe immutabili di entità, superfici e team. Le collezioni richiedono operazioni analoghe ma producono errori specifici; una piccola `Lens[S, A]`, fornita come istanza contestuale, separa il modo di focalizzare ciascuna mappa dalla logica generica di ricerca, inserimento e rimozione.
+All'interno dell'engine gni sottodominio adotta la rappresentazione dei dati più adatta alle proprie operazioni. Ad esempio i `Locatable` che descrive gli elementi del mondo vengono tradotti in dei `Placed` che rappresentano solamente forma e posa di un oggetto nello spazione, ovvero tutto ciò che serve agli algoritmi di rilevamento delle collisioni. Le type class `Collides` e `Contains` applicano il pattern Strategy per isolare gli algoritmi dalle loro implementazioni concrete, `CollisionDetector` offre un'interfaccia uniforme al resto dell'engine, fornendo, tramite `given`, un'implementazione di default. L'iniezione delle implementazioni tramite `given` e `using` è utile per la realizzazione pattern Dependency Injection, il quale consente, ai test di sostituire ogni algoritmo con uno stub controllato, ed agli sviluppatori che utilizzano il game engine di fornire una proprio implementazione del `CollisionDetector` in sostituzione di quella fornita di default. Le extension method `hasCollisionWith` e `isInside` sul tipo `Locatable` forniscono un'API chiara e fluida da utilizzare nel resto dell'applicazione.
 
-Anche una modifica composta è atomica a livello di valore. Le copie intermedie necessarie a sostituire un elemento rimangono locali alla trasformazione e soltanto il risultato finale può diventare la nuova scena condivisa. Immutabilità e validazione costituiscono quindi la base sia del modello sia della consistenza applicativa.
+![collision_detection_class_diagram.mermaid.png](assets/collision_detection_class_diagram.mermaid.png)
 
-### Geometria e pipeline fisica
 
-Gli algoritmi geometrici non dipendono direttamente da entità e superfici. `Placed[A]` associa forma, posizione e rotazione; le type class `Collides[A, B]` e `Contains[A]` definiscono le operazioni disponibili per ogni combinazione di forme. `CollisionDetector` presenta al resto dell'engine un contratto sui `Locatable` e adatta tali oggetti alla rappresentazione geometrica.
+## Pannello "Chat With Jimmy"
 
-Una collisione conserva normale, profondità di penetrazione e punto di contatto, non soltanto un esito booleano. La fisica può così riusare lo stesso risultato per separazione, risposta ed eventi. Le istanze geometriche sono sostituibili tramite contextual abstraction, mentre il dispatch sulle forme eterogenee della scena avviene attraverso l'ADT `Shape2D`.
+Il pannello "Chat With Jimmy" è organizzato tramite il pattern MVVM: `AiModelChatPanel` costruisce la View, `ChatPanelViewModel` coordina gli eventi e `ChatPanelState` rappresenta il Model. Lo stato è modellato tramite il pattern State come un'enumerazione di valori immutabili `Ready`, `Waiting` ed `Error`, rendendo esplicite le transizioni e impedendo combinazioni di dati non valide. `ChatPanelActions` costituisce il functional core: ogni action è una funzione pura che riceve lo stato corrente e restituisce un nuovo `ChatPanelState`. L'unico punto in cui lo stato persiste è il `ChatPanelViewModel`, che lo mantiene in un `ObjectProperty` di `ScalaFX`, collega gli eventi della GUI con le relative actions del `ChatPanelActions`, coordina la chiamata all'`AiAgent` quando viene mandato un prompt ed infine aggiorna lo stato della pagina. La View osserva la property tramite il pattern Observer e traduce ogni nuovo stato nei model dei componenti `AiPanelHeader`, `MessageBox` e `PromptComposer`. `AiAgent` è la porta definita nel layer `application` dalla quale dipende il ViewModel; il layer `infrastructure` la implementa con `Langchain4jAiAgent`, un Adapter che traduce comandi e risultati di dominio nelle operazioni di LangChain4j, mentre `Langchain4jAgentFactory` ne incapsula la costruzione e la configurazione per Ollama.
 
-Ogni `PhysicsRule` trasforma un `PhysicsContext` in `Either[PhysicsError, PhysicsRuleResult]`. Il contesto contiene stato, delta temporale e una fotografia immutabile dei contatti; il risultato contiene nuovo stato ed eventi. `PhysicsManager` calcola il `CollisionSnapshot` una volta per fixed update e lo condivide tra tutte le regole, evitando rilevamenti ripetuti nello stesso passo.
+![ai_chat_panel_class_diagram.mermaid.png](assets/ai_chat_panel_class_diagram.mermaid.png)
 
-`RuleCombinator` applica le regole abilitate nell'ordine configurato. Lo stato prodotto da una regola alimenta la successiva, gli eventi vengono concatenati nello stesso ordine e il primo errore impedisce l'esecuzione delle trasformazioni rimanenti. Regole disponibili e insieme delle regole abilitate rimangono immutabili, quindi una configurazione diversa produce un nuovo manager senza alterare quello ricevuto.
+## Valutazione del modello LLM
 
-.mermaid
-    sequenceDiagram
-        participant PM as PhysicsManager
-        participant CD as CollisionDetector
-        participant RC as RuleCombinator
-        participant PR as PhysicsRule
+La valutazione del modello LLM segue i pattern Ports and Adapters e Dependency Inversion: il layer `application` definisce le porte `AgentEvaluator` e `AgentEvaluationDataset`, senza dipendere da LangChain4j, Ollama o da uno specifico insieme di test. Il layer `infrastructure` fornisce gli adattatori concreti: `Langchain4jAgentEvaluator` esegue le conversazioni e interroga il modello da valutare ed il modello giudice, `Langchain4jToolCallMapper` traduce i tipi della libreria nei `ToolCall` di dominio e `HardcodedAgentEvaluationDataset` fornisce i casi di valutazione. Il metodo `AgentEvaluator.evaluate` applica il pattern Template Method: mantiene pura e comune l'aggregazione dei punteggi, delegando all'implementazione di `evaluateCase` gli effetti necessari a valutare il singolo caso. Ogni sottodominio usa la rappresentazione richiesta dal proprio scopo: il dominio descrive input e risultati immutabili tramite `AgentEvaluationTest`, `ToolCall`, `AgentEvaluationResponse` e `AgentEvaluationRecap`, mentre i tipi dipendenti da LangChain4j restano confinati nell'infrastruttura. `AgentEvaluationRuntime` riceve evaluator, dataset e printer tramite `given` e `using`, realizzando la Dependency Injection e permettendo ai test o a nuove integrazioni di sostituire ciascuna dipendenza senza modificare il flusso applicativo.
 
-        PM->>CD: rileva i contatti su State(t)
-        CD-->>PM: CollisionSnapshot
-        PM->>RC: regole abilitate e contesto
-        loop ordine configurato
-            RC->>PR: State_i, dt e stesso snapshot
-            PR-->>RC: nuovo stato ed eventi oppure errore
-        end
-        alt tutte le regole hanno successo
-            RC-->>PM: State_n ed eventi accumulati
-        else una regola fallisce
-            RC-->>PM: primo PhysicsError
-        end
+![agent_evaluation_class_diagram.mermaid.png](assets/agent_evaluation_class_diagram.mermaid.png)
 
-Le regole mantengono una responsabilità fisica ciascuna: dinamiche delle superfici, attrazione, risoluzione delle collisioni, contatto con i bordi, danno e cinematica. Algoritmi e calcoli specifici restano interni alle rispettive implementazioni e non modificano il protocollo comune.
+## Motore fisico
 
-### Ray casting e pathfinding locale
+## Performance
 
-`EnemyAttractionRule` delega al sottosistema di ray casting la scelta tra una direzione diretta verso il nemico e un percorso locale attorno al primo ostacolo. `VertexFinder` trasforma cerchi e rettangoli nelle rispettive rappresentazioni in coordinate globali, considerando posizione, dimensioni e rotazione. `RayCast` espande poi gli ostacoli in funzione dell'ingombro dell'entità in movimento e di un margine di sicurezza, adottando un'approssimazione conservativa della somma di Minkowski che consente di trattare il moto come quello di un punto.
-
-`RayIntersection` interpreta ciascun contorno come una sequenza di segmenti, calcola le intersezioni positive con il raggio e seleziona quella più vicina oltre la tolleranza. Se il primo elemento incontrato è il bersaglio, il suo centro rimane la destinazione; in presenza di un ostacolo, `WaypointFinder` produce invece due candidati laterali. Per un cerchio usa i punti di tangenza, mentre per un rettangolo seleziona i due vertici estremi rispetto alla direzione di osservazione.
-
-I candidati vengono spostati verso l'esterno per includere l'ingombro dell'entità e `SizeHelper` elimina quelli che non consentirebbero di rimanere interamente dentro `WorldBounds`. Tra i waypoint validi viene scelto quello più vicino al bersaglio originale. La strategia è intenzionalmente locale e greedy: riduce il costo e può reagire a una scena dinamica senza mantenere un percorso globale.
-
-![Flusso del ray casting](assets/raycast-flow.png)
-
-### Sessione, rendering ed eventi
-
-Il game loop separa frequenza della simulazione e frequenza di visualizzazione. Una sessione conserva configurazione temporale e accumulatore; a ogni chiamata consuma zero o più passi completi e mantiene il resto. Il risultato distingue stato precedente e corrente e fornisce `alpha`, usato per interpolare posizione e rotazione del frame senza modificare lo stato fisico definitivo.
-
-`EngineFacade` nasconde game loop e rappresentazione concreta della sessione. È una facade funzionale: creazione, avvio, arresto e tick ricevono una sessione e restituiscono quella successiva, senza stato globale. Il client vede un solo risultato contenente i valori che deve adottare e non dipende dai dettagli temporali interni.
-
-Il rendering è diviso in pianificazione pura e interpretazione grafica. `RendererManager` legge uno stato e, tramite un `Painter` sostituibile, produce un `Vector[DrawCommand]` ordinato con superfici prima delle entità. `DrawCommand` è un ADT backend-neutral; soltanto `ShapePainter`, nel layer Presentation, lo interpreta su ScalaFX. Un backend alternativo può quindi riusare stato e piano di disegno senza importare JavaFX nell'engine.
-
-Gli `EngineEvent` percorrono la pipeline insieme ai risultati. Le regole accumulano eventi senza pubblicare side effect, il game loop unisce quelli dei diversi fixed update e mondo e runtime li inoltrano al callback scelto dal composition root. Formatter e logger restano esterni all'engine; non è necessario un event bus globale.
-
-### Modifiche del mondo e consistenza del runtime
-
-La porta `World` espone le operazioni applicative su entità, superfici e team. Le mutazioni sono rappresentate dall'ADT `WorldEdit`, che distingue le nove operazioni di creazione, aggiornamento e rimozione. `WorldEditor` interpreta modalità, scena e comando come trasformazione pura: in modalità di simulazione rifiuta la richiesta, mentre in modalità di modifica produce una nuova scena e gli eventuali eventi.
-
-`MonadCoreWorld` costituisce il guscio imperativo dell'interprete. Sotto sincronizzazione legge modalità e scena correnti e sostituisce il riferimento soltanto quando l'intera trasformazione termina con successo. GUI e tool AI usano la stessa porta, perciò atomicità e divieto di modifica non dipendono dal canale di ingresso.
-
-.mermaid
-    flowchart LR
-        GUI[GUI] --> W[Porta World]
-        AI[Tool AI] --> W
-
-        subgraph Shell[Guscio imperativo]
-            W --> SNAP[Legge modalità e scena]
-            COMMIT[Commit della nuova scena] --> EVENTS[Pubblica gli eventi]
-            KEEP[Conserva la scena corrente]
-        end
-
-        subgraph Core[Interprete puro]
-            SNAP --> INPUT[LoopMode + Scene + WorldEdit]
-            INPUT --> EDITOR[WorldEditor]
-            EDITOR --> MODE{EditMode?}
-            MODE -- no --> ERROR[Errore]
-            MODE -- sì --> APPLY[Trasformazione immutabile]
-            APPLY --> RESULT{Risultato valido?}
-        end
-
-        RESULT -- sì --> COMMIT
-        RESULT -- no --> KEEP
-        ERROR --> KEEP
-
-`GameEngineRuntime` coordina mondo, sessione e rendering senza esporli alla Presentation. Il runtime adotta stato fisico, sessione e frame successivi soltanto dopo il completamento corretto dell'intero tick; un errore viene adattato, notificato e arresta l'esecuzione. Un lock per istanza protegge i riferimenti stateful che possono essere raggiunti dalla GUI e dai completamenti asincroni dell'agente.
-
-Lo snapshot di ripristino è separato dalla scena corrente. Una modifica GUI riuscita aggiorna la baseline, mentre un errore conserva quella precedente. Il reset ripristina scena e sessione arrestata; il ridimensionamento coordina i confini correnti con quelli della baseline per evitare che un reset reintroduca dimensioni obsolete.
-
-### Presentazione, form e chat
-
-La GUI riceve soltanto porte applicative e valori del dominio. Il pannello del motore separa controlli e canvas e condivide uno stato osservabile di esecuzione per mantenere coerente l'abilitazione delle azioni. Tale stato migliora l'interazione, ma la validazione autorevole rimane nel mondo applicativo.
-
-I form sono descritti dall'ADT `FormFieldSpec`, che distingue testo, selezione singola e selezione multipla. `FormFieldControlFactory` interpreta una specifica producendo controllo grafico e funzione di lettura; `FormFieldsState` conserva i lettori attivi. I campi dipendenti dalla forma vengono sostituiti dinamicamente, così soltanto i valori visibili partecipano al submit. Parser separati traducono le stringhe nel modello, lasciando ai costruttori dell'engine la validazione definitiva.
-
-La chat applica MVVM con uno stato finito. `ChatPanelState` ammette `Ready`, `Waiting` ed `Error`; proprietà come prompt disponibile e possibilità di invio derivano dalla variante anziché da flag indipendenti. `ChatPanelActions` contiene le transizioni pure, `ChatPanelViewModel` orchestra gli effetti asincroni e `AiModelChatPanel` proietta lo stato sui componenti ScalaFX. Una risposta tardiva viene accettata soltanto se lo stato corrente è `Waiting`.
-
-.mermaid
-    flowchart TB
-        subgraph MVVM[Presentation: ciclo MVVM]
-            VIEW[AiModelChatPanel<br/>View]
-            VM[ChatPanelViewModel<br/>effetti e thread UI]
-            REDUCER[ChatPanelActions<br/>transizioni pure]
-            STATE[(ObjectProperty<br/>ChatPanelState)]
-
-            VIEW -- eventi utente --> VM
-            VM -- stato corrente ed evento --> REDUCER
-            REDUCER -- nuovo stato immutabile --> STATE
-            STATE -- aggiornamento osservabile --> VIEW
-        end
-
-        AGENT[AiAgent port]
-        VM -- ask o cleanHistory --> AGENT
-        AGENT -- risultato asincrono tipizzato --> VM
-
-        subgraph VARIANTS[Varianti ammesse]
-            READY[Ready<br/>prompt modificabile]
-            WAITING[Waiting<br/>richiesta in corso]
-            ERROR[Error<br/>prompt ed errore]
-
-            READY -- submit valido --> WAITING
-            ERROR -- nuovo submit --> WAITING
-            WAITING -- risposta valida --> READY
-            WAITING -- risposta con errore --> ERROR
-        end
-
-        STATE -. variante corrente .-> READY
-        STATE -. variante corrente .-> WAITING
-        STATE -. variante corrente .-> ERROR
-
-### Agente, valutatore ed errori
-
-`AiAgent` è una porta applicativa espressa con tipi interni. L'adapter LangChain4j esegue la chiamata bloccante in un `Future` e converte risposta o fallimento in un risultato tipizzato. I tool costituiscono un anti-corruption layer: traducono nullabilità e parametri Java nel dominio Scala, delegano le operazioni alle porte del mondo e restituiscono esiti espliciti comprensibili dal modello.
-
-La memoria è indicizzata per conversazione e limitata; il system prompt delimita l'ambito dell'assistente e impone di usare i tool come fonte dello stato corrente. Questi vincoli non sostituiscono i controlli applicativi: una mutazione non autorizzata viene comunque rifiutata dal medesimo mondo usato dalla GUI.
-
-Il valutatore separa definizione del caso, esecuzione e giudizio. Ogni caso riceve un mondo e una conversazione isolati; le chiamate esterne vengono tradotte nell'ADT interno `ToolCall` e confrontate strutturalmente con quelle attese. Lingua e proprietà semantiche sono affidate al modello giudice usando anche lo stato finale del mondo, mentre i punteggi vengono validati prima dell'aggregazione.
-
-Gli errori seguono il confine che li produce: `EngineError` per modello e core, `PhysicsError` per la pipeline e `BaseError` per i casi d'uso del simulator. `ErrorsAdapter` traduce il vocabolario dell'engine quando attraversa una porta applicativa. Le funzioni pure usano `Either`; `Try` è confinato ai punti in cui dialoghi, rete o parsing delle librerie possono sollevare eccezioni. Presentation sceglie la rappresentazione dell'errore senza cambiarne il significato.
-
-### Performance testing
-
-Il sottosistema prestazionale è separato in `performance.model`, `performance.core` e `performance.simulator`. Il model contiene strategie, configurazione, conteggi validati, report, errori e il contratto del clock. Il core contiene `PerformanceRunner` e `PerformanceMetrics` e non conosce scene, regole fisiche, CLI o interfacce grafiche. Gli adapter simulator costruiscono il workload concreto attraverso `EngineFacade`, preparano la scena deterministica, forniscono il clock reale e traducono route, argomenti e report nel formato testuale.
-
-`PerformanceRunner` riceve la preparazione del workload come funzione. `PrepareWorkload` associa un `EntityCount` alla costruzione fallibile di una `Operation`, rappresentando il contratto:
-
-`EntityCount => Either[PerformanceError, () => Either[PerformanceError, Unit]]`
-
-Il runner determina la sequenza dei carichi, prepara un'operazione per ciascuno, esegue i warm-up e raccoglie le iterazioni misurate. Il workload concreto rimane così sostituibile, mentre `PerformanceMetrics` opera soltanto sui campioni e conserva una responsabilità pura.
-
-`PerformanceConfig` raccoglie la progressione delle entità, il numero di iterazioni, i warm-up e il frame budget. `EntityCount` e `IterationCount` sono conteggi positivi distinti che condividono la stessa validazione; `WarmupCount` ammette anche zero e `GrowthFactor` richiede un valore maggiore di uno. Il frame budget è una `FiniteDuration` costruita dai millisecondi. Gli smart constructor restituiscono `Either`, così una richiesta non valida non raggiunge il runner.
-
-I quattro esperimenti condividono configurazione e metriche, ma interpretano la progressione in modo diverso:
-
-| Esperimento | Carichi misurati | Parametri specifici | Criterio di termine |
-| ----------- | ---------------- | ------------------- | ------------------- |
-| Load | Solo il valore iniziale | Nessuno | Dopo un punto |
-| Stress | Crescita fino al massimo | Massimo e fattore | Primo p95 oltre budget, oppure massimo |
-| Spike | Iniziale, massimo, iniziale | Massimo | Dopo tre punti |
-| Scalability | Crescita fino al massimo | Massimo e fattore | Dopo il massimo |
-
-Stress e Scalability usano `EntityGrowth`. Dati il numero iniziale $ n_0 $, il massimo e il fattore, la progressione è:
-
-$ n_{k+1} = \min(n_k \cdot factor, maximum) $
-
-Il massimo viene incluso anche quando non è una potenza esatta del fattore. La moltiplicazione viene eseguita in `Long` prima di applicare il limite, evitando un overflow intermedio di `Int`.
-
-Per ogni carico `EnginePerformance` costruisce una `DeterministicScene` e una sessione avviata, poi restituisce l'operazione che invoca `EngineFacade.tick`. Con $ n $ entità, la scena usa una griglia di dimensione:
-
-$ columns = \lceil\sqrt{n}\rceil,\qquad rows = \left\lceil\frac{n}{columns}\right\rceil $
-
-La scena alterna cerchi e rettangoli, team, velocità lineari, rotazioni e velocità angolari. Ogni entità possiede massa, salute e danno; due team reciprocamente nemici esercitano l'attrazione e una superficie estesa sul mondo fornisce forza, attrito e danno. La struttura non introduce casualità, quindi la stessa configurazione esercita lo stesso scenario logico.
-
-Scena e sessione vengono preparate prima della misura. I warm-up eseguono l'operazione senza leggere il clock; per ogni iterazione misurata, dati $ t_{before,i} $ e $ t_{after,i} $, la latenza raccolta è:
-
-$ L_i = t_{after,i} - t_{before,i} $
-
-Il clock è una dipendenza sostituibile. L'adapter di produzione usa `System.nanoTime()`, mentre un clock a sequenza consente ai test di fornire timestamp deterministici. Un errore durante preparazione, warm-up o misura interrompe la pipeline e viene restituito come `PerformanceError`; gli errori prodotti dal tick vengono adattati a `EnginePerformanceError`.
-
-`PerformanceMetrics` ordina le latenze e usa il metodo nearest-rank. Per $ N $ campioni indicizzati da uno:
-
-$ P_p = L_{\lceil pN\rceil},\qquad p\in\{0.50,0.95,0.99\} $
-
-Il completion rate rappresenta la frazione di campioni non superiori al budget $ B $:
-
-$ completionRate = \frac{|\{i\mid L_i\leq B\}|}{N} $
-
-L'uguaglianza rispetta il budget. Stress si interrompe invece soltanto quando $ p95>B $ e conserva il primo `EntityCount` che supera la soglia; gli altri esperimenti raccolgono tutti i punti previsti. La misura comprende il tick dell'engine, ma non il rendering JavaFX e l'interpolazione.
-
-`PerformanceCli` costituisce l'ingresso condiviso. Traduce route e coppie opzione-valore in una `PerformanceRequest`, delega l'esecuzione e formatta un risultato line-oriented indipendente dalla locale. La GUI rimane in `simulator.presentation.performance`: `PerformanceMode` abilita il relativo decorator soltanto con `--performance`, `ExperimentForm` traduce i campi nello stesso comando testuale e `ExperimentDialog` esegue l'operazione fuori dal thread grafico. La configurazione fisica viene ricostruita dagli stati pubblici delle regole del runtime; `ResultDialog` presenta il medesimo testo prodotto dalla CLI.
-
-## Pattern di progettazione
-
-La tabella collega ogni pattern alla decisione in cui viene applicato, evitando di ripeterne il funzionamento.
-
-| Pattern o idioma | Applicazione | Motivazione |
-| ---------------- | ------------ | ----------- |
-| Smart Constructor | opaque type, aggregati del modello e configurazione performance | impedire la costruzione di valori non validi |
-| Lens | collezioni interne di `Scene` | riusare lookup e aggiornamenti immutabili |
-| Strategy e Type Class | collisioni, contenimento e `Painter` | sostituire una politica senza modificare l'orchestrazione |
-| Pipeline | sequenza delle `PhysicsRule` ed esperimenti prestazionali | evolvere stato, eventi e misure in ordine con short-circuit |
-| Facade | `EngineFacade` | nascondere game loop e sessione concreta ai client |
-| Command con Interpreter | `WorldEdit` e `DrawCommand` | separare descrizione di un'operazione dalla sua esecuzione |
-| MVVM con Reducer | pannello chat | rendere espliciti stato, transizioni pure ed effetti |
-| Adapter | engine, errori, LangChain4j e tool | tradurre contratti e confinare rappresentazioni esterne |
-| Dependency Injection | porte, component builder, workload e clock | comporre collaboratori senza service locator globale |
-| Observer leggero | callback degli eventi e proprietà ScalaFX | notificare cambiamenti senza introdurre un event bus generale |
-
-## Organizzazione del codice
-
-I sorgenti di produzione sono radicati in `monad_core` e separano il package riusabile dell'engine dall'applicazione simulator:
-
-```text
-monad_core
-├── engine
-│   ├── model
-│   ├── geometry
-│   ├── collision_detection
-│   ├── physics
-│   │   ├── core
-│   │   ├── combinators
-│   │   ├── rules
-│   │   ├── utils
-│   │   └── pathfinding
-│   ├── core
-│   │   ├── traits
-│   │   └── events
-│   └── simulator
-├── performance
-│   ├── model
-│   ├── core
-│   └── simulator
-├── simulator
-│   ├── domain
-│   ├── application
-│   ├── infrastructure
-│   ├── presentation
-│   │   └── performance
-│   └── errors
-└── Launcher.scala
-```
-
-Nell'engine, `model` contiene dati e invarianti; `geometry` gli algoritmi indipendenti dalla scena; `collision_detection` il contratto sugli elementi del dominio; `physics` contesto, manager, combinazione e regole; `core` il ciclo temporale e le astrazioni consumate dagli altri sottosistemi; `engine.simulator` la facade e i dati dell'API di integrazione. Le implementazioni non destinate ai client sono ristrette con visibilità di package.
-
-Nel sottosistema performance, `model` raccoglie dati validati e contratti, `core` genera i carichi e calcola le metriche e `simulator` collega tali funzioni all'engine, al clock di sistema e alla CLI. La sola interfaccia ScalaFX risiede nel sottopackage `simulator.presentation.performance`.
-
-Nel simulator, `domain` contiene i concetti AI indipendenti dalle librerie; `application` porte e comandi; `infrastructure` gli adapter per engine, AI, dataset e logging; `presentation` GUI e ingressi headless; `errors` il vocabolario applicativo comune. Il `Launcher` rimane esterno ai layer perché ne costituisce il composition root.
-
-Un tipo viene collocato in base alla responsabilità: un comando del caso d'uso appartiene ad Application, un concetto AI indipendente al Domain, il codice che importa LangChain4j a Infrastructure e quello che importa ScalaFX a Presentation. I tipi pubblici dell'engine attraversano il simulator come shared kernel, ma la dipendenza inversa non è consentita.
-
-Questi confini definiscono anche i punti di estensione: una nuova regola implementa `PhysicsRule`, una diversa politica grafica implementa `Painter`, un nuovo provider implementa `AiAgent`, un nuovo dataset implementa la relativa porta e un diverso workload può essere fornito al runner prestazionale. Il composition root può sostituire tali collaboratori senza modificare i casi d'uso o il nucleo dell'engine.
+## Game loop ed interpolazione
