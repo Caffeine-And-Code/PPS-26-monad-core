@@ -15,9 +15,9 @@ Di seguito approfondisco alcuni aspetti rilevanti dei sorgenti elencati in prece
 
 Ho implementato `Scene` come un aggregato immutabile che contiene tre mappe: entità e superfici sono indicizzate tramite `LocatableId`, mentre i team tramite `TeamId`.
 
-Per evitare di ripetere la stessa logica sulle tre mappe ho utilizzato il **Lens pattern**. Una `Lens[S, A]` permette di leggere (`get`) e aggiornare (`set`) una parte di una struttura immutabile. Per ogni mappa di `Scene` è definita una lens specifica, mentre funzioni generiche come `getFromMap`, `addToMap` e `removeFromMap` raccolgono la logica comune di accesso e modifica.
+Per evitare di ripetere la stessa logica sulle tre mappe ho deciso di implementare tre funzioni generiche quali `getFromMap`, `addToMap` e `removeFromMap` che raccolgono la logica comune di accesso e modifica permettendo, tramite high order function, il wrapping dell'eventuale errore generico sulla mappa con un errore specifico e quindi più dettagliato.
 
-In questo modo il codice risulta più compatto e riutilizzabile, mantenendo comunque una gestione tipizzata degli errori, di seguito sono rappresentate le operazioni specifiche per le entities e le funzioni generiche nominate in precedenza:
+In questo modo il codice risulta più compatto e riutilizzabile, mantenendo comunque una gestione tipizzata degli errori, di seguito sono rappresentate le operazioni specifiche per le entities e le funzioni generiche nominate in precedenza (tranne l'operazione di remove data l'elevata somigliata con l'operazione add):
 
 ![scene-code.png](../assets/scene-code.png)
 

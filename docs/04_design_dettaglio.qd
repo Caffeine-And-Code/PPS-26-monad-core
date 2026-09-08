@@ -72,6 +72,12 @@ I candidati vengono spostati verso l'esterno per includere l'ingombro dell'entit
 
 ![Flusso del ray casting](assets/raycast-flow.png)
 
+### Scene - Lens Pattern
+
+`Scene` è lo stato dell'engine, essa infatti contiene le tre mappe `entities`, `surfaces` e `teams` e rende disponibili le medesime operazioni CRUD sulle stesse, è stato quindi deciso di applicare il Lens Pattern alla Scena permettendo di avere una lente che possa, data una scena:
+- ottenere una entità specifica tramite il metodo `get`
+- ottenere una nuova scena aggiornata rispettandone l'immutabilità tramite il metodo `set`
+
 ### Sessione, rendering ed eventi
 
 `EngineFacade` nasconde il game loop e permette al client di ragionare per sessioni. È una facade funzionale per la quale ogni operazione riceve una sessione e restituisce quella successiva, senza stato globale. Il client vede un solo risultato contenente i valori che deve adottare e non dipende dai dettagli interni.
