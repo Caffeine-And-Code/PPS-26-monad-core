@@ -1,6 +1,6 @@
 package integrations.monad_core.simulator.presentation.performance
 
-import monad_core.performance.simulator.PerformanceCli
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.performance.PerformanceMode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

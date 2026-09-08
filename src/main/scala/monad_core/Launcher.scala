@@ -2,7 +2,6 @@ package monad_core
 
 import monad_core.engine.core.events.EngineEvent
 import monad_core.engine.simulator.Painter
-import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluator, AiAgent}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
@@ -19,6 +18,7 @@ import monad_core.simulator.infrastructure.logging.{
   EventLogLevel,
   mapEventsToLogEntries
 }
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.agent_evaluation.{
   AgentEvaluationArguments,
   AgentEvaluationRuntime,

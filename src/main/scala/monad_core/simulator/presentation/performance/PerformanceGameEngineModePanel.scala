@@ -1,11 +1,11 @@
 package monad_core.simulator.presentation.performance
 
 import javafx.scene.layout.HBox as JfxHBox
-import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.components.{
   Error,
   MenuButton,
@@ -112,7 +112,7 @@ final case class PerformanceGameEngineModePanel(
    * @param gameEngineRuntime runtime providing the currently enabled physics rules
    * @return asynchronous operation accepted by the experiment dialog
    * @see
-   *   [[monad_core.performance.simulator.PerformanceCli.runWithRules PerformanceCli.runWithRules]]
+   *   [[PerformanceCli.runWithRules PerformanceCli.runWithRules]]
    */
   private def runExperiment(
       gameEngineRuntime: GameEngineRuntime

@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.performance
 
-import monad_core.performance.model.{InvalidPerformanceArgument, PerformanceError}
-import monad_core.performance.simulator.PerformanceCli
+import monad_core.simulator.domain.performance.{InvalidPerformanceArgument, PerformanceError}
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.components.forms.base.{
   FormFieldSpec,
   SelectFieldSpec,
@@ -21,7 +21,7 @@ final case class ExperimentCommand(route: String, arguments: Vector[String])
 /**
  * Defines the performance form and converts its values into a command.
  *
- * @see [[monad_core.performance.simulator.PerformanceCli PerformanceCli]]
+ * @see [[PerformanceCli PerformanceCli]]
  */
 object ExperimentForm:
 

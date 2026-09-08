@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.performance
 
-import monad_core.performance.model.InvalidPerformanceArgument
-import monad_core.performance.simulator.PerformanceCli
+import monad_core.simulator.domain.performance.InvalidPerformanceArgument
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.components.forms.base.{
   FormFieldSpec,
   SelectFieldSpec,

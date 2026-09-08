@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.performance
 
-import monad_core.performance.simulator.PerformanceCli
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.routes.RouteResponse

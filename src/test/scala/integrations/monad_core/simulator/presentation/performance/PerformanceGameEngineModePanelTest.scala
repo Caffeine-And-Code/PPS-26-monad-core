@@ -8,12 +8,12 @@ import javafx.scene.control.{Button, TextArea}
 import javafx.scene.input.{MouseButton, MouseEvent}
 import javafx.scene.layout.HBox
 import javafx.stage.{Stage, Window}
-import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.{CannotBuildPanel, ImageResourceNotFound}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.MonadCoreGameEngineRuntime
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.performance.{
