@@ -1,6 +1,6 @@
 # Design di dettaglio
 
-...
+Durante lo sviluppo dell'applicazione abbiamo voluto dare molta enfasi sul testing e sulle diverse modalità di test che verranno esplose in seguito nel relativo capitolo. Abbiamo quindi privilegiato pattern che rendessero il più testabile possibile il nostro codice, ad esempio abbiamo fatto uso di dependency injection per tutto ciò che per un oggetto è una dipendenza esterna, abbiamo poi utilizzato meccanismi di mock, per mockare le dipendenze in modo da avere poter coprire la maggior quantità di codice possibile con unit test. Di seguito sono elencate tutte le macro aree dell'applicativo con relativa spiegazione in dettaglio della realizzazione.
 
 ## Modelli dell'engine
 
