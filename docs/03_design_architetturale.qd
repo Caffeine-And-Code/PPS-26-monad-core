@@ -58,6 +58,22 @@ Definisce l'astrazione dello stato e il ciclo temporale a passo fisso. Coordina 
 
 Costituisce il confine pubblico del motore. Espone sessione, avanzamento, configurazione delle regole, interpolazione e produzione di comandi di disegno backend-neutral. I client non dipendono così dall'organizzazione interna di core e physics.
 
+#### 5.1 Engine Facade
+
+Il seguente diagramma descrive come una applicazione client comunica con l'engine estraendo e masquerando il gameloop, evitando l'utilizzo dello stesso, garantendo un utilizzo il più semplice possibile per un eventuale utilizzatore di libreria.
+
+![api-use-case.png](assets/api-use-case.png)
+
+#### 5.2 World Port
+
+`MonadCoreWorld` costituisce il guscio imperativo: conserva sotto sincronizzazione la scena e la modalità correnti, invoca `WorldEditor` e, soltanto in caso di `Right`, sostituisce la scena e pubblica gli eventi. Il runtime mantiene coerente la modalità dell'adapter attraverso le operazioni `enterEditMode` ed `enterSimulationMode`. Il risultato è un'architettura **functional core–imperative shell**, nella quale decisioni, transizioni ed errori sono valori puri, mentre la mutazione necessaria all'esecuzione è confinata negli adapter.
+
+La porta `GameEngineRuntime` e il relativo adapter `MonadCoreGameEngineRuntime` definiscono il confine di esecuzione del motore. L'adapter conserva un'istanza di `Session` e orchestra l'esecuzione esclusivamente tramite la facade. Il `PhysicsManager` predefinito è confinato al runtime e passato esplicitamente alla facade, mentre il `Painter` necessario al rendering viene ricevuto come dipendenza contestuale.
+
+Il package diagram seguente mostra soltanto i tipi coinvolti e la loro collocazione. La porta `World` rimane nel layer application; `MonadCoreWorld` e il runtime concreto appartengono al package infrastructure dell'engine; l'ADT e il suo interprete puro sono raccolti nel sottopackage `world`. Le dipendenze rappresentate sono limitate a quelle necessarie per comprendere la delega delle modifiche.
+
+![simulator-integration.png](assets/simulator-integration.png)
+
 ### 6. Simulator Domain
 
 Contiene conversazioni, prompt, risposte e tipi della valutazione dell'agente. Dipende da valori Scala e dai soli dati dell'engine necessari a descrivere il mondo iniziale e finale, senza conoscere interfacce o librerie AI.

@@ -76,6 +76,8 @@ Per intercettare regressioni difficili da descrivere mediante singole asserzioni
 
 Le baseline versionate coprono, tra gli altri, il launcher, i dialog di creazione e modifica, i pulsanti, le notifiche, il canvas ridimensionabile e le tre viste del performance testing. Se una baseline non esiste, viene generata e il test fallisce intenzionalmente: l'immagine o il JSON devono quindi essere esaminati e accettati esplicitamente prima che un'esecuzione successiva possa avere esito positivo.
 
+***Nota sulla riproducibilità degli snapshot visivi.*** In un contesto aziendale, le baseline vengono spesso generate e verificate in ambienti uguali o quanto più possibile simili a quelli di produzione o di rilascio, così da massimizzarne la stabilità e la significatività. Anche in questo progetto sarebbe stato possibile predisporre tre workflow GitHub Actions distinti, uno per ciascun sistema operativo supportato, mantenendo verifiche e baseline specifiche per Linux, Windows e macOS. Ho preferito intenzionalmente una soluzione più semplice e accessibile: tutti i componenti del gruppo possono eseguire i test e generare localmente gli snapshot senza dipendere da una pipeline dedicata. La normalizzazione delle dimensioni e le tolleranze sull'antialiasing compensano le differenze grafiche minori tra piattaforme. La scelta privilegia quindi la riproducibilità locale e la semplicità operativa rispetto alla corrispondenza pixel-perfect con un singolo ambiente di rilascio.
+
 ### Vincoli architetturali e DDD
 
 La struttura architetturale non è affidata soltanto a una convenzione: è stata infatti realizzata una serie di utility che estendono la classe di test base per analizzare gli import dei sorgenti, rendendo eseguibili alcuni vincoli del design.
