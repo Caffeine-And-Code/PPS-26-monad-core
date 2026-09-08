@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.performance
 
-import monad_core.simulator.infrastructure.performance.PerformanceCli
+import monad_core.simulator.application.performance.PerformanceExecutor
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.routes.RouteResponse
@@ -22,9 +22,11 @@ object PerformanceMode:
    * @return
    *  the panel selected by the `--performance` option
    */
-  def panelFor(arguments: Array[String]): GameEngineModePanelBuilder =
+  def panelFor(arguments: Array[String])(using
+      performanceExecutor: PerformanceExecutor
+  ): GameEngineModePanelBuilder =
     if arguments.contains(PerformanceOption) then
-      PerformanceGameEngineModePanel(GameEngineModePanel)
+      PerformanceGameEngineModePanel(GameEngineModePanel, performanceExecutor)
     else GameEngineModePanel
 
   /**
@@ -38,8 +40,10 @@ object PerformanceMode:
    *  routing response containing the execution outcome
    * @see [[monad_core.simulator.presentation.routes.RouteResponse RouteResponse]]
    */
-  def runCommand(arguments: Array[String], route: String): RouteResponse =
-    PerformanceCli.run(route, arguments) match
+  def runCommand(arguments: Array[String], route: String)(using
+      performanceExecutor: PerformanceExecutor
+  ): RouteResponse =
+    performanceExecutor.run(route, arguments) match
       case Left(error) => RouteResponse(success = false, message = error.message)
       case Right(report) =>
         Console.println(report)

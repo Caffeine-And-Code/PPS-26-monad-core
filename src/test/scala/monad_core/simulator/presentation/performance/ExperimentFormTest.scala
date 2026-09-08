@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.performance
 
 import monad_core.simulator.domain.performance.InvalidPerformanceArgument
-import monad_core.simulator.infrastructure.performance.PerformanceCli
+import monad_core.simulator.application.performance.PerformanceExecutor
 import monad_core.simulator.presentation.components.forms.base.{
   FormFieldSpec,
   SelectFieldSpec,
@@ -17,12 +17,12 @@ class ExperimentFormTest extends AnyFunSuite with Matchers:
 
   private val CommonValues = Map(
     KindField.id                     -> "Load",
-    PerformanceCli.Entities          -> "10",
-    PerformanceCli.Iterations        -> "3",
-    PerformanceCli.Warmups           -> "1",
-    PerformanceCli.FrameBudgetMillis -> "16",
-    PerformanceCli.MaximumEntities   -> "100",
-    PerformanceCli.GrowthFactor      -> "2"
+    PerformanceExecutor.Entities          -> "10",
+    PerformanceExecutor.Iterations        -> "3",
+    PerformanceExecutor.Warmups           -> "1",
+    PerformanceExecutor.FrameBudgetMillis -> "16",
+    PerformanceExecutor.MaximumEntities   -> "100",
+    PerformanceExecutor.GrowthFactor      -> "2"
   )
 
   private def commandFor(kind: String): ExperimentCommand =
@@ -64,22 +64,22 @@ class ExperimentFormTest extends AnyFunSuite with Matchers:
   test("fields include the starting entity count"):
     val result = fieldIds(ExperimentForm.fields)
 
-    result should contain(PerformanceCli.Entities)
+    result should contain(PerformanceExecutor.Entities)
 
   test("fields include the iteration count"):
     val result = fieldIds(ExperimentForm.fields)
 
-    result should contain(PerformanceCli.Iterations)
+    result should contain(PerformanceExecutor.Iterations)
 
   test("fields include the warm-up count"):
     val result = fieldIds(ExperimentForm.fields)
 
-    result should contain(PerformanceCli.Warmups)
+    result should contain(PerformanceExecutor.Warmups)
 
   test("fields include the frame budget"):
     val result = fieldIds(ExperimentForm.fields)
 
-    result should contain(PerformanceCli.FrameBudgetMillis)
+    result should contain(PerformanceExecutor.FrameBudgetMillis)
 
   test("load has no specific fields"):
     val result = KindField.dependentFields("Load")
@@ -89,94 +89,94 @@ class ExperimentFormTest extends AnyFunSuite with Matchers:
   test("stress includes the maximum entity count"):
     val result = fieldIds(KindField.dependentFields("Stress"))
 
-    result should contain(PerformanceCli.MaximumEntities)
+    result should contain(PerformanceExecutor.MaximumEntities)
 
   test("stress includes the growth factor"):
     val result = fieldIds(KindField.dependentFields("Stress"))
 
-    result should contain(PerformanceCli.GrowthFactor)
+    result should contain(PerformanceExecutor.GrowthFactor)
 
   test("spike includes the maximum entity count"):
     val result = fieldIds(KindField.dependentFields("Spike"))
 
-    result should contain(PerformanceCli.MaximumEntities)
+    result should contain(PerformanceExecutor.MaximumEntities)
 
   test("spike excludes the growth factor"):
     val result = fieldIds(KindField.dependentFields("Spike"))
 
-    result should not contain PerformanceCli.GrowthFactor
+    result should not contain PerformanceExecutor.GrowthFactor
 
   test("scalability includes the maximum entity count"):
     val result = fieldIds(KindField.dependentFields("Scalability"))
 
-    result should contain(PerformanceCli.MaximumEntities)
+    result should contain(PerformanceExecutor.MaximumEntities)
 
   test("scalability includes the growth factor"):
     val result = fieldIds(KindField.dependentFields("Scalability"))
 
-    result should contain(PerformanceCli.GrowthFactor)
+    result should contain(PerformanceExecutor.GrowthFactor)
 
   test("command maps load to its route"):
     val result = commandFor("Load")
 
-    result.route shouldBe PerformanceCli.LoadRoute
+    result.route shouldBe PerformanceExecutor.LoadRoute
 
   test("command maps stress to its route"):
     val result = commandFor("Stress")
 
-    result.route shouldBe PerformanceCli.StressRoute
+    result.route shouldBe PerformanceExecutor.StressRoute
 
   test("command maps spike to its route"):
     val result = commandFor("Spike")
 
-    result.route shouldBe PerformanceCli.SpikeRoute
+    result.route shouldBe PerformanceExecutor.SpikeRoute
 
   test("command maps scalability to its route"):
     val result = commandFor("Scalability")
 
-    result.route shouldBe PerformanceCli.ScalabilityRoute
+    result.route shouldBe PerformanceExecutor.ScalabilityRoute
 
   test("command includes the starting entity count"):
     val result = commandFor("Load")
 
-    result.arguments should contain(PerformanceCli.Entities)
+    result.arguments should contain(PerformanceExecutor.Entities)
 
   test("command includes the iteration count"):
     val result = commandFor("Load")
 
-    result.arguments should contain(PerformanceCli.Iterations)
+    result.arguments should contain(PerformanceExecutor.Iterations)
 
   test("command includes the warm-up count"):
     val result = commandFor("Load")
 
-    result.arguments should contain(PerformanceCli.Warmups)
+    result.arguments should contain(PerformanceExecutor.Warmups)
 
   test("command includes the frame budget"):
     val result = commandFor("Load")
 
-    result.arguments should contain(PerformanceCli.FrameBudgetMillis)
+    result.arguments should contain(PerformanceExecutor.FrameBudgetMillis)
 
   test("stress command includes the maximum entity count"):
     val result = commandFor("Stress")
 
-    result.arguments should contain(PerformanceCli.MaximumEntities)
+    result.arguments should contain(PerformanceExecutor.MaximumEntities)
 
   test("stress command includes the growth factor"):
     val result = commandFor("Stress")
 
-    result.arguments should contain(PerformanceCli.GrowthFactor)
+    result.arguments should contain(PerformanceExecutor.GrowthFactor)
 
   test("spike command excludes the growth factor"):
     val result = commandFor("Spike")
 
-    result.arguments should not contain PerformanceCli.GrowthFactor
+    result.arguments should not contain PerformanceExecutor.GrowthFactor
 
   test("command omits a missing optional value"):
-    val values = CommonValues - PerformanceCli.Iterations
+    val values = CommonValues - PerformanceExecutor.Iterations
 
     val result = ExperimentForm.command(values).value
 
-    result.arguments should not contain PerformanceCli.Iterations
+    result.arguments should not contain PerformanceExecutor.Iterations
 
   test("command rejects a missing test type"):
     val values = CommonValues - KindField.id

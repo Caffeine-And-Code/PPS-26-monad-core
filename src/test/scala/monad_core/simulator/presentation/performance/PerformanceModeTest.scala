@@ -1,10 +1,14 @@
 package monad_core.simulator.presentation.performance
 
+import monad_core.simulator.application.performance.PerformanceExecutor
 import monad_core.simulator.presentation.panels.GameEngineModePanel
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class PerformanceModeTest extends AnyFunSuite with Matchers:
+class PerformanceModeTest extends AnyFunSuite with Matchers with MockFactory:
+
+  private given PerformanceExecutor = mock[PerformanceExecutor]
 
   test("panelFor returns the base panel by default"):
     val result = PerformanceMode.panelFor(Array.empty)

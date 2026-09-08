@@ -6,6 +6,7 @@ import monad_core.simulator.application.ai.{AgentEvaluationDataset, AgentEvaluat
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
 import monad_core.simulator.application.logging.Logger
+import monad_core.simulator.application.performance.PerformanceExecutor
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.ai.agent_evaluator.Langchain4jAgentEvaluator
 import monad_core.simulator.infrastructure.ai.agent_evaluator.dataset.HardcodedAgentEvaluationDataset
@@ -47,6 +48,8 @@ import scala.Console.{GREEN, RESET}
  * with its optional performance control.
  */
 object Launcher:
+
+  private given PerformanceExecutor = PerformanceCli
 
   /**
    * Assembles the dependencies required by the GUI and starts the ScalaFX application.
@@ -156,21 +159,21 @@ object Launcher:
   def main(args: Array[String]): Unit =
     lazy val evaluateModelRoute = evaluateModel(args)
     lazy val performanceLoadRoute =
-      PerformanceMode.runCommand(args, PerformanceCli.LoadRoute)
+      PerformanceMode.runCommand(args, PerformanceExecutor.LoadRoute)
     lazy val performanceStressRoute =
-      PerformanceMode.runCommand(args, PerformanceCli.StressRoute)
+      PerformanceMode.runCommand(args, PerformanceExecutor.StressRoute)
     lazy val performanceSpikeRoute =
-      PerformanceMode.runCommand(args, PerformanceCli.SpikeRoute)
+      PerformanceMode.runCommand(args, PerformanceExecutor.SpikeRoute)
     lazy val performanceScalabilityRoute =
-      PerformanceMode.runCommand(args, PerformanceCli.ScalabilityRoute)
+      PerformanceMode.runCommand(args, PerformanceExecutor.ScalabilityRoute)
     lazy val guiRoute = outcomeFor(guiApplication(args))
 
     val result = Router()
       .on(Route("evaluate-model"), () => evaluateModelRoute)
-      .on(Route(PerformanceCli.LoadRoute), () => performanceLoadRoute)
-      .on(Route(PerformanceCli.StressRoute), () => performanceStressRoute)
-      .on(Route(PerformanceCli.SpikeRoute), () => performanceSpikeRoute)
-      .on(Route(PerformanceCli.ScalabilityRoute), () => performanceScalabilityRoute)
+      .on(Route(PerformanceExecutor.LoadRoute), () => performanceLoadRoute)
+      .on(Route(PerformanceExecutor.StressRoute), () => performanceStressRoute)
+      .on(Route(PerformanceExecutor.SpikeRoute), () => performanceSpikeRoute)
+      .on(Route(PerformanceExecutor.ScalabilityRoute), () => performanceScalabilityRoute)
       .on(All(), () => guiRoute)
       .evaluate(args)
 

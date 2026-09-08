@@ -1,7 +1,7 @@
 package monad_core.simulator.presentation.performance
 
 import monad_core.simulator.domain.performance.{InvalidPerformanceArgument, PerformanceError}
-import monad_core.simulator.infrastructure.performance.PerformanceCli
+import monad_core.simulator.application.performance.PerformanceExecutor
 import monad_core.simulator.presentation.components.forms.base.{
   FormFieldSpec,
   SelectFieldSpec,
@@ -21,7 +21,7 @@ final case class ExperimentCommand(route: String, arguments: Vector[String])
 /**
  * Defines the performance form and converts its values into a command.
  *
- * @see [[PerformanceCli PerformanceCli]]
+ * @see [[PerformanceExecutor PerformanceExecutor]]
  */
 object ExperimentForm:
 
@@ -44,70 +44,70 @@ object ExperimentForm:
     case Load
         extends ExperimentChoice(
           "Load",
-          PerformanceCli.LoadRoute,
+          PerformanceExecutor.LoadRoute,
           Vector.empty
         )
 
     case Stress
         extends ExperimentChoice(
           "Stress",
-          PerformanceCli.StressRoute,
-          Vector(PerformanceCli.MaximumEntities, PerformanceCli.GrowthFactor)
+          PerformanceExecutor.StressRoute,
+          Vector(PerformanceExecutor.MaximumEntities, PerformanceExecutor.GrowthFactor)
         )
 
     case Spike
         extends ExperimentChoice(
           "Spike",
-          PerformanceCli.SpikeRoute,
-          Vector(PerformanceCli.MaximumEntities)
+          PerformanceExecutor.SpikeRoute,
+          Vector(PerformanceExecutor.MaximumEntities)
         )
 
     case Scalability
         extends ExperimentChoice(
           "Scalability",
-          PerformanceCli.ScalabilityRoute,
-          Vector(PerformanceCli.MaximumEntities, PerformanceCli.GrowthFactor)
+          PerformanceExecutor.ScalabilityRoute,
+          Vector(PerformanceExecutor.MaximumEntities, PerformanceExecutor.GrowthFactor)
         )
 
   private val KindField = "performance-kind"
 
   private val CommonFields = Vector(
-    PerformanceCli.Entities,
-    PerformanceCli.Iterations,
-    PerformanceCli.Warmups,
-    PerformanceCli.FrameBudgetMillis
+    PerformanceExecutor.Entities,
+    PerformanceExecutor.Iterations,
+    PerformanceExecutor.Warmups,
+    PerformanceExecutor.FrameBudgetMillis
   )
 
   private val ArgumentFields: Map[String, TextFieldSpec] = Map(
-    PerformanceCli.Entities -> field(
-      PerformanceCli.Entities,
+    PerformanceExecutor.Entities -> field(
+      PerformanceExecutor.Entities,
       "Start entities",
-      PerformanceCli.DefaultStartEntities
+      PerformanceExecutor.DefaultStartEntities
     ),
-    PerformanceCli.MaximumEntities -> field(
-      PerformanceCli.MaximumEntities,
+    PerformanceExecutor.MaximumEntities -> field(
+      PerformanceExecutor.MaximumEntities,
       "Maximum entities",
-      PerformanceCli.DefaultMaximumEntities
+      PerformanceExecutor.DefaultMaximumEntities
     ),
-    PerformanceCli.GrowthFactor -> field(
-      PerformanceCli.GrowthFactor,
+    PerformanceExecutor.GrowthFactor -> field(
+      PerformanceExecutor.GrowthFactor,
       "Growth factor",
-      PerformanceCli.DefaultGrowthFactor
+      PerformanceExecutor.DefaultGrowthFactor
     ),
-    PerformanceCli.Iterations -> field(
-      PerformanceCli.Iterations,
+    PerformanceExecutor.Iterations -> field(
+      PerformanceExecutor.Iterations,
       "Iterations",
-      PerformanceCli.DefaultIterations
+      PerformanceExecutor.DefaultIterations
     ),
-    PerformanceCli.Warmups -> field(
-      PerformanceCli.Warmups,
+    PerformanceExecutor.Warmups -> field(
+      PerformanceExecutor.Warmups,
       "Warm-ups",
-      PerformanceCli.DefaultWarmups
+      PerformanceExecutor.DefaultWarmups
     ),
-    PerformanceCli.FrameBudgetMillis -> TextFieldSpec(
-      PerformanceCli.FrameBudgetMillis,
+    PerformanceExecutor.FrameBudgetMillis -> TextFieldSpec(
+      PerformanceExecutor.FrameBudgetMillis,
       "Frame budget (ms)",
-      Some(PerformanceCli.DefaultFrameBudgetMillis.toString)
+      Some(PerformanceExecutor.DefaultFrameBudgetMillis.toString)
     )
   )
 

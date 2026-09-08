@@ -57,4 +57,4 @@ class EnginePerformanceTest extends AnyFunSuite with Matchers:
 
     val result = EnginePerformance.run(request(), PhysicsManager(Vector(failingRule)))
 
-    result shouldBe Left(EnginePerformanceError("expected"))
+    result shouldBe Left(EnginePerformanceError(PhysicsRuleError("expected").message))

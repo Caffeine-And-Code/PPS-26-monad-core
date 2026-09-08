@@ -4,8 +4,8 @@ import javafx.scene.layout.HBox as JfxHBox
 import monad_core.simulator.CannotBuildPanel
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.performance.PerformanceExecutor
 import monad_core.simulator.errors.BaseError
-import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.components.{
   Error,
   MenuButton,
@@ -31,7 +31,8 @@ import scala.jdk.CollectionConverters.*
  *   [[monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder GameEngineModePanelBuilder]]
  */
 final case class PerformanceGameEngineModePanel(
-    delegate: GameEngineModePanelBuilder
+    delegate: GameEngineModePanelBuilder,
+    performanceExecutor: PerformanceExecutor
 ) extends GameEngineModePanelBuilder:
 
   private val PerformanceButtonIndex = 2
@@ -112,12 +113,12 @@ final case class PerformanceGameEngineModePanel(
    * @param gameEngineRuntime runtime providing the currently enabled physics rules
    * @return asynchronous operation accepted by the experiment dialog
    * @see
-   *   [[PerformanceCli.runWithRules PerformanceCli.runWithRules]]
+   *   [[PerformanceExecutor.runWithRules PerformanceExecutor.runWithRules]]
    */
   private def runExperiment(
       gameEngineRuntime: GameEngineRuntime
   ): ExperimentDialog.RunExperiment = command =>
     val rules = gameEngineRuntime.physicsRules
     Future {
-      PerformanceCli.runWithRules(command.route, command.arguments.toArray, rules)
+      performanceExecutor.runWithRules(command.route, command.arguments.toArray, rules)
     }(ExecutionContext.global)
