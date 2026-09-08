@@ -162,7 +162,12 @@ private[physics] object DamageApplicationRule:
       finalById: Map[LocatableId, Entity]
   ): Either[PhysicsError, State] =
     val updatedEntities = finalById.values
-      .filter(entity => originalById.get(entity.id).exists(_ != entity))
+      .flatMap(entity =>
+        originalById
+          .get(entity.id)
+          .filter(_ != entity)
+          .map(_ => entity)
+      )
       .toList
       .sortBy(_.id.value)
     val removedEntities = originalById.values
