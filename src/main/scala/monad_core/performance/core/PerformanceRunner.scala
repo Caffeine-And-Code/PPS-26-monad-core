@@ -6,6 +6,7 @@ import monad_core.performance.model.{
   PerformanceConfig,
   PerformanceError,
   PerformanceKind,
+  PerformancePlan,
   PerformancePoint,
   PerformanceReport
 }
@@ -15,12 +16,14 @@ import scala.annotation.tailrec
 /**
  * Performance experiment selected for execution.
  *
- * @param kind
- *   strategy used to generate the entity counts to measure
+ * @param plan
+ *   strategy and entity counts to measure
  * @param config
- *   shared experiment configuration
+ *   shared measurement configuration
  */
-final case class PerformanceRequest(kind: PerformanceKind, config: PerformanceConfig)
+final case class PerformanceRequest(plan: PerformancePlan, config: PerformanceConfig):
+  /** Returns the strategy selected by the plan. */
+  def kind: PerformanceKind = plan.kind
 
 /** Executes the selected performance strategy over an injected workload. */
 private[performance] object PerformanceRunner:
@@ -53,19 +56,19 @@ private[performance] object PerformanceRunner:
       request: PerformanceRequest,
       prepare: PrepareWorkload
   )(using clock: NanoClock): Either[PerformanceError, PerformanceReport] =
-    val counts = request.kind match
-      case PerformanceKind.Load =>
-        Right(Vector(request.config.growth.start))
-      case PerformanceKind.Spike =>
+    val counts = request.plan match
+      case PerformancePlan.Load(entities) =>
+        Right(Vector(entities))
+      case PerformancePlan.Spike(range) =>
         Right(
           Vector(
-            request.config.growth.start,
-            request.config.growth.maximum,
-            request.config.growth.start
+            range.start,
+            range.maximum,
+            range.start
           )
         )
-      case PerformanceKind.Stress | PerformanceKind.Scalability =>
-        request.config.growth.counts
+      case PerformancePlan.Stress(growth)      => growth.counts
+      case PerformancePlan.Scalability(growth) => growth.counts
 
     counts.flatMap(countValues =>
       collect(

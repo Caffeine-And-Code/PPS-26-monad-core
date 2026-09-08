@@ -10,6 +10,7 @@ import monad_core.performance.model.{
   PerformanceConfig,
   PerformanceError,
   PerformanceKind,
+  PerformancePlan,
   PerformancePoint,
   PerformanceReport,
   UnknownPerformanceRoute
@@ -55,13 +56,13 @@ object PerformanceCli:
   val FrameBudgetMillis = "--frame-budget-ms"
 
   /** Default initial entity count exposed to command-line clients. */
-  val DefaultStartEntities: Int = PerformanceConfig.DefaultStartEntities
+  val DefaultStartEntities: Int = PerformancePlan.DefaultStartEntities
 
   /** Default maximum entity count exposed to command-line clients. */
-  val DefaultMaximumEntities: Int = PerformanceConfig.DefaultMaximumEntities
+  val DefaultMaximumEntities: Int = PerformancePlan.DefaultMaximumEntities
 
   /** Default entity growth factor exposed to command-line clients. */
-  val DefaultGrowthFactor: Int = PerformanceConfig.DefaultGrowthFactor
+  val DefaultGrowthFactor: Int = PerformancePlan.DefaultGrowthFactor
 
   /** Default measured iteration count exposed to command-line clients. */
   val DefaultIterations: Int = PerformanceConfig.DefaultIterations
@@ -75,8 +76,8 @@ object PerformanceCli:
   /**
    * Parses a route and its command-line arguments into a validated request.
    *
-   * Missing arguments use their default values. A supplied argument without a following value
-   * is treated as missing.
+   * Missing relevant arguments use their default values. A supplied argument without a following
+   * value is treated as missing, while arguments unused by the selected route are ignored.
    *
    * @param route
    *   selected performance route
@@ -85,6 +86,7 @@ object PerformanceCli:
    * @return
    *   the validated request, or the first route, parsing or configuration error
    * @see
+   *   [[monad_core.performance.model.PerformancePlan PerformancePlan]] and
    *   [[monad_core.performance.model.PerformanceConfig PerformanceConfig]]
    */
   def parse(
@@ -93,21 +95,7 @@ object PerformanceCli:
   ): Either[PerformanceError, PerformanceRequest] =
     for
       kind <- kindFor(route)
-      start <- intArgument(
-        arguments,
-        Entities,
-        PerformanceConfig.DefaultStartEntities
-      )
-      maximum <- intArgument(
-        arguments,
-        MaximumEntities,
-        math.max(start, PerformanceConfig.DefaultMaximumEntities)
-      )
-      factor <- intArgument(
-        arguments,
-        GrowthFactor,
-        PerformanceConfig.DefaultGrowthFactor
-      )
+      plan <- planFor(kind, arguments)
       iterations <- intArgument(
         arguments,
         Iterations,
@@ -124,14 +112,11 @@ object PerformanceCli:
         PerformanceConfig.DefaultFrameBudgetMillis
       )
       config <- PerformanceConfig.from(
-        start,
-        maximum,
-        factor,
         iterations,
         warmups,
         budgetMillis
       )
-    yield PerformanceRequest(kind, config)
+    yield PerformanceRequest(plan, config)
 
   /**
    * Runs an engine performance command using the system monotonic clock.
@@ -252,6 +237,71 @@ object PerformanceCli:
       case SpikeRoute       => Right(PerformanceKind.Spike)
       case ScalabilityRoute => Right(PerformanceKind.Scalability)
       case unknown          => Left(UnknownPerformanceRoute(unknown))
+
+  /**
+   * Parses the entity-count values used by the selected strategy.
+   *
+   * @param kind
+   *   strategy whose plan is being created
+   * @param arguments
+   *   command-line option and value pairs
+   * @return
+   *   the validated plan, or the first invalid relevant argument
+   * @see
+   *   [[monad_core.performance.model.PerformancePlan PerformancePlan]]
+   */
+  private def planFor(
+      kind: PerformanceKind,
+      arguments: Array[String]
+  ): Either[PerformanceError, PerformancePlan] =
+    intArgument(arguments, Entities, PerformancePlan.DefaultStartEntities).flatMap { start =>
+      kind match
+        case PerformanceKind.Load => PerformancePlan.load(start)
+        case PerformanceKind.Spike =>
+          for
+            maximum <- intArgument(
+              arguments,
+              MaximumEntities,
+              math.max(start, PerformancePlan.DefaultMaximumEntities)
+            )
+            plan <- PerformancePlan.spike(start, maximum)
+          yield plan
+        case PerformanceKind.Stress =>
+          growingPlan(arguments, start, PerformancePlan.stress)
+        case PerformanceKind.Scalability =>
+          growingPlan(arguments, start, PerformancePlan.scalability)
+    }
+
+  /**
+   * Parses the values shared by stress and scalability growth plans.
+   *
+   * @param arguments
+   *   command-line option and value pairs
+   * @param start
+   *   already parsed initial entity count
+   * @param create
+   *   validated constructor for the selected growth plan
+   * @return
+   *   the validated plan, or the first invalid relevant argument
+   */
+  private def growingPlan(
+      arguments: Array[String],
+      start: Int,
+      create: (Int, Int, Int) => Either[PerformanceError, PerformancePlan]
+  ): Either[PerformanceError, PerformancePlan] =
+    for
+      maximum <- intArgument(
+        arguments,
+        MaximumEntities,
+        math.max(start, PerformancePlan.DefaultMaximumEntities)
+      )
+      factor <- intArgument(
+        arguments,
+        GrowthFactor,
+        PerformancePlan.DefaultGrowthFactor
+      )
+      plan <- create(start, maximum, factor)
+    yield plan
 
   /**
    * Reads an integer argument or returns its default value.

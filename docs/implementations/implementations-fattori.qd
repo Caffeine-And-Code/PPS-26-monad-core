@@ -1,5 +1,3 @@
-## Fabio Fattori
-
 Mi sono occupato principalmente del modello e della gestione della scena, della progettazione dell'API pubblica e dell'integrazione tra engine e applicazione, dell'interfaccia grafica ScalaFX, del sistema di eventi e di alcune infrastrutture di test; nello specifico possiamo individuare i seguenti gruppi di sorgenti:
 
 - `engine/model/Scene.scala`, `engine/core/traits/State.scala`, `EngineFacade.scala`, `RendererManager.scala`, `DrawCommand.scala`, `EngineColor.scala` e l'astrazione `Painter`;
@@ -27,24 +25,7 @@ Per evitare che ogni regola fisica ripetesse la collision detection ho introdott
 
 La regola restituisce lo `State` risultante all'interno di `Either[PhysicsError, PhysicsRuleResult]`. Se la salute rimane valida, una copia aggiornata dell'entità sostituisce quella precedente; se il danno esaurisce la salute, l'entità viene rimossa dalla scena. Quando il contatto non comporta un danno applicabile, per esempio perché manca `Damage` oppure `Health`, l'entità rimane invariata. Al termine dell'intero aggiornamento `PhysicsManager` confronta lo stato iniziale con quello finale: produce `EntityUpdated` per un'entità modificata ancora presente, `EntityRemoved` per un'entità non più presente e nessun evento di stato per un'entità invariata. Il comportamento è stato integrato anche nei form e nei parser ScalaFX e nei tool dell'agente, mantenendo i costruttori del modello come unico punto di validazione.
 
-.mermaid
-    flowchart LR
-        Context[PhysicsContext<br/>State + dt + CollisionSnapshot] --> Rule[DamageApplicationRule]
-        Rule --> EntityContacts[Contatti entità-entità<br/>danno bidirezionale]
-        Rule --> SurfaceContacts[Contatti entità-superficie<br/>damageOverTime]
-        EntityContacts --> Apply[applyDamage<br/>Either]
-        SurfaceContacts --> Apply
-        Apply --> Outcome{Esito sull'entità}
-        Outcome -->|danno o salute assenti| Unchanged[Entità invariata]
-        Outcome -->|salute residua| Updated[Copia con Health aggiornata]
-        Outcome -->|salute esaurita| Removed[Entità esclusa dalla scena]
-        Unchanged --> Result[PhysicsRuleResult<br/>State risultante]
-        Updated --> Result
-        Removed --> Result
-        Result --> Comparison{Confronto tra<br/>State iniziale e finale}
-        Comparison -->|modificata e presente| UpdatedEvent[EntityUpdated]
-        Comparison -->|non più presente| RemovedEvent[EntityRemoved]
-        Comparison -->|invariata| NoEvent[Nessun evento di stato]
+![damage-rule.png](../assets/damage-rule.png)
 
 ### API pubblica e integrazione applicativa
 
@@ -58,130 +39,17 @@ La facade è focalizzata sul caso d'uso temporale e non nasconde tutti i tipi de
 
 Dal punto di vista di un'applicazione client, l'API consente di gestire il ciclo di vita della simulazione senza conoscere la rappresentazione del game loop. I casi d'uso sono suddivisi tra gestione della sessione e avanzamento del mondo: la configurazione personalizzata dei tempi estende la creazione, mentre il risultato viene elaborato dopo ogni tick completato con successo.
 
-.mermaid
-    flowchart LR
-        Client["«actor»<br/>Applicazione client"]
-
-        subgraph FacadeBoundary[EngineFacade]
-            direction LR
-
-            subgraph Lifecycle[Ciclo di vita della sessione]
-                direction TB
-                Create([Creare una sessione<br/>default oppure create])
-                Configure([Configurare tick time<br/>e max frame time])
-                Control([Avviare o arrestare<br/>start e stop])
-                Inspect([Interrogare sessione<br/>mode e isRunning])
-            end
-
-            subgraph Advancement[Avanzamento della simulazione]
-                direction TB
-                Tick([Avanzare lo State<br/>tick])
-                Physics([Usare la fisica<br/>predefinita o configurata])
-                Result([Ottenere State, eventi,<br/>alpha e nextSession])
-            end
-        end
-
-        Client --> Create
-        Client --> Control
-        Client --> Inspect
-        Client --> Tick
-        Client --> Result
-        Configure -.->|«extend»| Create
-        Tick -.->|«include»| Physics
-        Tick -.->|«include»| Result
+![api-use-case.png](../assets/api-use-case.png)
 
 #### Struttura e flusso operativo della facade
 
 La vista strutturale evidenzia il confine di astrazione: il client conosce `Session` e `TickResult`, mentre `GameLoop` rimane un dettaglio nascosto. `TickResult` rende espliciti tutti i valori che il client deve propagare al passo successivo, evitando aggiornamenti impliciti all'interno della facade.
 
-.mermaid
-    classDiagram
-        direction LR
-
-        class ClientApplication {
-            <<external application>>
-        }
-
-        class EngineFacade {
-            <<functional facade>>
-            +default() Session
-            +create(tickTime, maxFrameTime) Either
-            +start(session) Session
-            +stop(session) Session
-            +mode(session) LoopMode
-            +isRunning(session) Boolean
-            +tick(session, state, currentTime, physics) Either
-        }
-
-        class Session {
-            <<opaque type>>
-        }
-
-        class GameLoop {
-            <<hidden representation>>
-        }
-
-        class TickResult {
-            +state State
-            +nextSession Session
-            +events Vector~EngineEvent~
-            +alpha Double
-        }
-
-        class State {
-            <<trait>>
-        }
-
-        class PhysicsManager
-        class EngineEvent
-
-        ClientApplication --> EngineFacade : usa
-        EngineFacade ..> Session : crea ed evolve
-        Session ..> GameLoop : rappresentazione opaca
-        EngineFacade ..> GameLoop : delega internamente
-        EngineFacade ..> State : riceve
-        EngineFacade ..> PhysicsManager : riceve
-        EngineFacade --> TickResult : restituisce
-        TickResult --> State : nuovo stato
-        TickResult --> Session : prossima sessione
-        TickResult ..> EngineEvent : eventi
+![engine-facade-operative-flux.png](../assets/engine-facade-operative-flux.png)
 
 Il diagramma di sequenza mostra invece che la facade non conserva lo stato del client. Anche dopo `start` e `tick`, le istanze ricevute non vengono mutate: è l'applicazione a decidere quando adottare la nuova `Session` e il nuovo `State` restituiti.
 
-.mermaid
-    sequenceDiagram
-        actor Client as Applicazione client
-        participant Facade as EngineFacade
-        participant CoreLoop as GameLoop interno
-        participant Physics as PhysicsManager
-
-        Client->>Facade: create(tickTime, maxFrameTime)
-        alt configurazione non valida
-            Facade-->>Client: Left(EngineError)
-        else sessione valida
-            Facade-->>Client: Session in EditMode
-            Client->>Facade: start(session)
-            Facade->>CoreLoop: start()
-            CoreLoop-->>Facade: nuovo GameLoop
-            Facade-->>Client: nuova Session in SimulationMode
-
-            Client->>Facade: tick(session, state, currentTime, physics)
-            Facade->>CoreLoop: tick(state, currentTime)
-            CoreLoop->>Physics: zero o più fixed update
-            Physics-->>CoreLoop: State oppure EngineError ed eventi
-
-            alt errore nel tick
-                CoreLoop-->>Facade: Left(EngineError)
-                Facade-->>Client: Left(EngineError)
-            else tick completato
-                CoreLoop-->>Facade: GameLoopTickResult
-                Facade-->>Client: Right(TickResult)
-                Note over Client: adotta state e nextSession<br/>e consuma eventi e alpha
-                Client->>Facade: stop(nextSession)
-                Facade->>CoreLoop: stop()
-                Facade-->>Client: nuova Session in EditMode
-            end
-        end
+![facade-sequence.png](../assets/facade-sequence.png)
 
 #### Integrazione nel simulator
 
@@ -193,39 +61,7 @@ La porta `GameEngineRuntime` e il relativo adapter `MonadCoreGameEngineRuntime`,
 
 Il package diagram seguente mostra soltanto i tipi coinvolti e la loro collocazione. La porta `World` rimane nel layer application; `MonadCoreWorld` e il runtime concreto appartengono al package infrastructure dell'engine; l'ADT e il suo interprete puro sono raccolti nel sottopackage `world`. Le dipendenze rappresentate sono limitate a quelle necessarie per comprendere la delega delle modifiche.
 
-.mermaid
-    flowchart LR
-        subgraph Application["package monad_core.simulator.application.engine"]
-            direction TB
-            RuntimePort["«port»<br/>GameEngineRuntime"]
-
-            subgraph ApplicationWorld["package world"]
-                WorldPort["«port»<br/>World"]
-            end
-        end
-
-        subgraph Infrastructure["package monad_core.simulator.infrastructure.engine"]
-            direction TB
-            RuntimeAdapter["MonadCoreGameEngineRuntime"]
-            WorldAdapter["MonadCoreWorld"]
-
-            subgraph InfrastructureWorld["package world"]
-                direction TB
-                Edit["«ADT» WorldEdit"]
-                Editor["WorldEditor"]
-                Outcome{"Either"}
-                Result["WorldEditResult"]
-                EditingError["SceneEditingNotAllowed"]
-            end
-        end
-
-        RuntimeAdapter -.->|implementa| RuntimePort
-        WorldAdapter -.->|implementa| WorldPort
-        WorldAdapter -->|delega| Editor
-        Editor -->|interpreta| Edit
-        Editor -->|restituisce| Outcome
-        Outcome -->|Right| Result
-        Outcome -->|Left| EditingError
+![simulator-integration.png](../assets/simulator-integration.png)
 
 ### Renderer sostituibile
 
@@ -235,57 +71,7 @@ Ho modellato il rendering in due fasi distinte: la **descrizione pura** dell'imm
 
 Il `Painter` viene risolto tramite `using`, così chi installa il pacchetto engine può fornire la propria implementazione senza modificare `RendererManager`. Il simulator usa `PaintArchitect`, che definisce colori e traduzione delle forme in modo puro e deterministico; un client esterno può invece scegliere una diversa politica cromatica o di produzione dei comandi. L'unico passaggio necessariamente effectful è l'interpretazione finale: nell'applicazione ScalaFX, `ShapePainter` consuma il `Vector[DrawCommand]` e applica le operazioni al `GraphicsContext`. Un altro client può interpretare gli stessi valori con un backend grafico differente oppure in modalità headless, mantenendo invariato il nucleo dell'engine.
 
-.mermaid
-    classDiagram
-        direction LR
-
-        class ClientApplication {
-            <<external application>>
-            +renderState()
-        }
-
-        class State
-
-        class RendererManager {
-            +render(State)(using Painter) Either~EngineError, Vector~DrawCommand~~
-        }
-
-        class Painter {
-            <<pure trait>>
-            +baseEntityColor()
-            +baseSurfaceColor()
-            +teamIdColorRelation()
-            +drawCircle() Option~DrawCommand~
-            +drawRectangle() Option~DrawCommand~
-        }
-
-        class DrawCommand {
-            <<ADT>>
-            Circle
-            Rectangle
-        }
-
-        class PaintArchitect {
-            <<pure provided implementation>>
-        }
-
-        class CustomPainter {
-            <<external implementation>>
-        }
-
-        class ShapePainter {
-            <<ScalaFX interpreter>>
-            +paint(GraphicsContext, Vector~DrawCommand~)
-        }
-
-        ClientApplication --> RendererManager : renderizza lo State
-        RendererManager ..> State : legge
-        RendererManager ..> Painter : richiede via using
-        RendererManager --> DrawCommand : restituisce valori
-        Painter <|.. PaintArchitect : implementazione fornita
-        Painter <|.. CustomPainter : implementazione sostituibile
-        ClientApplication ..> CustomPainter : fornisce come given
-        ShapePainter ..> DrawCommand : interpreta
+![renderer-architecture.png](../assets/renderer-architecture.png)
 
 ### Interfaccia grafica e form dichiarativi
 
@@ -295,20 +81,7 @@ Il blocco nella GUI migliora l'esperienza d'uso, ma non costituisce il vincolo d
 
 In `SceneRendererPanel` ho collegato un `AnimationTimer` al runtime, sincronizzato i limiti del mondo con le dimensioni del canvas e implementato la selezione degli elementi tramite hit detection sulle due varianti di `Shape2D`. A ogni frame il runtime consegna al pannello il `Vector[DrawCommand]` prodotto dal renderer puro e il pannello lo interpreta tramite `ShapePainter`. Il menu contestuale viene costruito in base al tipo unione `Entity | Surface`; il pattern matching seleziona quindi, a tempo di compilazione, le azioni ammesse per l'elemento scelto. Dopo ogni mutazione completata con successo creo uno snapshot della scena; in caso di `Left`, mostro invece l'errore e non modifico la baseline. Il comando di arresto può così eliminare gli effetti della simulazione e ripristinare esattamente l'ultimo stato di editing valido.
 
-.mermaid
-    flowchart LR
-        Controls[Controlli play, pausa e stop] --> Property[isEngineRunning<br/>BooleanProperty condivisa]
-        Property --> Tools[Menu degli strumenti<br/>disabilitato]
-        Property --> Context[Menu contestuale<br/>non aperto e azioni disabilitate]
-
-        Tools --> Command[Comando World]
-        Context --> Command
-        Command --> Adapter[MonadCoreWorld]
-        Runtime[Modalità effettiva del runtime] -->|enterEditMode / enterSimulationMode| Adapter
-        Adapter --> Editor[WorldEditor]
-        Editor -->|SimulationMode| Rejected[Left SceneEditingNotAllowed]
-        Editor -->|EditMode| Result[Right WorldEditResult]
-        Result --> Commit[Commit scena, eventi e snapshot]
+![ui-api-call-workflow.png](../assets/ui-api-call-workflow.png)
 
 Per i dialoghi ho evitato la creazione di schermate indipendenti e duplicate. `FormFieldSpec` è un ADT composto da campi testuali, selezioni singole e selezioni multiple. `FormFieldControlFactory` interpreta la specifica e produce sia il nodo grafico sia una funzione `() => String` per leggerne il valore. `FormFieldsState` conserva in modo immutabile queste funzioni e i nodi dinamici; quando, per esempio, cambia la forma selezionata, i campi dipendenti relativi al raggio oppure all'altezza e alla larghezza vengono sostituiti e lo stato viene copiato senza mantenere riferimenti obsoleti.
 
@@ -326,49 +99,7 @@ Nel game loop, lavorando sulla base sviluppata con Tonelli, ho introdotto `GameL
 
 Le mutazioni esplicite delle entità effettuate tramite `MonadCoreWorld` pubblicano gli eventi di creazione, rimozione e aggiornamento, mentre `MonadCoreGameEngineRuntime` inoltra quelli prodotti dal sottosistema fisico. Nel composition root ho collegato entrambi allo stesso callback. `EventLogFormatter` trasforma infine ciascun caso dell'ADT in un `EventLogEntry` strutturato, con livello `Info` o `Trace`, consumato attraverso la porta applicativa `Logger`. Engine, formattazione e destinazione del log restano pertanto disaccoppiati.
 
-.mermaid
-    flowchart TD
-        subgraph Engine[Pacchetto engine]
-            direction LR
-
-            Rule[PhysicsRule]
-            RuleResult[PhysicsRuleResult<br/>State + Vector di EngineEvent]
-            Combinator[RuleCombinator.sequence]
-            Physics[PhysicsManager]
-            Step[PhysicsStep]
-            Loop[GameLoop<br/>fixed update]
-            InternalResult[GameLoopTickResult<br/>State + Loop + Eventi + Alpha]
-            Facade[EngineFacade]
-            TickResult[EngineFacade.TickResult<br/>State + Session + Eventi + Alpha]
-
-            Rule --> RuleResult
-            RuleResult --> Combinator
-            Combinator --> Physics
-            Physics --> Step
-            Step --> Loop
-            Loop --> InternalResult
-            InternalResult --> Facade
-            Facade --> TickResult
-        end
-
-        subgraph Simulator[Applicazione simulator]
-            direction LR
-
-            World[MonadCoreWorld<br/>create, remove, update]
-            Runtime[MonadCoreGameEngineRuntime]
-            Callback[Callback condiviso<br/>Vector di EngineEvent]
-            Formatter[EventLogFormatter]
-            LogEntry[EventLogEntry<br/>Info oppure Trace]
-            Logger[Logger]
-
-            World -->|eventi applicativi| Callback
-            Runtime -->|eventi fisici| Callback
-            Callback --> Formatter
-            Formatter --> LogEntry
-            LogEntry --> Logger
-        end
-
-        Engine -->|EngineFacade.TickResult restituito al GameEngineRuntime| Simulator
+![event-system.png](../assets/log-system.png)
 
 ### Continuous Integration e Continuous Delivery
 
@@ -382,24 +113,7 @@ Soltanto dopo il completamento della matrice, il job di release genera con Quark
 
 Il workflow Pages può essere avviato anche manualmente tramite `workflow_dispatch` e utilizza un gruppo di concorrenza che annulla una pubblicazione precedente ancora in corso. Ho configurato esplicitamente i permessi minimi per la lettura dei contenuti durante la build e quelli necessari alla pubblicazione nel solo job di deploy; l'autenticazione di quest'ultimo avviene tramite token OIDC.
 
-.mermaid
-    flowchart TD
-        Push[Push su un branch] --> Tests[Test Scala<br/>Java 21 + Xvfb + tuProlog JVM]
-        PR[Pull request verso<br/>main o development] --> Tests
-        PR --> Format[scalafmtCheckAll]
-
-        Main[Push su main] --> Version[Verifica incremento<br/>release_version]
-        Version --> Matrix[Assembly su matrice<br/>Linux, Windows, macOS]
-        Matrix --> Artifacts[Fat JAR versionati]
-        Artifacts --> Pdf[Relazione PDF<br/>con Quarkdown]
-        Pdf --> Release[GitHub Release]
-
-        Main --> Html[Relazione HTML<br/>con Quarkdown]
-        Main --> Scaladoc[Documentazione API<br/>con sbt doc]
-        Html --> Site[Artefatto Pages unico]
-        Scaladoc --> Api[Directory /api]
-        Api --> Site
-        Site --> Pages[GitHub Pages]
+![actions-architecture.png](../assets/actions-architecture.png)
 
 #### Possibile deploy in un ambiente di produzione containerizzato
 
