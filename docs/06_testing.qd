@@ -1,122 +1,85 @@
 # Testing
 
-La strategia di testing di **MonadCore2D** è stata costruita su più livelli, in modo da verificare le singole unità di logica, le collaborazioni tra componenti e i principali vincoli trasversali del sistema. Il principio metodologico adottato è il **Test-Driven Development** (TDD), affiancato da test di integrazione, test dell'interfaccia grafica, test architetturali e verifiche dedicate al comportamento dell'assistente LLM.
-
-## Tecnologie usate
-
-Il framework di riferimento è **ScalaTest**, utilizzato prevalentemente tramite `AnyFunSuite`, `Matchers` e gli helper per ispezionare valori `Either` e `Option`. **ScalaMock** permette di isolare le dipendenze e di verificare il protocollo di interazione tra componenti: chiamate effettuate, argomenti ricevuti, ordine delle operazioni e metodi che non devono essere invocati. Per insiemi di casi omogenei vengono impiegati anche i test table-driven di ScalaTest, utili soprattutto per intervalli numerici, combinazioni di forme e varianti dei componenti grafici.
-
-**tuProlog** viene utilizzato per generare alcuni insiemi combinatori di dati di test. È incluso come dipendenza JVM nel solo scope `Test`: le teorie Prolog vengono caricate dal classpath e interrogate direttamente dal codice Scala, senza richiedere un runtime Prolog installato sulla macchina host.
-
-I test dell'interfaccia utilizzano direttamente **ScalaFX** e **JavaFX**, con helper dedicati all'inizializzazione del toolkit e all'esecuzione delle operazioni sul JavaFX Application Thread. Il progetto integra inoltre un sistema realizzato internamente per gli snapshot strutturali e visuali.
-
-La copertura viene misurata tramite il runner di **IntelliJ IDEA**, scelto dal gruppo come strumento di sviluppo e analisi. La qualità delle asserzioni dell'engine può essere valutata anche mediante **Stryker4s**, configurato nella build per il mutation testing. I test end-to-end dell'assistente utilizzano invece **LangChain4j** e un modello servito localmente da **Ollama**.
-
-## Grado di copertura
-
-Il report generato da IntelliJ IDEA, relativo alla suite standard e limitato ai sorgenti di produzione, riporta i seguenti valori:
-
-.tablesort {2}
-    | Metrica | Copertura |
-    | ------- | --------- |
-    | Classi  | 97,2%     |
-    | Metodi  | 93,6%     |
-    | Righe   | 92,9%     |
-
-La copertura è distribuita sui sottosistemi principali: nell'engine interessa in particolare il modello, la geometria, la collision detection, il game loop, le regole fisiche e il pathfinding; nel performance testing comprende valori validati, generazione dei carichi, metriche, runner, scena deterministica e CLI; nel simulator comprende il dominio, i servizi applicativi, gli adapter infrastrutturali, la gestione asincrona e i componenti grafici.
-
-La sola line coverage non garantisce, tuttavia, che un test sia in grado di riconoscere un comportamento errato. Per questo motivo è stato configurato anche Stryker4s sui sorgenti dell'engine: il mutation testing introduce modifiche artificiali nel codice e controlla che almeno un test fallisca. La coverage di IntelliJ e il mutation score forniscono quindi due informazioni complementari, rispettivamente sull'estensione del codice esercitato e sull'efficacia delle asserzioni.
+La strategia di testing che abbiamo utilizzato è costruita su più livelli, componendo una vera e propria piramide dei test, alla base abbiamo gli unit test che tramite tecniche di mocking coprono gran parte dell'applicazione, dopodiché abbiamo gli integration test che verificano l'integrazione di più elementi di un workflow. Infine abbiamo test ad ancora più alto livello come gli snapshot testing per la GUI o i test architetturali per il codice.   
+In particolare abbiamo voluto soffermarci particolarmente sull'aspetto del testing esplorando diverse soluzione che fossero utili per il nostro caso d'uso.
 
 ## Metodologia usata
 
-Lo sviluppo ha seguito il ciclo **Red-Green-Refactor** del TDD:
+Lo sviluppo ha seguito il ciclo _Red-Green-Refactor_ del TDD:
 
-1. **Red**: il comportamento atteso viene prima espresso mediante un test, che deve fallire perché la funzionalità non è ancora presente oppure perché riproduce un difetto;
-2. **Green**: viene introdotta l'implementazione minima necessaria a soddisfare il test;
-3. **Refactor**: codice e test vengono migliorati mantenendo verde l'intera suite.
+1. Red: il comportamento atteso viene prima espresso mediante un test, che deve fallire perché la funzionalità non è ancora presente oppure perché riproduce un difetto;
+2. Green: viene introdotta l'implementazione minima necessaria a soddisfare il test;
+3. Refactor: codice e test vengono migliorati mantenendo verde l'intera suite.
 
-In questo modo, i test hanno guidato la progettazione delle API e la scomposizione delle responsabilità, oltre a costituire una rete di sicurezza per i refactoring successivi. I nomi dei test descrivono il comportamento osservabile, così che la suite possa essere letta anche come specifica eseguibile del sistema.
+I test unitari sono stati sviluppati seguendo la struttura _Arrange-Act-Assert_.
+1. Arrange: inizializzazione dei dati necessari al test
+2. Act: esegue l’azione o il metodo da verificare
+3. Assert: controlla che il risultato ottenuto sia quello atteso
 
-I test unitari seguono generalmente la struttura *Arrange-Act-Assert*. Le dipendenze vengono sostituite con mock quando l'obiettivo è verificare esclusivamente la responsabilità dell'unità in esame. Per il modello e gli algoritmi geometrici vengono controllati sistematicamente sia i casi validi sia i limiti del dominio: valori nulli o negativi, punti sul bordo, forme separate, tangenti, sovrapposte o contenute e condizioni prossime alle tolleranze numeriche. Nei test della fisica vengono inoltre verificati l'aggiornamento immutabile della scena, la composizione sequenziale delle regole, lo *short-circuit* in presenza di un errore e il comportamento con più entità.
+## Tecnologie usate
 
-I test di integrazione utilizzano invece collaboratori reali quando è necessario verificare che più parti del sistema producano insieme il comportamento desiderato. La suite eseguita normalmente dalla build rimane deterministica e non richiede servizi remoti; le verifiche che interrogano realmente un modello linguistico sono collocate in una configurazione SBT separata, denominata `llmIntegrationTest`.
+Come framework di riferimento abbiamo utilizzato `ScalaTest` tramite lo stile `AnyFunSuite`.
+Per eseguire i mocking delle dipendeze abbiamo utilizzato `scalamock`.
+Per verificare l'efficacia dei test sviluppati abbiamo utilizzato `Stryker Mutator` per scala (`stryker4s`).
+Per generare test basati su diverse combinazioni da usare come table cases abbiamo utilizzato il linguaggio `Prolog`, tramite la libreria `tuProlog`.
+Per effettuare i test sui componenti della GUI e generare gli snapshot abbiamo utilizzato gli helper forniti da `scalaFX`.   
 
-Sono stati classificati come **test di integrazione** anche alcuni test che, per finalità, potrebbero essere considerati unitari o di snapshot, ma che richiedono l'inizializzazione del toolkit grafico e l'esecuzione sul thread applicativo di **ScalaFX/JavaFX**. Poiché tale infrastruttura non può essere efficacemente sostituita tramite mock, questi test dipendono necessariamente dall'interazione tra i componenti grafici dell'applicazione e il runtime JavaFX. Questa dipendenza è stata quindi considerata una forma di integrazione tra componenti e ha motivato la loro classificazione come test di integrazione.
+## Grado di copertura
+
+Il report sulla test coverage è stato generato tramite gli strumenti forniti l'IDE IntelliJ IDEA e riporta i seguenti valori sull'intera base di codice:
+
+
+| Metrica | Copertura |
+| ------- | --------- |
+| Classi  | 97%       |
+| Metodi  | 94%       |
+| Righe   | 94%       |
+
+## Mutation testing
+
+La sola line coverage non garantisce che un test sia in grado di riconoscere un comportamento errato. Per questo motivo è stato utilizzato `Stryker4s` sui sorgenti dell'engine. Il mutation testing fornito da `Stryker4s` introduce delle modifiche al codice e poi esegue i test unitari sul codice modificato. Ci si aspetta che, a questo punto, i test unitari falliscano. Se invece non falliscono, ciò potrebbe indicare che i test non coprono il codice in modo sufficientemente approfondito. Dopo l'introduzione di `Stryker Mutator` abbiamo infatti notato che, nonostante l'elevata mole di unit test prodotti, non tutti i bug venivano individuati. Abbiamo quindi provveduto ad implementare gli unit test mancanti, raggiungendo un mutation score del 100%. La coverage di IntelliJ e il mutation score forniscono quindi due informazioni complementari sull'efficacia delle asserzioni.
+
+## Snapshot Testing
+Il sistema di snapshot della GUI: `SceneGraphSerializer` converte ricorsivamente il scene graph JavaFX in una rappresentazione JSON stabile, mentre `SnapshotTesting` confronta sia questa struttura sia le immagini PNG versionate. Il confronto visivo normalizza le dimensioni dipendenti dal sistema operativo, ammette una tolleranza esplicita per canale rispetto alle differenze di antialiasing e misura la percentuale di pixel difformi. Gli assert dedicati allo snapshot testing vengono utilizzati, ad esempio, nel seguente modo:
+
+![snapshots-code.png](assets/snapshots-code.png)
+
+La generazione di snapshot ed il loro versionamento aggiunge ulteriore qualità alla suite di test grazie al controllo mirato della GUI, non solo sul piano grafico ma anche sul piano architetturale permettendo il controllo ed il rilevamento di elementi inaspettati non visibili.
+
+## Test architetturali
+Data le architetture dei singoli package e la relazione tra essi, abbiamo pensato di sviluppare delle modalità di controllo automatico _red-green_. `ArchitectureChecker` analizza gli import tra i package e fornisce matcher ScalaTest con cui si può verificare l'indipendenza dell'engine, la direzione delle dipendenze tra domain, application, infrastructure e presentation e il confinamento di ScalaFX e JavaFX nel layer grafico.
+
+Grazie a test di questo genere la gestione ed il rispetto dell'architettura adottata diventa uno vero e proprio standard di progetto.
+
+![architecture-testing-code.png](assets/architecture-testing-code.png)
 
 ## Esempi rilevanti
 
-### Collision detection e fisica
+### Integration test dell'agente AI
 
-La distinzione tra test unitari e test di integrazione è evidente nella collision detection. I primi sostituiscono le type class `Collides` e `Contains` con mock e verificano che `CollisionDetector` deleghi correttamente. I secondi utilizzano le implementazioni geometriche reali e controllano il risultato complessivo su entità e superfici concrete. In questo modo, un errore può essere ricondotto più facilmente all'orchestrazione del detector oppure agli algoritmi geometrici sottostanti.
-
-Per le regole fisiche vengono verificati sia i singoli calcoli sia la loro applicazione alla scena. Tra i casi più significativi rientrano il movimento con intervalli temporali diversi, la risoluzione delle collisioni tra corpi mobili e fissi, il contatto con i bordi, l'effetto delle superfici e l'attrazione verso il nemico più vicino. I test del game loop controllano inoltre la frequenza degli aggiornamenti, l'accumulatore temporale, la limitazione dei picchi di latenza e le transizioni tra modalità di modifica e simulazione.
-
-### Performance testing
-
-I test del package `monad_core.performance` separano il nucleo puro dagli adapter che richiedono l'engine. Gli unit test del model verificano singolarmente smart constructor, valori limite, progressione dei carichi, configurazione, errori e dati del report. Quelli del core controllano nearest-rank, completion rate, quattro strategie, breakpoint, warm-up, iterazioni e propagazione del primo errore. `SequenceNanoClock` fornisce timestamp predeterminati, rendendo esatte le asserzioni sulle latenze senza dipendere dal tempo della macchina.
-
-Gli integration test in `integrations.monad_core.performance.simulator` usano invece i componenti reali dell'engine. `DeterministicSceneTest` verifica ogni proprietà necessaria alle regole fisiche e la disposizione ripetibile di entità, team, superficie e confini; `EnginePerformanceTest` controlla il tick completo e l'adattamento degli errori; `PerformanceCliTest` copre route, valori predefiniti, parsing, formattazione e ricostruzione della configurazione corrente delle regole.
-
-La presentazione mantiene la stessa distinzione. Gli unit test di `ExperimentForm` e `PerformanceMode` verificano selezione dei campi, costruzione del comando e scelta del pannello senza inizializzare finestre. Gli integration test JavaFX coprono invece decorator, dialoghi, esecuzione asincrona, aggiornamento del risultato ed errori. Per le tre viste prestazionali sono versionate coppie di snapshot JSON e PNG relative al launcher esteso, al form iniziale e al risultato.
-
-### Generazione logica dei casi di test con Prolog
-
-Due teorie Prolog descrivono dichiarativamente i domini finiti da combinare. La prima genera le nove coppie ordinate ottenute dai tipi di notifica `Info`, `Error` e `Success`; la seconda produce le otto combinazioni di presenza o assenza dei campi geometrici `radius`, `width` e `height`. Gli oggetti `GeneratedNotificationCombos` e `GeneratedShapeCombos` caricano queste teorie tramite l'API tuProlog, enumerano le soluzioni con `solve` e `solveNext` e costruiscono tabelle direttamente utilizzabili da ScalaTest tramite `forAll`.
-
-Questa integrazione evita di duplicare manualmente i prodotti cartesiani nei test e separa la definizione logica delle combinazioni dalla loro verifica. Poiché tuProlog è una normale dipendenza SBT, sia la CI sia un checkout pulito possono eseguire direttamente `sbt test` senza preparazione nativa del sistema operativo e senza generare sorgenti intermedi.
-
-### Interfaccia grafica e snapshot testing
-
-I test ScalaFX verificano il comportamento osservabile di stage, pannelli, pulsanti e form: proprietà reattive, abilitazione dei controlli, callback, validazione degli input, propagazione degli errori e contenuto prodotto in seguito alle interazioni.
-
-Per intercettare regressioni difficili da descrivere mediante singole asserzioni, sono stati realizzati due tipi complementari di snapshot test:
-
-* gli **snapshot strutturali** serializzano in JSON l'albero della scena, includendo il tipo dei nodi, gli identificatori, le classi di stile, il testo e i figli;
-* gli **snapshot visuali** confrontano il rendering con immagini PNG di riferimento. Il confronto tollera piccole differenze per canale dovute all'antialiasing, normalizza le dimensioni dipendenti dal sistema operativo e fallisce solo oltre una soglia esplicita di pixel differenti.
-
-Le baseline versionate coprono, tra gli altri, il launcher, i dialog di creazione e modifica, i pulsanti, le notifiche, il canvas ridimensionabile e le tre viste del performance testing. Se una baseline non esiste, viene generata e il test fallisce intenzionalmente: l'immagine o il JSON devono quindi essere esaminati e accettati esplicitamente prima che un'esecuzione successiva possa avere esito positivo.
-
-### Vincoli architetturali e DDD
-
-La struttura architetturale non è affidata soltanto a una convenzione: è stata infatti realizzata una serie di utility che estendono la classe di test base per analizzare gli import dei sorgenti, rendendo eseguibili alcuni vincoli del design.
-
-In particolare, viene controllato che l'engine resti indipendente dal simulator, che JavaFX e ScalaFX siano confinati al layer di presentation e che, per il simulator application, venga verificata la corretta implementazione dell'organizzazione **Domain-Driven Design** adottata dal progetto. I test proteggono inoltre il domain dalle dipendenze verso i layer esterni e controllano le relazioni ammesse tra domain, application, infrastructure e presentation.
-
-In questo modo, le direzioni di dipendenza stabilite dal design diventano regole automatiche di regressione: l'introduzione di un import non ammesso provoca il fallimento della suite.
-
-### Assistente LLM
-
-Il comportamento emergente dell'assistente non può essere verificato interamente tramite mock o mediante il confronto esatto di stringhe. Nei test di integrazione LLM, i servizi applicativi `World` e `GameEngineRuntime` restano mockati, mentre l'assistente e il modello sono reali. È così possibile osservare le decisioni del modello senza modificare una simulazione reale.
-
-La metodologia è ispirata alla documentazione di LangChain4j e all'articolo [Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/) di Hamel Husain: gli integration test riprendono il *Level 1*, mentre il programma separato di valutazione è ispirato al *Level 2*.
-
-Gli scenari coprono la conversazione senza tool, la lettura e la modifica delle entità, le sequenze di tool, la memoria tra messaggi, la richiesta di informazioni mancanti, il divieto di modificare il mondo durante l'esecuzione del motore, il rispetto dell'ambito tematico e l'uso della lingua dell'utente.
-
-Le asserzioni sono state adattate alla natura non deterministica delle risposte mediante tre strategie:
-
-* confronto diretto per le informazioni che devono comparire nella risposta;
-* matcher sui tool eseguiti, per verificarne l'assenza, l'unicità o l'insieme atteso;
-* tecnica **LLM-as-a-Judge** per proprietà semantiche non esprimibili mediante una semplice uguaglianza. Un secondo assistente, configurato con temperatura zero, riceve un criterio e restituisce esclusivamente `PASS` o `FAIL`.
-
-I matcher di ScalaTest sono stati estesi con extension method, metodi infix e builder intermedi, formando una piccola DSL con cui esprimere le verifiche in forma dichiarativa. Per esempio:
-
+La natura generativa dell'agente rende difficile utilizzare le classiche tecniche di testing. La strategia di testing viene quindi divisa in due parti, ciò che si può testare in maniera deterministica, ovvero facendo uso di metodi di assertion classici e ciò che non può essere testato in maniera deterministica, come la corretta risposta alla domanda dell'utente o la lingua utilizzata dal modello per la risposta.
+Per quanto riguarda la parte deterministica sono stati implementati nuovi `Matcher` compatibili con `ScalaTest` per controllare la presenza di un'informazione nella risposta o se sono stati utilizzati i tool giusti.
+Esempio:
 ```scala
-result should onlyExecuteTool("createCircleEntity")
-result should notExecuteTools
+val result = assistant.chat(memoryId, userMessage)
 
-val judgeCriteria = "Assistant should refuse to answer user question cause it can talk about his allowed topics"
+result should containsInResponse(rectangleEntity.id.toString)
+result should notExecuteTools
+result should onlyExecuteTool("getAllEntities")
+result should executeOnlyTheseTools(List("getAllEntities", "start"))
+```
+Questi Matcher sono integrati con `Langchain4j` e permettono di verificare se l'agente AI ha riportato correttamente una determinata informazione richiesta o se ha usato solamente i tool che erano necessari per soddisfare la richiesta.
+
+Per testare invece ciò che non è deterministico abbiamo utilizzato la tecnica del _Model as a Judge_ che consiste nell'utilizzare un modello esterno (generalmente migliore di quello utilizzato per testare), per valutare la risposta dell'agente AI secondo alcuni criteri, anche per questa casistica è stato implementato un Matcher che renda il più semplice e naturale possibile da leggere il test.
+Esempio:
+```scala
+val result = assistant.chat(memoryId, userMessage)
+
+val judgeCriteria =
+  "Assistant should response in same language as user question, Italian in this case"
 result judgedBy judgeAssistant shouldSatisfy judgeCriteria
 ```
-
-L'espressione `judgedBy` produce un `JudgedResult`, sul quale `shouldSatisfy` costruisce ed esegue il matcher del judge.
-
-## Esecuzione e CI/CD
-
-I test standard vengono eseguiti da SBT in processi JVM separati per classe e senza parallelismo tra i processi forkati. Questa scelta riduce le interferenze dovute allo stato globale del toolkit JavaFX e rende più riproducibili i test grafici. Le attese asincrone sono inoltre limitate da timeout, in modo che un malfunzionamento non possa bloccare indefinitamente la suite.
-
-A ogni pull request verso `main` o `development` e a ogni push su qualsiasi branch, GitHub Actions esegue `sbt test` su Java 21. I test grafici vengono avviati in un display virtuale **Xvfb**, con font controllati, per consentire la verifica di JavaFX anche in un ambiente Linux headless. La pipeline impedisce quindi l'integrazione di modifiche che introducano regressioni funzionali, grafiche o architetturali nella suite standard.
-
-I test che dipendono da Ollama vengono eseguiti separatamente tramite `sbt "llmIntegrationTest / test"`. La loro esclusione dalla pipeline standard evita che la disponibilità del modello, la latenza e la variabilità generativa rendano instabile la continuous integration. Costituiscono quindi un controllo end-to-end da eseguire in un ambiente preparato esplicitamente, in particolare prima delle release o dopo modifiche a prompt, tool e memoria conversazionale.
+Questo matcher fallisce se il modello giudice decreta che la risposta dell'agente AI non soddisfa i criteri, in questo caso fallirà se il modello giudice decreta che la risposta non è in italiano.
 
 ### Generazione logica dei casi di test con Prolog
 
@@ -158,16 +121,27 @@ Le soluzioni vengono infine raccolte in tabelle ScalaTest, rendendo possibile, d
 
 Lo stesso approccio viene utilizzato per verificare tutte le coppie di notifiche tramite `GeneratedNotificationCombos.cases`. Questa integrazione evita la duplicazione manuale dei prodotti cartesiani e mantiene separata la definizione logica dei dati dalla loro verifica.
 
-## SNAPSHOT
-Il sistema di snapshot della GUI: `SceneGraphSerializer` converte ricorsivamente il scene graph JavaFX in una rappresentazione JSON stabile, mentre `SnapshotTesting` confronta sia questa struttura sia le immagini PNG versionate. Il confronto visivo normalizza le dimensioni dipendenti dal sistema operativo, ammette una tolleranza esplicita per canale rispetto alle differenze di antialiasing e misura la percentuale di pixel difformi. Gli assert dedicati allo snapshot testing vengono utilizzati, ad esempio, nel seguente modo:
+### Test su interfaccia grafica
 
-![snapshots-code.png](assets/snapshots-code.png)
+I test dell'interfaccia grafica sono integration test perché verificano i componenti dell'applicazione insieme alla dipendenza ScalaFX. Per esempio, `AiModelChatPanelTest` costruisce il pannello reale, modifica il campo di testo e aziona il pulsante sul thread grafico. L'agente AI viene invece sostituito con un mock, così il test può controllare sia la richiesta inviata sia i messaggi mostrati nell'interfaccia.
 
-La generazione di snapshot ed il loro versionamento aggiunge ulteriore qualità alla suite di test grazie al controllo mirato della GUI, non solo sul piano grafico ma anche sul piano architetturale permettendo il controllo ed il rilevamento di elementi inaspettati non visibili.
+```scala
+aiAgent.ask.expects(AskAgentCommand(conversationId, userPrompt))
+  .returning(Future.successful(Right(AgentResponse("Hi!"))))
 
-## ARCHITECTURE
-Data le architetture dei singoli package e la relazione tra essi, abbiamo pensato di sviluppare delle modalità di controllo automatico _red-green_. `ArchitectureChecker` analizza gli import tra i package e fornisce matcher ScalaTest con cui si può verificare l'indipendenza dell'engine, la direzione delle dipendenze tra domain, application, infrastructure e presentation e il confinamento di ScalaFX e JavaFX nel layer grafico.
+onFxThread {
+  promptField(panel).setText("Hello")
+  submitButton(panel).fire()
+}
+drainFxQueue()
+onFxThread { messageTexts(panel) should contain allOf ("Hello", "Hi!") }
+```
 
-Grazie a test di questo genere la gestione ed il rispetto dell'architettura adottata diventa uno vero e proprio standard di progetto.
 
-![architecture-testing-code.png](assets/architecture-testing-code.png)
+## Esecuzione e CI/CD
+
+I test standard vengono eseguiti da SBT in processi JVM separati per classe e senza parallelismo tra i processi forkati. Questa scelta riduce le interferenze dovute allo stato globale del toolkit JavaFX e rende più riproducibili i test grafici. Le attese asincrone sono inoltre limitate da timeout, in modo che un malfunzionamento non possa bloccare indefinitamente la suite.
+
+A ogni pull request verso `main` o `development` e a ogni push su qualsiasi branch, GitHub Actions esegue `sbt test` su Java 21. I test grafici vengono avviati in un display virtuale **Xvfb**, con font controllati, per consentire la verifica di JavaFX anche in un ambiente Linux headless. La pipeline impedisce quindi l'integrazione di modifiche che introducano regressioni funzionali, grafiche o architetturali nella suite standard.
+
+I test che dipendono da Ollama vengono eseguiti separatamente tramite `sbt "llmIntegrationTest / test"`. La loro esclusione dalla pipeline standard evita che la disponibilità del modello, la latenza e la variabilità generativa rendano instabile la continuous integration. Costituiscono quindi un controllo end-to-end da eseguire in un ambiente preparato esplicitamente, in particolare prima delle release o dopo modifiche a prompt, tool e memoria conversazionale.

@@ -122,13 +122,10 @@ ThisBuild / scalacOptions ++= Seq(
 )
 
 strykerMutate := Seq(
-  "src/main/scala/monad_core/engine/**/*.scala",
-  "src/main/scala/monad_core/performance/**/*.scala"
+  "src/main/scala/monad_core/engine/**/*.scala"
 )
 
 strykerTestFilter := Seq(
   "monad_core.engine.*",
-  "monad_core.performance.*",
-  "integrations.monad_core.engine.*",
-  "integrations.monad_core.performance.*"
+  "integrations.monad_core.engine.*"
 )

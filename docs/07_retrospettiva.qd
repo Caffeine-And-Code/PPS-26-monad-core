@@ -16,6 +16,16 @@
 
 .include {events/sprint_planning_3.qd}
 
+.include {events/daily_scrum_sprint_3.qd}
+
+.include {events/sprint_review_3.qd}
+
+.include {events/sprint_planning_4.qd}
+
+.include {events/daily_scrum_sprint_4.qd}
+
+.include {events/sprint_review_4.qd}
+
 ## Backlog
 
 .include {tasks/user_stories.qd}

@@ -32,28 +32,6 @@ Il `Launcher` costituisce il Composition Root dell'applicazione: è l'unico punt
 
 ![launcher_class_diagram.mermaid.png](assets/launcher_class_diagram.mermaid.png)
 
-## Motore fisico
-
-## Performance
-
-## Game loop ed interpolazione
-
-## Regola d'applicazione del danno e riconoscimento della "morte"
-
-La `DamageApplicationRule` gestisce l'applicazione del danno in seguito a una collisione. Le collisioni possono avvenire tra due entità oppure tra un'entità e una superficie, in entrambi i casi, il danno viene applicato tramite la funzione `applyDamage` dell'entità coinvolta.
-
-L'applicazione può produrre tre risultati:
-
-- l'entità conserva una quantità di vita maggiore di zero e viene aggiornata nello `State`
-- la vita raggiunge zero o un valore inferiore e l'entità viene rimossa dalla scena
-- l'entità non possiede una salute a cui applicare il danno e rimane quindi invariata
-
-La "morte" di un'entità viene quindi rappresentata direttamente dalla sua rimozione dallo `State`, senza introdurre uno stato o un flag aggiuntivo.
-
-Al termine della regola, il confronto tra lo stato iniziale e quello risultante permette di generare l'`EngineEvent` appropriato: `EntityUpdated` se l'entità è stata modificata, `EntityRemoved` se è stata eliminata, oppure nessun evento se è rimasta invariata.
-
-![Flusso della regola di applicazione del danno](assets/damage-rule.png)
-
 ## CI/CD
 
 La Continuous Integration esegue la suite Scala per ogni push su qualsiasi branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX. Un workflow separato applica con le stesse modalità il criterio di formattazione tramite `sbt scalafmtCheckAll`, la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
@@ -63,14 +41,6 @@ La Continuous Delivery viene avviata da un push su `main`. Il primo job legge `r
 Soltanto dopo il completamento della matrice, il job di release genera con Quarkdown il PDF della relazione, scarica i tre JAR e crea una GitHub Release dotata di tag versionato, note automatiche e tutti gli artefatti richiesti per la consegna. In parallelo, un workflow dedicato costruisce il sito documentale pubblicato tramite GitHub Pages. Il job genera con Quarkdown la relazione HTML e con `sbt doc` la Scaladoc del progetto, quindi assembla un unico artefatto Pages: la relazione occupa la radice del sito, mentre la documentazione delle API è disponibile nel percorso `/api`. In questo modo la descrizione progettuale e il riferimento tecnico versionato vengono distribuiti insieme a ogni aggiornamento di `main`.
 
 ![actions-architecture.png](assets/actions-architecture.png)
-
-### Scenario: Deploy in un ambiente di produzione containerizzato
-
-La pipeline realizzata distribuisce i JAR tramite GitHub Releases e pubblica la documentazione su GitHub Pages, non effettua quindi il deploy dell'applicazione su una macchina di produzione. Se fosse disponibile un ambiente di produzione basato su Docker, il workflow sarebbe esteso con un job eseguito dopo la build e i test. Il job scaricherebbe il JAR Linux già prodotto, costruirebbe un'immagine contenente Java 21 e tutte le dipendenze di runtime e la pubblicherebbe su GitHub Container Registry. L'immagine sarebbe identificata sia dal numero di versione sia dal commit, evitando di dipendere esclusivamente da un tag mutabile come `latest`.
-
-La macchina di produzione conserverebbe soltanto la configurazione esterna e i segreti necessari all'esecuzione. Il rilascio richiederebbe quindi due operazioni: `docker compose pull` per scaricare la nuova immagine e `docker compose up -d` per ricreare il container. In questo modo l'ambiente non compilerebbe il progetto e non installerebbe manualmente Java o le dipendenze applicative: ogni versione verrebbe eseguita nello stesso ambiente descritto dall'immagine.
-
-Un eventuale rollback consisterebbe nel ripristinare nel file Compose il tag della versione precedente e ricreare il container.
 
 ## Sessione, rendering ed eventi
 
