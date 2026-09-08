@@ -196,7 +196,7 @@ Con questa opzione viene abilitata la voce dedicata alle prestazioni nel pannell
 
 ### Risultati performance test
 
-I risultati delle misurazioni vengono presentati a terminale oppure mostrati in una finestra dedicata se avviati dall'interfaccia grafica. Per ciascun livello di carico analizzato, identificato dal numero di entità presenti, il report indica in millisecondi i tempi di risposta p50, p95 e p99. Il valore p50 corrisponde alla mediana, mentre i valori p95 e p99 indicano la soglia di tempo entro cui si conclude rispettivamente il 95% e il 99% delle iterazioni. Viene inoltre riportata la quota percentuale di iterazioni che ha rispettato il limite temporale previsto per il frame.
+I risultati delle misurazioni vengono presentati a terminale oppure mostrati in una finestra dedicata se avviati dall'interfaccia grafica. Per ciascun livello di carico analizzato, identificato dal numero di entità presenti, il report indica in millisecondi i tempi di risposta p50, p95 e p99. Il valore p50 corrisponde alla mediana, mentre i valori p95 e p99 indicano la soglia di tempo entro cui si conclude rispettivamente il 95% e il 99% delle iterazioni. Viene inoltre riportata la quota percentuale di iterazioni che ha rispettato il limite temporale previsto per il frame. Nel caso dello stress test, il report segnala anche il primo numero di entità per cui p95 supera il frame budget, identificandolo come breakpoint.
 
 ### Risultati valutazione dell'agente AI
 La valutazione dell'agente AI viene avviata eseguendo l'applicazione con il parametro `evaluate-model`, ad esempio con il comando `java -jar monad_core_2d.jar evaluate-model`. Tramite appositi flag da riga di comando è possibile indicare quale modello valutare e quale modello usare come valutatore:

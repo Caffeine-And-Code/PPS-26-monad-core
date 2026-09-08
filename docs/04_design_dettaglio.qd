@@ -56,13 +56,17 @@ Gli eventi `EngineEvent` attraversano la sequenza di calcolo insieme ai dati ela
 
 ![event-system.png](assets/log-system.png)
 
-## Game loop ed interpolazione
+## Game loop e interpolazione
 
 Il ciclo principale è progettato come un nucleo funzionale puro.
 
 `GameLoop` definisce l'interfaccia generale, mentre `GameLoopImpl` memorizza in modo immutabile lo stato operativo, la durata del passo, l'orario dell'ultimo calcolo e il tempo accumulato. Il motore fisico viene ricevuto tramite `using` applicando la Dependency Injection, e può essere sostituito senza toccare il ciclo, secondo il pattern Strategy. I companion object di `GameLoop` e `WorldBounds` usano costruttori controllati per validare i dati prima di creare un'istanza.
 
-Il metodo `GameLoopImpl.tick` limita il tempo trascorso alla durata massima prevista per un singolo fotogramma e lo aggiunge al tempo accumulato. Indicando con $ T $ la durata di un passo e con $ A' $ il tempo totale a disposizione, il numero di aggiornamenti completi e il tempo residuo sono dati da:
+Il metodo `GameLoopImpl.tick` limita il tempo trascorso alla durata massima prevista per un singolo fotogramma e lo aggiunge al tempo accumulato. Indicando con $ A $ il valore precedente dell'accumulatore, con $ t_c-t_p $ il tempo trascorso, con $ T_{max} $ la durata massima accettata per un fotogramma e con $ T $ la durata di un passo, il nuovo tempo disponibile è:
+
+$ A'=A+\min(t_c-t_p,T_{max}) $
+
+Il numero di aggiornamenti completi, il tempo residuo e il fattore di interpolazione sono quindi dati da:
 
 $ N=\left\lfloor\frac{A'}{T}\right\rfloor,\quad A_r=A'-NT,\quad \alpha=\frac{A_r}{T} $
 
@@ -72,7 +76,11 @@ L'enumerazione `LoopMode` separa le modifiche dalla simulazione attiva. Con il c
 
 Il componente `StateInterpolator` usa i due stati forniti dal ciclo per costruire la scena finale da disegnare. Gli elementi presenti in entrambi gli stati vengono interpolati, gli oggetti appena aggiunti provengono dallo stato più recente e quelli eliminati non vengono riproposti. Superfici e gruppi di appartenenza vengono letti direttamente dallo stato corrente. Anche i limiti del mondo in `WorldBounds` vengono calcolati e controllati nuovamente.
 
-La posizione usa un'interpolazione lineare. Per la direzione angolare, `Rotation` calcola la variazione scegliendo l'arco più breve e normalizza il valore, evitando rotazioni anomale nel passaggio vicino allo zero:
+La posizione usa un'interpolazione lineare:
+
+$ p'=p_0+\alpha(p_1-p_0) $
+
+Per la direzione angolare, `Rotation` calcola la variazione scegliendo l'arco più breve e normalizza il valore, evitando rotazioni anomale nel passaggio vicino allo zero:
 
 $ \Delta\theta=((\theta_1-\theta_0+540^\circ)\bmod360^\circ)-180^\circ,\quad \theta'=normalize(\theta_0+\alpha\Delta\theta) $
 
@@ -96,13 +104,15 @@ La regola `SurfaceDynamicsRule` applica gli effetti delle superfici agli element
 
 Per ciascun contatto vengono gestiti fino a tre effetti:
 
-- `appliedForce` genera un'accelerazione basata sulla massa dell'oggetto,
+- `appliedForce` calcola il rapporto tra forza e massa e lo applica come incremento della velocità a ogni passo,
 - `frictionIndex` rallenta la velocità lineare in base al tempo trascorso,
 - lo stesso attrito riduce anche la velocità angolare, se presente.
 
-Indicando con $ \mu $ il valore di attrito e con $ \Delta t $ il tempo in secondi, le due formule applicate sono:
+Indicando con $ \Delta v_F $ l'incremento prodotto dalla forza, con $ \mu $ il valore di attrito e con $ \Delta t $ il tempo in secondi, le formule applicate sono:
 
-$ a=\frac{F}{m},\quad f=\max(0,1-\mu\Delta t) $
+$ \Delta v_F=\frac{F}{m},\quad v'=v+\Delta v_F,\quad f=\max(0,1-\mu\Delta t) $
+
+Nell'implementazione l'incremento dovuto alla forza non viene riscalato rispetto a $ \Delta t $, mentre il fattore $ f $ viene applicato alla velocità lineare e a quella angolare in funzione del tempo trascorso.
 
 I campi non indicati non producono variazioni. L'oggetto di supporto `PhysicsUtil` gestisce la conversione dei tempi, il calcolo dell'accelerazione e l'effetto degli attriti. I contatti multipli vengono raggruppati in una mappa immutabile, e `SceneEntitiesUpdate` aggiorna nello stato solo gli elementi che hanno subito modifiche. La mancanza di un valore di massa necessario o un intervallo di tempo negativo generano un errore di tipo `PhysicsError`.
 
@@ -125,11 +135,11 @@ La correzione del contatto si svolge in due momenti:
 - la sovrapposizione viene rimossa spostando il solo oggetto mobile in caso di contatto con un corpo fisso, oppure distribuendo lo spostamento in base alle masse se entrambi gli oggetti possono muoversi,
 - la risposta elastica aggiorna la velocità lineare e l'eventuale velocità di rotazione.
 
-Il modulo `BounceResponse` calcola la reazione elastica lineare. Se è presente una rotazione, `CollisionVelocityDelta` determina la velocità nel punto di contatto, il momento d'inerzia e la forza d'impatto. La struttura `VelocityDelta` raccoglie le variazioni lineari e angolari da assegnare all'oggetto.
+Il modulo `BounceResponse` calcola la reazione elastica lineare. Se è presente una rotazione, `CollisionVelocityDelta` determina la velocità nel punto di contatto, il momento d'inerzia e l'impulso dell'impatto. La struttura `VelocityDelta` raccoglie le variazioni lineari e angolari da assegnare all'oggetto.
 
-La velocità nel punto di contatto include anche la componente dovuta alla rotazione:
+La velocità angolare è memorizzata in gradi al secondo e viene convertita in radianti al secondo prima di calcolare la componente tangenziale. Indicando con $ r=(r_x,r_y) $ il vettore dal centro del corpo al punto di contatto:
 
-$ v_{contact}=v+\omega(-r_y,r_x) $
+$ \omega_r=\omega_d\frac{\pi}{180},\quad v_{contact}=v+\omega_r(-r_y,r_x) $
 
 Per cerchi e rettangoli con densità costante vengono calcolati i rispettivi momenti d'inerzia:
 
@@ -138,6 +148,12 @@ $ I_{circle}=\frac{1}{2}mr^2,\quad I_{rectangle}=\frac{1}{12}m(h^2+l^2) $
 Con $ v_n $ velocità di avvicinamento lungo la normale, l'impulso generato risulta:
 
 $ j=\frac{-2v_n}{M^{-1}_{eff}} $
+
+La massa effettiva inversa comprende sia la traslazione sia la rotazione dei due corpi:
+
+$ M^{-1}_{eff}=m_1^{-1}+m_2^{-1}+\frac{(r_1\times n)^2}{I_1}+\frac{(r_2\times n)^2}{I_2} $
+
+Il contributo relativo a un grado di libertà vale zero quando il corpo non prevede la corrispondente velocità lineare o angolare.
 
 Il componente `SceneEntitiesUpdate` salva nello stato i dati corretti. Per ogni contatto la regola genera inoltre l'evento `CollisionDetected` indicando come bersaglio `CollisionTarget.Entity`.
 
@@ -183,7 +199,7 @@ $ p'=p+v\Delta t,\quad \theta'=normalize(\theta+\omega\Delta t) $
 
 La ricerca del percorso locale viene usata da `EnemyAttractionRule` per decidere se un elemento può puntare direttamente al nemico o se deve aggirare un ostacolo. Questo sistema non genera una mappa completa del tragitto, ma individua solo il punto successivo utile in base agli ostacoli presenti nell'istante corrente.
 
-Il componente `VertexFinder` converte ogni forma in una serie di coordinate nello spazio. `CircleVertexes` crea punti distribuiti lungo la forma circolare, `RectangleVertexes` trova i vertici del rettangolo considerando posizione e orientamento, mentre `PointOnCircle` calcola i singoli punti sulla circonferenza. Grazie a queste informazioni, `RayIntersection` può analizzare gli elementi come una serie di segmenti lineari.
+Il componente `VertexFinder` converte la `Shape2D` associata a ogni entità in una serie di coordinate nello spazio. `CircleVertexes` approssima una forma circolare mediante sedici punti distribuiti sulla circonferenza, `RectangleVertexes` trova i vertici del rettangolo considerando posizione e orientamento, mentre `PointOnCircle` calcola i singoli punti sulla circonferenza. Grazie a queste informazioni, `RayIntersection` può analizzare gli elementi come una serie di segmenti lineari.
 
 La procedura in `RayCast` segue questi passaggi:
 
@@ -198,29 +214,33 @@ Il modulo `RayIntersection` valuta sia gli incroci con i lati delle forme sia la
 
 Dati $ R(t)=o+td $, $ S(u)=a+us $ e $ q=a-o $, i parametri calcolati sono:
 
-$ t=\frac{q\times s}{d\times s},\quad u=\frac{q\times d}{d\times s},\quad t\geq0,\quad 0\leq u\leq1 $
+$ t=\frac{q\times s}{d\times s},\quad u=\frac{q\times d}{d\times s},\quad t>\varepsilon,\quad 0\leq u\leq1 $
 
-Il componente `WaypointFinder` sfrutta i punti di tangenza nel caso di ostacoli circolari. Per le forme rettangolari sceglie invece i due vertici con la deviazione angolare minima e massima rispetto alla linea centrale. La funzione `RayCast.actualWaypoint` allontana questi punti dall'ostacolo tenendo conto del raggio del corpo in corsa. Infine, `SizeHelper` controlla che l'intero ingombro della forma rimanga all'interno dell'area di gioco.
+Il componente `WaypointFinder` sfrutta i punti di tangenza nel caso di ostacoli circolari. Per le forme rettangolari sceglie invece i due vertici con la deviazione angolare minima e massima rispetto alla linea centrale. La funzione `RayCast.actualWaypoint` allontana questi punti dall'ostacolo tenendo conto del raggio d'ingombro del corpo in movimento. Per un cerchio coincide con il raggio, mentre per un rettangolo corrisponde a metà della diagonale. Infine, `SizeHelper` controlla che l'intero ingombro della forma rimanga all'interno dell'area di gioco.
 
 Se la traiettoria non tocca alcun elemento viene generato `RayIntersectedNothing`. Se il codice dell'oggetto rilevato non corrisponde più a un elemento valido viene restituito `RayIntersectedAMissingEntity`. Quando tutti i punti di passaggio ricadono fuori dai confini il risultato è `None`, e l'elemento prosegue lungo la direzione attuale.
 
 ## Performance
 
-La gestione delle prestazioni adotta i principi Ports and Adapters e Dependency Inversion. Il livello applicativo mette a disposizione la porta `PerformanceExecutor`, mentre `PerformanceCli` la realizza nel livello di infrastruttura. `Launcher` passa l'implementazione tramite `given`, consentendo alla parte grafica di dipendere solo dall'interfaccia astratta. Il componente `PerformancePlan` usa il pattern Strategy per gestire le quattro prove previste. I moduli `EnginePerformance`, `PerformanceClock` e `PerformanceCli` svolgono la funzione di adattatori. L'interfaccia grafica estende i propri comandi tramite il componente `PerformanceGameEngineModePanel`, seguendo il pattern Decorator.
+La gestione delle prestazioni adotta i principi Ports and Adapters e Dependency Inversion. Il livello applicativo mette a disposizione la porta `PerformanceExecutor`, mentre `PerformanceCli` la realizza nel livello di infrastruttura. `Launcher` passa l'implementazione tramite `given`, consentendo alla parte grafica di dipendere solo dall'interfaccia astratta. `PerformancePlan` è un ADT che rappresenta i quattro esperimenti e conserva per ciascun caso soltanto i parametri significativi. I moduli `EnginePerformance`, `PerformanceClock` e `PerformanceCli` svolgono la funzione di adattatori. L'interfaccia grafica estende i propri comandi tramite il componente `PerformanceGameEngineModePanel`, seguendo il pattern Decorator.
 
 ![performance-classes](assets/performance-classes.drawio.png)
 
 I tipi `EntityCount`, `IterationCount`, `WarmupCount` e `GrowthFactor`, insieme alle classi `EntityRange`, `EntityGrowth` e `PerformanceConfig`, vengono istanziati mediante costruttori con validazione interna. In questo modo il modulo di esecuzione riceve solo valori, passi di crescita e limiti temporali già verificati. La struttura `PerformanceRequest` unisce il piano di test ai parametri operativi.
 
-Il componente `PerformanceRunner` riceve la funzione `PrepareWorkload` e un orologio `NanoClock`. Per ciascun numero di entità analizzato imposta il test, completa i cicli preparatori e misura i tempi rilevati. `PerformanceMetrics` calcola i valori p50, p95, p99 e la percentuale di esecuzioni rimaste entro il tempo limite. `PerformanceReport` abbina queste misure al numero di elementi testati e registra l'eventuale punto di arresto della prova di stress.
+Il componente `PerformanceRunner` riceve la funzione `PrepareWorkload` e un orologio `NanoClock`. Per ciascun numero di entità analizzato imposta il test, completa i cicli preparatori e misura i tempi rilevati. Il piano Load contiene un solo numero di entità, mentre Spike usa nell'ordine il valore iniziale, il massimo e nuovamente quello iniziale. Scalability segue l'intera progressione moltiplicativa, includendo il limite massimo. Stress usa la stessa progressione ma si arresta al primo punto in cui p95 supera il frame budget.
 
-Ordinando i valori temporali misurati, i percentili vengono ricavati con il metodo del valore più vicino. La percentuale di successo conta invece i test conclusi entro il limite di tempo stabilito:
+`PerformanceMetrics` calcola i valori p50, p95, p99 e il tasso di esecuzioni rimaste entro il tempo limite. `PerformanceReport` abbina queste misure al numero di elementi testati e registra l'eventuale punto di arresto della prova di stress.
+
+Ordinando i valori temporali misurati, i percentili vengono ricavati con il metodo del rango più vicino, considerando i campioni indicizzati a partire da uno. Il tasso di completamento è compreso tra zero e uno e conta le esecuzioni concluse entro il limite di tempo stabilito:
 
 $ P_p=L_{\lceil pN\rceil},\quad p\in\{0.50,0.95,0.99\} $
 
 $ completionRate=\frac{|\{i\mid L_i\leq B\}|}{N} $
 
-La classe `DeterministicScene` crea uno scenario di prova riproducibile, popolato da elementi provvisti di forma, massa, salute, danno, gruppo e parametri di movimento. `EnginePerformance` imposta la sessione e applica il carico di lavoro a un ciclo operativo reale di `EngineFacade`. Il modulo `PerformanceClock` fornisce il conteggio del tempo di sistema.
+Nel report questo tasso viene moltiplicato per cento e mostrato come percentuale.
+
+La classe `DeterministicScene` crea uno scenario di prova riproducibile, popolato da elementi provvisti di forma, massa, salute, danno, gruppo e parametri di movimento. `EnginePerformance` imposta la sessione e applica il carico di lavoro a un ciclo operativo reale di `EngineFacade`. Il modulo `PerformanceClock` fornisce un orologio monotono in nanosecondi basato su `System.nanoTime`.
 
 Il componente `PerformanceCli` traduce i comandi della console in una richiesta controllata, esegue il test e presenta i risultati formattati. `PerformanceMode` sfrutta la medesima porta sia per i comandi su console sia per richiamare la vista grafica. `PerformanceGameEngineModePanel` legge le regole attive dal motore e avvia la misurazione su un thread separato rispetto a quello dell'interfaccia JavaFX.
 

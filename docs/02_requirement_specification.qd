@@ -93,14 +93,14 @@ Glossario:
     2. limitare le risposte dell'agente esclusivamente a temi riguardanti l'applicazione, senza fornire risposte a richieste estranee.
 4. Notificare graficamente all'utente ogni errore verificatosi durante l'utilizzo dell'applicativo, evitando chiusure inattese.
 5. Poter valutare le prestazioni dell'engine (simulazione delle entità sulla base delle regole fisiche scelte):
-    1. poter impostare i parametri con cui eseguire le valutazioni. I parametri comuni tra tutte le tipologie di test sono: numero di entità, numero di warm-up (cicli preparatori prima del test), frame budget (limite in millisecondi che un'iterazione deve rispettare) e numero di iterazioni per ogni benchmark (ogni valutazione viene ripetuta per il numero di iterazioni indicato e restituisce il valore medio),
-    2. poter eseguire un `load test` (verifica se, con il carico specificato, il tempo di calcolo rientra o meno nella percentuale di frame budget),
+    1. poter impostare i parametri con cui eseguire le valutazioni. I parametri comuni tra tutte le tipologie di test sono: numero di entità, numero di warm-up (cicli preparatori prima del test), frame budget (limite in millisecondi che un'iterazione deve rispettare) e numero di iterazioni per ogni benchmark. Le misurazioni riportano i percentili p50, p95 e p99, oltre alla quota di iterazioni concluse entro il frame budget,
+    2. poter eseguire un `load test` (verifica, con il carico specificato, i tempi di calcolo e la quota di iterazioni che rientra nel frame budget),
     3. poter eseguire uno `spike test` (esegue tre valutazioni: sul numero iniziale di entità, sul numero massimo e nuovamente su quello iniziale, simulando un picco improvviso di carico),
-    4. poter eseguire uno `stress test` e uno `scalability test`, entrambi basati su un numero massimo di entità e su un fattore di crescita. Lo stress test si arresta non appena il frame budget scende allo 0%, mentre lo scalability test prosegue fino al raggiungimento del limite massimo stabilito.
+    4. poter eseguire uno `stress test` e uno `scalability test`, entrambi basati su un numero massimo di entità e su un fattore di crescita. Lo stress test si arresta al primo numero di entità per cui il percentile p95 supera il frame budget, mentre lo scalability test prosegue fino al raggiungimento del limite massimo stabilito.
 6. Poter valutare le prestazioni del modello LLM mediante benchmark integrati nell'applicazione, basati su compiti mirati all'uso degli strumenti messi a disposizione dell'agente.
 
 ## Requisiti non funzionali
-Per quanto riguarda l'engine, i requisiti non funzionali riguardano il costo prestazionale dell'esecuzione di un ciclo di calcolo della fisica per ogni elemento (entità, superficie e team) presente nella scena. L'applicazione deve mettere a disposizione strumenti di performance testing che consentano a ogni utente di misurare le prestazioni del motore sul proprio hardware.
+Per quanto riguarda l'engine, i requisiti non funzionali riguardano il costo prestazionale dell'esecuzione di un ciclo di calcolo della fisica al crescere del numero di entità, mantenendo fissa la configurazione di superfici e team della scena di prova. L'applicazione deve mettere a disposizione strumenti di performance testing che consentano a ogni utente di misurare le prestazioni del motore sul proprio hardware.
 
 Per quanto riguarda la GUI, i requisiti non funzionali riguardano la fluidità e la semplicità d'uso:
 - l'esperienza d'uso deve essere fluida,

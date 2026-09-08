@@ -10,12 +10,12 @@ Il mio contributo al progetto ha riguardato principalmente i seguenti campi, con
   - `engine/simulator/StateInterpolator.scala`
   - `engine/model/WorldBounds.scala`
 - Motore fisico e sistema di ray casting
-  - la totalità del package `engine/physics`, salvo una minore eccezione sui file `PhysicsContext` e `DamageApplicationRule`, sviluppati da Fabio Fattori e successivamente integrati nel sottosistema
+  - la totalità del package `engine/physics`, ad eccezione dei contributi di Fabio Fattori a `PhysicsContext` e `DamageApplicationRule`, successivamente integrati nel sottosistema
 - Performance testing
   - i package `performance` nei layer `simulator/domain`,
     `simulator/application`, `simulator/infrastructure` e `simulator/presentation`
 
-Ad aggiungersi a questi, la collaborazione con Mattia Senni ha interessato il modello delle entità e
+A questi ambiti si aggiunge la collaborazione con Mattia Senni, che ha interessato il modello delle entità e
 la collision detection originaria. Su quella base, sono stati aggiunti supporto
 alla rotazione, collision point e algoritmi per forme ruotate. I tool e gli
 adapter LangChain4j sono stati estesi affinché rotazione e velocità angolare attraversassero anche il
@@ -53,7 +53,7 @@ raggiunto un errore, gli elementi successivi non producono effetti.
 
 #### Tipi opachi e smart constructor
 
-Quantità semanticamente diverse ma rappresentate da interi sono stati definiti come opaque type.
+Quantità semanticamente diverse ma rappresentate da interi sono state definite come opaque type.
 Ne sono un esempio `EntityCount`, `IterationCount`, `WarmupCount` e `GrowthFactor`.
 La validità può essere ottenuta soltanto tramite `from`. Fuori
 dal companion la rappresentazione rimane nascosta.
@@ -64,8 +64,8 @@ crescita mantengono costruttori distinti perché hanno limiti differenti.
 #### ADT e pattern matching
 
 `LoopMode`, `PerformanceKind`, `PerformancePlan` ed errori chiusi rappresentano
-insiemi finiti di casi. Il pattern matching rende visibile la totalità delle
-strategie e lascia al compilatore il controllo di esaustività.
+insiemi finiti di casi. Il pattern matching rende visibile la totalità dei
+casi e lascia al compilatore il controllo di esaustività.
 
 La scelta di un ADT per `PerformancePlan` risolve anche una proprietà funzionale:
 uno stato non valido o privo di significato non è rappresentabile. Un Load non
@@ -81,7 +81,7 @@ detector, clock o executor controllati.
 
 `PerformanceExecutor` costituisce il port del layer Application usato da
 Presentation per avviare gli esperimenti. `PerformanceCli`, collocato in
-Infrastructure, lo implementa; `Launcher` effettua il collegamento nel composition
+Infrastructure, lo implementa. `Launcher` effettua il collegamento nel composition
 root. La GUI può quindi usare `runWithRules` e i dati condivisi dei comandi senza
 importare l'adapter concreto.
 
@@ -112,7 +112,7 @@ un ciclo a stack costante.
 #### Extension method, infix e union type
 
 Le extension method aggiungono operazioni ai tipi opachi e ai valori geometrici.
-Un esempio esplicativo può essere l'individuazione dei vertici di una `Shape` nel contesto del pathfinding.
+Un esempio esplicativo è l'individuazione dei vertici della `Shape2D` associata a un'entità nel contesto del pathfinding.
 
 Il combinatore infix `+` esprime la concatenazione di due regole. Operazioni come
 prodotto scalare, prodotto vettoriale, distanza e rotazione mantengono le formule
