@@ -30,11 +30,11 @@ Lo sviluppo ha seguito il ciclo Red–Green–Refactor del Test-Driven Developme
 
 ## Strumenti di test, build e continuous integration
 
-- **SBT** ha gestito compilazione, dipendenze, suite standard, configurazione dei test LLM, assembly e Scaladoc;
-- **ScalaTest** e **ScalaMock** hanno supportato test comportamentali, table-driven e isolamento dei collaboratori;
-- **Stryker4s** ha verificato l'efficacia delle asserzioni dell'engine mediante mutation testing;
-- **ScalaFX/JavaFX**, helper dedicati e snapshot strutturali e visuali hanno verificato la GUI;
-- **GitHub** ha ospitato repository, pull request, branch policy e release;
-- **GitHub Actions** ha eseguito controlli su formattazione e suite automatizzata, usando Xvfb per i test grafici, e ha prodotto fat JAR, relazione e documentazione delle API.
+- SBT ha gestito compilazione, dipendenze, suite standard, configurazione dei test LLM, assembly e Scaladoc;
+- ScalaTest e ScalaMock hanno supportato test comportamentali, table-driven e isolamento dei collaboratori;
+- Stryker4s ha verificato l'efficacia delle asserzioni dell'engine mediante mutation testing;
+- ScalaFX/JavaFX, helper dedicati e snapshot strutturali e visuali hanno verificato la GUI;
+- GitHub ha ospitato repository, pull request, branch policy e release;
+- GitHub Actions ha eseguito controlli su formattazione e suite automatizzata, usando Xvfb per i test grafici, e ha prodotto fat JAR, relazione e documentazione delle API.
 
 La suite standard è rimasta indipendente da Ollama; le verifiche con un modello reale sono state collocate nella configurazione separata `llmIntegrationTest`. In questo modo una pull request ha potuto ricevere un esito deterministico, mentre il comportamento emergente dell'assistente è stato controllato esplicitamente negli ambienti predisposti.
