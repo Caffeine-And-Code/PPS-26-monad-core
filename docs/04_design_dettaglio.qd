@@ -14,7 +14,6 @@ All'interno dell'engine gni sottodominio adotta la rappresentazione dei dati pi�
 
 ![collision_detection_class_diagram.mermaid.png](assets/collision_detection_class_diagram.mermaid.png)
 
-
 ## Pannello "Chat With Jimmy"
 
 Il pannello "Chat With Jimmy" è organizzato tramite il pattern MVVM: `AiModelChatPanel` costruisce la View, `ChatPanelViewModel` coordina gli eventi e `ChatPanelState` rappresenta il Model. Lo stato è modellato tramite il pattern State come un'enumerazione di valori immutabili `Ready`, `Waiting` ed `Error`, rendendo esplicite le transizioni e impedendo combinazioni di dati non valide. `ChatPanelActions` costituisce il functional core: ogni action è una funzione pura che riceve lo stato corrente e restituisce un nuovo `ChatPanelState`. L'unico punto in cui lo stato persiste è il `ChatPanelViewModel`, che lo mantiene in un `ObjectProperty` di `ScalaFX`, collega gli eventi della GUI con le relative actions del `ChatPanelActions`, coordina la chiamata all'`AiAgent` quando viene mandato un prompt ed infine aggiorna lo stato della pagina. La View osserva la property tramite il pattern Observer e traduce ogni nuovo stato nei model dei componenti `AiPanelHeader`, `MessageBox` e `PromptComposer`. `AiAgent` è la porta definita nel layer `application` dalla quale dipende il ViewModel; il layer `infrastructure` la implementa con `Langchain4jAiAgent`, un Adapter che traduce comandi e risultati di dominio nelle operazioni di LangChain4j, mentre `Langchain4jAgentFactory` ne incapsula la costruzione e la configurazione per Ollama.
@@ -32,3 +31,51 @@ La valutazione del modello LLM segue i pattern Ports and Adapters e Dependency I
 ## Performance
 
 ## Game loop ed interpolazione
+
+## Regola d'applicazione del danno e riconoscimento della "morte"
+
+La `DamageApplicationRule` gestisce l'applicazione del danno in seguito a una collisione. Le collisioni possono avvenire tra due entità oppure tra un'entità e una superficie; in entrambi i casi, il danno viene applicato tramite la funzione `applyDamage` dell'entità coinvolta.
+
+L'applicazione può produrre tre risultati:
+
+- l'entità conserva una quantità di vita maggiore di zero e viene aggiornata nello `State`;
+- la vita raggiunge zero o un valore inferiore e l'entità viene rimossa dalla scena;
+- l'entità non possiede una salute a cui applicare il danno e rimane quindi invariata.
+
+La "morte" di un'entità viene quindi rappresentata direttamente dalla sua rimozione dallo `State`, senza introdurre uno stato o un flag aggiuntivo.
+
+Al termine della regola, il confronto tra lo stato iniziale e quello risultante permette di generare l'`EngineEvent` appropriato: `EntityUpdated` se l'entità è stata modificata, `EntityRemoved` se è stata eliminata, oppure nessun evento se è rimasta invariata.
+
+![Flusso della regola di applicazione del danno](assets/damage-rule.png)
+
+## CI/CD
+
+La Continuous Integration esegue la suite Scala per ogni push su qualsiasi branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX. Un workflow separato applica con le stesse modalità il criterio di formattazione tramite `sbt scalafmtCheckAll`; la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
+
+La Continuous Delivery viene avviata da un push su `main`. Il primo job legge `release_version` da `project/build.properties`, recupera l'ultima release tramite GitHub CLI e accetta soltanto una versione strettamente maggiore. La build utilizza quindi una matrice di runner Linux, Windows e macOS: ogni piattaforma esegue `sbt assembly`, rinomina il fat JAR includendo la versione e il sistema operativo e pubblica l'artefatto intermedio. Questa distinzione è necessaria perché la distribuzione include i moduli JavaFX specifici di ciascuna piattaforma.
+
+Soltanto dopo il completamento della matrice, il job di release genera con Quarkdown il PDF della relazione, scarica i tre JAR e crea una GitHub Release dotata di tag versionato, note automatiche e tutti gli artefatti richiesti per la consegna. In parallelo, un workflow dedicato costruisce il sito documentale pubblicato tramite GitHub Pages. Il job genera con Quarkdown la relazione HTML e con `sbt doc` la Scaladoc del progetto, quindi assembla un unico artefatto Pages: la relazione occupa la radice del sito, mentre la documentazione delle API è disponibile nel percorso `/api`. In questo modo la descrizione progettuale e il riferimento tecnico versionato vengono distribuiti insieme a ogni aggiornamento di `main`.
+
+![actions-architecture.png](assets/actions-architecture.png)
+
+### Scenario: Deploy in un ambiente di produzione containerizzato
+
+La pipeline realizzata distribuisce i JAR tramite GitHub Releases e pubblica la documentazione su GitHub Pages; non effettua quindi il deploy dell'applicazione su una macchina di produzione. Se fosse disponibile un ambiente di produzione basato su Docker, il workflow sarebbe esteso con un job eseguito dopo la build e i test. Il job scaricherebbe il JAR Linux già prodotto, costruirebbe un'immagine contenente Java 21 e tutte le dipendenze di runtime e la pubblicherebbe su GitHub Container Registry. L'immagine sarebbe identificata sia dal numero di versione sia dal commit, evitando di dipendere esclusivamente da un tag mutabile come `latest`.
+
+La macchina di produzione conserverebbe soltanto la configurazione esterna e i segreti necessari all'esecuzione. Il rilascio richiederebbe quindi due operazioni: `docker compose pull` per scaricare la nuova immagine e `docker compose up -d` per ricreare il container. In questo modo l'ambiente non compilerebbe il progetto e non installerebbe manualmente Java o le dipendenze applicative: ogni versione verrebbe eseguita nello stesso ambiente descritto dall'immagine.
+
+Un eventuale rollback consisterebbe nel ripristinare nel file Compose il tag della versione precedente e ricreare il container.
+
+## Sessione, rendering ed eventi
+
+`EngineFacade` nasconde il game loop e permette al client di ragionare per sessioni. È una facade funzionale per la quale ogni operazione riceve una sessione e restituisce quella successiva, senza stato globale. Il client vede un solo risultato contenente i valori che deve adottare e non dipende dai dettagli interni.
+
+![facade-flux.png](assets/engine-facade-operative-flux.png)
+
+Il rendering è diviso in pianificazione pura e interpretazione grafica. `RendererManager` legge uno stato e, tramite un `Painter` sostituibile, produce un `Vector[DrawCommand]` ordinato con superfici prima delle entità. `DrawCommand` è un ADT, soltanto `ShapePainter`, nel layer Presentation, lo interpreta su ScalaFX. Un `Painter` alternativo può quindi riusare lo stato e piano di disegno senza importare JavaFX nell'engine.
+
+![renderer-architecture.png](assets/renderer-architecture.png)
+
+Gli `EngineEvent` percorrono la pipeline insieme ai risultati. Le regole accumulano eventi senza pubblicare side effect, il game loop unisce quelli dei diversi fixed update e mondo e runtime li inoltrano al callback scelto dal composition root. Formatter e logger restano esterni all'engine.
+
+![event-system.png](assets/log-system.png)
