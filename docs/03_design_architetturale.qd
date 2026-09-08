@@ -117,16 +117,50 @@ Descrizione degli elementi della GUI:
 - se il pannello "Chat with Jimmy" è in stato loading, non sarà possibile scrivere o inviare prompt e comparirà un messaggio dall'agente AI con scritto "Loading ..."
 - in caso di errore durante l'elaborazione della risposta dell'agente AI comparirà un messaggio da parte dell'agente AI che spiega l'errore avvenuto, sarà comunque possibile inviargli altri prompt 
 
+### Esecuzione dei performance test
+
+È possibile lanciare i test sulle performance tramite SBT o tramite il fat JAR. I test disponibili sono:
+- Load: esegue un test con un solo livello di carico. Utile per misurare le latenze dell'engine con un numero di entità specifico
+- Stress: esegue un test con un numero di entità crescente fino a che il p95 non supera il budget temporale specificato. Utile per misurare il numero massimo di entità che l'engine riesce a gestire entro il budget temporale specificato
+- Spike: esegue un test con un numero di entità crescente fino al massimo specificato e poi torna al numero iniziale. Utile per misurare le latenze dell'engine con un numero di entità crescente e poi tornare al numero iniziale
+- Scalability: esegue un test con un numero di entità crescente fino al massimo specificato. Utile per misurare le latenze dell'engine con un numero di entità crescente e per misurare la scalabilità dell'engine in base al fattore di crescita specificato
+
+Tramite CLI, i test sono invocabili tramite comandi e opzioni quali:
+
+```shell
+sbt "run performance-load-test --entities 100 --iterations 20 --warmups 5 --frame-budget-ms 16"
+
+sbt "run performance-stress-test --entities 100 --max-entities 1600 --growth-factor 2 --iterations 20 --warmups 5 --frame-budget-ms 16"
+
+sbt "run performance-spike-test --entities 100 --max-entities 1600 --iterations 20 --warmups 5 --frame-budget-ms 16"
+
+sbt "run performance-scalability-test --entities 100 --max-entities 1600 --growth-factor 2 --iterations 20 --warmups 5 --frame-budget-ms 16"
+```
+
+Sempre tramite CLI, è possibile eseguire i test direttamente sul Fat JAR generato:
+
+```shell
+java -jar $jar performance-load-test `
+  --entities 100 --iterations 20 --warmups 5 --frame-budget-ms 16
+```
+
+È inoltre possibile lanciare l'applicazione GUI con la seguente opzione:
+
+```shell
+java -jar $jar --performance
+```
+
+Con questa opzione compare il menu prestazionale nel pannello motore. Il tipo di test
+selezionato determina i campi specifici visibili, mentre entità iniziali, iterazioni, warm-up
+e frame budget rimangono comuni.
+
 ### Risultati performance test
+
 I risultati di un esperimento di performance vengono restituiti tramite un report sulla CLI oppure, in caso di esecuzione dalla GUI,
 visualizzati in una schermata dedicata. Per ogni livello di carico analizzato, identificato dal numero di entità, il report indica in
 millisecondi le latenze p50, p95 e p99: il p50 rappresenta la mediana, mentre p95 e p99 indicano i tempi entro i quali si conclude
 rispettivamente il 95% e il 99% delle iterazioni. Viene inoltre riportata la percentuale di iterazioni completate entro
 il budget temporale specificato.
-- L’esperimento Load analizza un solo livello di carico
-- Spike ne considera tre, corrispondenti al valore iniziale, al massimo e nuovamente all’iniziale
-- Scalability segue la progressione determinata dall’intervallo e dal fattore di crescita
-- Stress può invece interrompersi al primo superamento del budget da parte del p95, segnalando il relativo breakpoint.
 
 ### Risultati valutazione dell'agente AI
 La valutazione dell'agente AI consiste nel far partire l'applicativo tramite passando il parametro `evaluate-model` (esempio `java --jar monad_core_2d.jar evaluate-model`). È inoltre possibile specificare quale modello AI valutare, e quale modello utilizzare come giudice delle valutazioni tramite i flag passati via riga di comando `--agent-model-url` (URL di ollama del modello da valutare, default "http://localhost:11434"), `--agent-model` (nome del modello da valutare, default "gemma4:e4b"), `--judge-model-url` (URL di ollama del modello giudice, default "http://localhost:11434"), `--judge-model` (nome del modello giudice, default "gemma4:e4b").
