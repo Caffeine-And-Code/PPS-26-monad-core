@@ -29,9 +29,8 @@ private[physics] object KinematicsRule:
      *   updated physics state, or the first [[PhysicsError]]
      */
     override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
+      val entities = context.state.allEntities.filterNot(_.isFixed)
       for
-        entities = context.state.allEntities.filterNot(_.isFixed)
-
         updatedEntities <- applyKinematics(context.state, entities, context.dt)
 
         updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)

@@ -22,9 +22,10 @@ class EnginePerformanceTest extends AnyFunSuite with Matchers:
 
   private val Duration = 1_000L
 
-  private def request(kind: PerformanceKind = PerformanceKind.Load): PerformanceRequest =
-    val config = PerformanceConfig.from(1, 2, 2, 1, 0, 16L).value
-    PerformanceRequest(kind, config)
+  private def request(): PerformanceRequest =
+    val plan   = PerformancePlan.load(1).value
+    val config = PerformanceConfig.from(1, 0, 16L).value
+    PerformanceRequest(plan, config)
 
   private def clock(): SequenceNanoClock =
     SequenceNanoClock(Vector(0L, Duration))
