@@ -157,3 +157,17 @@ LazyList.unfold(Option(engine.solve(goal))):
 Le soluzioni vengono infine raccolte in tabelle ScalaTest, rendendo possibile, durante la stesura dei test, l'attraversamento di tutti i casi generati senza dichiararli manualmente.
 
 Lo stesso approccio viene utilizzato per verificare tutte le coppie di notifiche tramite `GeneratedNotificationCombos.cases`. Questa integrazione evita la duplicazione manuale dei prodotti cartesiani e mantiene separata la definizione logica dei dati dalla loro verifica.
+
+## SNAPSHOT
+Il sistema di snapshot della GUI: `SceneGraphSerializer` converte ricorsivamente il scene graph JavaFX in una rappresentazione JSON stabile, mentre `SnapshotTesting` confronta sia questa struttura sia le immagini PNG versionate. Il confronto visivo normalizza le dimensioni dipendenti dal sistema operativo, ammette una tolleranza esplicita per canale rispetto alle differenze di antialiasing e misura la percentuale di pixel difformi. Gli assert dedicati allo snapshot testing vengono utilizzati, ad esempio, nel seguente modo:
+
+![snapshots-code.png](assets/snapshots-code.png)
+
+La generazione di snapshot ed il loro versionamento aggiunge ulteriore qualità alla suite di test grazie al controllo mirato della GUI, non solo sul piano grafico ma anche sul piano architetturale permettendo il controllo ed il rilevamento di elementi inaspettati non visibili.
+
+## ARCHITECTURE
+Data le architetture dei singoli package e la relazione tra essi, abbiamo pensato di sviluppare delle modalità di controllo automatico _red-green_. `ArchitectureChecker` analizza gli import tra i package e fornisce matcher ScalaTest con cui si può verificare l'indipendenza dell'engine, la direzione delle dipendenze tra domain, application, infrastructure e presentation e il confinamento di ScalaFX e JavaFX nel layer grafico.
+
+Grazie a test di questo genere la gestione ed il rispetto dell'architettura adottata diventa uno vero e proprio standard di progetto.
+
+![architecture-testing-code.png](assets/architecture-testing-code.png)
