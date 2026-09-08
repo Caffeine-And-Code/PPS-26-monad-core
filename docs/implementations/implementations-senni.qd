@@ -4,19 +4,97 @@ Nella realizzazione del progetto le parti realizzate da Senni Mattia sono:
 - sviluppo del pannello chat con assistente AI per la GUI
 - sviluppo dell'applicativo di testing e valutazione dell'assistente AI
 
-Ho inoltre contribuito insieme a Fattori allo sviluppo dell'architettura dell'applicazione GUI, proponendo e progettando una struttura ispirata alla clean architecture poiché l'applicazione avrebbe usato sia risorse esterne sia componenti sostituibili, quali il game engine. Ho inoltre proposto l'utilizzo del pattern MVVM per la gestione delle interfacce grafiche di ScalaFX.
-Ho inoltre prototipato la gestione dei componenti della GUI tramite un pattern di iterazione basato su state e action, ispirato dalle librerie più popolari per la gestione dello stato di React JS, introducendo inoltre una via di comunicazione tra componente figlio e componente padre (ispirata dai props di react) e una via di comunicazione da componente padre a componente figlio.
+Ho inoltre contribuito allo sviluppo dell'architettura dell'applicazione GUI, proponendo e progettando una struttura ispirata alla clean architecture poiché l'applicazione avrebbe usato sia risorse esterne sia componenti sostituibili, quali il game engine. Ho inoltre proposto l'utilizzo del pattern MVVM per la gestione delle interfacce grafiche di ScalaFX.
+Ho inoltre prototipato la gestione dei componenti della GUI tramite un pattern di iterazione basato su state e action, ispirato dalle librerie più popolari per la gestione dello stato di `React JS` (`Zustand JS`), introducendo inoltre una via di comunicazione tra componente figlio e componente padre (ispirata dai props di react) e una via di comunicazione da componente padre a componente figlio necessaria per via della natura non reattiva di `scalaFX`.
 
-Alcuni elementi degni di nota legate alle implementazioni sono qui descritte.
+Alcuni elementi degni di nota legate sulle implementazioni non precedentemente citati sono qui descritte.
 
 ### Entità del game engine
 Nello sviluppo delle entità del game engine ho adottato degli *opaque type* per rappresentare valori di dominio quali `Health`, `Weight`, `LocatableId` e `TeamId`. La loro creazione è affidata a *smart constructor* che restituiscono `Either[EngineError, A]`, in maniera da evitare la rappresentazione di valori non validi e comporre le operazioni mediante `map`, `flatMap` e *for comprehension*, senza ricorrere a eccezioni per gli errori attesi. Entità, superfici e team sono immutabili e vengono aggiornati tramite copie validate; una factory generica permette la costruzione dei diversi `Locatable` validi, evitando di duplicare la logica di validazione.
 
+Lo *smart constructor* mantiene `Health` distinto da `Int` all'esterno del companion object e rende esplicito il fallimento nella firma. La factory di `Locatable` riceve la funzione costruttrice del tipo concreto e applica in un solo punto le validazioni comuni:
+
+```scala
+opaque type Health = Int
+
+object Health:
+  def apply(h: Int): Either[EngineError, Health] =
+    Either.cond(h > 0, h, HealthCannotBeNegativeOrZero(h))
+
+private def createGeneric[A](
+    id: String,
+    position: Vector2D,
+    shape: Shape2D,
+    rotation: Double
+)(build: (LocatableId, Vector2D, Shape2D, Double) => A): Either[EngineError, A] =
+  for {
+    locatableId <- LocatableId(id)
+    _           <- validate(position, rotation)
+  } yield build(locatableId, position, shape, rotation)
+```
+
 ### Sistema di rilevamento collisioni
 Nel sistema di rilevamento delle collisioni ho separato gli algoritmi relativi alle diverse coppie di forme tramite le type class `Collides[A, B]` e `Contains[A]`. Le loro implementazioni vengono fornite attraverso il costrutto `given`: negli unit test posso quindi sostituire gli algoritmi reali con dei mock e verificare i componenti in modo isolato. Lo stesso meccanismo permette a un utilizzatore esterno di continuare a usare le interfacce del sistema fornendo, sempre tramite un `given`, una propria implementazione degli algoritmi di collisione o contenimento. Per le forme generiche ho utilizzato il pattern matching per individuare la combinazione corretta e richiamare l'algoritmo specifico. Le operazioni sono esposte tramite extension method, così da mantenere il loro utilizzo semplice e vicino al linguaggio del dominio. Ho inoltre introdotto `Placed[A]` per rappresentare una forma e la sua posizione indipendentemente da `Entity` e `Surface`, evitando di legare gli algoritmi geometrici al concetto di entità, in modo che un dominio abbia le sue strutture dati e i suoi concetti per funzionare. Sopra questi algoritmi ho realizzato `CollisionDetector`, che offre al resto dell'engine un'unica interfaccia basata sui `Locatable` e si occupa di convertirli nella rappresentazione geometrica richiesta. In questo modo è possibile utilizzare espressioni come `entity hasCollisionWith surface` ed `entity isInside surface` senza esporre i dettagli del rilevamento.
+
+Il `given` costruisce il detector dalle istanze delle type class disponibili nel contesto. L'extension method richiede a sua volta un `CollisionDetector` come context parameter, combinando dependency injection statica e sintassi di dominio senza accoppiare `Locatable` agli algoritmi geometrici:
+
+```scala
+given fromGeometry(using
+    collidesInstance: Collides[Shape2D, Shape2D],
+    containsInstance: Contains[Shape2D]
+): CollisionDetector with
+  override def collision(first: Locatable, second: Locatable): Option[Collision] =
+    collidesInstance.checkCollision(first.placed, second.placed)
+
+extension (locatable: Locatable)
+  infix def hasCollisionWith(other: Locatable)(using
+      detector: CollisionDetector
+  ): Option[Collision] =
+    detector.collision(locatable, other)
+```
 
 ### Pannello chat con agente AI
 Per la parte AI ho separato i layer introducendo `AiAgent` come porta applicativa, senza dipendenze da LangChain4j. Le richieste sono rappresentate da comandi applicativi, mentre l'adapter nel layer infrastructure traduce le chiamate e gli errori della libreria nelle astrazioni interne `Future`, `Either` e `AgentResponse`. Anche i tool svolgono il ruolo di adapter: convertono le richieste del modello nei comandi di `World` e `GameEngineRuntime`, lasciando ai servizi applicativi la validazione e l'esecuzione. Nel livello di infrastructure c'è inoltre una factory che fornisce un'implementazione dell'`AiAgent` che utilizza la dipendenza esterna Langchain4j, il tutto viene instazionato nel Launcher che può configurare il factory e forinre un given dell'`AiAgent` di livello applicazione in modo che l'app utilizzi l'interfaccia fornita a livello applicazione ma realmente utilizza un'implementazione con dipenze esterne che diventano quindi facili da sostituire. Ho modellato gli stati del componenente `Ready`, `Waiting` ed `Error` tramite un ADT, così che ogni evento produca una transizione tra stati immutabili e non siano rappresentabili combinazioni incoerenti.
 
+L'`enum` limita gli stati ammessi dal pannello e le azioni li trasformano tramite funzioni pure. Il ViewModel applica ogni trasformazione con una funzione di ordine superiore, mentre gli effetti asincroni restano separati dalla logica di transizione:
+
+```scala
+enum ChatPanelState:
+  case Ready(messages: Seq[ChatMessage], prompt: String)
+  case Waiting(messages: Seq[ChatMessage])
+  case Error(messages: Seq[ChatMessage], prompt: String, error: String)
+
+def onAgentRespond(
+    state: ChatPanelState,
+    response: Either[BaseError, AgentResponse]
+): ChatPanelState =
+  state match
+    case waiting: ChatPanelState.Waiting =>
+      response match
+        case Right(answer) =>
+          waiting.toReady.addMessage(ChatMessage(answer.response, Assistant))
+        case Left(error) =>
+          waiting.toError(error.message)
+    case _ => state
+
+private def update(action: ChatPanelState => ChatPanelState): Unit =
+  state.value = action(state.value)
+```
+
 ### Valutatore dell'agente AI
 Per progettare questa parte mi sono ispirato alla documentazione di LangChain4j e all'articolo [Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/) di Hamel Husain. Il programma di valutazione riprende il *Level 2*: nell'evaluator ho costruito una pipeline funzionale con `Try`, `Either`, for-comprehension e collezioni immutabili, che crea un mondo isolato, esegue i prompt, confronta i tool call e usa un LLM-as-a-Judge per valutare risposta e stato finale. Tool call e risultati sono modellati come ADT, mentre un mapper converte e valida i tipi esterni di LangChain4j prima che entrino nel dominio; dataset e modalità di stampa sono inoltre trait di livello application, il che semplifica una possibile sostituzione della dipendenza da LangChain4j senza modificare il resto dell'applicazione.
+
+Nei test di integrazione ho realizzato una sintassi fluida per il Model-as-a-Judge tramite extension method e metodi `infix`. Il wrapper immutabile `JudgedResult` conserva insieme risposta e giudice, permettendo di esprimere il criterio come un'asserzione leggibile e tipata:
+
+```scala
+extension (result: Result[String])
+  infix def judgedBy(judge: LlmJudgeAssistant): JudgedResult =
+    JudgedResult(result, judge)
+
+final case class JudgedResult(result: Result[String], judge: LlmJudgeAssistant):
+  infix def shouldSatisfy(judgePrompt: String): Assertion =
+    val judgement = beJudgedBy(judge).withCriteria(judgePrompt)(result)
+    assert(judgement.matches, judgement.failureMessage)
+
+result judgedBy judgeAssistant shouldSatisfy judgeCriteria
+```
