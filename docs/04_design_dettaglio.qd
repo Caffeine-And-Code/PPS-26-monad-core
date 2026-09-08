@@ -4,7 +4,7 @@
 
 ## Modelli dell'engine
 
-I modelli dell'engine seguono il principio di rendere gli stati illegali non rappresentabili, codificando nei tipi gli invarianti dei valori di dominio. Gli opaque type `LocatableId`, `TeamId`, `Weight`, `Health` e `Damage` applicano il pattern Value Object e vengono creati tramite smart constructor che validano i valori, restituendo gli errori attesi con `Either`; allo stesso modo i costruttori non pubblici di `Shape2D`, `Entity`, `Surface`, `Team` e `WorldBounds` controllano la creazione dei relativi oggetti. Le enum e le case class modellano i dati come Algebraic Data Type immutabili, ad esempio `Shape2D` ammette solamente `Circle` e `Rectangle`, mentre `Option` rappresenta esplicitamente le proprietà che possono essere assenti. `EntityBuilder` e `SurfaceBuilder` applicano il pattern Builder componendo con `map` e `flatMap` le funzioni pure di costruzione e interrompendo la catena al primo errore. `Scene` svolge il ruolo di Aggregate Root immutabile e utilizza `Lens` fornite tramite `given` per riusare le operazioni di lettura e aggiornamento sulle diverse mappe, restituendo a ogni modifica una nuova scena e rendendo ogni trasformazione deterministica, testabile e immutabile.
+I modelli dell'engine seguono il principio di rendere gli stati illegali non rappresentabili, codificando nei tipi gli invarianti dei valori di dominio. Gli opaque type `LocatableId`, `TeamId`, `Weight`, `Health` e `Damage` applicano il pattern Value Object e vengono creati tramite smart constructor che validano i valori, restituendo gli errori attesi con `Either`, allo stesso modo i costruttori non pubblici di `Shape2D`, `Entity`, `Surface`, `Team` e `WorldBounds` controllano la creazione dei relativi oggetti. Le enum e le case class modellano i dati come Algebraic Data Type immutabili, ad esempio `Shape2D` ammette solamente `Circle` e `Rectangle`, mentre `Option` rappresenta esplicitamente le proprietà che possono essere assenti. `EntityBuilder` e `SurfaceBuilder` applicano il pattern Builder componendo con `map` e `flatMap` le funzioni pure di costruzione e interrompendo la catena al primo errore. `Scene` svolge il ruolo di Aggregate Root immutabile e utilizza `Lens` fornite tramite `given` per riusare le operazioni di lettura e aggiornamento sulle diverse mappe, restituendo a ogni modifica una nuova scena e rendendo ogni trasformazione deterministica, testabile e immutabile.
 
 ![entity_model_class_diagram.mermaid.png](assets/entity_model_class_diagram.mermaid.png)
 
@@ -16,7 +16,7 @@ All'interno dell'engine gni sottodominio adotta la rappresentazione dei dati pi�
 
 ## Pannello "Chat With Jimmy"
 
-Il pannello "Chat With Jimmy" è organizzato tramite il pattern MVVM: `AiModelChatPanel` costruisce la View, `ChatPanelViewModel` coordina gli eventi e `ChatPanelState` rappresenta il Model. Lo stato è modellato tramite il pattern State come un'enumerazione di valori immutabili `Ready`, `Waiting` ed `Error`, rendendo esplicite le transizioni e impedendo combinazioni di dati non valide. `ChatPanelActions` costituisce il functional core: ogni action è una funzione pura che riceve lo stato corrente e restituisce un nuovo `ChatPanelState`. L'unico punto in cui lo stato persiste è il `ChatPanelViewModel`, che lo mantiene in un `ObjectProperty` di `ScalaFX`, collega gli eventi della GUI con le relative actions del `ChatPanelActions`, coordina la chiamata all'`AiAgent` quando viene mandato un prompt ed infine aggiorna lo stato della pagina. La View osserva la property tramite il pattern Observer e traduce ogni nuovo stato nei model dei componenti `AiPanelHeader`, `MessageBox` e `PromptComposer`. `AiAgent` è la porta definita nel layer `application` dalla quale dipende il ViewModel; il layer `infrastructure` la implementa con `Langchain4jAiAgent`, un Adapter che traduce comandi e risultati di dominio nelle operazioni di LangChain4j, mentre `Langchain4jAgentFactory` ne incapsula la costruzione e la configurazione per Ollama.
+Il pannello "Chat With Jimmy" è organizzato tramite il pattern MVVM: `AiModelChatPanel` costruisce la View, `ChatPanelViewModel` coordina gli eventi e `ChatPanelState` rappresenta il Model. Lo stato è modellato tramite il pattern State come un'enumerazione di valori immutabili `Ready`, `Waiting` ed `Error`, rendendo esplicite le transizioni e impedendo combinazioni di dati non valide. `ChatPanelActions` costituisce il functional core: ogni action è una funzione pura che riceve lo stato corrente e restituisce un nuovo `ChatPanelState`. L'unico punto in cui lo stato persiste è il `ChatPanelViewModel`, che lo mantiene in un `ObjectProperty` di `ScalaFX`, collega gli eventi della GUI con le relative actions del `ChatPanelActions`, coordina la chiamata all'`AiAgent` quando viene mandato un prompt ed infine aggiorna lo stato della pagina. La View osserva la property tramite il pattern Observer e traduce ogni nuovo stato nei model dei componenti `AiPanelHeader`, `MessageBox` e `PromptComposer`. `AiAgent` è la porta definita nel layer `application` dalla quale dipende il ViewModel, il layer `infrastructure` la implementa con `Langchain4jAiAgent`, un Adapter che traduce comandi e risultati di dominio nelle operazioni di LangChain4j, mentre `Langchain4jAgentFactory` ne incapsula la costruzione e la configurazione per Ollama.
 
 ![ai_chat_panel_class_diagram.mermaid.png](assets/ai_chat_panel_class_diagram.mermaid.png)
 
@@ -26,6 +26,12 @@ La valutazione del modello LLM segue i pattern Ports and Adapters e Dependency I
 
 ![agent_evaluation_class_diagram.mermaid.png](assets/agent_evaluation_class_diagram.mermaid.png)
 
+## Launcher
+
+Il `Launcher` costituisce il Composition Root dell'applicazione: è l'unico punto che conosce contemporaneamente le port definite dal layer `application`, gli adapter del layer `infrastructure` e gli oggetti del layer `presentation`. Per la modalità grafica costruisce `MonadCoreWorld`, `MonadCoreGameEngineRuntime`, `Langchain4jAiAgent`, `ConsoleLogger` e gli altri servizi, li associa alle rispettive astrazioni tramite `given` e li rende disponibili a `ScalaFxLauncher`, `MainStage` e ai pannelli attraverso `using`. La modalità di valutazione segue lo stesso principio, collegando `Langchain4jAgentEvaluator`, `HardcodedAgentEvaluationDataset` e `AgentEvaluatorConsolePrinter` alle port richieste da `AgentEvaluationRuntime`, questa Dependency Injection mantiene la presentation indipendente dall'infrastruttura e consente di sostituire le implementazioni nei test. Il sistema di routing usa un `Router` immutabile configurato tramite `on`: ogni `ArgumentRoutingRoute` associa un `RouteType` a una funzione senza argomenti che rappresenta il comando da eseguire. `evaluate` seleziona la prima route compatibile con gli argomenti, mentre `All` realizza il fallback verso la GUI.
+
+![launcher_class_diagram.mermaid.png](assets/launcher_class_diagram.mermaid.png)
+
 ## Motore fisico
 
 ## Performance
@@ -34,13 +40,13 @@ La valutazione del modello LLM segue i pattern Ports and Adapters e Dependency I
 
 ## Regola d'applicazione del danno e riconoscimento della "morte"
 
-La `DamageApplicationRule` gestisce l'applicazione del danno in seguito a una collisione. Le collisioni possono avvenire tra due entità oppure tra un'entità e una superficie; in entrambi i casi, il danno viene applicato tramite la funzione `applyDamage` dell'entità coinvolta.
+La `DamageApplicationRule` gestisce l'applicazione del danno in seguito a una collisione. Le collisioni possono avvenire tra due entità oppure tra un'entità e una superficie, in entrambi i casi, il danno viene applicato tramite la funzione `applyDamage` dell'entità coinvolta.
 
 L'applicazione può produrre tre risultati:
 
-- l'entità conserva una quantità di vita maggiore di zero e viene aggiornata nello `State`;
-- la vita raggiunge zero o un valore inferiore e l'entità viene rimossa dalla scena;
-- l'entità non possiede una salute a cui applicare il danno e rimane quindi invariata.
+- l'entità conserva una quantità di vita maggiore di zero e viene aggiornata nello `State`
+- la vita raggiunge zero o un valore inferiore e l'entità viene rimossa dalla scena
+- l'entità non possiede una salute a cui applicare il danno e rimane quindi invariata
 
 La "morte" di un'entità viene quindi rappresentata direttamente dalla sua rimozione dallo `State`, senza introdurre uno stato o un flag aggiuntivo.
 
@@ -50,7 +56,7 @@ Al termine della regola, il confronto tra lo stato iniziale e quello risultante 
 
 ## CI/CD
 
-La Continuous Integration esegue la suite Scala per ogni push su qualsiasi branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX. Un workflow separato applica con le stesse modalità il criterio di formattazione tramite `sbt scalafmtCheckAll`; la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
+La Continuous Integration esegue la suite Scala per ogni push su qualsiasi branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX. Un workflow separato applica con le stesse modalità il criterio di formattazione tramite `sbt scalafmtCheckAll`, la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
 
 La Continuous Delivery viene avviata da un push su `main`. Il primo job legge `release_version` da `project/build.properties`, recupera l'ultima release tramite GitHub CLI e accetta soltanto una versione strettamente maggiore. La build utilizza quindi una matrice di runner Linux, Windows e macOS: ogni piattaforma esegue `sbt assembly`, rinomina il fat JAR includendo la versione e il sistema operativo e pubblica l'artefatto intermedio. Questa distinzione è necessaria perché la distribuzione include i moduli JavaFX specifici di ciascuna piattaforma.
 
@@ -60,7 +66,7 @@ Soltanto dopo il completamento della matrice, il job di release genera con Quark
 
 ### Scenario: Deploy in un ambiente di produzione containerizzato
 
-La pipeline realizzata distribuisce i JAR tramite GitHub Releases e pubblica la documentazione su GitHub Pages; non effettua quindi il deploy dell'applicazione su una macchina di produzione. Se fosse disponibile un ambiente di produzione basato su Docker, il workflow sarebbe esteso con un job eseguito dopo la build e i test. Il job scaricherebbe il JAR Linux già prodotto, costruirebbe un'immagine contenente Java 21 e tutte le dipendenze di runtime e la pubblicherebbe su GitHub Container Registry. L'immagine sarebbe identificata sia dal numero di versione sia dal commit, evitando di dipendere esclusivamente da un tag mutabile come `latest`.
+La pipeline realizzata distribuisce i JAR tramite GitHub Releases e pubblica la documentazione su GitHub Pages, non effettua quindi il deploy dell'applicazione su una macchina di produzione. Se fosse disponibile un ambiente di produzione basato su Docker, il workflow sarebbe esteso con un job eseguito dopo la build e i test. Il job scaricherebbe il JAR Linux già prodotto, costruirebbe un'immagine contenente Java 21 e tutte le dipendenze di runtime e la pubblicherebbe su GitHub Container Registry. L'immagine sarebbe identificata sia dal numero di versione sia dal commit, evitando di dipendere esclusivamente da un tag mutabile come `latest`.
 
 La macchina di produzione conserverebbe soltanto la configurazione esterna e i segreti necessari all'esecuzione. Il rilascio richiederebbe quindi due operazioni: `docker compose pull` per scaricare la nuova immagine e `docker compose up -d` per ricreare il container. In questo modo l'ambiente non compilerebbe il progetto e non installerebbe manualmente Java o le dipendenze applicative: ogni versione verrebbe eseguita nello stesso ambiente descritto dall'immagine.
 
