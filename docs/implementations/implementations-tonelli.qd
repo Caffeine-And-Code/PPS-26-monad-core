@@ -1,474 +1,160 @@
 ### Ambiti di competenza e collaborazioni
 
-Il mio contributo si concentra sul comportamento dinamico dell'engine e sugli strumenti
-con cui osservarne le prestazioni. Ho realizzato il game loop a passo fisso,
-l'interpolazione dello stato, la quasi totalità della pipeline delle regole fisiche, con la risposta alle
-collisioni e il pathfinding locale basato su ray casting. Ho inoltre sviluppato
-il sottosistema di performance testing, sia nella modalità a riga di comando sia
-nell'estensione opzionale dell'interfaccia grafica.
+Il mio contributo al progetto ha riguardato principalmente i seguenti campi, con relativi sorgenti:
+
+- Game loop e interpolazione della scena
+  - `engine/core/GameLoop.scala`
+  - `engine/core/GameLoopImpl.scala`
+  - `engine/core/GameLoopError.scala`
+  - `engine/core/LoopMode.scala`
+  - `engine/simulator/StateInterpolator.scala`
+  - `engine/model/WorldBounds.scala`
+- Motore fisico e sistema di ray casting
+  - la totalità del package `engine/physics`, salvo una minore eccezione sui file `PhysicsContext` e `DamageApplicationRule`, sviluppati da Fabio Fattori e successivamente integrati nel sottosistema
+- Performance testing
+  - i package `performance` nei layer `simulator/domain`,
+    `simulator/application` e `simulator/infrastructure`
+  - i cinque file nel package `simulator/presentation/performance`
+
+Ad aggiungersi a questi, la collaborazione con Mattia Senni ha interessato il modello delle entità e
+la collision detection originaria. Su quella base, sono stati aggiunti supporto
+alla rotazione, collision point e algoritmi per forme ruotate. I tool e gli
+adapter LangChain4j sono stati estesi affinché rotazione e velocità angolare attraversassero anche il
+canale LLM.
+
+Una modifica sostanziale in questi termini è stata operata su `ShapeCollision.scala`,
+dove sono stati introdotti o rielaborati:
+
+- collisioni fra rettangoli ruotati mediante Separating Axis Theorem
+- punto di contatto tra rettangoli mediante clipping dei poligoni
+- collisione tra cerchio e rettangolo ruotato
+- gestione di un cerchio completamente interno a un rettangolo
+- normali deterministiche per casi degeneri
+- simmetria dei risultati quando l'ordine delle forme viene invertito
+- tolleranze numeriche sui contatti e sui bordi del clipping
+
+Anche `Collision.scala` è stato esteso con il punto di contatto necessario alla
+risposta angolare. In `Entity.scala`, `Surface.scala`, `Locatable.scala` e
+`Vector2D.scala` sono state introdotte o propagate le parti riguardanti rotazione,
+velocità angolare e operazioni vettoriali richieste dai nuovi
+algoritmi.
+
+### Aspetti implementativi rilevanti
+
+#### Aggiornamento immutabile e gestione degli errori
+
+Le trasformazioni principali non modificano la scena ricevuta. `GameLoop`,
+`PhysicsManager`, regole e piani restituiscono valori successivi. Gli errori
+attesi attraversano `Either`, mentre `Option` esprime proprietà assenti o
+intersezioni non trovate.
+
+Le for-comprehension compongono validazioni e trasformazioni conservando il primo
+`Left`. Nei fold su collezioni, l'accumulatore stesso è un `Either`, per cui, una volta
+raggiunto un errore, gli elementi successivi non producono effetti.
+
+#### Tipi opachi e smart constructor
+
+Quantità semanticamente diverse ma rappresentate da interi sono stati definiti come opaque type.
+Ne sono un esempio `EntityCount`, `IterationCount`, `WarmupCount` e `GrowthFactor`.
+La validità può essere ottenuta soltanto tramite `from`. Fuori
+dal companion la rappresentazione rimane nascosta.
+
+La regola comune ai conteggi positivi è centralizzata in `PositiveCount`, mentre Warm-up e
+crescita mantengono costruttori distinti perché hanno limiti differenti.
+
+#### ADT e pattern matching
+
+`LoopMode`, `PerformanceKind`, `PerformancePlan` ed errori chiusi rappresentano
+insiemi finiti di casi. Il pattern matching rende visibile la totalità delle
+strategie e lascia al compilatore il controllo di esaustività.
+
+La scelta di un ADT per `PerformancePlan` risolve anche una proprietà funzionale:
+uno stato non valido o privo di significato non è rappresentabile. Un Load non
+può contenere massimo e fattore inutilizzati, come uno Spike non può contenere un
+fattore che non verrà letto.
+
+#### Dipendenze contestuali
+
+`PhysicsEngine`, `CollisionDetector`, `NanoClock` e `PerformanceExecutor` vengono
+forniti con `given` e `using`. Le funzioni dichiarano il collaboratore necessario
+senza legarlo a un singleton concreto. Nei test la stessa firma riceve mock,
+detector, clock o executor controllati.
+
+`PerformanceExecutor` costituisce il port del layer Application usato da
+Presentation per avviare gli esperimenti. `PerformanceCli`, collocato in
+Infrastructure, lo implementa; `Launcher` effettua il collegamento nel composition
+root. La GUI può quindi usare `runWithRules` e i dati condivisi dei comandi senza
+importare l'adapter concreto.
+
+#### Funzioni come valori
+
+Nel nucleo del performance runner il workload resta rappresentato come funzione,
+poiché il contratto interno è formato da una sola operazione. I due alias
+principali sono equivalenti a:
+
+```scala
+type Operation = () => Either[PerformanceError, Unit]
+type PrepareWorkload =
+  EntityCount => Either[PerformanceError, Operation]
+```
+
+La funzione restituita può essere invocata per warm-up e campioni,
+mentre il runner rimane indipendente dal tipo di workload.
+
+Lo stesso uso di funzioni di ordine superiore compare nelle regole del motore fisico.
 
-Nel nucleo dell'engine ho realizzato in misura prevalente `GameLoop`,
-`GameLoopImpl`, `GameLoopError`, `LoopMode`, `StateInterpolator` e `WorldBounds`.
-Per la fisica, ho sviluppato l'intero package di `physics` (fatta eccezione per `PhysicsContext` e `DamageApplicationRule`, aggiunte da Fattori ed integrate nella mia struttura), ove risiedono la logica delle regole fisiche, l'algoritmo di pathfinding e le funzioni di utility utilizzate in quel package. La parte prestazionale comprende l'intero package `performance` e i componenti in
-`simulator.presentation.performance`.
+#### Ricorsione in coda
 
-Sul modello sviluppato prevalentemente da Senni ho contribuito a `Entity`, `Surface`, `Locatable`, `Vector2D`,
-`Collision` e `ShapeCollision` per introdurre rotazione, velocità angolare e punti
-di contatto. Ho propagato rotazione e velocità angolare anche attraverso `ToolCall`
-e il relativo mapper, così queste proprietà possono essere impostate anche dal client LLM.
+Il consumo dei tick, la ripetizione dei workload e la generazione della
+progressione sono implementati con funzioni annotate `@tailrec`. L'annotazione
+chiede al compilatore di verificare che la ricorsione possa essere trasformata in
+un ciclo a stack costante.
 
-Le implementazioni seguono prevalentemente un modello funzionale: lo stato evolve
-producendo nuovi valori, mentre gli errori attesi sono rappresentati con `Either`
-e le proprietà opzionali con `Option`. Ho usato `given` e `using` per fornire
-collaboratori sostituibili, opaque type per i parametri prestazionali validati,
-ADT e pattern matching per distinguere i casi del dominio, e combinatori come
-`map`, `flatMap`, `foldLeft` e for-comprehension per comporre le trasformazioni.
-Gli effetti inevitabili, come clock, console, `Future` e JavaFX, rimangono ai
-confini dei rispettivi sottosistemi.
+#### Extension method, infix e union type
 
-### Game loop e interpolazione
+Le extension method aggiungono operazioni ai tipi opachi e ai valori geometrici.
+Un esempio esplicativo può essere l'individuazione dei vertici di una `Shape` nel contesto del pathfinding.
 
-#### Aggiornamento a passo fisso
+Il combinatore infix `+` esprime la concatenazione di due regole. Operazioni come
+prodotto scalare, prodotto vettoriale, distanza e rotazione mantengono le formule
+vicine al dominio.
 
-`GameLoop` controlla il tempo della simulazione senza dipendere dalla frequenza con
-cui il renderer richiede i frame. Se la fisica usasse direttamente la durata variabile
-di ogni frame, lo stesso scenario verrebbe integrato con passi diversi in funzione
-del carico della macchina. Il loop conserva invece il tempo trascorso in un
-accumulatore ed esegue soltanto aggiornamenti di durata costante.
+`MenuButtonEntry` è una union type tra azione semplice e voce selezionabile. Il
+pattern matching converte entrambe nello specifico controllo JavaFX senza
+costringerle in una gerarchia mutabile.
 
-Il loop è immutabile. `start`, `stop` e `withMode` restituiscono una nuova
-configurazione, mentre `withTickTime` restituisce un `Either` perché deve validare
-la nuova durata. Anche il costruttore controlla che il tick sia positivo, che timestamp
-e accumulatore non siano negativi e che il tempo massimo ammesso per un frame non sia
-inferiore al tick. Il clock non viene letto internamente: `tick` riceve il timestamp
-corrente, rendendo il comportamento temporale deterministico nei test.
+#### Collezioni
 
-Dato il timestamp corrente $ t_n $ e quello precedente $ t_{n-1} $, il tempo
-considerato per il frame è limitato superiormente:
+Durante lo sviluppo ne sono state usate di vario tipo:
 
-$ \Delta t_f=\min(t_n-t_{n-1},\Delta t_{max}) $
+- `List` viene usata dove il dominio espone già sequenze lineari di entità e
+vertici
+- `Vector` dove contano indicizzazione, accumulo ordinato e accesso ai
+campioni
+- `Set` per l'appartenenza delle regole abilitate
+- `Seq` per l'ordine delle regole nel `PhysicsManager`
+- `Map` per lookup per identificatore nell'aggiornamento delle entità nella scena
+- `Array[String]` resta al confine della JVM perché è il tipo della firma `main`, venendo convertito o attraversato
+ senza usarlo come struttura di dominio.
 
-Con $ A $ accumulatore precedente e $ h $ durata del passo fisico, ottengo:
+I combinatori `map`, `flatMap`, `filter`, `collect`, `foldLeft`, `groupMap`,
+`zip`, `minByOption` e `sortBy` sostituiscono buffer condivisi e cicli con stato
+esterno.
 
-$ A'=A+\Delta t_f $
+#### Confinamento degli effetti
 
-$ N=\left\lfloor\frac{A'}{h}\right\rfloor,\qquad A_r=A'-Nh $
+`PerformanceClock` è l'unico punto che legge `System.nanoTime()`. La stampa del
+report resta confinata al routing in Presentation, mentre `PerformanceCli`
+restituisce il testo tramite `Either`. La GUI esegue il lavoro computazionale in
+un `Future` e usa `Platform.runLater` per aggiornare i controlli. `Try` converte le
+eccezioni impreviste di costruzione JavaFX in errori applicativi.
 
-`GameLoopImpl.runFixedUpdate` esegue quindi $ N $ chiamate a
-`PhysicsEngine.step`. Ogni chiamata usa lo stesso $ h $, ma riceve lo stato prodotto
-dalla precedente. La funzione è ricorsiva in coda (identificata dal tag `@tailrec`): non richiede un contatore mutabile
-condiviso e conserva esplicitamente stato precedente, stato aggiornato, resto
-temporale ed eventi. Se una chiamata restituisce `Left`, le successive non vengono
-eseguite. Il limite $ \Delta t_{max} $ impedisce che una pausa molto lunga si trasformi in una
-quantità incontrollata di aggiornamenti da recuperare. 
+Il runtime del simulatore contiene mutabilità e sincronizzazione perché integra
+un toolkit a eventi e conserva una sessione interattiva. Tale mutabilità non viene
+propagata nel modello o nelle regole pure.
 
-Quando il loop è fermo o si trova in `EditMode`, la fisica non viene invocata.
-Il timestamp viene comunque aggiornato, così il tempo trascorso durante la modifica
-non viene accumulato alla successiva ripartenza. Durante la simulazione, invece,
-`tick` restituisce `GameLoopTickResult` con stato precedente, stato corrente,
-nuovo loop, eventi e coefficiente di interpolazione.
+#### Visibilità qualificata
 
-![gameloop-sequence.png](../assets/gameloop-sequence.png)
-
-#### Interpolazione per il rendering
-
-Dopo gli aggiornamenti completi rimane $ A_r<h $. Il rapporto
-
-$ \alpha=\frac{A_r}{h},\qquad 0\leq\alpha<1 $
-
-indica quanto il tempo di rendering si trovi tra gli ultimi due stati fisici.
-`StateInterpolator` usa questo valore per costruire una scena visiva intermedia,
-senza modificare lo stato che verrà usato dal tick successivo. Per la posizione
-applica una interpolazione lineare:
-
-$ x_{render}=x_{previous}+\alpha(x_{next}-x_{previous}) $
-
-Per gli angoli non è sufficiente interpolare direttamente i valori numerici.
-Nel passaggio da $ 350^\circ $ a $ 10^\circ $, per esempio, l'arco corretto è di
-$ 20^\circ $ e non di $ -340^\circ $. `Rotation.interpolate` normalizza la
-differenza in $ [-180^\circ,180^\circ) $ e applica:
-
-$ \theta_{render}=normalize(\theta_{previous}+\alpha\Delta\theta_{shortest}) $
-
-Le entità dei due stati vengono associate per identificatore. Quelle presenti in
-entrambi vengono interpolate; quelle apparse nello stato successivo vengono mantenute
-così come sono, mentre quelle rimosse non vengono reintrodotte. Anche le dimensioni
-del mondo sono interpolate, necessità introdotta dalla possibilità di modificare le dimensioni della scena visibile. Superfici, team e proprietà non temporali provengono
-invece dallo stato successivo.
-
-Il percorso complessivo è quindi:
-
-![interpolator-flow.png](../assets/interpolator-flow.png)
-
-### PhysicsManager e regole fisiche
-
-#### Composizione ed estensibilità
-
-`PhysicsRule` è il contratto comune delle regole. Ogni implementazione espone un
-identificatore e si comporta come una trasformazione fallibile:
-
-$ PhysicsContext\longrightarrow Either[PhysicsError,PhysicsRuleResult] $
-
-`PhysicsContext` contiene lo stato iniziale del passo, il delta temporale e uno
-snapshot immutabile delle collisioni. `PhysicsRuleResult` contiene il nuovo stato
-e gli eventi prodotti. Una regola non aggiorna un singleton e non chiama direttamente
-la GUI: riceve tutti i dati necessari e restituisce un valore.
-
-`RuleCombinator.sequence` compone una sequenza di regole mediante `foldLeft`.
-Il `flatMap` consegna a ogni regola lo stato prodotto dalla precedente e interrompe
-il calcolo al primo errore; il `map` concatena gli eventi in un `Vector`,
-preservandone l'ordine. Il contesto viene copiato aggiornando soltanto lo stato,
-mentre lo snapshot dei contatti resta quello rilevato all'inizio del passo.
-
-`PhysicsManager` conserva due informazioni distinte: una `Seq` con l'ordine delle
-regole e un `Set` con quelle abilitate. Le operazioni `enable`, `disable`,
-`enableAll` e `disableAll` producono un nuovo manager. L'estensione non richiede
-quindi di modificare il manager: è sufficiente implementare `PhysicsRule` e inserire
-la nuova regola nella sequenza. Lo stesso manager può inoltre essere costruito con
-una sequenza personalizzata e un `CollisionDetector` fornito tramite `using`.
-
-All'inizio di `step` il manager costruisce una sola volta `PhysicsContext` attraverso
-il detector, evitando la costruzione di collisioni per ogni punto che ne necessitava, poi filtra le regole abilitate e le compone. Al termine confronta le
-entità prima e dopo la pipeline e produce `EntityUpdated` e `EntityRemoved` in ordine
-di identificatore.
-
-La configurazione predefinita usa questo ordine:
-
-![physics-flow.png](../assets/physics-flow.png)
-
-L'ordine è parte del comportamento: forze, attrito, sterzata e rimbalzi modificano
-le velocità prima che la cinematica calcoli il nuovo spostamento.
-Come da introduzione, la `DamageApplicationRule` non verrà descritta qui, in quanto solamente integrata.
-
-#### SurfaceDynamicsRule
-
-`SurfaceDynamicsRule` applica alle entità in contatto con una superficie le proprietà
-fisiche che essa espone. Le proprietà sono opzionali, quindi una superficie priva di
-forza o attrito lascia invariata la componente corrispondente.
-
-Il calcolo dell'accelerazione condiviso da `PhysicsUtil` è:
-
-$ a=\frac{F}{m} $
-
-Nel codice attuale `applyForce` aggiunge direttamente questo valore alla velocità:
-
-$ v_{force}=v+\frac{F}{m} $
-
-L'attrito lineare e quello angolare dipendono invece dalla durata del passo.
-Con $ \mu $ indice di attrito e $ \Delta t $ espresso in secondi:
-
-$ k_f=\max(0,1-\mu\Delta t) $
-
-$ v'=k_f v_{force},\qquad\omega'=k_f\omega $
-
-Il limite inferiore impedisce che un attrito elevato inverta artificialmente il
-movimento. Una massa assente quando è richiesta per la forza e un delta negativo
-sono rappresentati come `PhysicsError`.
-
-#### EnemyAttractionRule
-
-`EnemyAttractionRule` orienta ogni entità mobile verso il nemico più vicino.
-`PhysicsUtil.nearestEnemy` usa le relazioni tra team e la distanza euclidea;
-le entità fisse e quelle senza un nemico valido non vengono modificate.
-
-La regola non ruota istantaneamente la velocità. Dopo aver determinato una destinazione
-diretta o un waypoint tramite il sottosistema di ray casting, normalizza la differenza
-angolare:
-
-$ \Delta\theta=normalize_{[-\pi,\pi)}(\theta_{target}-\theta_{current}) $
-
-La rotazione ammessa nel passo è limitata da $ \omega_{max}\Delta t $:
-
-$ \theta'=\theta_{current}+clamp(\Delta\theta,-\omega_{max}\Delta t,\omega_{max}\Delta t) $
-
-Ricostruisce quindi il vettore velocità usando il nuovo angolo e lo stesso modulo.
-Una velocità nulla o una direzione target nulla restano invariate. La costruzione
-della destinazione è descritta nella sezione dedicata al ray casting.
-
-#### CollisionResolutionRule
-
-`CollisionResolutionRule` trasforma i contatti tra entità in una `CollisionMap`
-e delega a `CollisionResolver` due operazioni distinte: prima elimina le
-sovrapposizioni, poi aggiorna velocità lineare e angolare.
-
-Per le collisioni rettangolo-rettangolo, `ShapeCollision` usa il Separating Axis
-Theorem sugli assi locali ruotati. Se $ a,b $ sono le semidimensioni,
-$ u,v $ gli assi locali e $ n $ un asse unitario,
-il raggio di proiezione è:
-
-$ r(n)=a|u\cdot n|+b|v\cdot n| $
-
-Con $ d $ vettore tra i centri, l'overlap lungo l'asse vale:
-
-$ o(n)=r_1(n)+r_2(n)-|d\cdot n| $
-
-Un valore negativo individua un asse separatore. Se tutti i valori sono non negativi,
-l'asse con overlap minimo determina normale e profondità di penetrazione.
-Il punto di contatto viene stimato intersecando i rettangoli tramite clipping e
-calcolando la media dei vertici ottenuti: non coincide necessariamente con il
-baricentro areale del poligono.
-
-Per cerchio-rettangolo porta il centro del cerchio nel riferimento locale del
-rettangolo e individuo il punto più vicino con un `clamp`. Per due cerchi,
-indicando con $ c_1,c_2 $ i centri:
-
-$ d_p=r_1+r_2-\|c_2-c_1\| $
-
-La correzione della posizione precede il rimbalzo. Contro un corpo fisso,
-con normale $ n $ orientata verso la separazione e penetrazione $ d $:
-
-$ p'=p+d n $
-
-Tra due corpi mobili ripartisco la correzione in base alle masse. Per il primo:
-
-$ p'_1=p_1+d\frac{m_2}{m_1+m_2}n $
-
-Il corpo più leggero viene spostato maggiormente. Nel caso puramente lineare,
-`BounceResponse` conserva solo la velocità entrante lungo la normale:
-
-$ v_n=\min(v\cdot n,0) $
-
-Contro un fisso la riflessione è:
-
-$ v'=v-2v_n n $
-
-Tra due corpi mobili uso la velocità relativa e un urto perfettamente elastico:
-
-$ j=\frac{-2\min((v_1-v_2)\cdot n,0)}{m_1^{-1}+m_2^{-1}} $
-
-$ v'_1=v_1+jm_1^{-1} n $
-
-Quando è presente una velocità angolare, `CollisionVelocityDelta` include il braccio
-$ r=p_{contact}-p_{center} $. La velocità nel punto
-di contatto diventa:
-
-$ v_{contact}=v+\omega(-r_y,r_x) $
-
-In questa formula $ \omega $ è espresso in radianti al secondo. Il modello conserva
-gradi al secondo, perciò il codice converte in ingresso e in uscita.
-I momenti d'inerzia impiegati sono:
-
-$ I_{circle}=\frac12mr^2,\qquad I_{rectangle}=\frac1{12}m(h^2+l^2) $
-
-L'inverso della massa effettiva comprende traslazione e rotazione:
-
-$ M^{-1}_{eff}=m_1^{-1}+m_2^{-1}+\frac{(r_1\times n)^2}{I_1}+\frac{(r_2\times n)^2}{I_2} $
-
-Con $ J=j n $ applico:
-
-$ \Delta v =m^{-1} J,\qquad\Delta\omega=\frac{r \times J}{I} $
-
-`VelocityDelta` mantiene separata questa matematica dalla modifica dell'entità.
-`BounceResponse` sceglie il caso lineare o rotazionale e aggiorna soltanto le
-componenti effettivamente presenti.
-
-#### BorderContactRule
-
-`WorldBounds` rappresenta gli spigoli superiore sinistro e inferiore destro del rettangolo valido della scena.
-`BorderContactRule` individua le entità che ne oltrepassano uno o più lati e
-`BorderWall` rappresenta ogni contatto come un corpo fisso temporaneo, dotato
-di normale e punto di contatto coerenti.
-
-Il muro viene passato allo stesso `CollisionResolver` usato per le entità.
-Correzione della penetrazione, riflessione e risposta angolare non sono quindi
-duplicate in una seconda implementazione.
-
-#### KinematicsRule
-
-`KinematicsRule` conclude la pipeline e integra velocità lineare e angolare.
-`PhysicsUtil` converte il delta dai nanosecondi ai secondi. 
-Con velocità costanti durante il passo:
-
-$ p'=p+v\Delta t $
-
-$ \theta'=normalize(\theta+\omega\Delta t) $
-
-Una velocità assente non equivale a una velocità pari a zero: `None` indica che
-l'entità non supporta quella componente, mentre `Some(0)` la rende presente ma
-momentaneamente nulla. La distinzione viene conservata anche nelle collisioni
-e nell'attrito.
-
-### Ray casting e pathfinding locale
-
-#### Intersezione tra raggio e ostacoli
-
-Nel flusso descritto dal design, `RayIntersection` considera ogni contorno come
-una sequenza di segmenti.
-Il raggio di origine $ o $ e direzione $ d $ è:
-
-$ R(t)=o+t d,\qquad t\geq0 $
-
-Un segmento tra $ a $ e $ b $ è invece:
-
-$ S(u)=a+u(b-a),\qquad0\leq u\leq1 $
-
-Ponendo $ s=b-a $ e
-$ q=a-o $, i parametri dell'intersezione sono:
-
-$ t=\frac{q\times s}{d\times s},\qquad u=\frac{q \times d}{d}\times s $
-
-`RayCast` usa una direzione normalizzata, quindi $ t $ rappresenta anche la distanza.
-Se $ |d\times s|<\varepsilon $, le rette sono considerate parallele.
-Negli altri casi accetta soltanto $ t\geq0 $ e $ u\in[0,1] $.
-Dopo aver scartato le distanze inferiori alla tolleranza, sceglie l'intersezione
-positiva più vicina.
-
-Ho aggiunto un controllo separato per i vertici allineati con il raggio.
-Questo evita che un punto esattamente condiviso da due segmenti venga perso a causa
-della tolleranza o della condizione di parallelismo. Se il primo oggetto individuato
-non corrisponde a un'entità esistente, restituisco un `PhysicsError` esplicito.
-Anche l'assenza completa di intersezioni è rappresentata come errore del ray cast, in quanto significherebbe che il raggio ricevuto a monte non puntava in direzione dell'obiettivo originale.
-
-#### Costruzione e scelta dei waypoint
-
-Per costruire i due candidati attorno a un cerchio di centro $ c $ e raggio $ r $,
-osservato da un punto esterno
-$ s $, calcolo i punti di tangenza:
-
-$ \theta=atan2(y_s-y_c,x_s-x_c) $
-
-$ \alpha=acos\left(\frac{r}{\|s-c\|}\right) $
-
-$ w_{1,2}=c+r(\cos(\theta\pm\alpha),\sin(\theta\pm\alpha)) $
-
-La costruzione richiede che il punto iniziale sia esterno al cerchio. 
-Da un punto interno non esistono due tangenti reali. Per un rettangolo calcolo invece l'angolo
-orientato di ogni vertice rispetto alla direzione del centro e scelgo i due estremi visibili.
-
-L'offset verso l'esterno usa il raggio per le entità circolari e la semidiagonale
-per quelle rettangolari. Questa approssimazione può escludere un passaggio che una
-somma di Minkowski più precisa considererebbe valido, ma evita che il solo centro
-dell'entità superi un ostacolo lasciando la forma in collisione.
-
-### Performance testing
-
-Ho realizzato il sottosistema descritto nel design mantenendo il runner indipendente
-dall'engine e dalle modalità di presentazione. La separazione è ottenuta soprattutto
-attraverso tipi validati, funzioni ricevute come valori e collaboratori contestuali,
-senza introdurre una gerarchia di servizi per ogni fase dell'esperimento.
-
-#### Validazione e nucleo funzionale
-
-`EntityCount` e `IterationCount` sono opaque type distinti, pur condividendo la
-validazione di `PositiveCount`. `WarmupCount` conserva separatamente il caso zero,
-mentre `GrowthFactor` accetta soltanto valori maggiori di uno. Gli smart constructor
-`from` restituiscono `Either`, e `PerformanceConfig` conserva il frame budget come
-`FiniteDuration`; in questo modo il core riceve soltanto configurazioni già valide.
-
-Ho rappresentato il workload attraverso i type alias funzionali `Operation` e
-`PrepareWorkload`. `PerformanceRunner` può quindi preparare, ripetere e misurare
-un'operazione senza conoscere il tipo di scena o l'output finale. Le funzioni
-`collect` e `repeat` sono ricorsive in coda e terminano al primo `PerformanceError`.
-Nella generazione della crescita la moltiplicazione viene eseguita in `Long` prima
-del limite, evitando l'overflow intermedio del valore `Int`.
-
-`NanoClock` viene risolto tramite `using`: `PerformanceClock` adatta
-`System.nanoTime()` in produzione, mentre `SequenceNanoClock` fornisce timestamp
-predefiniti nei test. La misurazione rimane così parte del comportamento osservabile,
-ma la sorgente del tempo non diventa una dipendenza globale del runner.
-
-#### Adapter dell'engine e CLI
-
-`EnginePerformance` prepara una `DeterministicScene` e una sessione avviata, poi
-costruisce l'operazione che invoca `EngineFacade.tick`. Ho mantenuto la costruzione
-della scena fallibile e priva di casualità e ho adattato gli errori dell'engine a
-`EnginePerformanceError`, così il chiamante conserva un unico tipo di fallimento.
-
-`PerformanceCli` concentra parsing, valori predefiniti, esecuzione e formattazione.
-Le opzioni vengono convertite nella stessa `PerformanceRequest` usata dal core e il
-report viene prodotto come testo line-oriented. L'uso esplicito di `Locale.ROOT`
-rende stabili separatore decimale, millisecondi e percentuali tra ambienti diversi.
-
-#### Estensione grafica opzionale
-
-Per non modificare il pannello standard, `PerformanceGameEngineModePanel` implementa
-lo stesso builder e decora il risultato prodotto da `GameEngineModePanel`. Il
-controllo viene scelto da `PerformanceMode` soltanto in presenza di `--performance`;
-il decorator aggiunge un `MenuButton` attraverso la stessa API usata dai controlli
-di creazione e fisica. Form e dialoghi restano nel layer Presentation perché
-dipendono da ScalaFX.
-
-`ExperimentForm` descrive selettore e campi tramite `FormFieldSpec`, riusa le
-costanti e le route della CLI e produce un `ExperimentCommand` composto da coppie
-opzione-valore, evitando una seconda validazione grafica. Il decorator legge dal
-runtime gli stati pubblici delle regole e `PerformanceCli.runWithRules` ricostruisce
-la configurazione fisica da applicare alla scena. L'esperimento viene eseguito in un
-`Future` su `ExecutionContext.global`; il messaggio iniziale e l'esito vengono
-mostrati nella stessa finestra e gli aggiornamenti grafici vengono riportati sul
-JavaFX Application Thread.
-
-### Costrutti avanzati di Scala utilizzati
-
-Nelle parti descritte sono stati utilizzati i seguenti costrutti e meccanismi di Scala:
-
-- **Opaque type e smart constructor**: `EntityCount`, `IterationCount`, `WarmupCount`
-  e `GrowthFactor` distinguono quantità rappresentate internamente come `Int`.
-  La costruzione tramite `from` impedisce di ottenere valori non validi fuori dai
-  rispettivi companion object, senza introdurre wrapper a runtime.
-
-- **ADT tramite `enum`, gerarchie `sealed` e case class**: modalità del loop, tipi
-  di esperimento, eventi ed errori sono rappresentati con insiemi chiusi di casi.
-  Le case class modellano stati e risultati immutabili e consentono di produrne
-  versioni aggiornate tramite `copy`.
-
-- **Pattern matching**: sono state distinte in modo dichiarativo forme geometriche,
-  strategie prestazionali, risultati `Right` e `Left`, valori `Some` e `None`,
-  modalità del loop e lati dei bordi. Nei casi basati su ADT chiusi il compilatore
-  può inoltre segnalare pattern mancanti.
-
-- **Parametri contestuali con `given` e `using`**: `PhysicsEngine`,
-  `CollisionDetector` e `NanoClock` sono forniti al punto d'uso senza dipendere
-  da istanze globali. Sono così sostituibili con implementazioni controllate nei test
-  mantenendo invariata la firma logica delle operazioni principali.
-
-- **Extension method e metodi infix**: operazioni geometriche e vettoriali sono state
-  aggiunte ai tipi del dominio senza modificarne necessariamente l'interfaccia.
-  Sono state usate anche per esporre il valore validato degli opaque type e per
-  comporre regole fisiche con una sintassi vicina al dominio.
-
-- **Funzioni come valori e funzioni di ordine superiore**: una `PhysicsRule` è
-  utilizzabile come trasformazione, mentre il performance runner riceve funzioni
-  di preparazione e operazioni da eseguire. Callback e lambda sono state impiegate
-  anche per azioni dei menu, submit dei form e completamento asincrono.
-
-- **Type alias per firme funzionali**: alias come `Operation`, `PrepareWorkload`
-  e `RunExperiment` assegnano un nome al ruolo di funzioni articolate senza creare
-  gerarchie di classi prive di comportamento aggiuntivo.
-
-- **Polimorfismo parametrico**: funzioni generiche come `repeat[A]` e gli adapter
-  degli errori operano sul valore prodotto senza conoscerne il tipo concreto.
-  La stessa logica di iterazione e composizione può quindi essere riutilizzata
-  per warm-up, campioni e altri risultati.
-
-- **Composizione monadica con `Either` e `Option`**: gli errori attesi e l'assenza
-  di un valore sono rappresentati nel tipo di ritorno. `map`, `flatMap`, `fold`
-  e for-comprehension concatenano le operazioni senza eccezioni per il normale
-  controllo di flusso e preservano lo short-circuit al primo errore.
-
-- **Combinatori sulle collezioni immutabili**: `map`, `flatMap`, `filter`,
-  `collect`, `foldLeft`, `zip`, `minByOption` e `sortBy` sono stati usati per
-  trasformare entità, contatti, vertici, regole e campioni. Lo stato intermedio
-  viene trasportato dall'accumulatore invece che da collezioni mutate sul posto.
-
-- **Ricorsione in coda con `@tailrec`**: il consumo dei fixed update, la generazione
-  della crescita e la ripetizione dei workload sono stati espressi ricorsivamente.
-  L'annotazione richiede al compilatore di verificare che le chiamate possano essere
-  trasformate in un ciclo senza crescita dello stack.
-
-- **Visibilità qualificata dei package**: modificatori come `private[physics]`,
-  `private[pathfinding]` e `private[performance]` espongono helper e modelli soltanto
-  al sottosistema che ne ha bisogno, senza renderli parte dell'API pubblica.
-
-- **Companion object, metodi `apply` e parametri di default**: costruzione validata,
-  configurazioni predefinite e factory sono state collocate accanto ai rispettivi
-  tipi. Questo consente una sintassi di creazione uniforme senza introdurre stato
-  globale modificabile.
-
-- **`Try` per il confine con API che lanciano eccezioni**: la costruzione dei dialoghi
-  JavaFX viene adattata a `Either`, mantenendo le eccezioni della libreria esterna
-  fuori dal contratto usato dal resto dell'applicazione.
-
-- **`Future` ed `ExecutionContext` per l'esecuzione asincrona**: gli esperimenti
-  prestazionali vengono eseguiti fuori dal JavaFX Application Thread. Il risultato
-  viene poi riportato sul thread grafico tramite `Platform.runLater`, separando
-  il lavoro computazionale dall'aggiornamento dell'interfaccia.
+Modificatori come `private[physics]`, `private[pathfinding]` e
+`private[performance]` permettono ai test e ai collaboratori del sottosistema di
+usare componenti mirati senza trasformarli in API pubblica dell'engine.

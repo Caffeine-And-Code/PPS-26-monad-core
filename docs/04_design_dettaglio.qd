@@ -85,3 +85,295 @@ Il rendering è diviso in pianificazione pura e interpretazione grafica. `Render
 Gli `EngineEvent` percorrono la pipeline insieme ai risultati. Le regole accumulano eventi senza pubblicare side effect, il game loop unisce quelli dei diversi fixed update e mondo e runtime li inoltrano al callback scelto dal composition root. Formatter e logger restano esterni all'engine.
 
 ![event-system.png](assets/log-system.png)
+
+## Game loop ed interpolazione
+
+Il game loop è progettato come un functional core.
+
+`GameLoop` espone il
+contratto, mentre `GameLoopImpl` conserva in modo immutabile modalità, durata del
+tick, ultimo timestamp e tempo accumulato. Il motore fisico viene ricevuto
+tramite `using`, applicando Dependency Injection, e può essere sostituito senza
+modificare il ciclo, secondo il pattern Strategy. I companion object di
+`GameLoop` e `WorldBounds` applicano lo Smart Constructor, perché validano i
+parametri prima di rendere disponibile un'istanza.
+
+`GameLoopImpl.tick` limita il tempo trascorso alla durata massima di un frame e
+lo somma all'accumulatore. Se $ T $ è la durata del tick e $ A' $ è il tempo
+disponibile, il numero di aggiornamenti completi e il residuo sono:
+
+$ N=\left\lfloor\frac{A'}{T}\right\rfloor,\quad A_r=A'-NT,\quad \alpha=\frac{A_r}{T} $
+
+`runFixedUpdate` esegue ricorsivamente i tick completi. Ogni chiamata usa lo
+stato restituito dalla precedente, accumula gli eventi e termina al primo
+errore. `FixedUpdateResult` conserva i dati intermedi, mentre
+`GameLoopTickResult` espone al client lo stato precedente, quello corrente, il
+nuovo loop, gli eventi e il coefficiente di interpolazione.
+
+`LoopMode` distingue la modifica dalla simulazione. Quando il loop è fermo o in
+`EditMode`, la scena non avanza e la fisica non viene invocata. `GameLoopError` raccoglie gli errori relativi a
+tick, timestamp, accumulatore e durata massima del frame.
+
+`StateInterpolator` usa i due stati restituiti dal loop per produrre la scena da
+mostrare. Le entità presenti in entrambi vengono interpolate, quelle nuove sono
+prese dallo stato corrente e quelle rimosse non vengono reintrodotte. Superfici
+e team provengono dallo stato corrente. Anche `WorldBounds` viene interpolato e
+validato nuovamente.
+
+La posizione usa un'interpolazione lineare. Per la rotazione `Rotation`
+seleziona l'arco più breve e normalizza il risultato, evitando un giro quasi
+completo quando gli angoli attraversano lo zero.
+
+$ \Delta\theta=((\theta_1-\theta_0+540^\circ)\bmod360^\circ)-180^\circ,\quad \theta'=normalize(\theta_0+\alpha\Delta\theta) $
+
+![gameloop-classes](assets/gameloop-classes.drawio.png)
+
+## Motore fisico
+
+Il motore fisico applica il pattern Strategy attraverso `PhysicsRule`. Ogni
+regola realizza lo stesso contratto e può essere abilitata o disabilitata senza modificare `PhysicsManager`. `RuleCombinator` realizza una
+Pipeline funzionale, perché propaga lo stato da una regola alla successiva,
+accumula gli eventi e interrompe la sequenza al primo errore. Il
+`CollisionDetector` è ricevuto tramite `given` e `using`, applicando Dependency
+Injection e mantenendo sostituibile il sistema di rilevamento descritto nella
+sezione dedicata.
+
+### Nucleo e pipeline
+
+![physics-pipeline](assets/physics-pipeline.drawio.png)
+
+`PhysicsManager.step` crea un solo `PhysicsContext` per aggiornamento. Il
+contesto contiene stato, delta temporale e `CollisionSnapshot`. Lo snapshot
+separa i contatti tra entità, rappresentati da `EntityCollisionContact`, dai
+contatti tra entità e superfici, rappresentati da `SurfaceContact`. Ogni regola
+riceve lo stato aggiornato dalla precedente ma osserva gli stessi contatti
+rilevati all'inizio dello step.
+
+La configurazione predefinita esegue nell'ordine `SurfaceDynamicsRule`,
+`EnemyAttractionRule`, `CollisionResolutionRule`, `BorderContactRule`,
+`DamageApplicationRule` e `KinematicsRule`.
+
+### Regola delle dinamiche delle superfici
+
+La `SurfaceDynamicsRule` applica gli effetti delle superfici alle entità mobili
+che risultano al loro interno. I `SurfaceContact` permettono di recuperare
+entità e superficie dallo stato senza ripetere la collision detection.
+
+Per ogni contatto possono essere applicati tre effetti:
+
+- `appliedForce` produce un'accelerazione in base alla massa dell'entità,
+- `frictionIndex` riduce la velocità lineare in funzione del delta temporale,
+- lo stesso attrito riduce la velocità angolare, quando questa è presente.
+
+Indicando con $ \mu $ l'indice di attrito e con $ \Delta t $ il tempo espresso
+in secondi, i due calcoli principali sono:
+
+$ a=\frac{F}{m},\quad f=\max(0,1-\mu\Delta t) $
+
+Le proprietà opzionali assenti non producono alcun cambiamento. `PhysicsUtil`
+esegue conversione del tempo, calcolo dell'accelerazione e applicazione degli
+attriti. I contatti multipli vengono composti su una mappa immutabile, poi
+`SceneEntitiesUpdate` sostituisce nello `State` soltanto le entità modificate.
+Una massa necessaria ma assente e un delta temporale negativo vengono restituiti
+come `PhysicsError`.
+
+### Regola di attrazione verso il nemico
+
+La `EnemyAttractionRule` orienta le entità mobili verso il nemico più vicino.
+`PhysicsUtil.nearestEnemy` usa il team dell'entità per individuare gli avversari
+e seleziona quello con distanza minima. Un'entità priva di team, senza nemici o
+senza velocità lineare rimane invariata.
+
+Per ogni bersaglio viene richiesto a `RayCast` un punto da raggiungere. Se il
+nemico è visibile, viene restituita la sua posizione. Se un ostacolo interrompe
+la linea diretta, viene scelto un waypoint laterale. La velocità viene quindi
+ruotata verso il punto ottenuto, mantenendone invariato il modulo. La variazione
+angolare è limitata da una velocità massima di rotazione moltiplicata per il
+delta temporale, evitando cambi di direzione istantanei.
+
+Le entità orientate vengono applicate tramite `SceneEntitiesUpdate`. Un errore
+del ray casting viene propagato come `PhysicsError`, mentre l'assenza di un
+waypoint valido lascia invariata l'entità.
+
+### Regola di risoluzione delle collisioni
+
+![contact-classes](assets/contact-classes.drawio.png)
+
+La `CollisionResolutionRule` elabora i contatti tra entità presenti nel
+`CollisionSnapshot`. Ogni `EntityCollisionContact` viene trasformato in due
+associazioni, una per ciascun corpo, invertendo la normale nel secondo verso.
+Il risultato è un `CollisionMap` consumato da `CollisionResolver`.
+
+La risoluzione avviene in due fasi:
+
+- l'overlap viene eliminato spostando il solo corpo mobile contro un corpo fisso,
+  oppure distribuendo la correzione in base alle masse quando entrambi sono mobili,
+- il rimbalzo aggiorna la velocità lineare e, quando disponibile, quella angolare.
+
+`BounceResponse` gestisce la risposta elastica lineare. Quando è presente una
+componente rotazionale, `CollisionVelocityDelta` calcola la velocità nel punto
+di contatto, il momento d'inerzia e l'impulso. `VelocityDelta` raccoglie le
+variazioni lineare e angolare da applicare all'entità.
+
+La velocità del punto di contatto comprende la componente tangenziale della
+rotazione:
+
+$ v_{contact}=v+\omega(-r_y,r_x) $
+
+Per cerchi e rettangoli uniformi vengono usati i rispettivi momenti d'inerzia:
+
+$ I_{circle}=\frac{1}{2}mr^2,\quad I_{rectangle}=\frac{1}{12}m(h^2+l^2) $
+
+Con $ v_n $ velocità relativa entrante lungo la normale, l'impulso elastico è:
+
+$ j=\frac{-2v_n}{M^{-1}_{eff}} $
+
+`SceneEntitiesUpdate` inserisce nello stato i corpi corretti. Per ogni contatto
+la regola produce inoltre un `CollisionDetected` con un
+`CollisionTarget.Entity`.
+
+### Regola di contatto con i bordi
+
+La `BorderContactRule` controlla se una parte di un'entità mobile supera i
+limiti di `WorldBounds`. `SizeHelper` calcola l'ingombro orizzontale e verticale
+della forma tenendo conto della rotazione, così il controllo non considera
+soltanto il centro dell'entità.
+
+Per ogni lato attraversato `BorderWall` crea un corpo fisso temporaneo con
+normale, profondità di penetrazione e punto di contatto. Questi dati sono
+raccolti in `DetectedBorderCollision` e trasformati in un `CollisionMap`.
+
+La regola riusa `CollisionResolver`, quindi separazione e rimbalzo seguono lo
+stesso comportamento delle collisioni tra entità. Lo stato viene aggiornato
+tramite `SceneEntitiesUpdate` e viene prodotto un `CollisionDetected` con un
+`CollisionTarget.Border` che identifica il lato coinvolto.
+
+### Regola d'applicazione del danno e riconoscimento della "morte"
+
+La DamageApplicationRule gestisce l'applicazione del danno in seguito a una collisione. Le collisioni possono avvenire tra due entità oppure tra un'entità e una superficie. In entrambi i casi, il danno viene applicato tramite la funzione applyDamage dell'entità coinvolta.
+
+L'applicazione può produrre tre risultati:
+
+- l'entità conserva una quantità di vita maggiore di zero e viene aggiornata nello State,
+- la vita raggiunge zero o un valore inferiore e l'entità viene rimossa dalla scena,
+- l'entità non possiede una salute a cui applicare il danno e rimane quindi invariata.
+
+La "morte" di un'entità viene quindi rappresentata direttamente dalla sua rimozione dallo State, senza introdurre uno stato o un flag aggiuntivo.
+
+Al termine della regola, il confronto tra lo stato iniziale e quello risultante permette di generare l'EngineEvent appropriato: EntityUpdated se l'entità è stata modificata, EntityRemoved se è stata eliminata, oppure nessun evento se è rimasta invariata.
+
+![Flusso della regola di applicazione del danno](assets/damage-rule.png)
+
+### Regola cinematica
+
+La `KinematicsRule` aggiorna posizione e rotazione delle entità non fisse al
+termine della pipeline. `PhysicsUtil.nextPosition` somma alla posizione lo
+spostamento ottenuto da velocità lineare e delta temporale. `Rotation.normalize`
+somma la variazione angolare e mantiene l'angolo tra zero incluso e 360 escluso.
+
+L'applicazione può produrre tre risultati:
+
+- un'entità con velocità lineare viene spostata,
+- un'entità con velocità angolare viene ruotata,
+- una proprietà di movimento assente lascia invariata la relativa componente.
+
+Le due trasformazioni possono essere applicate insieme. Un delta temporale
+negativo o un errore del modello viene propagato come `PhysicsError`.
+`SceneEntitiesUpdate` sostituisce infine nello stato le entità aggiornate.
+
+$ p'=p+v\Delta t,\quad \theta'=normalize(\theta+\omega\Delta t) $
+
+### Sistema di pathfinding locale
+
+Il pathfinding viene usato da `EnemyAttractionRule` per stabilire se
+un'entità possa dirigersi verso il nemico o debba aggirare un ostacolo. Non
+calcola un percorso globale. Produce il prossimo punto utile in base alla
+geometria osservata nello step corrente.
+
+`VertexFinder` trasforma ogni entità in una sequenza di punti nello spazio.
+`CircleVertexes` approssima un cerchio con punti equidistanti,
+`RectangleVertexes` calcola i vertici del rettangolo considerando posizione e
+rotazione, mentre `PointOnCircle` costruisce i singoli punti della
+circonferenza. Questa rappresentazione permette a `RayIntersection` di trattare
+le forme come insiemi di segmenti.
+
+`RayCast` esegue il flusso principale:
+
+1. rimuove dalla mappa dei vertici l'entità che sta cercando il percorso,
+2. amplia gli ostacoli in base all'ingombro dell'entità mobile e a un margine di sicurezza,
+3. usa `RayIntersection` per trovare l'oggetto più vicino lungo la direzione del bersaglio,
+4. restituisce la posizione del nemico quando questo è il primo oggetto incontrato,
+5. in presenza di un ostacolo richiede due alternative a `WaypointFinder`,
+6. scarta i punti che porterebbero l'entità fuori dal mondo e sceglie quello più vicino alla destinazione.
+
+`RayIntersection` verifica sia l'intersezione con i lati delle forme sia il caso
+in cui un vertice si trovi direttamente sul raggio. Le intersezioni parallele,
+quelle dietro l'origine e quelle esterne al segmento vengono ignorate. Tra i
+risultati validi viene mantenuta la distanza minore.
+
+Posti $ R(t)=o+td $, $ S(u)=a+us $ e $ q=a-o $, i parametri verificati sono:
+
+$ t=\frac{q\times s}{d\times s},\quad u=\frac{q\times d}{d\times s},\quad t\geq0,\quad 0\leq u\leq1 $
+
+`WaypointFinder` usa i punti di tangenza per un ostacolo circolare. Per un
+rettangolo seleziona invece i due vertici con angolo minimo e massimo rispetto
+alla direzione del centro. `RayCast.actualWaypoint` allontana i candidati
+dall'ostacolo considerando il raggio del corpo in movimento. `SizeHelper`
+verifica infine che l'intera forma, non soltanto il suo centro, rimanga dentro i
+limiti della scena.
+
+Quando il raggio non incontra alcuna forma viene prodotto
+`RayIntersectedNothing`. Se l'identificatore incontrato non corrisponde più a
+un'entità viene prodotto `RayIntersectedAMissingEntity`. Se tutti i waypoint
+sono fuori dal mondo il risultato è `None` e l'entità mantiene la direzione
+corrente.
+
+## Performance
+
+Il sottosistema di performance applica Ports and Adapters e Dependency
+Inversion. Il layer Application espone `PerformanceExecutor`, mentre
+`PerformanceCli` lo implementa nel layer Infrastructure. `Launcher` fornisce
+l'implementazione tramite `given`, permettendo alla Presentation di dipendere
+soltanto dal port. `PerformancePlan` applica Strategy per rappresentare i
+quattro esperimenti. `EnginePerformance`, `PerformanceClock` e
+`PerformanceCli` svolgono il ruolo di Adapter. La GUI aggiunge il proprio
+controllo tramite il pattern Decorator realizzato da
+`PerformanceGameEngineModePanel`.
+
+![performance-classes](assets/performance-classes.drawio.png)
+
+Gli opaque type `EntityCount`, `IterationCount`, `WarmupCount` e `GrowthFactor`
+e le classi `EntityRange`, `EntityGrowth` e `PerformanceConfig` vengono creati
+tramite Smart Constructor. In questo modo il runner riceve soltanto conteggi,
+progressioni e budget già validati. `PerformanceRequest` unisce il piano alla
+configurazione.
+
+`PerformanceRunner` riceve come valore una funzione `PrepareWorkload` e un
+`NanoClock`. Per ogni numero di entità prepara l'operazione, esegue i warm-up e
+raccoglie i campioni. `PerformanceMetrics` calcola p50, p95, p99 e la percentuale
+di esecuzioni concluse entro il budget. `PerformanceReport` associa le metriche
+ai conteggi e conserva l'eventuale breakpoint dello stress test.
+
+Ordinando le $ N $ latenze, i percentili usano il metodo nearest rank. Il
+completion rate conta invece i campioni non superiori al budget $ B $:
+
+$ P_p=L_{\lceil pN\rceil},\quad p\in\{0.50,0.95,0.99\} $
+
+$ completionRate=\frac{|\{i\mid L_i\leq B\}|}{N} $
+
+`DeterministicScene` costruisce un workload riproducibile con entità dotate di
+forma, massa, salute, danno, team e movimento. `EnginePerformance` prepara una
+sessione e adatta il workload a un tick reale di `EngineFacade`.
+`PerformanceClock` fornisce il tempo monotono di sistema.
+
+`PerformanceCli` traduce route e argomenti in una richiesta validata, esegue
+l'esperimento e formatta il report. `PerformanceMode` usa lo stesso port sia per
+le route da console sia per scegliere il pannello grafico.
+`PerformanceGameEngineModePanel` legge lo stato pubblico delle regole dal
+runtime e avvia l'esperimento fuori dal JavaFX Application Thread.
+
+`ExperimentForm` costruisce un `ExperimentCommand` con i campi comuni e quelli
+specifici del piano. `ExperimentDialog` gestisce invio, stato di esecuzione e
+completamento asincrono. `ResultDialog` mostra il testo e
+`ResultDialogHandle` permette di aggiornare la stessa finestra senza crearne una
+nuova.
