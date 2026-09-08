@@ -1,40 +1,40 @@
 # Processo di sviluppo adottato
 
-Il progetto è stato sviluppato con un processo agile, incrementale e iterativo, articolato in sprint brevi. Ogni incremento ha esteso una base eseguibile e verificata, consentendo di rivedere priorità e soluzioni quando l'integrazione tra engine, simulator e servizi esterni ha evidenziato nuovi vincoli. La cronologia degli incrementi e degli scostamenti è riportata nella retrospettiva; questo capitolo descrive invece le pratiche applicate durante l'intero progetto.
+Il progetto è stato sviluppato seguendo un processo agile, incrementale e iterativo, articolato in sprint brevi. Ogni incremento ha esteso una base eseguibile e verificata, consentendo di rivedere priorità e soluzioni quando l'integrazione tra engine, simulator e servizi esterni ha evidenziato nuovi vincoli. La cronologia degli incrementi e degli scostamenti è riportata nella retrospettiva, questo capitolo descrive invece le pratiche applicate durante l'intero progetto.
 
 ## Divisione e gestione dei task
 
-Il product backlog è stato espresso mediante User Story nel formato «Come [ruolo], voglio [funzionalità], così da [beneficio]». Ciascuna storia è stata scomposta in task tecnici assegnabili e verificabili. Per le attività iniziali la complessità è stata stimata in Story Point secondo la sequenza di Fibonacci, in modo da rappresentare l'incertezza senza introdurre una precisione artificiale.
+Il product backlog è stato definito mediante User Story nel formato «Come [ruolo], voglio [funzionalità], così da [beneficio]». Ciascuna storia è stata scomposta in task tecnici assegnabili e verificabili. Per le attività iniziali, la complessità è stata stimata in Story Point secondo la sequenza di Fibonacci, in modo da rappresentare l'incertezza senza introdurre una precisione artificiale.
 
 L'assegnazione iniziale ha individuato tre aree prevalenti:
 
-- Senni: modello delle entità, collision detection, chat e integrazione con l'agente;
-- Fattori: scena, CI/CD, eventi, runtime e interfaccia grafica;
-- Tonelli: game loop, applicazione della fisica, test sulle performance.
+- Senni: modello delle entità, collision detection, chat e integrazione con l'agente,
+- Fattori: scena, CI/CD, eventi, runtime e interfaccia grafica,
+- Tonelli: game loop, applicazione della fisica e test sulle performance.
 
-La divisione non ha costituito un confine rigido. Durante gli sprint i task incompleti sono stati riportati nel backlog successivo, nuove attività sono state assegnate in base alle dipendenze emerse e le interfacce condivise sono state discusse o sviluppate congiuntamente. Il backlog e i report degli incontri sono rimasti file testuali versionati insieme al codice, rendendo ricostruibili pianificazione e variazioni.
+La divisione non ha costituito un confine rigido. Durante gli sprint, i task incompleti sono stati riportati nel backlog successivo, nuove attività sono state assegnate in base alle dipendenze emerse e le interfacce condivise sono state discusse o sviluppate insieme. Il backlog e i report degli incontri sono stati gestiti come file testuali versionati insieme al codice, rendendo così tracciabili pianificazione e variazioni.
 
-Il repository ha adottato un flusso basato su branch dedicati alle funzionalità. Il ramo `development` ha raccolto gli incrementi integrati, mentre `main` ha rappresentato lo stato destinato alla release. Le modifiche sono confluite tramite pull request, dopo verifica automatica e revisione degli altri componenti.
+Nel repository è stato adottato un flusso basato su branch dedicati alle singole funzionalità. Il ramo `development` ha raccolto gli incrementi integrati, mentre `main` ha rappresentato lo stato destinato alla release. Le modifiche sono state unite tramite pull request, solo dopo la verifica automatica e la revisione da parte degli altri componenti del gruppo.
 
 ## Meeting e interazioni
 
-Ogni sprint è iniziato con uno Sprint Planning dedicato a revisione del backlog, selezione dell'incremento, stima e assegnazione dei task. Gli incontri giornalieri hanno condiviso attività concluse, lavoro immediatamente successivo e impedimenti; quando una decisione coinvolgeva più sottosistemi, il confronto è proseguito tramite pair programming o revisione congiunta delle interfacce.
+Ogni sprint è iniziato con uno Sprint Planning dedicato a revisione del backlog, selezione dell'incremento, stima e assegnazione dei task. Negli incontri giornalieri sono stati condivisi attività concluse, lavoro da svolgere e impedimenti riscontrati, quando una decisione coinvolgeva più sottosistemi, il confronto è proseguito tramite pair programming o revisione congiunta delle interfacce.
 
-La Sprint Review ha verificato l'incremento prodotto, lo stato dei task e le attività da riportare nell'iterazione seguente. Planning e review hanno avuto una durata massima rispettivamente di due ore e un'ora; i daily sono rimasti incontri brevi di coordinamento, anche a distanza.
+La Sprint Review ha verificato l'incremento prodotto, lo stato dei task e le attività da riportare nell'iterazione seguente. Planning e review hanno avuto una durata massima rispettivamente di due ore e di un'ora, i daily sono rimasti brevi incontri di coordinamento, svolti anche a distanza.
 
 ## Revisione e qualità in itinere
 
-Ogni funzionalità è stata sviluppata su un branch separato e sottoposta a code review mediante pull request. La revisione ha considerato comportamento, qualità delle astrazioni, rispetto della programmazione funzionale, test e direzioni di dipendenza. Le osservazioni hanno prodotto correzioni prima del merge oppure task di refactoring espliciti quando la modifica coinvolgeva più componenti.
+Ogni funzionalità è stata sviluppata su un branch separato e sottoposta a code review tramite pull request. La revisione ha verificato comportamento, qualità delle astrazioni, rispetto della programmazione funzionale, test e correttezza delle dipendenze. Le osservazioni emerse hanno portato a correzioni prima dell'unione del codice o alla creazione di task di refactoring dedicati quando la modifica coinvolgeva più componenti.
 
-Lo sviluppo ha seguito il ciclo Red–Green–Refactor del Test-Driven Development: il comportamento atteso è stato espresso mediante test, è stata introdotta la soluzione minima necessaria e infine sono stati migliorati struttura e nomi mantenendo verde la suite. Per le collaborazioni con GUI e modello linguistico, non interamente riconducibili a unità pure, sono stati affiancati test di integrazione e verifiche dedicate.
+Lo sviluppo ha seguito il ciclo Red–Green–Refactor del Test-Driven Development: il comportamento atteso è stato espresso tramite test, è stata introdotta la soluzione minima necessaria e infine sono stati migliorati codice e nomi mantenendo la suite funzionante. Per l'interazione con GUI e modello linguistico, non del tutto riconducibile a unità pure, sono stati affiancati test di integrazione e verifiche dedicate.
 
 ## Strumenti di test, build e continuous integration
 
-- SBT ha gestito compilazione, dipendenze, suite standard, configurazione dei test LLM, assembly e Scaladoc;
-- ScalaTest e ScalaMock hanno supportato test comportamentali, table-driven e isolamento dei collaboratori;
-- Stryker4s ha verificato l'efficacia delle asserzioni dell'engine mediante mutation testing;
-- ScalaFX/JavaFX, helper dedicati e snapshot strutturali e visuali hanno verificato la GUI;
-- GitHub ha ospitato repository, pull request, branch policy e release;
-- GitHub Actions ha eseguito controlli su formattazione e suite automatizzata, usando Xvfb per i test grafici, e ha prodotto fat JAR, relazione e documentazione delle API.
+- SBT ha gestito compilazione, dipendenze, suite standard, configurazione dei test LLM, packaging dell'assembly e Scaladoc,
+- ScalaTest e ScalaMock hanno supportato i test comportamentali, table-driven e l'isolamento dei componenti,
+- Stryker4s ha verificato l'efficacia delle asserzioni dell'engine mediante mutation testing,
+- ScalaFX/JavaFX, helper dedicati e snapshot strutturali e visivi hanno consentito di verificare la GUI,
+- GitHub ha ospitato repository, pull request, regole sui branch e release,
+- GitHub Actions ha eseguito i controlli su formattazione e suite automatizzata, sfruttando Xvfb per i test grafici, e ha generato il fat JAR, la relazione e la documentazione delle API.
 
-La suite standard è rimasta indipendente da Ollama; le verifiche con un modello reale sono state collocate nella configurazione separata `llmIntegrationTest`. In questo modo una pull request ha potuto ricevere un esito deterministico, mentre il comportamento emergente dell'assistente è stato controllato esplicitamente negli ambienti predisposti.
+La suite standard è stata mantenuta del tutto indipendente da Ollama, le verifiche con un modello reale sono state collocate nella configurazione separata `llmIntegrationTest`. In questo modo ogni pull request ha potuto ricevere un esito deterministico, mentre il comportamento dell'assistente è stato controllato separatamente negli ambienti predisposti.

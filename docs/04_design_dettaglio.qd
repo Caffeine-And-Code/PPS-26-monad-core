@@ -1,98 +1,78 @@
 # Design di dettaglio
 
-Durante lo sviluppo dell'applicazione abbiamo voluto dare molta enfasi sul testing e sulle diverse modalità di test che verranno esplose in seguito nel relativo capitolo. Abbiamo quindi privilegiato pattern che rendessero il più testabile possibile il nostro codice, ad esempio abbiamo fatto uso di dependency injection per tutto ciò che per un oggetto è una dipendenza esterna, abbiamo poi utilizzato meccanismi di mock, per mockare le dipendenze in modo da avere poter coprire la maggior quantità di codice possibile con unit test. Di seguito sono elencate tutte le macro aree dell'applicativo con relativa spiegazione in dettaglio della realizzazione.
+Durante lo sviluppo dell'applicazione è stata data molta importanza al testing e alle diverse tipologie di verifica, descritte poi in dettaglio nel capitolo dedicato. Sono stati scelti pattern mirati a rendere il codice facilmente testabile. In particolare, è stata adottata la Dependency Injection per ogni dipendenza esterna e sono stati utilizzati oggetti mock, così da isolare i componenti e coprire la maggior parte del codice con test unitari. Di seguito vengono presentate le aree principali dell'applicazione con la spiegazione dettagliata della loro realizzazione.
 
 ## Modelli dell'engine
 
-I modelli dell'engine seguono il principio di rendere gli stati illegali non rappresentabili, codificando nei tipi gli invarianti dei valori di dominio. Gli opaque type `LocatableId`, `TeamId`, `Weight`, `Health` e `Damage` applicano il pattern Value Object e vengono creati tramite smart constructor che validano i valori, restituendo gli errori attesi con `Either`, allo stesso modo i costruttori non pubblici di `Shape2D`, `Entity`, `Surface`, `Team` e `WorldBounds` controllano la creazione dei relativi oggetti. Le enum e le case class modellano i dati come Algebraic Data Type immutabili, ad esempio `Shape2D` ammette solamente `Circle` e `Rectangle`, mentre `Option` rappresenta esplicitamente le proprietà che possono essere assenti. `EntityBuilder` e `SurfaceBuilder` applicano il pattern Builder componendo con `map` e `flatMap` le funzioni pure di costruzione e interrompendo la catena al primo errore. `Scene` svolge il ruolo di Aggregate Root immutabile e utilizza `Lens` fornite tramite `given` per riusare le operazioni di lettura e aggiornamento sulle diverse mappe, restituendo a ogni modifica una nuova scena e rendendo ogni trasformazione deterministica, testabile e immutabile.
+I modelli dell'engine seguono il principio di rendere non rappresentabili gli stati non validi, inserendo nei tipi i vincoli dei valori di dominio. Gli opaque type `LocatableId`, `TeamId`, `Weight`, `Health` e `Damage` applicano il pattern Value Object e sono creati tramite costruttori intelligenti che convalidano i dati, restituendo gli errori previsti tramite `Either`. Allo stesso modo, i costruttori protetti di `Shape2D`, `Entity`, `Surface`, `Team` e `WorldBounds` controllano la creazione dei rispettivi oggetti. Le enum e le case class modellano i dati come strutture immutabili. Ad esempio, `Shape2D` ammette solo `Circle` e `Rectangle`, mentre `Option` gestisce i campi facoltativi. `EntityBuilder` e `SurfaceBuilder` usano il pattern Builder componendo con `map` e `flatMap` funzioni di costruzione pure, arrestando la catena al primo errore riscontrato. `Scene` opera come Aggregate Root immutabile e sfrutta le `Lens` passate tramite `given` per riutilizzare le logiche di lettura e aggiornamento sulle collezioni interne. In questo modo ogni modifica produce una nuova scena, garantendo un'evoluzione deterministica, testabile e priva di effetti collaterali.
 
 ![entity_model_class_diagram.mermaid.png](assets/entity_model_class_diagram.mermaid.png)
 
 ## Rilevamento delle collisioni
 
-All'interno dell'engine gni sottodominio adotta la rappresentazione dei dati più adatta alle proprie operazioni. Ad esempio i `Locatable` che descrive gli elementi del mondo vengono tradotti in dei `Placed` che rappresentano solamente forma e posa di un oggetto nello spazione, ovvero tutto ciò che serve agli algoritmi di rilevamento delle collisioni. Le type class `Collides` e `Contains` applicano il pattern Strategy per isolare gli algoritmi dalle loro implementazioni concrete, `CollisionDetector` offre un'interfaccia uniforme al resto dell'engine, fornendo, tramite `given`, un'implementazione di default. L'iniezione delle implementazioni tramite `given` e `using` è utile per la realizzazione pattern Dependency Injection, il quale consente, ai test di sostituire ogni algoritmo con uno stub controllato, ed agli sviluppatori che utilizzano il game engine di fornire una proprio implementazione del `CollisionDetector` in sostituzione di quella fornita di default. Le extension method `hasCollisionWith` e `isInside` sul tipo `Locatable` forniscono un'API chiara e fluida da utilizzare nel resto dell'applicazione.
+All'interno dell'engine ogni parte usa la rappresentazione dei dati più comoda per le proprie operazioni. Ad esempio, gli elementi `Locatable` che descrivono gli oggetti del mondo vengono convertiti in strutture `Placed`, le quali contengono solo forma e posizione nello spazio, ovvero le uniche informazioni richieste dagli algoritmi di contatto. Le type class `Collides` e `Contains` applicano il pattern Strategy per separare la definizione degli algoritmi dalle implementazioni concrete. `CollisionDetector` offre un punto di accesso uniforme per il resto del motore, fornendo un'implementazione di base tramite `given`. Il passaggio delle implementazioni con `given` e `using` realizza la Dependency Injection. Questa scelta permette ai test di sostituire gli algoritmi con versioni controllate e consente agli sviluppatori esterni di fornire un proprio rilevatore al posto di quello predefinito. Le funzioni di estensione `hasCollisionWith` e `isInside` sul tipo `Locatable` offrono infine un'interfaccia semplice e diretta per il resto del codice.
 
 ![collision_detection_class_diagram.mermaid.png](assets/collision_detection_class_diagram.mermaid.png)
 
 ## Pannello "Chat With Jimmy"
 
-Il pannello "Chat With Jimmy" è organizzato tramite il pattern MVVM: `AiModelChatPanel` costruisce la View, `ChatPanelViewModel` coordina gli eventi e `ChatPanelState` rappresenta il Model. Lo stato è modellato tramite il pattern State come un'enumerazione di valori immutabili `Ready`, `Waiting` ed `Error`, rendendo esplicite le transizioni e impedendo combinazioni di dati non valide. `ChatPanelActions` costituisce il functional core: ogni action è una funzione pura che riceve lo stato corrente e restituisce un nuovo `ChatPanelState`. L'unico punto in cui lo stato persiste è il `ChatPanelViewModel`, che lo mantiene in un `ObjectProperty` di `ScalaFX`, collega gli eventi della GUI con le relative actions del `ChatPanelActions`, coordina la chiamata all'`AiAgent` quando viene mandato un prompt ed infine aggiorna lo stato della pagina. La View osserva la property tramite il pattern Observer e traduce ogni nuovo stato nei model dei componenti `AiPanelHeader`, `MessageBox` e `PromptComposer`. `AiAgent` è la porta definita nel layer `application` dalla quale dipende il ViewModel, il layer `infrastructure` la implementa con `Langchain4jAiAgent`, un Adapter che traduce comandi e risultati di dominio nelle operazioni di LangChain4j, mentre `Langchain4jAgentFactory` ne incapsula la costruzione e la configurazione per Ollama.
+Il pannello "Chat With Jimmy" è organizzato secondo il pattern MVVM: `AiModelChatPanel` definisce la vista, `ChatPanelViewModel` gestisce gli eventi e `ChatPanelState` rappresenta il modello dei dati. Lo stato è strutturato con il pattern State come un insieme di valori immutabili (`Ready`, `Waiting` ed `Error`), rendendo evidenti i cambi di stato ed evitando combinazioni di dati incoerenti. `ChatPanelActions` raccoglie la logica pura: ogni azione è una funzione che riceve lo stato corrente e ne restituisce uno nuovo. L'unico elemento che conserva lo stato nel tempo è `ChatPanelViewModel`, che lo memorizza dentro una proprietà osservabile di ScalaFX, associa gli eventi dell'interfaccia alle funzioni di `ChatPanelActions`, avvia la richiesta ad `AiAgent` all'invio di un messaggio e aggiorna infine la vista. La vista osserva questa proprietà e traduce ogni variazione nei modelli dei componenti `AiPanelHeader`, `MessageBox` e `PromptComposer`. `AiAgent` è la porta definita nel livello applicativo da cui dipende il ViewModel. Il livello di infrastruttura la realizza con `Langchain4jAiAgent`, un adattatore che converte i comandi di dominio nelle chiamate richieste da LangChain4j, mentre `Langchain4jAgentFactory` ne gestisce la configurazione per Ollama.
 
 ![ai_chat_panel_class_diagram.mermaid.png](assets/ai_chat_panel_class_diagram.mermaid.png)
 
 ## Valutazione del modello LLM
 
-La valutazione del modello LLM segue i pattern Ports and Adapters e Dependency Inversion: il layer `application` definisce le porte `AgentEvaluator` e `AgentEvaluationDataset`, senza dipendere da LangChain4j, Ollama o da uno specifico insieme di test. Il layer `infrastructure` fornisce gli adattatori concreti: `Langchain4jAgentEvaluator` esegue le conversazioni e interroga il modello da valutare ed il modello giudice, `Langchain4jToolCallMapper` traduce i tipi della libreria nei `ToolCall` di dominio e `HardcodedAgentEvaluationDataset` fornisce i casi di valutazione. Il metodo `AgentEvaluator.evaluate` applica il pattern Template Method: mantiene pura e comune l'aggregazione dei punteggi, delegando all'implementazione di `evaluateCase` gli effetti necessari a valutare il singolo caso. Ogni sottodominio usa la rappresentazione richiesta dal proprio scopo: il dominio descrive input e risultati immutabili tramite `AgentEvaluationTest`, `ToolCall`, `AgentEvaluationResponse` e `AgentEvaluationRecap`, mentre i tipi dipendenti da LangChain4j restano confinati nell'infrastruttura. `AgentEvaluationRuntime` riceve evaluator, dataset e printer tramite `given` e `using`, realizzando la Dependency Injection e permettendo ai test o a nuove integrazioni di sostituire ciascuna dipendenza senza modificare il flusso applicativo.
+La valutazione del modello LLM segue i pattern Ports and Adapters e Dependency Inversion: il livello applicativo definisce le porte `AgentEvaluator` e `AgentEvaluationDataset`, senza dipendere da LangChain4j, da Ollama o da elenchi prefissati di test. Il livello di infrastruttura fornisce i componenti concreti: `Langchain4jAgentEvaluator` gestisce i messaggi e interroga sia il modello da testare sia il modello di controllo, `Langchain4jToolCallMapper` converte i tipi della libreria nei formati `ToolCall` di dominio ed `HardcodedAgentEvaluationDataset` fornisce i casi di prova. La funzione `AgentEvaluator.evaluate` segue il pattern Template Method: mantiene comune e privo di effetti collaterali il calcolo dei punteggi complessivi, affidando a `evaluateCase` le operazioni necessarie per valutare la singola prova. Ciascun livello usa i tipi più adatti: il dominio descrive ingressi ed esiti immutabili con `AgentEvaluationTest`, `ToolCall`, `AgentEvaluationResponse` e `AgentEvaluationRecap`, mentre i tipi legati a LangChain4j restano isolati nell'infrastruttura. `AgentEvaluationRuntime` riceve valutatore, dataset e modulo di stampa tramite `given` e `using`, completando l'iniezione delle dipendenze e consentendo di sostituire ogni parte nei test o con nuovi strumenti senza toccare il flusso principale.
 
 ![agent_evaluation_class_diagram.mermaid.png](assets/agent_evaluation_class_diagram.mermaid.png)
 
 ## Launcher
 
-Il `Launcher` costituisce il Composition Root dell'applicazione: è l'unico punto che conosce contemporaneamente le port definite dal layer `application`, gli adapter del layer `infrastructure` e gli oggetti del layer `presentation`. Per la modalità grafica costruisce `MonadCoreWorld`, `MonadCoreGameEngineRuntime`, `Langchain4jAiAgent`, `ConsoleLogger` e gli altri servizi, li associa alle rispettive astrazioni tramite `given` e li rende disponibili a `ScalaFxLauncher`, `MainStage` e ai pannelli attraverso `using`. La modalità di valutazione segue lo stesso principio, collegando `Langchain4jAgentEvaluator`, `HardcodedAgentEvaluationDataset` e `AgentEvaluatorConsolePrinter` alle port richieste da `AgentEvaluationRuntime`, questa Dependency Injection mantiene la presentation indipendente dall'infrastruttura e consente di sostituire le implementazioni nei test. Il sistema di routing usa un `Router` immutabile configurato tramite `on`: ogni `ArgumentRoutingRoute` associa un `RouteType` a una funzione senza argomenti che rappresenta il comando da eseguire. `evaluate` seleziona la prima route compatibile con gli argomenti, mentre `All` realizza il fallback verso la GUI.
+L'oggetto `Launcher` opera come radice di composizione del sistema: è l'unico componente a conoscere le porte del livello applicativo, gli adattatori dell'infrastruttura e gli elementi grafici. Per l'avvio con interfaccia grafica crea `MonadCoreWorld`, `MonadCoreGameEngineRuntime`, `Langchain4jAiAgent`, `ConsoleLogger` e gli altri servizi, li collega alle rispettive definizioni astratte tramite `given` e li passa a `ScalaFxLauncher`, `MainStage` e ai vari pannelli mediante `using`. La modalità di valutazione segue la stessa impostazione, associando `Langchain4jAgentEvaluator`, `HardcodedAgentEvaluationDataset` e `AgentEvaluatorConsolePrinter` alle porte richieste da `AgentEvaluationRuntime`. Questa gestione delle dipendenze mantiene la parte grafica indipendente dall'infrastruttura e facilita le sostituzioni durante i test. L'instradamento dei comandi usa un componente `Router` immutabile configurato con il metodo `on`: ogni elemento associa un tipo di percorso a una funzione senza argomenti che esegue l'operazione richiesta. Il metodo `evaluate` seleziona il primo percorso adatto ai parametri passati, mentre la voce `All` gestisce il ripiego verso l'interfaccia grafica.
 
 ![launcher_class_diagram.mermaid.png](assets/launcher_class_diagram.mermaid.png)
 
 ## CI/CD
 
-La Continuous Integration esegue la suite Scala per ogni push su qualsiasi branch e sulle pull request dirette a `main` e `development`. Il runner configura Java 21 e SBT, installa i font e un display virtuale Xvfb per rendere eseguibili in un ambiente Linux headless anche gli snapshot test JavaFX. Un workflow separato applica con le stesse modalità il criterio di formattazione tramite `sbt scalafmtCheckAll`, la configurazione Scalafmt condivisa rende così la formattazione un vincolo verificabile anziché una convenzione affidata al singolo sviluppatore.
+La Continuous Integration esegue la suite di test Scala a ogni invio su qualsiasi ramo e su tutte le pull request verso i rami `main` e `development`. L'ambiente di esecuzione prepara Java 21 e SBT, installando i caratteri di sistema e lo schermo virtuale Xvfb per eseguire su macchine Linux senza interfaccia anche i test grafici basati su JavaFX. Un flusso di lavoro separato verifica il rispetto dello stile di formattazione con il comando `sbt scalafmtCheckAll`. La presenza di una configurazione Scalafmt condivisa trasforma le regole di formattazione in un controllo automatico e verificabile.
 
-La Continuous Delivery viene avviata da un push su `main`. Il primo job legge `release_version` da `project/build.properties`, recupera l'ultima release tramite GitHub CLI e accetta soltanto una versione strettamente maggiore. La build utilizza quindi una matrice di runner Linux, Windows e macOS: ogni piattaforma esegue `sbt assembly`, rinomina il fat JAR includendo la versione e il sistema operativo e pubblica l'artefatto intermedio. Questa distinzione è necessaria perché la distribuzione include i moduli JavaFX specifici di ciascuna piattaforma.
+La Continuous Delivery parte in modo automatico a ogni invio sul ramo `main`. La prima fase legge il valore `release_version` dal file `project/build.properties`, recupera l'ultima versione tramite la riga di comando di GitHub e accetta solo numeri di versione superiori. La compilazione sfrutta una serie di macchine con Linux, Windows e macOS: ciascuna esegue `sbt assembly`, rinomina il pacchetto includendo versione e sistema operativo e salva l'archivio generato. Questo passaggio separato è necessario per incorporare le librerie JavaFX corrette per ogni ambiente.
 
-Soltanto dopo il completamento della matrice, il job di release genera con Quarkdown il PDF della relazione, scarica i tre JAR e crea una GitHub Release dotata di tag versionato, note automatiche e tutti gli artefatti richiesti per la consegna. In parallelo, un workflow dedicato costruisce il sito documentale pubblicato tramite GitHub Pages. Il job genera con Quarkdown la relazione HTML e con `sbt doc` la Scaladoc del progetto, quindi assembla un unico artefatto Pages: la relazione occupa la radice del sito, mentre la documentazione delle API è disponibile nel percorso `/api`. In questo modo la descrizione progettuale e il riferimento tecnico versionato vengono distribuiti insieme a ogni aggiornamento di `main`.
+Al termine dei lavori sulle diverse piattaforme, la fase di pubblicazione genera con Quarkdown il file PDF della relazione, recupera i tre pacchetti JAR e crea una Release su GitHub con etichetta di versione, note riassuntive e tutti gli allegati previsti. In parallelo, un secondo flusso di lavoro costruisce il sito web della documentazione su GitHub Pages. Il processo genera la versione HTML della relazione con Quarkdown e la documentazione del codice con `sbt doc`, unendo poi i contenuti in un unico archivio per Pages. La relazione viene posizionata nella pagina principale del sito, mentre le note tecniche sulle API sono accessibili all'indirizzo `/api`. In questo modo la guida descrittiva e i riferimenti sul codice vengono aggiornati insieme a ogni modifica del ramo principale.
 
 ![actions-architecture.png](assets/actions-architecture.png)
 
 ## Sessione, rendering ed eventi
 
-`EngineFacade` nasconde il game loop e permette al client di ragionare per sessioni. È una facade funzionale per la quale ogni operazione riceve una sessione e restituisce quella successiva, senza stato globale. Il client vede un solo risultato contenente i valori che deve adottare e non dipende dai dettagli interni.
+Il componente `EngineFacade` nasconde il ciclo principale del motore e consente al chiamante di gestire il lavoro tramite sessioni. Si tratta di una facciata funzionale in cui ogni operazione riceve lo stato corrente e ne restituisce uno nuovo, senza variabili globali. Il codice esterno riceve un unico risultato con le informazioni necessarie e non entra nei dettagli interni di funzionamento.
 
 ![facade-flux.png](assets/engine-facade-operative-flux.png)
 
-Il rendering è diviso in pianificazione pura e interpretazione grafica. `RendererManager` legge uno stato e, tramite un `Painter` sostituibile, produce un `Vector[DrawCommand]` ordinato con superfici prima delle entità. `DrawCommand` è un ADT, soltanto `ShapePainter`, nel layer Presentation, lo interpreta su ScalaFX. Un `Painter` alternativo può quindi riusare lo stato e piano di disegno senza importare JavaFX nell'engine.
+La parte visiva è divisa tra calcolo puro e disegno a schermo. `RendererManager` legge le informazioni della scena e, sfruttando un componente `Painter` intercambiabile, genera una lista ordinata di comandi grafici `Vector[DrawCommand]`, inserendo le superfici prima delle entità. Il tipo `DrawCommand` è una struttura dati astratta, e solo il componente `ShapePainter` nel livello di presentazione lo traduce nelle forme di ScalaFX. In questo modo è possibile usare un motore grafico diverso riutilizzando la stessa logica di disegno, senza inserire dipendenze da JavaFX nel motore logico.
 
 ![renderer-architecture.png](assets/renderer-architecture.png)
 
-Gli `EngineEvent` percorrono la pipeline insieme ai risultati. Le regole accumulano eventi senza pubblicare side effect, il game loop unisce quelli dei diversi fixed update e mondo e runtime li inoltrano al callback scelto dal composition root. Formatter e logger restano esterni all'engine.
+Gli eventi `EngineEvent` attraversano la sequenza di calcolo insieme ai dati elaborati. Le regole fisiche salvano gli eventi senza produrre effetti collaterali immediati. Il ciclo principale unisce gli eventi raccolti nei vari passi fissi, mentre la gestione del mondo e il runtime li trasmettono alla funzione scelta nella radice di composizione. I moduli di formattazione e scrittura dei log restano del tutto esterni al motore.
 
 ![event-system.png](assets/log-system.png)
 
 ## Game loop ed interpolazione
 
-Il game loop è progettato come un functional core.
+Il ciclo principale è progettato come un nucleo funzionale puro.
 
-`GameLoop` espone il
-contratto, mentre `GameLoopImpl` conserva in modo immutabile modalità, durata del
-tick, ultimo timestamp e tempo accumulato. Il motore fisico viene ricevuto
-tramite `using`, applicando Dependency Injection, e può essere sostituito senza
-modificare il ciclo, secondo il pattern Strategy. I companion object di
-`GameLoop` e `WorldBounds` applicano lo Smart Constructor, perché validano i
-parametri prima di rendere disponibile un'istanza.
+`GameLoop` definisce l'interfaccia generale, mentre `GameLoopImpl` memorizza in modo immutabile lo stato operativo, la durata del passo, l'orario dell'ultimo calcolo e il tempo accumulato. Il motore fisico viene ricevuto tramite `using` applicando la Dependency Injection, e può essere sostituito senza toccare il ciclo, secondo il pattern Strategy. I companion object di `GameLoop` e `WorldBounds` usano costruttori controllati per validare i dati prima di creare un'istanza.
 
-`GameLoopImpl.tick` limita il tempo trascorso alla durata massima di un frame e
-lo somma all'accumulatore. Se $ T $ è la durata del tick e $ A' $ è il tempo
-disponibile, il numero di aggiornamenti completi e il residuo sono:
+Il metodo `GameLoopImpl.tick` limita il tempo trascorso alla durata massima prevista per un singolo fotogramma e lo aggiunge al tempo accumulato. Indicando con $ T $ la durata di un passo e con $ A' $ il tempo totale a disposizione, il numero di aggiornamenti completi e il tempo residuo sono dati da:
 
 $ N=\left\lfloor\frac{A'}{T}\right\rfloor,\quad A_r=A'-NT,\quad \alpha=\frac{A_r}{T} $
 
-`runFixedUpdate` esegue ricorsivamente i tick completi. Ogni chiamata usa lo
-stato restituito dalla precedente, accumula gli eventi e termina al primo
-errore. `FixedUpdateResult` conserva i dati intermedi, mentre
-`GameLoopTickResult` espone al client lo stato precedente, quello corrente, il
-nuovo loop, gli eventi e il coefficiente di interpolazione.
+La funzione `runFixedUpdate` calcola in modo ricorsivo tutti i passi completi necessari. Ogni chiamata riceve lo stato prodotto da quella precedente, raccoglie i nuovi eventi e si ferma in presenza di errori. La struttura `FixedUpdateResult` memorizza i passaggi intermedi, mentre `GameLoopTickResult` restituisce al chiamante lo stato precedente, quello attuale, il nuovo ciclo, gli eventi generati e il fattore di interpolazione.
 
-`LoopMode` distingue la modifica dalla simulazione. Quando il loop è fermo o in
-`EditMode`, la scena non avanza e la fisica non viene invocata. `GameLoopError` raccoglie gli errori relativi a
-tick, timestamp, accumulatore e durata massima del frame.
+L'enumerazione `LoopMode` separa le modifiche dalla simulazione attiva. Con il ciclo fermo o impostato su `EditMode`, la scena non avanza e le regole fisiche non vengono richiamate. La classe `GameLoopError` raccoglie tutti i problemi relativi a passi, orari, tempi accumulati e limiti di durata del fotogramma.
 
-`StateInterpolator` usa i due stati restituiti dal loop per produrre la scena da
-mostrare. Le entità presenti in entrambi vengono interpolate, quelle nuove sono
-prese dallo stato corrente e quelle rimosse non vengono reintrodotte. Superfici
-e team provengono dallo stato corrente. Anche `WorldBounds` viene interpolato e
-validato nuovamente.
+Il componente `StateInterpolator` usa i due stati forniti dal ciclo per costruire la scena finale da disegnare. Gli elementi presenti in entrambi gli stati vengono interpolati, gli oggetti appena aggiunti provengono dallo stato più recente e quelli eliminati non vengono riproposti. Superfici e gruppi di appartenenza vengono letti direttamente dallo stato corrente. Anche i limiti del mondo in `WorldBounds` vengono calcolati e controllati nuovamente.
 
-La posizione usa un'interpolazione lineare. Per la rotazione `Rotation`
-seleziona l'arco più breve e normalizza il risultato, evitando un giro quasi
-completo quando gli angoli attraversano lo zero.
+La posizione usa un'interpolazione lineare. Per la direzione angolare, `Rotation` calcola la variazione scegliendo l'arco più breve e normalizza il valore, evitando rotazioni anomale nel passaggio vicino allo zero:
 
 $ \Delta\theta=((\theta_1-\theta_0+540^\circ)\bmod360^\circ)-180^\circ,\quad \theta'=normalize(\theta_0+\alpha\Delta\theta) $
 
@@ -100,250 +80,148 @@ $ \Delta\theta=((\theta_1-\theta_0+540^\circ)\bmod360^\circ)-180^\circ,\quad \th
 
 ## Motore fisico
 
-Il motore fisico applica il pattern Strategy attraverso `PhysicsRule`. Ogni
-regola realizza lo stesso contratto e può essere abilitata o disabilitata senza modificare `PhysicsManager`. `RuleCombinator` realizza una
-Pipeline funzionale, perché propaga lo stato da una regola alla successiva,
-accumula gli eventi e interrompe la sequenza al primo errore. Il
-`CollisionDetector` è ricevuto tramite `given` e `using`, applicando Dependency
-Injection e mantenendo sostituibile il sistema di rilevamento descritto nella
-sezione dedicata.
+Il motore fisico applica il pattern Strategy tramite l'interfaccia `PhysicsRule`. Ogni regola rispetta lo stesso contratto e può essere attivata o disattivata senza modifiche a `PhysicsManager`. Il componente `RuleCombinator` realizza una catena funzionale che trasferisce lo stato da una regola all'altra, raccoglie gli eventi emessi e arresta l'esecuzione al primo errore. `CollisionDetector` viene passato tramite `given` e `using`, realizzando la Dependency Injection e mantenendo intercambiabile il modulo di rilevamento degli urti.
 
 ### Nucleo e pipeline
 
 ![physics-pipeline](assets/physics-pipeline.drawio.png)
 
-`PhysicsManager.step` crea un solo `PhysicsContext` per aggiornamento. Il
-contesto contiene stato, delta temporale e `CollisionSnapshot`. Lo snapshot
-separa i contatti tra entità, rappresentati da `EntityCollisionContact`, dai
-contatti tra entità e superfici, rappresentati da `SurfaceContact`. Ogni regola
-riceve lo stato aggiornato dalla precedente ma osserva gli stessi contatti
-rilevati all'inizio dello step.
+Il metodo `PhysicsManager.step` crea un singolo oggetto `PhysicsContext` per ogni ciclo di aggiornamento. Questo elemento contiene lo stato, l'intervallo temporale e una fotografia dei contatti `CollisionSnapshot`. Tale fotografia separa gli urti tra entità, memorizzati come `EntityCollisionContact`, dai contatti con le superfici, salvati come `SurfaceContact`. Ciascuna regola riceve lo stato modificato dalla regola precedente, ma analizza i contatti rilevati all'avvio del passo.
 
-La configurazione predefinita esegue nell'ordine `SurfaceDynamicsRule`,
-`EnemyAttractionRule`, `CollisionResolutionRule`, `BorderContactRule`,
-`DamageApplicationRule` e `KinematicsRule`.
+L'ordine di esecuzione predefinito comprende nell'ordine: `SurfaceDynamicsRule`, `EnemyAttractionRule`, `CollisionResolutionRule`, `BorderContactRule`, `DamageApplicationRule` e `KinematicsRule`.
 
 ### Regola delle dinamiche delle superfici
 
-La `SurfaceDynamicsRule` applica gli effetti delle superfici alle entità mobili
-che risultano al loro interno. I `SurfaceContact` permettono di recuperare
-entità e superficie dallo stato senza ripetere la collision detection.
+La regola `SurfaceDynamicsRule` applica gli effetti delle superfici agli elementi in movimento presenti sopra di esse. La struttura `SurfaceContact` permette di recuperare l'entità e la superficie dallo stato senza ripetere i controlli di contatto.
 
-Per ogni contatto possono essere applicati tre effetti:
+Per ciascun contatto vengono gestiti fino a tre effetti:
 
-- `appliedForce` produce un'accelerazione in base alla massa dell'entità,
-- `frictionIndex` riduce la velocità lineare in funzione del delta temporale,
-- lo stesso attrito riduce la velocità angolare, quando questa è presente.
+- `appliedForce` genera un'accelerazione basata sulla massa dell'oggetto,
+- `frictionIndex` rallenta la velocità lineare in base al tempo trascorso,
+- lo stesso attrito riduce anche la velocità angolare, se presente.
 
-Indicando con $ \mu $ l'indice di attrito e con $ \Delta t $ il tempo espresso
-in secondi, i due calcoli principali sono:
+Indicando con $ \mu $ il valore di attrito e con $ \Delta t $ il tempo in secondi, le due formule applicate sono:
 
 $ a=\frac{F}{m},\quad f=\max(0,1-\mu\Delta t) $
 
-Le proprietà opzionali assenti non producono alcun cambiamento. `PhysicsUtil`
-esegue conversione del tempo, calcolo dell'accelerazione e applicazione degli
-attriti. I contatti multipli vengono composti su una mappa immutabile, poi
-`SceneEntitiesUpdate` sostituisce nello `State` soltanto le entità modificate.
-Una massa necessaria ma assente e un delta temporale negativo vengono restituiti
-come `PhysicsError`.
+I campi non indicati non producono variazioni. L'oggetto di supporto `PhysicsUtil` gestisce la conversione dei tempi, il calcolo dell'accelerazione e l'effetto degli attriti. I contatti multipli vengono raggruppati in una mappa immutabile, e `SceneEntitiesUpdate` aggiorna nello stato solo gli elementi che hanno subito modifiche. La mancanza di un valore di massa necessario o un intervallo di tempo negativo generano un errore di tipo `PhysicsError`.
 
 ### Regola di attrazione verso il nemico
 
-La `EnemyAttractionRule` orienta le entità mobili verso il nemico più vicino.
-`PhysicsUtil.nearestEnemy` usa il team dell'entità per individuare gli avversari
-e seleziona quello con distanza minima. Un'entità priva di team, senza nemici o
-senza velocità lineare rimane invariata.
+La regola `EnemyAttractionRule` orienta le entità mobili verso l'avversario più vicino. La funzione `PhysicsUtil.nearestEnemy` legge il gruppo dell'entità per trovare i team rivali e sceglie l'elemento a distanza minore. Gli oggetti senza gruppo, privi di avversari o senza velocità lineare restano invariati.
 
-Per ogni bersaglio viene richiesto a `RayCast` un punto da raggiungere. Se il
-nemico è visibile, viene restituita la sua posizione. Se un ostacolo interrompe
-la linea diretta, viene scelto un waypoint laterale. La velocità viene quindi
-ruotata verso il punto ottenuto, mantenendone invariato il modulo. La variazione
-angolare è limitata da una velocità massima di rotazione moltiplicata per il
-delta temporale, evitando cambi di direzione istantanei.
+Per ogni bersaglio viene richiesto a `RayCast` un punto verso cui muoversi. Se la linea è libera, viene restituita direttamente la posizione del bersaglio. In presenza di un ostacolo, viene invece calcolato un punto di passaggio laterale. La direzione del movimento viene quindi orientata verso tale punto, mantenendo costante l'intensità della velocità. Il cambio di direzione viene limitato da una velocità di rotazione massima moltiplicata per l'intervallo di tempo, evitando svolte istantanee.
 
-Le entità orientate vengono applicate tramite `SceneEntitiesUpdate`. Un errore
-del ray casting viene propagato come `PhysicsError`, mentre l'assenza di un
-waypoint valido lascia invariata l'entità.
+Gli aggiornamenti vengono registrati tramite `SceneEntitiesUpdate`. Gli errori durante il tracciamento del raggio producono un `PhysicsError`, mentre l'assenza di punti di passaggio validi lascia l'entità nella direzione corrente.
 
 ### Regola di risoluzione delle collisioni
 
 ![contact-classes](assets/contact-classes.drawio.png)
 
-La `CollisionResolutionRule` elabora i contatti tra entità presenti nel
-`CollisionSnapshot`. Ogni `EntityCollisionContact` viene trasformato in due
-associazioni, una per ciascun corpo, invertendo la normale nel secondo verso.
-Il risultato è un `CollisionMap` consumato da `CollisionResolver`.
+La regola `CollisionResolutionRule` gestisce i contatti tra entità presenti nella fotografia dei contatti `CollisionSnapshot`. Ogni elemento `EntityCollisionContact` viene suddiviso in due voci, una per ciascun corpo coinvolto, invertendo la direzione della normale per il secondo oggetto. La mappa risultante viene passata al componente `CollisionResolver`.
 
-La risoluzione avviene in due fasi:
+La correzione del contatto si svolge in due momenti:
 
-- l'overlap viene eliminato spostando il solo corpo mobile contro un corpo fisso,
-  oppure distribuendo la correzione in base alle masse quando entrambi sono mobili,
-- il rimbalzo aggiorna la velocità lineare e, quando disponibile, quella angolare.
+- la sovrapposizione viene rimossa spostando il solo oggetto mobile in caso di contatto con un corpo fisso, oppure distribuendo lo spostamento in base alle masse se entrambi gli oggetti possono muoversi,
+- la risposta elastica aggiorna la velocità lineare e l'eventuale velocità di rotazione.
 
-`BounceResponse` gestisce la risposta elastica lineare. Quando è presente una
-componente rotazionale, `CollisionVelocityDelta` calcola la velocità nel punto
-di contatto, il momento d'inerzia e l'impulso. `VelocityDelta` raccoglie le
-variazioni lineare e angolare da applicare all'entità.
+Il modulo `BounceResponse` calcola la reazione elastica lineare. Se è presente una rotazione, `CollisionVelocityDelta` determina la velocità nel punto di contatto, il momento d'inerzia e la forza d'impatto. La struttura `VelocityDelta` raccoglie le variazioni lineari e angolari da assegnare all'oggetto.
 
-La velocità del punto di contatto comprende la componente tangenziale della
-rotazione:
+La velocità nel punto di contatto include anche la componente dovuta alla rotazione:
 
 $ v_{contact}=v+\omega(-r_y,r_x) $
 
-Per cerchi e rettangoli uniformi vengono usati i rispettivi momenti d'inerzia:
+Per cerchi e rettangoli con densità costante vengono calcolati i rispettivi momenti d'inerzia:
 
 $ I_{circle}=\frac{1}{2}mr^2,\quad I_{rectangle}=\frac{1}{12}m(h^2+l^2) $
 
-Con $ v_n $ velocità relativa entrante lungo la normale, l'impulso elastico è:
+Con $ v_n $ velocità di avvicinamento lungo la normale, l'impulso generato risulta:
 
 $ j=\frac{-2v_n}{M^{-1}_{eff}} $
 
-`SceneEntitiesUpdate` inserisce nello stato i corpi corretti. Per ogni contatto
-la regola produce inoltre un `CollisionDetected` con un
-`CollisionTarget.Entity`.
+Il componente `SceneEntitiesUpdate` salva nello stato i dati corretti. Per ogni contatto la regola genera inoltre l'evento `CollisionDetected` indicando come bersaglio `CollisionTarget.Entity`.
 
 ### Regola di contatto con i bordi
 
-La `BorderContactRule` controlla se una parte di un'entità mobile supera i
-limiti di `WorldBounds`. `SizeHelper` calcola l'ingombro orizzontale e verticale
-della forma tenendo conto della rotazione, così il controllo non considera
-soltanto il centro dell'entità.
+La regola `BorderContactRule` verifica se un elemento mobile oltrepassa i confini definiti da `WorldBounds`. Il modulo `SizeHelper` calcola le dimensioni occupate nello spazio tenendo conto anche dell'angolo di rotazione, evitando verifiche limitate al solo punto centrale.
 
-Per ogni lato attraversato `BorderWall` crea un corpo fisso temporaneo con
-normale, profondità di penetrazione e punto di contatto. Questi dati sono
-raccolti in `DetectedBorderCollision` e trasformati in un `CollisionMap`.
+Per ogni confine superato, `BorderWall` modella un corpo fisso provvisorio completo di normale, profondità di ingresso e punto di contatto. Questi valori vengono inseriti in `DetectedBorderCollision` e poi organizzati in una mappa di collisione.
 
-La regola riusa `CollisionResolver`, quindi separazione e rimbalzo seguono lo
-stesso comportamento delle collisioni tra entità. Lo stato viene aggiornato
-tramite `SceneEntitiesUpdate` e viene prodotto un `CollisionDetected` con un
-`CollisionTarget.Border` che identifica il lato coinvolto.
+La regola sfrutta la stessa logica di `CollisionResolver`, mantenendo coerenti la separazione e il rimbalzo con quanto avviene tra entità. Lo stato viene aggiornato tramite `SceneEntitiesUpdate`, generando l'evento `CollisionDetected` con il riferimento `CollisionTarget.Border` relativo alla parete interessata.
 
 ### Regola d'applicazione del danno e riconoscimento della "morte"
 
-La DamageApplicationRule gestisce l'applicazione del danno in seguito a una collisione. Le collisioni possono avvenire tra due entità oppure tra un'entità e una superficie. In entrambi i casi, il danno viene applicato tramite la funzione applyDamage dell'entità coinvolta.
+La regola `DamageApplicationRule` gestisce i danni conseguenti a un impatto. I contatti possono avvenire tra due elementi oppure tra un elemento e una superficie. In entrambe le situazioni il danno viene applicato tramite la funzione `applyDamage` dell'oggetto interessato.
 
-L'applicazione può produrre tre risultati:
+L'operazione può portare a tre esiti:
 
-- l'entità conserva una quantità di vita maggiore di zero e viene aggiornata nello State,
-- la vita raggiunge zero o un valore inferiore e l'entità viene rimossa dalla scena,
-- l'entità non possiede una salute a cui applicare il danno e rimane quindi invariata.
+- l'entità mantiene un valore di salute superiore a zero e viene aggiornata nello stato,
+- la salute scende a zero o a valori inferiori e l'entità viene eliminata dalla scena,
+- l'entità non prevede una misura di salute e resta invariata.
 
-La "morte" di un'entità viene quindi rappresentata direttamente dalla sua rimozione dallo State, senza introdurre uno stato o un flag aggiuntivo.
+L'eliminazione di un elemento dal mondo di gioco corrisponde direttamente alla sua rimozione dallo stato, senza l'uso di indicatori o stati dedicati.
 
-Al termine della regola, il confronto tra lo stato iniziale e quello risultante permette di generare l'EngineEvent appropriato: EntityUpdated se l'entità è stata modificata, EntityRemoved se è stata eliminata, oppure nessun evento se è rimasta invariata.
+Al termine del passaggio, il confronto tra lo stato di partenza e quello aggiornato permette di emettere l'evento opportuno: `EntityUpdated` in caso di modifica, `EntityRemoved` in caso di eliminazione, oppure nessun evento se non vi sono stati cambiamenti.
 
 ![Flusso della regola di applicazione del danno](assets/damage-rule.png)
 
 ### Regola cinematica
 
-La `KinematicsRule` aggiorna posizione e rotazione delle entità non fisse al
-termine della pipeline. `PhysicsUtil.nextPosition` somma alla posizione lo
-spostamento ottenuto da velocità lineare e delta temporale. `Rotation.normalize`
-somma la variazione angolare e mantiene l'angolo tra zero incluso e 360 escluso.
+La regola `KinematicsRule` aggiorna la posizione e l'orientamento degli elementi mobili alla fine della sequenza fisica. La funzione `PhysicsUtil.nextPosition` somma alla posizione corrente lo spostamento calcolato tramite velocità lineare e intervallo di tempo. La funzione `Rotation.normalize` aggiorna l'angolo mantenendolo nell'intervallo tra zero compreso e 360 escluso.
 
-L'applicazione può produrre tre risultati:
+L'aggiornamento può produrre tre esiti:
 
-- un'entità con velocità lineare viene spostata,
-- un'entità con velocità angolare viene ruotata,
-- una proprietà di movimento assente lascia invariata la relativa componente.
+- un oggetto con velocità lineare si sposta nello spazio,
+- un oggetto con velocità angolare varia il proprio angolo,
+- l'assenza di valori di movimento lascia invariata la grandezza corrispondente.
 
-Le due trasformazioni possono essere applicate insieme. Un delta temporale
-negativo o un errore del modello viene propagato come `PhysicsError`.
-`SceneEntitiesUpdate` sostituisce infine nello stato le entità aggiornate.
+Entrambi gli spostamenti possono avvenire contemporaneamente. Un valore di tempo negativo o un dato incoerente nel modello generano un errore di tipo `PhysicsError`. `SceneEntitiesUpdate` registra infine le nuove coordinate nello stato:
 
 $ p'=p+v\Delta t,\quad \theta'=normalize(\theta+\omega\Delta t) $
 
 ### Sistema di pathfinding locale
 
-Il pathfinding viene usato da `EnemyAttractionRule` per stabilire se
-un'entità possa dirigersi verso il nemico o debba aggirare un ostacolo. Non
-calcola un percorso globale. Produce il prossimo punto utile in base alla
-geometria osservata nello step corrente.
+La ricerca del percorso locale viene usata da `EnemyAttractionRule` per decidere se un elemento può puntare direttamente al nemico o se deve aggirare un ostacolo. Questo sistema non genera una mappa completa del tragitto, ma individua solo il punto successivo utile in base agli ostacoli presenti nell'istante corrente.
 
-`VertexFinder` trasforma ogni entità in una sequenza di punti nello spazio.
-`CircleVertexes` approssima un cerchio con punti equidistanti,
-`RectangleVertexes` calcola i vertici del rettangolo considerando posizione e
-rotazione, mentre `PointOnCircle` costruisce i singoli punti della
-circonferenza. Questa rappresentazione permette a `RayIntersection` di trattare
-le forme come insiemi di segmenti.
+Il componente `VertexFinder` converte ogni forma in una serie di coordinate nello spazio. `CircleVertexes` crea punti distribuiti lungo la forma circolare, `RectangleVertexes` trova i vertici del rettangolo considerando posizione e orientamento, mentre `PointOnCircle` calcola i singoli punti sulla circonferenza. Grazie a queste informazioni, `RayIntersection` può analizzare gli elementi come una serie di segmenti lineari.
 
-`RayCast` esegue il flusso principale:
+La procedura in `RayCast` segue questi passaggi:
 
-1. rimuove dalla mappa dei vertici l'entità che sta cercando il percorso,
-2. amplia gli ostacoli in base all'ingombro dell'entità mobile e a un margine di sicurezza,
-3. usa `RayIntersection` per trovare l'oggetto più vicino lungo la direzione del bersaglio,
-4. restituisce la posizione del nemico quando questo è il primo oggetto incontrato,
-5. in presenza di un ostacolo richiede due alternative a `WaypointFinder`,
-6. scarta i punti che porterebbero l'entità fuori dal mondo e sceglie quello più vicino alla destinazione.
+1. rimuove dall'elenco dei punti l'elemento che sta cercando la traiettoria,
+2. allarga i contorni degli ostacoli considerando le dimensioni dell'oggetto e un margine di sicurezza,
+3. usa `RayIntersection` per individuare l'oggetto più vicino lungo la direzione del bersaglio,
+4. restituisce la posizione del nemico se questo si trova lungo una traiettoria libera,
+5. richiede due punti alternativi a `WaypointFinder` se la via diretta è ostruita,
+6. scarta le posizioni esterne ai limiti del mondo e seleziona il punto più vicino all'obiettivo.
 
-`RayIntersection` verifica sia l'intersezione con i lati delle forme sia il caso
-in cui un vertice si trovi direttamente sul raggio. Le intersezioni parallele,
-quelle dietro l'origine e quelle esterne al segmento vengono ignorate. Tra i
-risultati validi viene mantenuta la distanza minore.
+Il modulo `RayIntersection` valuta sia gli incroci con i lati delle forme sia la presenza di vertici posizionati direttamente lungo la linea. I segmenti paralleli, i punti situati alle spalle dell'oggetto e le posizioni esterne ai segmenti vengono tralasciati. Tra i punti validi viene tenuto quello a distanza minore.
 
-Posti $ R(t)=o+td $, $ S(u)=a+us $ e $ q=a-o $, i parametri verificati sono:
+Dati $ R(t)=o+td $, $ S(u)=a+us $ e $ q=a-o $, i parametri calcolati sono:
 
 $ t=\frac{q\times s}{d\times s},\quad u=\frac{q\times d}{d\times s},\quad t\geq0,\quad 0\leq u\leq1 $
 
-`WaypointFinder` usa i punti di tangenza per un ostacolo circolare. Per un
-rettangolo seleziona invece i due vertici con angolo minimo e massimo rispetto
-alla direzione del centro. `RayCast.actualWaypoint` allontana i candidati
-dall'ostacolo considerando il raggio del corpo in movimento. `SizeHelper`
-verifica infine che l'intera forma, non soltanto il suo centro, rimanga dentro i
-limiti della scena.
+Il componente `WaypointFinder` sfrutta i punti di tangenza nel caso di ostacoli circolari. Per le forme rettangolari sceglie invece i due vertici con la deviazione angolare minima e massima rispetto alla linea centrale. La funzione `RayCast.actualWaypoint` allontana questi punti dall'ostacolo tenendo conto del raggio del corpo in corsa. Infine, `SizeHelper` controlla che l'intero ingombro della forma rimanga all'interno dell'area di gioco.
 
-Quando il raggio non incontra alcuna forma viene prodotto
-`RayIntersectedNothing`. Se l'identificatore incontrato non corrisponde più a
-un'entità viene prodotto `RayIntersectedAMissingEntity`. Se tutti i waypoint
-sono fuori dal mondo il risultato è `None` e l'entità mantiene la direzione
-corrente.
+Se la traiettoria non tocca alcun elemento viene generato `RayIntersectedNothing`. Se il codice dell'oggetto rilevato non corrisponde più a un elemento valido viene restituito `RayIntersectedAMissingEntity`. Quando tutti i punti di passaggio ricadono fuori dai confini il risultato è `None`, e l'elemento prosegue lungo la direzione attuale.
 
 ## Performance
 
-Il sottosistema di performance applica Ports and Adapters e Dependency
-Inversion. Il layer Application espone `PerformanceExecutor`, mentre
-`PerformanceCli` lo implementa nel layer Infrastructure. `Launcher` fornisce
-l'implementazione tramite `given`, permettendo alla Presentation di dipendere
-soltanto dal port. `PerformancePlan` applica Strategy per rappresentare i
-quattro esperimenti. `EnginePerformance`, `PerformanceClock` e
-`PerformanceCli` svolgono il ruolo di Adapter. La GUI aggiunge il proprio
-controllo tramite il pattern Decorator realizzato da
-`PerformanceGameEngineModePanel`.
+La gestione delle prestazioni adotta i principi Ports and Adapters e Dependency Inversion. Il livello applicativo mette a disposizione la porta `PerformanceExecutor`, mentre `PerformanceCli` la realizza nel livello di infrastruttura. `Launcher` passa l'implementazione tramite `given`, consentendo alla parte grafica di dipendere solo dall'interfaccia astratta. Il componente `PerformancePlan` usa il pattern Strategy per gestire le quattro prove previste. I moduli `EnginePerformance`, `PerformanceClock` e `PerformanceCli` svolgono la funzione di adattatori. L'interfaccia grafica estende i propri comandi tramite il componente `PerformanceGameEngineModePanel`, seguendo il pattern Decorator.
 
 ![performance-classes](assets/performance-classes.drawio.png)
 
-Gli opaque type `EntityCount`, `IterationCount`, `WarmupCount` e `GrowthFactor`
-e le classi `EntityRange`, `EntityGrowth` e `PerformanceConfig` vengono creati
-tramite Smart Constructor. In questo modo il runner riceve soltanto conteggi,
-progressioni e budget già validati. `PerformanceRequest` unisce il piano alla
-configurazione.
+I tipi `EntityCount`, `IterationCount`, `WarmupCount` e `GrowthFactor`, insieme alle classi `EntityRange`, `EntityGrowth` e `PerformanceConfig`, vengono istanziati mediante costruttori con validazione interna. In questo modo il modulo di esecuzione riceve solo valori, passi di crescita e limiti temporali già verificati. La struttura `PerformanceRequest` unisce il piano di test ai parametri operativi.
 
-`PerformanceRunner` riceve come valore una funzione `PrepareWorkload` e un
-`NanoClock`. Per ogni numero di entità prepara l'operazione, esegue i warm-up e
-raccoglie i campioni. `PerformanceMetrics` calcola p50, p95, p99 e la percentuale
-di esecuzioni concluse entro il budget. `PerformanceReport` associa le metriche
-ai conteggi e conserva l'eventuale breakpoint dello stress test.
+Il componente `PerformanceRunner` riceve la funzione `PrepareWorkload` e un orologio `NanoClock`. Per ciascun numero di entità analizzato imposta il test, completa i cicli preparatori e misura i tempi rilevati. `PerformanceMetrics` calcola i valori p50, p95, p99 e la percentuale di esecuzioni rimaste entro il tempo limite. `PerformanceReport` abbina queste misure al numero di elementi testati e registra l'eventuale punto di arresto della prova di stress.
 
-Ordinando le $ N $ latenze, i percentili usano il metodo nearest rank. Il
-completion rate conta invece i campioni non superiori al budget $ B $:
+Ordinando i valori temporali misurati, i percentili vengono ricavati con il metodo del valore più vicino. La percentuale di successo conta invece i test conclusi entro il limite di tempo stabilito:
 
 $ P_p=L_{\lceil pN\rceil},\quad p\in\{0.50,0.95,0.99\} $
 
 $ completionRate=\frac{|\{i\mid L_i\leq B\}|}{N} $
 
-`DeterministicScene` costruisce un workload riproducibile con entità dotate di
-forma, massa, salute, danno, team e movimento. `EnginePerformance` prepara una
-sessione e adatta il workload a un tick reale di `EngineFacade`.
-`PerformanceClock` fornisce il tempo monotono di sistema.
+La classe `DeterministicScene` crea uno scenario di prova riproducibile, popolato da elementi provvisti di forma, massa, salute, danno, gruppo e parametri di movimento. `EnginePerformance` imposta la sessione e applica il carico di lavoro a un ciclo operativo reale di `EngineFacade`. Il modulo `PerformanceClock` fornisce il conteggio del tempo di sistema.
 
-`PerformanceCli` traduce route e argomenti in una richiesta validata, esegue
-l'esperimento e formatta il report. `PerformanceMode` usa lo stesso port sia per
-le route da console sia per scegliere il pannello grafico.
-`PerformanceGameEngineModePanel` legge lo stato pubblico delle regole dal
-runtime e avvia l'esperimento fuori dal JavaFX Application Thread.
+Il componente `PerformanceCli` traduce i comandi della console in una richiesta controllata, esegue il test e presenta i risultati formattati. `PerformanceMode` sfrutta la medesima porta sia per i comandi su console sia per richiamare la vista grafica. `PerformanceGameEngineModePanel` legge le regole attive dal motore e avvia la misurazione su un thread separato rispetto a quello dell'interfaccia JavaFX.
 
-`ExperimentForm` costruisce un `ExperimentCommand` con i campi comuni e quelli
-specifici del piano. `ExperimentDialog` gestisce invio, stato di esecuzione e
-completamento asincrono. `ResultDialog` mostra il testo e
-`ResultDialogHandle` permette di aggiornare la stessa finestra senza crearne una
-nuova.
+La finestra `ExperimentForm` prepara il comando `ExperimentCommand` con i parametri generali e le opzioni specifiche del test. Il modulo `ExperimentDialog` segue la fase di avvio, lo stato di avanzamento e la chiusura delle attività in secondo piano. Infine, `ResultDialog` mostra il resoconto testuale, mentre `ResultDialogHandle` consente di aggiornare la schermata aperta evitando la creazione di nuove finestre.
