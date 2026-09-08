@@ -13,8 +13,7 @@ Il mio contributo al progetto ha riguardato principalmente i seguenti campi, con
   - la totalità del package `engine/physics`, salvo una minore eccezione sui file `PhysicsContext` e `DamageApplicationRule`, sviluppati da Fabio Fattori e successivamente integrati nel sottosistema
 - Performance testing
   - i package `performance` nei layer `simulator/domain`,
-    `simulator/application` e `simulator/infrastructure`
-  - i cinque file nel package `simulator/presentation/performance`
+    `simulator/application`, `simulator/infrastructure` e `simulator/presentation`
 
 Ad aggiungersi a questi, la collaborazione con Mattia Senni ha interessato il modello delle entità e
 la collision detection originaria. Su quella base, sono stati aggiunti supporto
