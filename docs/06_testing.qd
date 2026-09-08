@@ -117,3 +117,43 @@ I test standard vengono eseguiti da SBT in processi JVM separati per classe e se
 A ogni pull request verso `main` o `development` e a ogni push su qualsiasi branch, GitHub Actions esegue `sbt test` su Java 21. I test grafici vengono avviati in un display virtuale **Xvfb**, con font controllati, per consentire la verifica di JavaFX anche in un ambiente Linux headless. La pipeline impedisce quindi l'integrazione di modifiche che introducano regressioni funzionali, grafiche o architetturali nella suite standard.
 
 I test che dipendono da Ollama vengono eseguiti separatamente tramite `sbt "llmIntegrationTest / test"`. La loro esclusione dalla pipeline standard evita che la disponibilità del modello, la latenza e la variabilità generativa rendano instabile la continuous integration. Costituiscono quindi un controllo end-to-end da eseguire in un ambiente preparato esplicitamente, in particolare prima delle release o dopo modifiche a prompt, tool e memoria conversazionale.
+
+### Generazione logica dei casi di test con Prolog
+
+Due teorie Prolog descrivono dichiarativamente i domini finiti utilizzati da alcuni test. La prima genera il prodotto cartesiano tra i tipi di notifica `Info`, `Error` e `Success`, ottenendo nove coppie ordinate. La relazione è definita nel seguente modo:
+
+```prolog
+notification_type(info).
+notification_type(error).
+notification_type(success).
+
+notification_pair(First, Second) :-
+    notification_type(First),
+    notification_type(Second).
+```
+
+La seconda teoria rappresenta la presenza o l’assenza dei campi geometrici `radius`, `width` e `height`. Ogni campo può assumere un valore `some` oppure `none`, producendo complessivamente otto combinazioni:
+
+```prolog
+shape_field_combo(Radius, Width, Height) :-
+    maybe_value(Radius),
+    maybe_value_width(Width),
+    maybe_value_height(Height).
+```
+
+L’oggetto `TuProlog` carica le teorie dal classpath e restituisce le soluzioni attraverso una `LazyList`. La prima soluzione viene ottenuta con `solve`, mentre le alternative successive vengono richieste soltanto quando necessario tramite `solveNext`:
+
+```scala
+LazyList.unfold(Option(engine.solve(goal))):
+  case Some(solution) if solution.isSuccess =>
+    val nextSolution =
+      Option.when(engine.hasOpenAlternatives)(engine.solveNext())
+    Some(solution -> nextSolution)
+  case _ => None
+```
+
+`GeneratedNotificationCombos` e `GeneratedShapeCombos` convertono i termini Prolog nei corrispondenti valori Scala. Le coppie di notifiche diventano istanze di `NotificationType`, mentre `some(Value)` e `none` vengono tradotti rispettivamente in `Some(Value)` e `None`.
+
+Le soluzioni vengono infine raccolte in tabelle ScalaTest, rendendo possibile, durante la stesura dei test, l'attraversamento di tutti i casi generati senza dichiararli manualmente.
+
+Lo stesso approccio viene utilizzato per verificare tutte le coppie di notifiche tramite `GeneratedNotificationCombos.cases`. Questa integrazione evita la duplicazione manuale dei prodotti cartesiani e mantiene separata la definizione logica dei dati dalla loro verifica.
