@@ -1,6 +1,10 @@
 package monad_core.simulator.application.performance
 
-import monad_core.simulator.domain.performance.{EmptyPerformanceSamples, LatencyDistribution, PerformanceError}
+import monad_core.simulator.domain.performance.{
+  EmptyPerformanceSamples,
+  LatencyDistribution,
+  PerformanceError
+}
 
 import scala.concurrent.duration.FiniteDuration
 

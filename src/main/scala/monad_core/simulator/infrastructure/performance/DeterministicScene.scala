@@ -1,7 +1,11 @@
 package monad_core.simulator.infrastructure.performance
 
 import monad_core.engine.model.*
-import monad_core.simulator.domain.performance.{EnginePerformanceError, EntityCount, PerformanceError}
+import monad_core.simulator.domain.performance.{
+  EnginePerformanceError,
+  EntityCount,
+  PerformanceError
+}
 
 /**
  * Builds a reproducible full-physics scene for engine performance measurements.

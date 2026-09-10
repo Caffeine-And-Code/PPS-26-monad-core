@@ -158,6 +158,7 @@ Descrizione degli elementi della GUI:
 - Pulsante "Send": invia il testo digitato all'agente AI e porta il pannello di chat nello stato di attesa.
 - Durante lo stato di attesa della chat non è possibile digitare o inviare nuovi messaggi, e compare l'avviso "Loading ...".
 - In caso di errore durante l'elaborazione compare un messaggio di testo con la descrizione del problema riscontrato, lasciando comunque la possibilità di inviare nuove richieste.
+- - Inoltre è possibile modificare il server ollama e il LLM utilizzato tramite 2 variabili di ambiente: `MONAD_CORE_OLLAMA_URL` url del server ollama, `MONAD_CORE_MODEL_NAME` nome del LLM da utilizzare. 
 
 ### Esecuzione dei performance test
 

@@ -10,9 +10,9 @@ import monad_core.simulator.domain.performance.{
 /** Application port for executing and rendering performance experiments. */
 trait PerformanceExecutor:
 
-  /** 
-    * Runs a performance command using the default physics configuration.
-   * 
+  /**
+   * Runs a performance command using the default physics configuration.
+   *
    * @param route
    *   selected performance route
    * @param arguments
@@ -25,18 +25,18 @@ trait PerformanceExecutor:
       arguments: Array[String]
   ): Either[PerformanceError, String]
 
-  /** 
-    * Runs a performance command using the supplied physics-rule configuration.
-    * 
-    * @param route
-    *   selected performance route
-    * @param arguments
-    *   command-line arguments
-    * @param rules
-    *   enabled state of the runtime's configurable physics rules
-    * @return
-    *   the formatted report, or the first validation or engine error
-    */
+  /**
+   * Runs a performance command using the supplied physics-rule configuration.
+   *
+   * @param route
+   *   selected performance route
+   * @param arguments
+   *   command-line arguments
+   * @param rules
+   *   enabled state of the runtime's configurable physics rules
+   * @return
+   *   the formatted report, or the first validation or engine error
+   */
   def runWithRules(
       route: String,
       arguments: Array[String],

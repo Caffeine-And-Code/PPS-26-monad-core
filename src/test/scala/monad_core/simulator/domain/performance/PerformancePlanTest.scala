@@ -1,6 +1,15 @@
 package monad_core.simulator.domain.performance
 
-import monad_core.simulator.domain.performance.{EntityCount, EntityGrowth, EntityRange, InvalidGrowthFactor, InvalidGrowthMaximum, InvalidPositiveCount, PerformanceKind, PerformancePlan}
+import monad_core.simulator.domain.performance.{
+  EntityCount,
+  EntityGrowth,
+  EntityRange,
+  InvalidGrowthFactor,
+  InvalidGrowthMaximum,
+  InvalidPositiveCount,
+  PerformanceKind,
+  PerformancePlan
+}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

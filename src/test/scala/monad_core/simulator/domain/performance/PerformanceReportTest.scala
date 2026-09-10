@@ -1,6 +1,12 @@
 package monad_core.simulator.domain.performance
 
-import monad_core.simulator.domain.performance.{EntityCount, LatencyDistribution, PerformanceKind, PerformancePoint, PerformanceReport}
+import monad_core.simulator.domain.performance.{
+  EntityCount,
+  LatencyDistribution,
+  PerformanceKind,
+  PerformancePoint,
+  PerformanceReport
+}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

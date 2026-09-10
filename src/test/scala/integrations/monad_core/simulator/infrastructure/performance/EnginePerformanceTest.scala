@@ -3,9 +3,22 @@ package integrations.monad_core.simulator.infrastructure.performance
 import helpers.performance.SequenceNanoClock
 import monad_core.engine.geometry.ShapeCollision.shapeCollidesWithShape
 import monad_core.engine.geometry.ShapeContainment.shapeContainsPoint
-import monad_core.engine.physics.core.{PhysicsContext, PhysicsError, PhysicsManager, PhysicsRule, PhysicsRuleError, PhysicsRuleResult}
+import monad_core.engine.physics.core.{
+  PhysicsContext,
+  PhysicsError,
+  PhysicsManager,
+  PhysicsRule,
+  PhysicsRuleError,
+  PhysicsRuleResult
+}
 import monad_core.simulator.application.performance.PerformanceRequest
-import monad_core.simulator.domain.performance.{EnginePerformanceError, NanoClock, PerformanceConfig, PerformanceKind, PerformancePlan}
+import monad_core.simulator.domain.performance.{
+  EnginePerformanceError,
+  NanoClock,
+  PerformanceConfig,
+  PerformanceKind,
+  PerformancePlan
+}
 import monad_core.simulator.infrastructure.performance.EnginePerformance
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite

@@ -43,8 +43,8 @@ class PerformanceGameEngineModePanelTest
     with FormTesting
     with Eventually:
 
-  given world: World                         = mock[World]
-  given gameEngineRuntime: GameEngineRuntime = MonadCoreGameEngineRuntime()
+  given world: World                                   = mock[World]
+  given gameEngineRuntime: GameEngineRuntime           = MonadCoreGameEngineRuntime()
   private val performanceExecutor: PerformanceExecutor = PerformanceCli
 
   private val ImageConfig                   = MockImageConfig()

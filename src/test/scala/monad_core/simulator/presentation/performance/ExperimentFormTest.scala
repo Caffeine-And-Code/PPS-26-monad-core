@@ -16,7 +16,7 @@ class ExperimentFormTest extends AnyFunSuite with Matchers:
   private val KindField = ExperimentForm.fields.head.asInstanceOf[SelectFieldSpec]
 
   private val CommonValues = Map(
-    KindField.id                     -> "Load",
+    KindField.id                          -> "Load",
     PerformanceExecutor.Entities          -> "10",
     PerformanceExecutor.Iterations        -> "3",
     PerformanceExecutor.Warmups           -> "1",

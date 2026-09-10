@@ -4,7 +4,19 @@ import helpers.performance.SequenceNanoClock
 import monad_core.engine.physics.core.PhysicsManager
 import monad_core.engine.simulator.EngineFacade
 import monad_core.simulator.application.performance.PerformanceRequest
-import monad_core.simulator.domain.performance.{EntityCount, EntityGrowth, EntityRange, InvalidPerformanceArgument, LatencyDistribution, NanoClock, PerformanceKind, PerformancePlan, PerformancePoint, PerformanceReport, UnknownPerformanceRoute}
+import monad_core.simulator.domain.performance.{
+  EntityCount,
+  EntityGrowth,
+  EntityRange,
+  InvalidPerformanceArgument,
+  LatencyDistribution,
+  NanoClock,
+  PerformanceKind,
+  PerformancePlan,
+  PerformancePoint,
+  PerformanceReport,
+  UnknownPerformanceRoute
+}
 import monad_core.simulator.infrastructure.performance.PerformanceCli
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
