@@ -10,7 +10,7 @@ Durante lo sprint sono stati completati i seguenti elementi:
 
 - Configurazione della pipeline CI/CD con GitHub Actions, comprensiva di controlli su *development*, gestione del rilascio su *main*, generazione del fat JAR, pubblicazione della documentazione e creazione della release.
 - Implementazione della gestione della scena, con struttura dati dedicata, creazione della scena, aggiunta e rimozione di entità, lookup per ID e aggancio al tick del game loop.
-- Implementazione della gestione e della progettazione delle entità, supporto a `Circle` e `Square`, proprietà, creazione e modifica.
+- Implementazione della gestione e della progettazione delle entità, supporto a `Circle` e `Rectangle`, proprietà, creazione e modifica.
 - Implementazione del game loop, con ciclo principale della simulazione, gestione del tick, avvio e arresto dell'update e configurazione del tick-time.
 - Prima implementazione della collision detection, limitata al comportamento *is inside*.
 - Prima implementazione della fisica, con introduzione della struttura `Vector2D`.
@@ -40,7 +40,7 @@ Durante lo sprint sono stati sottostimati i tempi necessari a prendere confidenz
 - Collision Detection:
   - implementare il comportamento *is colliding with*
   - completare il sistema di collision detection
-  - implementare collisioni cerchio-cerchio, quadrato-quadrato e miste
+  - implementare collisioni cerchio-cerchio, rettangolo-rettangolo e miste
   - implementare le reazioni alle collisioni
 - Gestione della fisica:
   - applicare forze esterne composte e attriti

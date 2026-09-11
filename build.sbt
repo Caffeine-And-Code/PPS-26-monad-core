@@ -78,14 +78,14 @@ lazy val root = rootProject
     LlmIntegrationTest / parallelExecution := false,
     LlmIntegrationTest / fork              := true,
     libraryDependencies ++= Seq(
-      "org.scalactic"  %% "scalactic"          % "3.2.20",
-      "org.scalatest"  %% "scalatest"          % "3.2.20" % "test,llmIntegrationTest",
-      "org.scalamock"  %% "scalamock"          % "7.5.5"  % "test,llmIntegrationTest",
-      "org.testfx"      % "testfx-core"        % "4.0.18" % Test,
-      "it.unibo.alice.tuprolog" % "tuprolog"   % "3.3.0"  % Test,
-      "dev.langchain4j" % "langchain4j-ollama" % "1.17.2",
-      "dev.langchain4j" % "langchain4j"        % "1.17.2",
-      "org.scalafx"    %% "scalafx"            % "23.0.1-R34"
+      "org.scalactic"          %% "scalactic"          % "3.2.20",
+      "org.scalatest"          %% "scalatest"          % "3.2.20" % "test,llmIntegrationTest",
+      "org.scalamock"          %% "scalamock"          % "7.5.5"  % "test,llmIntegrationTest",
+      "org.testfx"              % "testfx-core"        % "4.0.18" % Test,
+      "it.unibo.alice.tuprolog" % "tuprolog"           % "3.3.0"  % Test,
+      "dev.langchain4j"         % "langchain4j-ollama" % "1.17.2",
+      "dev.langchain4j"         % "langchain4j"        % "1.17.2",
+      "org.scalafx"            %% "scalafx"            % "23.0.1-R34"
     ) ++ javaFXModules.map(m =>
       ("org.openjfx" % s"javafx-$m" % javaFXVersion).classifier(osClassifier)
     ),
@@ -122,13 +122,10 @@ ThisBuild / scalacOptions ++= Seq(
 )
 
 strykerMutate := Seq(
-  "src/main/scala/monad_core/engine/**/*.scala",
-  "src/main/scala/monad_core/performance/**/*.scala"
+  "src/main/scala/monad_core/engine/**/*.scala"
 )
 
 strykerTestFilter := Seq(
   "monad_core.engine.*",
-  "monad_core.performance.*",
-  "integrations.monad_core.engine.*",
-  "integrations.monad_core.performance.*"
+  "integrations.monad_core.engine.*"
 )

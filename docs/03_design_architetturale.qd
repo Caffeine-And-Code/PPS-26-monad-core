@@ -4,90 +4,234 @@
 
 L'architettura di MonadCore2D è stata progettata con i seguenti obiettivi:
 
-- separare il motore di simulazione dalle modalità con cui viene utilizzato;
-- mantenere la logica fisica e il modello indipendenti dalla GUI e dai servizi di intelligenza artificiale;
-- isolare le dipendenze esterne, in particolare ScalaFX, LangChain4j e Ollama;
-- permettere l'esecuzione sia interattiva, tramite GUI, sia headless, per la valutazione degli agenti;
-- rendere sostituibili le implementazioni del motore, dell'agente AI, del logging e del dataset di valutazione;
-- rappresentare gli errori attesi mediante tipi espliciti, principalmente `Either`, evitando di affidare il normale flusso applicativo alle eccezioni.
+- separare il motore di simulazione dalle modalità con cui viene utilizzato,
+- mantenere la logica fisica indipendente dalla GUI e la GUI indipendente dai servizi utilizzati per realizzare l'agente AI,
+- isolare le dipendenze esterne, in particolare ScalaFX, LangChain4j e Ollama,
+- permettere l'esecuzione sia interattiva, tramite GUI, sia headless, per la valutazione degli agenti e delle performance dell'engine,
+- rendere sostituibili le implementazioni del motore, dell'agente AI, del logging e del dataset di valutazione,
+- rappresentare gli errori attesi mediante tipi espliciti, principalmente `Either`, evitando di affidare il normale flusso applicativo alle eccezioni,
+- isolare le parti di codice contenenti lo stato della simulazione e dell'applicazione, in modo da avere il nucleo dell'applicazione costituito solo da funzioni pure, ovvero funzioni in cui dagli stessi dati di ingresso derivano gli stessi risultati senza effetti collaterali.
 
-Il sistema è organizzato in due macrocomponenti: il **game engine**, utilizzabile come libreria autonoma, e il **simulatore**, che integra il motore con interfaccia grafica e agenti AI.
+Il sistema è organizzato in due componenti principali: il game engine, utilizzabile come libreria autonoma, e il simulatore, che integra il motore con interfaccia grafica, agenti AI e strumenti per valutare le prestazioni dei modelli LLM e del game engine sulla macchina dell'utente.
 
 ## Ambiente di esecuzione
 
-L'ambiente di esecuzione dell'applicazione è descritto dal seguente deployment diagram.
+L'ambiente di esecuzione dell'applicazione è descritto dal seguente diagramma di deployment.
 
 ![deployment-diagram-pps.png](assets/deployment-diagram-pps.png)
 
-- **Personal computer**: esegue la JVM contenente il simulatore. Nella modalità interattiva ospita anche la GUI ScalaFX; nella modalità di valutazione esegue invece il processo headless da linea di comando.
-- **Server Ollama**: espone via rete i modelli utilizzati da LangChain4j. Può essere eseguito sullo stesso computer del simulatore oppure su una macchina distinta.
+- Personal computer: esegue la JVM contenente il simulatore. Nella modalità interattiva ospita anche la GUI ScalaFX, mentre nella modalità di valutazione esegue il processo headless da riga di comando.
+- Server Ollama: espone via rete i modelli utilizzati da LangChain4j. Può essere eseguito sullo stesso computer del simulatore oppure su una macchina distinta.
 
-La GUI utilizza un agente configurato tramite URL del server e nome del modello.
+La GUI utilizza un agente configurato tramite indirizzo del server e nome del modello.
 
-Il collegamento a Ollama è necessario per le funzionalità AI, ma il game engine non dipende da Ollama e può essere utilizzato autonomamente.
+Il collegamento a Ollama è necessario per le funzionalità AI, ma il game engine non dipende da tale servizio e può essere utilizzato in modo autonomo.
 
 ## Vista dei componenti
 
-Il seguente component diagram mostra i principali componenti del sistema e le loro dipendenze logiche.
+Il seguente diagramma dei componenti mostra i moduli principali del sistema e le loro dipendenze logiche.
 
-![component-diagram-pps.png](assets/component-diagram-pps.png)
+![component-diagram-pps.png](assets/component-diagram-pps.drawio.png)
 
-Le dipendenze esterne sono confinate, per quanto possibile, ai bordi del sistema:
+Le dipendenze esterne sono confinate, per quanto possibile, ai confini del sistema:
 
-- ScalaFX è utilizzato dalla Presentation.
-- LangChain4j è utilizzato dagli adattatori AI nel livello Infrastructure;
-- Ollama rimane un servizio esterno e viene raggiunto esclusivamente attraverso LangChain4j.
+- ScalaFX è utilizzato nel livello Presentation,
+- LangChain4j è utilizzato dagli adattatori AI nel livello Infrastructure,
+- Ollama rimane un servizio esterno e viene raggiunto solo attraverso LangChain4j.
 
-L'oggetto `Launcher` costituisce il **composition root** dell'applicazione: seleziona la modalità di esecuzione, costruisce le implementazioni concrete delle entità di livello Infrastructure e le collega alle rispettive interfacce definite nel livello Application.
+L'oggetto `Launcher` costituisce la radice di composizione dell'applicazione: seleziona la modalità di esecuzione, crea le implementazioni concrete per il livello Infrastructure e le collega alle rispettive interfacce definite nel livello Application.
+
+Questa struttura permette di applicare la Dependency Injection e l'Inversion of Control in tutta l'applicazione grafica. Ogni funzione richiede infatti le dipendenze necessarie tramite il costrutto `using` di Scala, e tali dipendenze vengono istanziate dalla radice di composizione in un singolo punto per l'intero sistema.
 
 ## Architettura del simulatore
 
-L'architettura del simulatore è ispirata alla **Clean Architecture** e applica anche il principio **Ports and Adapters**. L'applicazione è suddivisione nei seguenti package `presentation`, `application`, `domain` e `infrastructure`.
+L'architettura del simulatore si ispira alla Clean Architecture e segue il principio Ports and Adapters. L'applicazione è suddivisa nei package `presentation`, `application`, `domain` e `infrastructure`.
 
 ### Domain
 
-Il livello Domain contiene i tipi che descrivono i concetti propri delle funzionalità AI e della loro valutazione.
-Si intende parte del livello di dominio anche i modelli descritti nel package `model` dell'engine, in quanto sono semplici rappresentazioni di forme geometriche e sono coerenti con il modo di rappresentare e di intendere le forme geometriche del simulatore.
-Il livello Domain non ha dipendenze esterne ad eccezione di quella sopra citata
+Il livello Domain contiene i tipi che descrivono i concetti propri delle funzionalità gestite dall'applicazione.
+Fanno parte del dominio anche i modelli descritti nel package `model` dell'engine, in quanto rappresentano forme geometriche coerenti con le strutture usate nel simulatore.
+Il livello Domain non ha dipendenze esterne, ad eccezione del package appena citato.
+In particolare contiene la rappresentazione dei seguenti concetti:
+- agente AI:
+    - informazioni su fornitore e modello dell'LLM,
+    - risposta dell'agente AI,
+    - messaggio inviato dall'utente,
+    - test di valutazione,
+    - risultati di un test di valutazione,
+    - risposta a un test di valutazione,
+    - aggregazione dei risultati dei test di valutazione,
+    - chiamata a uno strumento esterno.
+- valutazione delle prestazioni:
+    - fattore di scala con valore minimo e massimo,
+    - impostazioni delle valutazioni,
+    - aggregazione dei risultati delle prestazioni.
 
 ### Application
 
-Il livello Application definisce i casi d'uso e le porte necessarie per realizzarli.
-Il livello Application dipende dai tipi del livello Domain e nient'altro.
+Il livello Application definisce i casi d'uso dell'applicazione e le porte necessarie per realizzarli. Questa impostazione rende l'applicazione indipendente dalle librerie esterne. Al variare di una dipendenza esterna è infatti sufficiente sostituire il relativo adattatore, lasciando intatto il resto del codice che continua a basarsi sulle interfacce definite a livello applicativo.
+Il livello Application dipende esclusivamente dal livello Domain.
+In particolare, il livello applicativo definisce le modalità di interazione con:
+- La scena del game engine:
+    - permette di eseguire operazioni CRUD sulle entità nella scena,
+    - permette di eseguire operazioni CRUD sulle superfici nella scena,
+    - permette di eseguire operazioni CRUD sui team nella scena.
+- Il runtime del game engine:
+    - permette di avviare la simulazione,
+    - permette di fermare la simulazione,
+    - permette di verificare se la simulazione è in corso,
+    - permette di ridimensionare l'area della simulazione,
+    - permette di avanzare la simulazione di un singolo tick,
+    - permette di salvare uno stato della scena,
+    - permette di ripristinare uno stato salvato,
+    - permette di inizializzare la scena,
+    - permette di leggere l'ultimo errore generato dal motore, se presente,
+    - permette di ottenere tutte le regole fisiche applicate alla scena,
+    - permette di sostituire tutte le regole fisiche applicate alla scena.
+- L'agente AI:
+    - permette di inviare un messaggio all'agente AI,
+    - permette di conoscere fornitore e nome del modello in uso,
+    - permette di cancellare la cronologia della conversazione con l'agente.
+- Lo script di valutazione dell'agente:
+    - permette di valutare un LLM su un insieme di test.
+- Il dataset di valutazione dell'agente AI:
+    - permette di ottenere la lista dei test da eseguire.
+- Il sistema di log:
+    - permette di registrare informazioni a fini di controllo,
+    - permette di tenere traccia degli eventi generati.
 
 ### Infrastructure
 
-Il livello Infrastructure contiene gli adattatori concreti delle porte applicative.
-Questo livello dipende sia dalle porte definite in Application sia dalle librerie esterne. Le implementazioni possono quindi essere sostituite senza modificare i contratti applicativi: ad esempio è possibile introdurre un altro provider AI, un dataset caricato da file o una diversa implementazione del game engine.
-Il livello di Infrastructure dipende dai livelli di Application, Domain e dalle librerie esterne necessarie per le implementazioni delle porte di Application.
+Il livello Infrastructure contiene gli adattatori concreti delle porte applicative, realizzando le implementazioni delle interfacce definite nel livello Application.
+Queste implementazioni possono essere sostituite senza modificare i contratti applicativi. Ad esempio, è possibile introdurre un diverso fornitore AI, un dataset caricato da file o una differente implementazione del game engine.
+Il livello Infrastructure dipende dai livelli Application e Domain, oltre che dalle librerie esterne necessarie all'implementazione delle porte.
 
 ### Presentation
 
-Il livello Presentation contiene le due interfacce di ingresso dell'applicazione:
+Il livello Presentation contiene i tre punti di accesso dell'applicazione:
 
-- la GUI ScalaFX, composta da stage, pannelli, componenti, form e painter;
-- il comando `evaluate-model`, che esegue la valutazione e presenta il risultato su console.
+- la GUI ScalaFX, composta da finestre, pannelli, componenti, form e moduli di disegno,
+- il comando per eseguire la valutazione del modello AI con presentazione dei risultati su terminale,
+- i comandi per eseguire le diverse valutazioni dell'engine con presentazione dei risultati su terminale o su interfaccia grafica, in base alla configurazione richiesta.
 
-La Presentation invoca le porte di Application e usa i tipi di dominio necessari per mostrare o raccogliere dati. Non può usare in maniera diretta le dipendenze esterne come LangChain4j.
-Per interagire con le dipendenze esterne dovrà riferire alla loro implementazione fornitagli tramite dependency injection dal composition root, tramite le port definite nel livello Application.
-Il livello di Presentation dipende dal livello di Application, di Domain e dalla libreria `ScalaFX` per la GUI.
+Il livello Presentation richiama le porte del livello Application e usa i tipi di dominio per mostrare o raccogliere i dati. Non usa in modo diretto le dipendenze esterne come LangChain4j.
+L'interazione con le librerie esterne avviene sempre tramite le implementazioni fornite via Dependency Injection dalla radice di composizione, sfruttando le porte definite nel livello Application.
+Il livello Presentation dipende dai livelli Application e Domain, nonché dalla libreria `ScalaFX` per la parte grafica.
 
 ## Interazione con la GUI: MVVM
 
-Per l’interazione con la GUI è stato scelto di utilizzare il pattern MVVM.
-- Componente GUI: definisce i componenti `ScalaFx` del componente, attacca gli handler dei suoi componenti con gli handler del ViewModel, inoltre ha un listener sullo stato per cui ogni volta che si aggiorna lo stato, aggiorna la GUI 
-- ViewModel: inizializza lo stato iniziale, mette gli handler a disposizione del Componente GUI, associa a ogni handler l’Action corrispondente e aggiorna lo stato. 
-- Action: presenta una serie di metodi che ritornano lo stato aggiornato 
-- State: rappresenta lo stato del componente
+Per la gestione dell'interfaccia grafica è stato scelto il pattern MVVM:
+- Componente GUI: definisce i controlli `ScalaFX` dell'interfaccia, collega i gestori di eventi a quelli del ViewModel e registra un ascoltatore sullo stato per aggiornare la visualizzazione a ogni modifica.
+- ViewModel: prepara lo stato iniziale, mette i gestori di eventi a disposizione della vista, associa a ogni evento la relativa azione e aggiorna lo stato.
+- Action: fornisce una serie di funzioni che restituiscono lo stato aggiornato.
+- State: rappresenta la struttura dati immutabile con le informazioni correnti del componente.
 
 ![mvvm-gui.png](assets/mvvm-gui.png)
 
 ## Architettura del game engine
 
-Il game engine è progettato come libreria indipendente dal simulatore e non dipende da LangChain4j o Ollama o ScalaFX. Al suo interno i file sono raggrupati in base al dominio di appartenenza:
+Il game engine è stato realizzato come libreria indipendente dal simulatore. Ogni funzione interna al motore è pura e priva di effetti collaterali. I file sorgente sono organizzati in base al dominio di competenza:
 
-- `model` contiene gli oggetti del dominio fisico;
-- `geometry` e `collision_detection` contengono le operazioni geometriche e il rilevamento delle collisioni;
-- `physics` contiene regole, combinatori, risoluzione delle collisioni e pathfinding;
-- `core` contiene `GameLoop`, lo stato e i contratti di rendering e fisica;
-- `public_api` raccoglie `EngineFacade` e il contratto `Painter`, cioè il principale punto di integrazione con i client del motore.
+- `model` contiene gli oggetti del dominio fisico,
+- `geometry` e `collision_detection` contengono le operazioni geometriche, il rilevamento delle collisioni e le verifiche di contenimento,
+- `physics` contiene l'implementazione di tutte le regole fisiche disponibili, compresi il calcolo del danno e la ricerca del percorso,
+- `core` contiene l'implementazione del tick del ciclo principale, lo stato, le definizioni di disegno e fisica, nonché gli eventi generati dal ciclo stesso, includendo solo componenti senza stato e funzioni pure,
+- `simulator` fa da tramite tra il motore e l'applicazione chiamante, costituendo l'interfaccia pubblica del pacchetto.
+
+## Interfaccia del simulatore
+
+### GUI pagina principale
+
+![main-page-screenshot.png](assets/main-page-screenshot.png)
+
+Descrizione degli elementi della GUI:
+- Pannello di visualizzazione: area principale in cui viene mostrata la scena corrente.
+- Pulsante di avvio (freccia verde in alto a sinistra): avvia la simulazione fisica visibile a schermo.
+- Pulsante di arresto (quadrato rosso in alto a sinistra): attivo solo a simulazione avviata, riporta la scena allo stato salvato in precedenza.
+- Pulsante di pausa (simbolo di pausa giallo che sostituisce il pulsante di avvio a simulazione in corso): sospende temporaneamente la simulazione.
+- Pulsante strumenti (primo da sinistra nella barra superiore): apre un menu a tendina per aggiungere alla scena un'entità, una superficie o un team tramite un'apposita finestra di inserimento.
+- Pulsante fisica (secondo nella barra superiore): permette di scegliere quali regole fisiche applicare.
+- Pulsante prestazioni (terzo nella barra superiore): visibile solo avviando l'applicazione con il flag `--performance`, apre una finestra per scegliere tra i quattro test disponibili (Stress, Load, Spike, Scalability) e impostarne i parametri. Al termine dell'esecuzione mostra i risultati ottenuti.
+- Pannello "Chat with Jimmy": mostra lo storico della conversazione con l'agente AI e il nome del modello attualmente attivo.
+- Pulsante "Clear": cancella la conversazione con l'agente e ne avvia una nuova.
+- Campo di testo "Ask to jimmy": casella in cui digitare il messaggio per l'agente AI.
+- Pulsante "Send": invia il testo digitato all'agente AI e porta il pannello di chat nello stato di attesa.
+- Durante lo stato di attesa della chat non è possibile digitare o inviare nuovi messaggi, e compare l'avviso "Loading ...".
+- In caso di errore durante l'elaborazione compare un messaggio di testo con la descrizione del problema riscontrato, lasciando comunque la possibilità di inviare nuove richieste.
+- - Inoltre è possibile modificare il server ollama e il LLM utilizzato tramite 2 variabili di ambiente: `MONAD_CORE_OLLAMA_URL` url del server ollama, `MONAD_CORE_MODEL_NAME` nome del LLM da utilizzare. 
+
+### Esecuzione dei performance test
+
+È possibile avviare i test prestazionali tramite SBT o mediante il file JAR eseguibile. I test disponibili sono:
+- Load: esegue la misurazione con un singolo livello di carico, utile per rilevare i tempi di risposta del motore con un numero fisso di entità.
+- Stress: esegue la misurazione aumentando gradualmente il numero di entità fino a quando il novantacinquesimo percentile non supera il tempo limite assegnato al frame, utile per trovare la capacità massima del motore.
+- Spike: esegue la misurazione aumentando le entità fino al valore massimo indicato per poi riportarle subito al livello di partenza, utile per valutare la reazione a carichi improvvisi.
+- Scalability: esegue la misurazione aumentando le entità fino al valore massimo impostato, utile per studiare il comportamento del motore in base al fattore di crescita scelto.
+
+Da riga di comando i test possono essere avviati con i seguenti comandi:
+
+```shell
+sbt "run performance-load-test --entities 100 --iterations 20 --warmups 5 --frame-budget-ms 16"
+
+sbt "run performance-stress-test --entities 100 --max-entities 1600 --growth-factor 2 --iterations 20 --warmups 5 --frame-budget-ms 16"
+
+sbt "run performance-spike-test --entities 100 --max-entities 1600 --iterations 20 --warmups 5 --frame-budget-ms 16"
+
+sbt "run performance-scalability-test --entities 100 --max-entities 1600 --growth-factor 2 --iterations 20 --warmups 5 --frame-budget-ms 16"
+```
+
+I test possono essere eseguiti anche direttamente tramite il Fat JAR generato:
+
+```shell
+java -jar $jar performance-load-test `
+  --entities 100 --iterations 20 --warmups 5 --frame-budget-ms 16
+```
+
+L'applicazione grafica può essere avviata includendo l'opzione per i test prestazionali:
+
+```shell
+java -jar $jar --performance
+```
+
+Con questa opzione viene abilitata la voce dedicata alle prestazioni nel pannello di controllo. La tipologia di test selezionata mostra i campi specifici necessari, mentre parametri come entità iniziali, iterazioni, cicli preparatori e tempo massimo del frame restano sempre modificabili.
+
+### Risultati performance test
+
+I risultati delle misurazioni vengono presentati a terminale oppure mostrati in una finestra dedicata se avviati dall'interfaccia grafica. Per ciascun livello di carico analizzato, identificato dal numero di entità presenti, il report indica in millisecondi i tempi di risposta p50, p95 e p99. Il valore p50 corrisponde alla mediana, mentre i valori p95 e p99 indicano la soglia di tempo entro cui si conclude rispettivamente il 95% e il 99% delle iterazioni. Viene inoltre riportata la quota percentuale di iterazioni che ha rispettato il limite temporale previsto per il frame. Nel caso dello stress test, il report segnala anche il primo numero di entità per cui p95 supera il frame budget, identificandolo come breakpoint.
+
+### Risultati valutazione dell'agente AI
+La valutazione dell'agente AI viene avviata eseguendo l'applicazione con il parametro `evaluate-model`, ad esempio con il comando `java -jar monad_core_2d.jar evaluate-model`. Tramite appositi flag da riga di comando è possibile indicare quale modello valutare e quale modello usare come valutatore:
+- `--agent-model-url`: indirizzo del servizio per il modello da testare, con valore predefinito "http://localhost:11434",
+- `--agent-model`: nome del modello da testare, con valore predefinito "gemma4:e4b",
+- `--judge-model-url`: indirizzo del servizio per il modello di controllo, con valore predefinito "http://localhost:11434",
+- `--judge-model`: nome del modello di controllo, con valore predefinito "gemma4:e4b".
+
+La procedura sottopone il modello a una serie di verifiche caratterizzate da:
+- una scena iniziale composta da entità, superfici e team,
+- una sequenza ordinata di messaggi inviati uno alla volta,
+- la lingua stabilita per la prova,
+- l'elenco degli strumenti applicativi che il modello deve richiamare,
+- il testo che descrive il tipo di risposta attesa.
+
+La verifica controlla l'effettiva esecuzione degli strumenti previsti e usa il secondo modello per giudicare la correttezza delle risposte fornite, valutando:
+- l'uso della lingua richiesta,
+- la correttezza grammaticale del testo, con un punteggio compreso tra 0 e 100,
+- la selezione degli strumenti appropriati,
+- la rispondenza del contenuto rispetto alla richiesta iniziale.
+
+L'esito complessivo è calcolato come media percentuale dei risultati ottenuti nelle singole prove. Nel resoconto è presente anche il conteggio delle verifiche fallite a causa di errori nella generazione del testo da parte del modello.
+Esempio di output:
+```
+Agent evaluation results:
+Correct language choice: 100%
+Language correctness: 97%
+Correct tool calls: 96%
+Expectation maintained: 73%
+Failed evaluations: 0
+Finished model evaluation
+```
+
+Al completamento di ciascun test viene inoltre mostrata una riga di riepilogo a terminale:
+```
+event=agent_evaluation_test_completed status=success prompts=2 expected_tool_calls=2
+```

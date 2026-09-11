@@ -1,0 +1,49 @@
+### Report Daily Scrum Sprint 4
+
+**Data: 26/07/2026**
+
+| Membro | Attività svolte                                                                                                                                         | Problemi riscontrati |
+| - |---------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|
+| Senni | Impedita l'esecuzione dei tool dell'agente AI durante il funzionamento dell'engine                                                                      | -                    |
+| Fattori | Integrazione del runtime del Game Engine nel Simulator, completamento dei form per la modifica delle entità e stabilizzazione degli snapshot test in CI | -                    |
+| Tonelli | Completamento dei test del Physics Engine e revisione delle regole fisiche                                                                              | -                    |
+
+**Data: 02/08/2026**
+
+| Membro | Attività svolte                                                                                                                                                   | Problemi riscontrati |
+| - |-------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|
+| Senni | Sviluppo dei test di integrazione per l'assistente LangChain4j, dei matcher dedicati e della valutazione tramite LLM-as-a-judge, refactoring del pannello di chat | -                    |
+| Fattori | Implementazione dei form per team e superfici, del sistema di notifiche e dei relativi test unitari, di integrazione e snapshot                                   | -                    |
+| Tonelli | Avvio della documentazione del design del motore fisico                                                                                                           | -                    |
+
+**Data: 09/08/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Aggiunta di rotazione a entità e superfici, restituzione del punto di collisione e introduzione di property-based test per scena e collision detection; prima implementazione dell'applicazione CLI per valutare l'agente AI | Definizione di un dataset riproducibile per la valutazione dell'agente |
+| Fattori | Migrazione di entità, superfici, team e painter verso l'architettura DDD/Clean Architecture; aggiunta di test architetturali e test round-trip per i translator | Violazioni architetturali emerse durante la migrazione e test temporaneamente non funzionanti |
+| Tonelli | Implementazione del RayCast e della regola di gestione dei confini, con correzione dei test del Physics Engine | Risoluzione dei problemi emersi durante l'integrazione delle nuove regole fisiche |
+
+**Data: 16/08/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Rifinitura dei test dell'agente AI, semplificazione del Launcher e stesura della sezione personale sulle scelte implementative | Correzione di conflitti di merge e adeguamento dei test dopo il refactoring |
+| Fattori | Completamento dei test architetturali per ScalaFX e JavaFX e avvio della migrazione dei componenti grafici al pattern MVVM | Dipendenze non ammesse tra presentation e infrastructure e migrazione ancora incompleta dei form |
+| Tonelli | Correzione della propagazione verso sinistra, del ridimensionamento dei confini del mondo e delle dimensioni della GUI; rimozione degli accessi non sicuri agli `Option` | - |
+
+**Data: 23/08/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Aggiornamento del design architetturale e integrazione della rotazione nei tool controllati dall'LLM | - |
+| Fattori | Completamento della migrazione MVVM dei form, integrazione degli eventi del Game Engine e del relativo logger, introduzione della generazione Prolog dei casi di test e revisione dell'`EngineFacade` | Adattamento dell'accumulo degli eventi al flusso del Physics Manager |
+| Tonelli | Implementazione dell'interpolazione della scena nel Game Loop, rotazione delle superfici e delle entità, revisione dei rimbalzi e integrazione delle regole fisiche nella GUI | Correzione di rimbalzi, obstacle avoidance e interpolazione dello stato dopo l'integrazione |
+
+**Data: 30/08/2026**
+
+| Membro | Attività svolte | Problemi riscontrati |
+| - | - | - |
+| Senni | Introduzione dei builder per entità e superfici, completamento della documentazione personale e delle sezioni di requisiti, design architetturale, design di dettaglio e testing; migrazione del modulo performance nel Simulator | Correzione della compilazione della Scaladoc e risoluzione dei conflitti con le modifiche degli altri membri |
+| Fattori | Implementazione della regola di danno e della relativa configurazione tramite form e agente AI; refactoring funzionale del painter, completamento della Scaladoc e revisione della documentazione di progetto | Correzione del processo di release, del nome del JAR e della pubblicazione della documentazione API |
+| Tonelli | Realizzazione degli stress test per le regole fisiche e dell'interfaccia grafica per gli esperimenti di performance, refactoring della configurazione delle prove e completamento della documentazione tecnica | Mutanti Stryker residui, test della GUI da adeguare e riallineamento del modulo performance alla Clean Architecture |

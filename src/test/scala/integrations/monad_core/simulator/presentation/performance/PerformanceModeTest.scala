@@ -1,6 +1,7 @@
 package integrations.monad_core.simulator.presentation.performance
 
-import monad_core.performance.simulator.PerformanceCli
+import monad_core.simulator.application.performance.PerformanceExecutor
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.performance.PerformanceMode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -8,6 +9,8 @@ import org.scalatest.matchers.should.Matchers
 import java.io.ByteArrayOutputStream
 
 class PerformanceModeTest extends AnyFunSuite with Matchers:
+
+  private given PerformanceExecutor = PerformanceCli
 
   private val MinimalArguments = Array(
     PerformanceCli.Entities,

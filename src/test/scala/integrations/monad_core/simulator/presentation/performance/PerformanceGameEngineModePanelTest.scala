@@ -8,12 +8,13 @@ import javafx.scene.control.{Button, TextArea}
 import javafx.scene.input.{MouseButton, MouseEvent}
 import javafx.scene.layout.HBox
 import javafx.stage.{Stage, Window}
-import monad_core.performance.simulator.PerformanceCli
 import monad_core.simulator.{CannotBuildPanel, ImageResourceNotFound}
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.application.engine.world.World
+import monad_core.simulator.application.performance.PerformanceExecutor
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.MonadCoreGameEngineRuntime
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.panels.GameEngineModePanel
 import monad_core.simulator.presentation.panels.traits.GameEngineModePanelBuilder
 import monad_core.simulator.presentation.performance.{
@@ -42,8 +43,9 @@ class PerformanceGameEngineModePanelTest
     with FormTesting
     with Eventually:
 
-  given world: World                         = mock[World]
-  given gameEngineRuntime: GameEngineRuntime = MonadCoreGameEngineRuntime()
+  given world: World                                   = mock[World]
+  given gameEngineRuntime: GameEngineRuntime           = MonadCoreGameEngineRuntime()
+  private val performanceExecutor: PerformanceExecutor = PerformanceCli
 
   private val ImageConfig                   = MockImageConfig()
   private val PerformanceButtonIndex        = 2
@@ -56,7 +58,7 @@ class PerformanceGameEngineModePanelTest
   private def buildPanel(
       isEngineRunning: Boolean = false
   ): Either[BaseError, VBox] =
-    PerformanceGameEngineModePanel(GameEngineModePanel).build(
+    PerformanceGameEngineModePanel(GameEngineModePanel, performanceExecutor).build(
       ImageConfig,
       OnModeChange,
       OnStopClick,
@@ -183,7 +185,7 @@ class PerformanceGameEngineModePanelTest
       .expects(*, *, *, *, *, *)
       .returns(Left(expected))
 
-    val result = PerformanceGameEngineModePanel(delegate).build(
+    val result = PerformanceGameEngineModePanel(delegate, performanceExecutor).build(
       ImageConfig,
       OnModeChange,
       OnStopClick,
@@ -205,7 +207,7 @@ class PerformanceGameEngineModePanelTest
       .expects(invalidImageConfig, *, *, *, *, *)
       .returns(Right(basePanel))
 
-    val result = PerformanceGameEngineModePanel(delegate).build(
+    val result = PerformanceGameEngineModePanel(delegate, performanceExecutor).build(
       invalidImageConfig,
       OnModeChange,
       OnStopClick,

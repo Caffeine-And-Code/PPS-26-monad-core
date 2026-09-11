@@ -1,3 +1,30 @@
+# Monad Core 2D engine
+
+## Configurazione di Ollama
+
+L'applicazione usa Ollama per eseguire un LLM in locale. Prima di avviarla,
+installare Ollama e scaricare il modello predefinito:
+
+```bash
+ollama pull gemma4:e4b
+```
+Ollama deve essere in ascolto su `http://localhost:11434`.
+
+### Configurazione predefinita e personalizzata
+
+Per impostazione predefinita, Monad Core usa l'endpoint `http://localhost:11434` e il modello `gemma4:e4b`. È possibile sostituire entrambi tramite variabili d'ambiente:
+
+- `MONAD_CORE_OLLAMA_URL`: URL del server Ollama.
+- `MONAD_CORE_MODEL_NAME`: nome di un modello già scaricato dal server configurato.
+
+Ad esempio, per avviare l'applicazione con un server o un modello diversi:
+
+```bash
+MONAD_CORE_OLLAMA_URL=http://localhost:11434 \
+MONAD_CORE_MODEL_NAME=<nome-modello> \
+sbt run
+```
+
 ## What to do before a new release
 ### Update the version in designated file
 In ```project/build.properties``` the ```release_version``` field must be changed to a higher version than the one in the last release on github.

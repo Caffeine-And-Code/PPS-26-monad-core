@@ -4,8 +4,8 @@ import integrations.monad_core.simulator.presentation.support.FxThreadHelper.onF
 import integrations.monad_core.simulator.presentation.support.{DialogTesting, FormTesting}
 import javafx.scene.control.TextArea
 import javafx.stage.{Stage, Window}
-import monad_core.performance.model.{InvalidPerformanceArgument, PerformanceError}
-import monad_core.performance.simulator.PerformanceCli
+import monad_core.simulator.domain.performance.{InvalidPerformanceArgument, PerformanceError}
+import monad_core.simulator.infrastructure.performance.PerformanceCli
 import monad_core.simulator.presentation.performance.{
   ExperimentCommand,
   ExperimentDialog,

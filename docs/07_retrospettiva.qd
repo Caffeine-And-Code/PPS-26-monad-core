@@ -16,10 +16,24 @@
 
 .include {events/sprint_planning_3.qd}
 
+.include {events/daily_scrum_sprint_3.qd}
+
+.include {events/sprint_review_3.qd}
+
+.include {events/sprint_planning_4.qd}
+
+.include {events/daily_scrum_sprint_4.qd}
+
+.include {events/sprint_review_4.qd}
+
 ## Backlog
 
 .include {tasks/user_stories.qd}
 
-## Iterazioni
-
 ## Commenti finali
+
+Nel complesso, lo sviluppo si è protratto oltre le tempistiche inizialmente previste. Gli impegni lavorativi dei membri del gruppo hanno ridotto in alcuni periodi il tempo disponibile e hanno richiesto di riorganizzare le attività, recuperando parte del lavoro negli sprint successivi.
+
+Anche la complessità del progetto è risultata maggiore rispetto alle valutazioni iniziali. L'integrazione tra motore fisico, interfaccia grafica, agente AI e strumenti di testing ha fatto emergere dipendenze e problemi non immediatamente prevedibili, rendendo necessari ulteriori interventi di revisione, refactoring e stabilizzazione.
+
+Nonostante il prolungamento dei tempi, l'organizzazione iterativa e il confronto continuo tra i membri hanno permesso di adattare la pianificazione alle difficoltà incontrate. Il progetto è stato completato raggiungendo gli obiettivi principali e ottenendo un risultato finale più solido, verificato e coerente con i principi architetturali stabiliti.

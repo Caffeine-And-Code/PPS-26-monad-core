@@ -1,6 +1,6 @@
 package monad_core.simulator.presentation.performance
 
-import monad_core.performance.model.PerformanceError
+import monad_core.simulator.domain.performance.PerformanceError
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.components.{Error, NotificationManager}
 import monad_core.simulator.presentation.components.forms.base.{FormDialog, FormDialogProps}
