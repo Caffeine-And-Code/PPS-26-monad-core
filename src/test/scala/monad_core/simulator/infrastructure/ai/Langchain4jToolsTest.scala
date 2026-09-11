@@ -33,10 +33,18 @@ class Langchain4jToolsTest
   private val defaultRotation = 0.0
   private val rotation        = 45.0
   private val angularSpeed    = -30.0
+  private val frictionIndex   = 0.25
+  private val appliedForce    = Vector2D(10.0, -4.0)
+  private val damageOverTime  = 3
   private val invalidId       = ""
 
   private var world: World                         = uninitialized
   private var gameEngineRuntime: GameEngineRuntime = uninitialized
+
+  private def normalizeLineEndings(string: String): String =
+    string
+      .replace("\r\n", "\n")
+      .replace("\r", "\n")
 
   override def beforeEach(): Unit =
     super.beforeEach()
@@ -45,6 +53,15 @@ class Langchain4jToolsTest
 
   private def tools: Langchain4jTools =
     Langchain4jTools()(using world, gameEngineRuntime)
+
+  private def withAllOptionalFields(
+      surface: Either[EngineError, Surface]
+  ): Surface =
+    surface
+      .flatMap(_.withFrictionIndex(Some(frictionIndex)))
+      .flatMap(_.withAppliedForce(Some(appliedForce)))
+      .flatMap(_.withDamageOverTime(Some(damageOverTime)))
+      .value
 
   test("list all entities in the world returns empty if scene is empty"):
     (() => world.getAllEntities).expects().returning(List.empty).once()
@@ -59,9 +76,8 @@ class Langchain4jToolsTest
       Entity.rectangle("rectangle", Vector2D(posX, posY), height, rectangleLength).value
     (() => world.getAllEntities).expects().returning(List(circle, rectangle)).once()
 
-    val result = tools.getAllEntities
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getAllEntities)
+    val expected = normalizeLineEndings(
       s"""Result: 2 entities found.
          |1:
          |id: circle
@@ -72,6 +88,7 @@ class Langchain4jToolsTest
          |angularSpeed: none
          |weight: none
          |health: none
+         |damage: none
          |team: none
          |
          |2:
@@ -83,15 +100,18 @@ class Langchain4jToolsTest
          |angularSpeed: none
          |weight: none
          |health: none
+         |damage: none
          |team: none""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when get entity is called returns the formatted entity"):
     val entity = Entity.circle(entityId, Vector2D(posX, posY), radius).value
     world.getEntity.expects(LocatableId(entityId).value.value).returning(Right(entity)).once()
 
-    val result = tools.getEntity(entityId)
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getEntity(entityId))
+    val expected = normalizeLineEndings(
       s"""Result:
          |id: $entityId
          |position: ($posX, $posY)
@@ -101,7 +121,11 @@ class Langchain4jToolsTest
          |angularSpeed: none
          |weight: none
          |health: none
+         |damage: none
          |team: none""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when get entity receives an invalid id returns an error"):
     val result = tools.getEntity(invalidId)
@@ -126,11 +150,15 @@ class Langchain4jToolsTest
     val weight = 12
     val speedX = 1.5
     val speedY = -2.5
+    val health = 100
+    val damage = 7
     val entity = Entity
       .circle(entityId, Vector2D(posX, posY), radius)
-      .flatMap(_.withTeamId(teamId))
-      .flatMap(_.withWeight(weight))
-      .map(_.withSpeed(Vector2D(speedX, speedY)))
+      .flatMap(_.withTeamId(Some(teamId)))
+      .flatMap(_.withWeight(Some(weight)))
+      .map(_.withSpeed(Some(Vector2D(speedX, speedY))))
+      .flatMap(_.withHealth(Some(health)))
+      .flatMap(_.withDamage(Some(damage)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))
@@ -147,7 +175,9 @@ class Langchain4jToolsTest
       teamId,
       Integer.valueOf(weight),
       java.lang.Double.valueOf(speedX),
-      java.lang.Double.valueOf(speedY)
+      java.lang.Double.valueOf(speedY),
+      health = Integer.valueOf(health),
+      damage = Integer.valueOf(damage)
     )
 
     result shouldBe s"Success: Entity '$entityId' created."
@@ -228,7 +258,7 @@ class Langchain4jToolsTest
   test("when create circle entity receives an angular speed it is saved"):
     val entity = Entity
       .circle(entityId, Vector2D(posX, posY), radius)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))
@@ -249,7 +279,7 @@ class Langchain4jToolsTest
   test("when create rectangle entity receives an angular speed it is saved"):
     val entity = Entity
       .rectangle(entityId, Vector2D(posX, posY), height, rectangleLength)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.createEntity
       .expects(SaveEntityCommand(entity))
@@ -335,7 +365,7 @@ class Langchain4jToolsTest
   test("when update circle entity receives an angular speed it is saved"):
     val entity = Entity
       .circle(entityId, Vector2D(posX, posY), radius)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.updateEntity
       .expects(SaveEntityCommand(entity))
@@ -356,7 +386,7 @@ class Langchain4jToolsTest
   test("when update rectangle entity receives an angular speed it is saved"):
     val entity = Entity
       .rectangle(entityId, Vector2D(posX, posY), height, rectangleLength)
-      .map(_.withAngularSpeed(angularSpeed))
+      .map(_.withAngularSpeed(Some(angularSpeed)))
       .value
     world.updateEntity
       .expects(SaveEntityCommand(entity))
@@ -396,9 +426,8 @@ class Langchain4jToolsTest
     val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
     (() => world.getAllSurfaces).expects().returning(List(surface)).once()
 
-    val result = tools.getAllSurfaces
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getAllSurfaces)
+    val expected = normalizeLineEndings(
       s"""Result: 1 surfaces found.
          |1:
          |id: $surfaceId
@@ -406,22 +435,29 @@ class Langchain4jToolsTest
          |shape: circle, radius: $radius
          |rotation: $defaultRotation
          |frictionIndex: none
-         |appliedForce: none""".stripMargin
+         |appliedForce: none
+         |damageOverTime: none""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when get surface is called returns the formatted surface"):
     val surface = Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength).value
     world.getSurface.expects(LocatableId(surfaceId).value.value).returning(Right(surface)).once()
 
-    val result = tools.getSurface(surfaceId)
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getSurface(surfaceId))
+    val expected = normalizeLineEndings(
       s"""Result:
          |id: $surfaceId
          |position: ($posX, $posY)
          |shape: rectangle, height: $height, length: $rectangleLength
          |rotation: $defaultRotation
          |frictionIndex: none
-         |appliedForce: none""".stripMargin
+         |appliedForce: none
+         |damageOverTime: none""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when create circle surface is called returns a success message"):
     val surface = Surface.circle(surfaceId, Vector2D(posX, posY), radius).value
@@ -446,6 +482,53 @@ class Langchain4jToolsTest
     (() => gameEngineRuntime.isRunning).expects().returning(false).once()
 
     val result = tools.createRectangleSurface(surfaceId, posX, posY, height, rectangleLength)
+
+    result shouldBe s"Success: Surface '$surfaceId' created."
+
+  test("when create circle surface receives optional fields they are saved"):
+    val surface = withAllOptionalFields(
+      Surface.circle(surfaceId, Vector2D(posX, posY), radius)
+    )
+    world.createSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createCircleSurface(
+      surfaceId,
+      posX,
+      posY,
+      radius,
+      frictionIndex = java.lang.Double.valueOf(frictionIndex),
+      appliedForceX = java.lang.Double.valueOf(appliedForce.x),
+      appliedForceY = java.lang.Double.valueOf(appliedForce.y),
+      damageOverTime = Integer.valueOf(damageOverTime)
+    )
+
+    result shouldBe s"Success: Surface '$surfaceId' created."
+
+  test("when create rectangle surface receives optional fields they are saved"):
+    val surface = withAllOptionalFields(
+      Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength)
+    )
+    world.createSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createRectangleSurface(
+      surfaceId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      frictionIndex = java.lang.Double.valueOf(frictionIndex),
+      appliedForceX = java.lang.Double.valueOf(appliedForce.x),
+      appliedForceY = java.lang.Double.valueOf(appliedForce.y),
+      damageOverTime = Integer.valueOf(damageOverTime)
+    )
 
     result shouldBe s"Success: Surface '$surfaceId' created."
 
@@ -474,6 +557,66 @@ class Langchain4jToolsTest
     val result = tools.updateRectangleSurface(surfaceId, posX, posY, height, rectangleLength)
 
     result shouldBe s"Success: Surface '$surfaceId' updated."
+
+  test("when update circle surface receives optional fields they are saved"):
+    val surface = withAllOptionalFields(
+      Surface.circle(surfaceId, Vector2D(posX, posY), radius)
+    )
+    world.updateSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateCircleSurface(
+      surfaceId,
+      posX,
+      posY,
+      radius,
+      frictionIndex = java.lang.Double.valueOf(frictionIndex),
+      appliedForceX = java.lang.Double.valueOf(appliedForce.x),
+      appliedForceY = java.lang.Double.valueOf(appliedForce.y),
+      damageOverTime = Integer.valueOf(damageOverTime)
+    )
+
+    result shouldBe s"Success: Surface '$surfaceId' updated."
+
+  test("when update rectangle surface receives optional fields they are saved"):
+    val surface = withAllOptionalFields(
+      Surface.rectangle(surfaceId, Vector2D(posX, posY), height, rectangleLength)
+    )
+    world.updateSurface
+      .expects(SaveSurfaceCommand(surface))
+      .returning(Right(Scene(surfaces = Map(surface.id -> surface))))
+      .once()
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.updateRectangleSurface(
+      surfaceId,
+      posX,
+      posY,
+      height,
+      rectangleLength,
+      frictionIndex = java.lang.Double.valueOf(frictionIndex),
+      appliedForceX = java.lang.Double.valueOf(appliedForce.x),
+      appliedForceY = java.lang.Double.valueOf(appliedForce.y),
+      damageOverTime = Integer.valueOf(damageOverTime)
+    )
+
+    result shouldBe s"Success: Surface '$surfaceId' updated."
+
+  test("when a surface receives only one applied force component it returns an error"):
+    (() => gameEngineRuntime.isRunning).expects().returning(false).once()
+
+    val result = tools.createCircleSurface(
+      surfaceId,
+      posX,
+      posY,
+      radius,
+      appliedForceX = java.lang.Double.valueOf(appliedForce.x)
+    )
+
+    result shouldBe "Error: Both appliedForceX and appliedForceY must be provided together"
 
   test("when update rectangle surface receives a rotation it is saved"):
     val surface =
@@ -572,24 +715,28 @@ class Langchain4jToolsTest
     val team = Team.create("blue", Set("red", "green")).value
     (() => world.getAllTeams).expects().returning(List(team)).once()
 
-    val result = tools.getAllTeams
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getAllTeams)
+    val expected = normalizeLineEndings(
       """Result: 1 teams found.
         |1:
         |id: blue
         |enemies: green, red""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when get team is called returns the formatted team"):
     val team = Team.create("blue", Set("red")).value
     world.getTeam.expects(TeamId("blue").value.value).returning(Right(team)).once()
 
-    val result = tools.getTeam("blue")
-
-    result shouldBe
+    val result = normalizeLineEndings(tools.getTeam("blue"))
+    val expected = normalizeLineEndings(
       """Result:
         |id: blue
         |enemies: red""".stripMargin
+    )
+
+    result shouldBe expected
 
   test("when create team is called returns a success message"):
     val team = Team.create("blue", Set("red", "green")).value

@@ -14,6 +14,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
 import scala.util.Try
 
+/**
+ * [[monad_core.simulator.application.ai.AiAgent]] adapter based on LangChain4j AI service.
+ *
+ * @param assistant Langchain4j AI service
+ * @param agentInfo provider and model info
+ */
 case class Langchain4jAiAgent(
     assistant: Langchain4jAssistant,
     agentInfo: AgentInfo

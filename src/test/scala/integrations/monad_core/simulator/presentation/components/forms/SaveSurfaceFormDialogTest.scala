@@ -19,7 +19,8 @@ class SaveSurfaceFormDialogTest
     with MockFactory
     with DialogTesting
     with FormTesting:
-  val RadiusFieldIndex: Int = 2
+  val RadiusFieldIndex: Int         = 2
+  val DamageOverTimeFieldIndex: Int = 7
 
   val GenericEitherCircleSurface: Either[EngineError, Surface] =
     Surface.circle("id", Vector2D(0, 0), 6)
@@ -37,8 +38,9 @@ class SaveSurfaceFormDialogTest
   private def buildCompleteSurface(eitherSurface: Either[EngineError, Surface]): Surface =
     val either = for
       surface                  <- eitherSurface
-      surfaceWithFrictionIndex <- surface.withFrictionIndex(10)
-      finalSurface             <- surfaceWithFrictionIndex.withAppliedForce(Vector2D(12, 13))
+      surfaceWithFrictionIndex <- surface.withFrictionIndex(Some(10))
+      surfaceWithAppliedForce  <- surfaceWithFrictionIndex.withAppliedForce(Some(Vector2D(12, 13)))
+      finalSurface             <- surfaceWithAppliedForce.withDamageOverTime(Some(5))
     yield finalSurface
 
     either.value
@@ -83,12 +85,14 @@ class SaveSurfaceFormDialogTest
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       allFormFields(RadiusFieldIndex).setText("10.0")
+      allFormFields(DamageOverTimeFieldIndex).setText("25.0")
       selectCircleInComboBox()
 
       formSaveButton.fire()
     }
 
     submittedSurface shouldBe defined
+    submittedSurface.flatMap(_.damageOverTime).map(_.value) should be(Some(25))
 
   test(
     "SaveSurfaceFormDialog invokes onSubmit with constructed Surface on valid input, with passed surfaceToUpdate"
@@ -96,8 +100,7 @@ class SaveSurfaceFormDialogTest
     val surfaceToUpdate                   = buildCompleteSurface(GenericEitherCircleSurface)
     var submittedSurface: Option[Surface] = None
     val expectedRadius                    = 10.0
-    val expectedWeight                    = 70.0
-    val expectedHealth                    = 100.0
+    val expectedDamageOverTime            = 25
 
     val props = SaveSurfaceFormDialogProps(
       title = "Add Surface Test",
@@ -110,6 +113,7 @@ class SaveSurfaceFormDialogTest
       getOrFail(SaveSurfaceFormDialog.show(props))
 
       allFormFields(RadiusFieldIndex).setText(expectedRadius.toString)
+      allFormFields(DamageOverTimeFieldIndex).setText(expectedDamageOverTime.toString)
       formSaveButton.fire()
     }
 
@@ -117,6 +121,7 @@ class SaveSurfaceFormDialogTest
     val providedSurface: Surface = submittedSurface.get
     providedSurface.id should be(surfaceToUpdate.id)
     providedSurface.position should be(surfaceToUpdate.position)
+    providedSurface.damageOverTime.map(_.value) should be(Some(expectedDamageOverTime))
 
     inside(providedSurface.shape):
       case Shape2D.Circle(radius) => radius should be(expectedRadius)

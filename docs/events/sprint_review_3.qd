@@ -19,10 +19,15 @@ Durante lo sprint sono stati completati o evoluti i seguenti elementi:
 | Area | Responsabile | Stato |
 |-|-|-|
 | Comunicazione con agente LLM | Senni | Completata |
-| Tools dell'agente LLM | Senni | In sviluppo avanzato; restano alcuni test e l'apertura della pull request |
+| Tools dell'agente LLM | Senni | In sviluppo avanzato, restano alcuni test e l'apertura della pull request |
+| Studio del testing e della validazione dell'agente LLM | Senni | In sviluppo |
 | Visualizzazione della scena | Fattori | Completata |
 | Creazione entità dalla GUI | Fattori | In sviluppo avanzato |
+| Modifica delle entità dalla GUI | Fattori | Da completare |
+| Sistema degli eventi | Fattori | In attesa del completamento della fisica |
 | Gestione della fisica | Tonelli | In sviluppo avanzato |
+| Gestione modalità Edit/Simulation | Tonelli | Da completare |
+| Stress testing | Tonelli | Non avviato |
 
 Tutto ciò che non è stato completato durante lo Sprint 3 viene riportato nello sprint successivo.
 

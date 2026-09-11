@@ -5,8 +5,17 @@ import monad_core.engine.model.Entity
 import monad_core.engine.physics.core.PhysicsError
 import monad_core.engine.physics.utils.CollisionMap
 
+/** Resolves overlap and bounce responses for all colliding mobile entities. */
 private[physics] object CollisionResolver:
 
+  /**
+   * Resolves the collected collisions of every non-fixed entity.
+   *
+   * @param collisions
+   *   collisions grouped by affected entity
+   * @return
+   *   updated mobile entities, or the first physics error
+   */
   def apply(
       collisions: CollisionMap
   ): Either[PhysicsError, List[Entity]] =
@@ -20,6 +29,16 @@ private[physics] object CollisionResolver:
           )
       }
 
+  /**
+   * Resolves, in order, overlaps and bounce responses to one entity.
+   *
+   * @param entity
+   *   affected entity
+   * @param collisions
+   *   entities and contacts colliding with it
+   * @return
+   *   fully corrected entity, or the first [[PhysicsError]]
+   */
   private def resolveCollisions(
       entity: Entity,
       collisions: List[(Entity, Collision)]
@@ -29,6 +48,16 @@ private[physics] object CollisionResolver:
       resolvedEntity     <- resolveMultipleBounces(deOverlappedEntity, collisions)
     yield resolvedEntity
 
+  /**
+   * Applies all positional corrections accumulated for one entity.
+   *
+   * @param entity
+   *   entity to de-overlap
+   * @param collisions
+   *   entities and contacts overlapping it
+   * @return
+   *   position-corrected entity, or the first [[PhysicsError]]
+   */
   private def resolveMultipleOverlaps(
       entity: Entity,
       collisions: List[(Entity, Collision)]
@@ -39,6 +68,18 @@ private[physics] object CollisionResolver:
         resolveOverlap(updatedEntity, otherEntity, collision)
     }
 
+  /**
+   * Corrects one overlap according to the mobility and masses of both bodies.
+   *
+   * @param entity
+   *   entity to move
+   * @param other
+   *   overlapping entity
+   * @param collision
+   *   separation normal and penetration depth
+   * @return
+   *   position-corrected entity, or a [[PhysicsError]]
+   */
   private def resolveOverlap(
       entity: Entity,
       other: Entity,
@@ -68,6 +109,16 @@ private[physics] object CollisionResolver:
 
     newPosition.map(entity.moveTo)
 
+  /**
+   * Applies all velocity responses accumulated for one entity.
+   *
+   * @param entity
+   *   entity to update
+   * @param collisions
+   *   entities and contacts producing bounce responses
+   * @return
+   *   velocity-corrected entity, or the first [[PhysicsError]]
+   */
   private def resolveMultipleBounces(
       entity: Entity,
       collisions: List[(Entity, Collision)]

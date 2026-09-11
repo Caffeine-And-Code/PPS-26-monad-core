@@ -28,6 +28,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
         surface.rotation shouldBe 0
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
+        surface.damageOverTime shouldBe None
 
   test("can create a surface with a rectangle shape"):
     val entity = Surface.rectangle(ValidEntityId, ValidPosition, ValidHeight, ValidLength)
@@ -39,11 +40,12 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
         surface.shape shouldBe Shape2D.rectangle(ValidHeight, ValidLength).toOption.get
         surface.frictionIndex shouldBe None
         surface.appliedForce shouldBe None
+        surface.damageOverTime shouldBe None
 
   test("can create a surface and give it an friction index"):
     val frictionIndex = 2
 
-    val surfaceWithFrictionIndex = ValidSurface.flatMap(_.withFrictionIndex(frictionIndex))
+    val surfaceWithFrictionIndex = ValidSurface.flatMap(_.withFrictionIndex(Some(frictionIndex)))
 
     inside(surfaceWithFrictionIndex):
       case Right(surface) => surface.frictionIndex shouldBe Some(frictionIndex)
@@ -51,7 +53,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
   test("can create a surface and give it a negative friction index"):
     val frictionIndex = -2
 
-    val surfaceWithFrictionIndex = ValidSurface.flatMap(_.withFrictionIndex(frictionIndex))
+    val surfaceWithFrictionIndex = ValidSurface.flatMap(_.withFrictionIndex(Some(frictionIndex)))
 
     inside(surfaceWithFrictionIndex):
       case Right(surface) => surface.frictionIndex shouldBe Some(frictionIndex)
@@ -59,7 +61,7 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
   test("can create a surface and give it an valid applied force"):
     val appliedForce = Vector2D(10, 20)
 
-    val surfaceWithAppliedForce = ValidSurface.flatMap(_.withAppliedForce(appliedForce))
+    val surfaceWithAppliedForce = ValidSurface.flatMap(_.withAppliedForce(Some(appliedForce)))
 
     inside(surfaceWithAppliedForce):
       case Right(surface) => surface.appliedForce shouldBe Some(appliedForce)
@@ -67,7 +69,22 @@ class SurfaceTest extends AnyFunSuite with Matchers with Inside:
   test("can create a surface and give it a negative applied force"):
     val appliedForce = Vector2D(-10, -20)
 
-    val surfaceWithAppliedForce = ValidSurface.flatMap(_.withAppliedForce(appliedForce))
+    val surfaceWithAppliedForce = ValidSurface.flatMap(_.withAppliedForce(Some(appliedForce)))
 
     inside(surfaceWithAppliedForce):
       case Right(surface) => surface.appliedForce shouldBe Some(appliedForce)
+
+  test("can create a surface and give it damage over time"):
+    val damage = 5
+
+    val surfaceWithDamage = ValidSurface.flatMap(_.withDamageOverTime(Some(damage)))
+
+    inside(surfaceWithDamage):
+      case Right(surface) => surface.damageOverTime.map(_.value) shouldBe Some(damage)
+
+  test("cannot create a surface and give it negative damage over time"):
+    val invalidDamage = -1
+
+    val surfaceWithDamage = ValidSurface.flatMap(_.withDamageOverTime(Some(invalidDamage)))
+
+    surfaceWithDamage shouldBe Left(DamageCannotBeNegative())

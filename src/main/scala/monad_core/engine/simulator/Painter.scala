@@ -2,43 +2,51 @@ package monad_core.engine.simulator
 
 import monad_core.engine.model.{EngineColor, EngineError, Locatable, TeamId}
 
+/**
+ * Rendering policy used by the engine to convert model elements into backend-neutral
+ * [[DrawCommand]] values.
+ *
+ * Implementations define the color palette and how supported shapes are represented as
+ * drawing commands. They do not draw directly on a UI surface.
+ */
 trait Painter:
 
   /**
-   * @see drawCircle and drawRectangle
-   * @return the default color if the entity is not in a team
+   * Provides the color used for entities without a team-specific color.
+   *
+   * @return the default entity color, or an engine error if it cannot be constructed
    */
   def baseEntityColor: Either[EngineError, EngineColor]
 
   /**
-   * @see drawCircle and drawRectangle
-   * @return the color utilized for the surfaces
+   * Provides the default color used for surfaces.
+   *
+   * @return the surface color, or an engine error if it cannot be constructed
    */
   def baseSurfaceColor: Either[EngineError, EngineColor]
 
   /**
-   * specifies how circles are drawn by the engine
+   * Converts a circular locatable into a drawing command.
    *
-   * @param locatable the element composed of shape and position to draw
-   * @param color the base color: if the entity is in a Team the color is
-   *              the team color, otherwise a default color is provided
+   * @param locatable positioned model element to convert
+   * @param color color assigned to the resulting command
+   * @return `Some(DrawCommand.Circle)` when the locatable is circular, or `None` for another shape
    */
-  def drawCircle(locatable: Locatable, color: EngineColor): Unit
+  def drawCircle(locatable: Locatable, color: EngineColor): Option[DrawCommand]
 
   /**
-   * specifies how rectangles are drawn by the engine
+   * Converts a rectangular locatable into a drawing command.
    *
-   * @param locatable the element composed of shape and position to draw
-   * @param color the base color: if the entity is in a Team the color is
-   *              the team color, otherwise a default color is provided
+   * @param locatable positioned model element to convert
+   * @param color color assigned to the resulting command
+   * @return `Some(DrawCommand.Rectangle)` when the locatable is rectangular, or `None` for another shape
    */
-  def drawRectangle(locatable: Locatable, color: EngineColor): Unit
+  def drawRectangle(locatable: Locatable, color: EngineColor): Option[DrawCommand]
 
   /**
-   * defines a relation between TeamId and a Color, which will then be used to
-   * color the entities of the team.
+   * Resolves the color associated with a team.
    *
-   * @param teamId the id of the team
-   * @return the associated color used to represent the entities of the team
+   * @param teamId identifier of the team
+   * @return the team color, or an engine error if it cannot be constructed
    */
   def teamIdColorRelation(teamId: TeamId): Either[EngineError, EngineColor]

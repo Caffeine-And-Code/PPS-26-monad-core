@@ -11,13 +11,14 @@
 | Membro | Riepilogo giorno precedente | Problemi riscontrati |
 | - | - | - |
 | Fattori | - | - |
+| Tonelli | Implementazione interfaccia del motore fisico | - |
 
 **Data: 09/07/2026**
 
 | Membro | Riepilogo giorno precedente | Problemi riscontrati |
 | - | - | - |
 | Fattori | Ingegnerizzazione event system | - |
-| Tonelli | - | - |
+| Tonelli | Revisione dell'interfaccia del motore fisico | - |
 
 **Data: 15/07/2026**
 
@@ -58,8 +59,4 @@
 | Membro | Riepilogo giorno precedente | Problemi riscontrati |
 | - | - | - |
 | Senni | Refactoring AI Agent | - |
-| Tonelli | - | - |
-
-**Nota Attività Tonelli**
-
-Causa problemi lavorativi, il numero di ore destinabili al progetto è stato decisamente rispetto al previsto. Il membro sottoscritto si impegna a recuperare task e ore durante lo sprint successivo, onde evitare rallentamenti.
+| Tonelli | Refactoring del Game Loop e del motore fisico | - |

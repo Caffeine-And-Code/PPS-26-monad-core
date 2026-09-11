@@ -1,5 +1,13 @@
 package monad_core.simulator.presentation.agent_evaluation
 
+/**
+ * Model endpoints and names used for evaluation.
+ *
+ * @param testModelUrl endpoint of the agent under test
+ * @param testModel model under test
+ * @param judgeModelUrl endpoint of the judge model
+ * @param judgeModel judge model
+ */
 case class AgentEvaluationArguments(
     testModelUrl: String,
     testModel: String,
@@ -7,13 +15,27 @@ case class AgentEvaluationArguments(
     judgeModel: String
 )
 
+/** Command-line names and parser for [[AgentEvaluationArguments]]. */
 object AgentEvaluationArguments:
 
+  /** Argument that overrides the tested agent endpoint. */
   val agentModelUrlArgument = "--agent-model-url"
-  val agentModelArgument    = "--agent-model"
-  val judgeModelUrlArgument = "--judge-model-url"
-  val judgeModelArgument    = "--judge-model"
 
+  /** Argument that overrides the tested agent model. */
+  val agentModelArgument = "--agent-model"
+
+  /** Argument that overrides the judge endpoint. */
+  val judgeModelUrlArgument = "--judge-model-url"
+
+  /** Argument that overrides the judge model. */
+  val judgeModelArgument = "--judge-model"
+
+  /**
+   * Parse the arguments list to a [[AgentEvaluationArguments]]
+   *
+   * @param args command-line arguments
+   * @return parsed values combined with defaults for absent options
+   */
   def parse(args: Array[String]): AgentEvaluationArguments =
     args
       .sliding(2)

@@ -5,6 +5,7 @@ import monad_core.engine.model.EngineError
 import monad_core.simulator.ImageResourceNotFound
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.resources.{Image, ImageConfigRecord, ImageLoader}
+import monad_core.simulator.presentation.resources.Image.PerformanceIcon
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite

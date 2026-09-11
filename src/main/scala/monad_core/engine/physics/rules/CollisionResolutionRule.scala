@@ -1,12 +1,15 @@
 package monad_core.engine.physics.rules
 
-import monad_core.engine.collision_detection.CollisionDetector
 import monad_core.engine.core.events.EngineEvent.CollisionDetected
 import monad_core.engine.core.events.CollisionTarget
-import monad_core.engine.core.traits.State
-import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
-import monad_core.engine.physics.core.{PhysicsError, PhysicsRule, PhysicsRuleResult}
+import monad_core.engine.physics.core.{
+  EntityCollisionContact,
+  PhysicsContext,
+  PhysicsError,
+  PhysicsRule,
+  PhysicsRuleResult
+}
 import monad_core.engine.physics.utils.{
   CollisionMap,
   CollisionResolver,
@@ -14,71 +17,79 @@ import monad_core.engine.physics.utils.{
   SceneEntitiesUpdate
 }
 
+/** Physics rule that resolves contacts between scene entities. */
 private[physics] object CollisionResolutionRule:
-  private val Id              = "collision-resolution"
-  private val CombinationSize = 2
+  /** Stable identifier of the collision-resolution rule. */
+  private val Id = "collision-resolution"
 
-  final private case class DetectedCollision(
-      first: Entity,
-      second: Entity,
-      collision: Collision
-  )
-
+  /** Default entity-collision resolution rule. */
   given collisionResolutionRule: PhysicsRule with
 
     override val RuleId: String = CollisionResolutionRule.Id
 
-    override def apply(scene: State, dt: Long)(using
-        detector: CollisionDetector
-    ): Either[PhysicsError, PhysicsRuleResult] =
+    /**
+     * Resolves the entity contacts.
+     *
+     * @param context
+     *   physics context containing the state, elapsed time and entity contacts
+     * @return
+     *   updated state and entity-collision events, or a [[PhysicsError]]
+     */
+    override def apply(context: PhysicsContext): Either[PhysicsError, PhysicsRuleResult] =
       for
-        _ <- PhysicsUtil.timeLongToSeconds(dt)
-        entities = scene.allEntities
-
-        detectedCollisions = findCollisions(entities)
-        activeCollisions   = toCollisionMap(detectedCollisions)
+        _ <- PhysicsUtil.timeLongToSeconds(context.dt)
+        activeCollisions = toCollisionMap(context)
 
         updatedEntities <- CollisionResolver(activeCollisions)
 
-        updatedScene <- SceneEntitiesUpdate(scene, updatedEntities)
+        updatedScene <- SceneEntitiesUpdate(context.state, updatedEntities)
       yield PhysicsRuleResult(
         state = updatedScene,
-        events = detectedCollisions.map(toEvent)
+        events = context.collisions.entityContacts.map(toEvent)
       )
 
-    private def findCollisions(
-        entities: List[Entity]
-    )(using detector: CollisionDetector): Vector[DetectedCollision] =
-      entities
-        .combinations(CollisionResolutionRule.CombinationSize)
-        .collect {
-          case Seq(e1, e2) if !(e1.isFixed && e2.isFixed) =>
-            detector
-              .collision(e1, e2)
-              .map(DetectedCollision(e1, e2, _))
-        }
-        .flatten
-        .toVector
+    /**
+     * Builds the bidirectional collision map consumed by the resolver.
+     * The normal is reversed for the second entity so each response points away from its collider.
+     *
+     * @param context
+     *   physics context containing detected entity contacts
+     * @return
+     *   collisions grouped by entity
+     */
+    private def toCollisionMap(context: PhysicsContext): CollisionMap =
+      val entitiesById = context.state.allEntities.map(entity => entity.id -> entity).toMap
 
-    private def toCollisionMap(collisions: Vector[DetectedCollision]): CollisionMap =
-      collisions
+      context.collisions.entityContacts
         .flatMap { detected =>
-          Vector(
-            detected.second -> (detected.first, detected.collision),
-            detected.first -> (
-              detected.second,
-              detected.collision.copy(normalVector = detected.collision.normalVector.flip)
+          for
+            first  <- entitiesById.get(detected.firstId).toVector
+            second <- entitiesById.get(detected.secondId).toVector
+            entry <- Vector(
+              second -> (first, detected.collision),
+              first -> (
+                second,
+                detected.collision.copy(normalVector = detected.collision.normalVector.flip)
+              )
             )
-          )
+          yield entry
         }
         .groupMap(_._1)(_._2)
         .view
         .mapValues(_.toList)
         .toMap
 
-    private def toEvent(detected: DetectedCollision): CollisionDetected =
+    /**
+     * Converts a detected entity contact into an engine event.
+     *
+     * @param detected
+     *   entity contact to convert
+     * @return
+     *   corresponding collision event
+     */
+    private def toEvent(detected: EntityCollisionContact): CollisionDetected =
       CollisionDetected(
-        entityId = detected.first.id,
-        target = CollisionTarget.Entity(detected.second.id),
+        entityId = detected.firstId,
+        target = CollisionTarget.Entity(detected.secondId),
         collision = detected.collision
       )

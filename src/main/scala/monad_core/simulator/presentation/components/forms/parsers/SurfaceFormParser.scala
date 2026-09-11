@@ -12,16 +12,46 @@ import monad_core.simulator.presentation.components.forms.parsers.LocatableFormS
 
 import scala.util.Random
 
+/** Converts submitted surface form values into validated engine surfaces. */
 object SurfaceFormParser {
 
-  val PositionXKey     = "x"
-  val PositionYKey     = "y"
-  val ShapeKey         = "shape"
-  val RotationKey      = "rotation"
+  /** Key of the horizontal position. */
+  val PositionXKey = "x"
+
+  /** Key of the vertical position. */
+  val PositionYKey = "y"
+
+  /** Key of the selected shape. */
+  val ShapeKey = "shape"
+
+  /** Key of the optional initial rotation. */
+  val RotationKey = "rotation"
+
+  /** Key of the optional friction index. */
   val FrictionIndexKey = "friction"
+
+  /** Key of the optional horizontal applied force. */
   val AppliedForceXKey = "appliedForceX"
+
+  /** Key of the optional vertical applied force. */
   val AppliedForceYKey = "appliedForceY"
 
+  /** Key of the optional damage applied over time. */
+  val DamageOverTimeKey = "damageOverTime"
+
+  /**
+   * Builds a surface from submitted form values.
+   *
+   * Position and shape dimensions are required. Rotation, friction, applied force and damage over time are applied
+   * when valid values are supplied. Domain construction failures are adapted to presentation errors.
+   *
+   * @param values
+   *   submitted values indexed by the keys exposed by this parser and `BaseFormParser`
+   * @param generateId
+   *   identifier generator; invoked once after position and shape have been parsed
+   * @return
+   *   the validated surface, or the first parsing or domain error
+   */
   def buildSurface(
       values: Map[String, String],
       generateId: () => String = () => Random.alphanumeric.take(10).mkString
@@ -34,16 +64,31 @@ object SurfaceFormParser {
       surface <- buildByShape(shapeValue, generateId(), position, values, rotation.getOrElse(0.0))
 
       frictionIndex = values.get(FrictionIndexKey).flatMap(_.toDoubleOption)
-      surfaceWithFriction <- frictionIndex match
-        case Some(friction) => surface.withFrictionIndex(friction).adaptError()
-        case None           => Right(surface)
+      surfaceWithFriction <- surface.withFrictionIndex(frictionIndex).adaptError()
 
       appliedForce = BaseFormParser.getOptionalVector2D(values, AppliedForceXKey, AppliedForceYKey)
-      completeSurface <- appliedForce match
-        case Some(force) => surfaceWithFriction.withAppliedForce(force).adaptError()
-        case None        => Right(surfaceWithFriction)
+      surfaceWithAppliedForce <- surfaceWithFriction.withAppliedForce(appliedForce).adaptError()
+
+      damageOverTime  <- BaseFormParser.parseOptionalInt(values, DamageOverTimeKey)
+      completeSurface <- surfaceWithAppliedForce.withDamageOverTime(damageOverTime).adaptError()
     yield completeSurface
 
+  /**
+   * Builds the base surface for a parsed shape.
+   *
+   * @param shape
+   *   shape selected by the user
+   * @param id
+   *   identifier assigned to the surface
+   * @param position
+   *   parsed initial position
+   * @param values
+   *   values containing the required shape dimensions
+   * @param rotation
+   *   initial rotation in degrees
+   * @return
+   *   a circle or rectangle surface, or a parsing or domain error
+   */
   private[forms] def buildByShape(
       shape: LocatableFormShapes,
       id: String,

@@ -2,13 +2,46 @@
 .doctype {paged}
 .theme {paperwhite} layout:{latex}
 
+.cssproperties
+    - main-font-size: 0.85rem
+    - line-height: 1.1
+
 .css 
     nav,a {
-    color: black !important;
+        color: black !important;
     }
 
     .container {
-    padding: 250px 0 !important;
+        padding: 250px 0 !important;
+    }
+
+    .quarkdown h1,
+    .quarkdown h2,
+    .quarkdown h3,
+    .quarkdown h4 {
+        line-height: 1.1;
+        margin-top: 0.8em;
+        margin-bottom: 0.4em;
+    }
+
+    .quarkdown h1 {
+        --h-font-scale: 1.8;
+        font-size: 1.8em;
+    }
+
+    .quarkdown h2 {
+        --h-font-scale: 1.35;
+        font-size: 1.35em;
+    }
+
+    .quarkdown h3 {
+        --h-font-scale: 1.15;
+        font-size: 1.15em;
+    }
+
+    .quarkdown h4 {
+        --h-font-scale: 1;
+        font-size: 1em;
     }
 
 .container

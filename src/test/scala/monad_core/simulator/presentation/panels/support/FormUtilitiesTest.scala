@@ -1,13 +1,11 @@
 package monad_core.simulator.presentation.panels.support
 
-import monad_core.simulator.TeamNotFoundDuringSelection
 import monad_core.simulator.application.engine.GameEngineRuntime
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.presentation.panels.support.FormUtilities
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.matchers.should.Matchers.should
 
 class FormUtilitiesTest extends AnyFunSuite with Matchers with MockFactory:
 
@@ -24,4 +22,4 @@ class FormUtilitiesTest extends AnyFunSuite with Matchers with MockFactory:
       action.expects(expectedActionInput).returning(Right(())).once()
       (() => runtime.createSnapshot()).expects().once()
 
-    FormUtilities.onActionMakeSnapshot(expectedActionInput, action)
+    FormUtilities.onActionMakeSnapshot(expectedActionInput)(action)

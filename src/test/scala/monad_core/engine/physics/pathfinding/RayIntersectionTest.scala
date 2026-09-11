@@ -1,7 +1,7 @@
 package monad_core.engine.physics.pathfinding
 
 import monad_core.engine.model.{LocatableId, Vector2D}
-import monad_core.engine.helper.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
+import helpers.dummies.DummyEntityHelper.{makeFixedEntityCircle, makeFixedEntityRectangle}
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.funsuite.AnyFunSuite
@@ -24,8 +24,15 @@ class RayIntersectionTest extends AnyFunSuite with Matchers:
     width = 1.0
   )
 
-  test("RayIntersection should return None if vertexes are empty"):
+  test("RayIntersection should return None if the vertex map is empty"):
     val vertexMap = Map.empty[LocatableId, List[Vector2D]]
+
+    val result = RayIntersection(RayStart, RayDirection, vertexMap)
+
+    result shouldBe None
+
+  test("RayIntersection should return None if an element has no vertexes"):
+    val vertexMap = Map(IntersectedCircleEntity.id -> List.empty[Vector2D])
 
     val result = RayIntersection(RayStart, RayDirection, vertexMap)
 

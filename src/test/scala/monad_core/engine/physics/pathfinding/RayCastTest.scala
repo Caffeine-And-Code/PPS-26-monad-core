@@ -3,10 +3,7 @@ package monad_core.engine.physics.pathfinding
 import monad_core.engine.model.*
 import monad_core.engine.model.Shape2D.{Circle, Rectangle}
 import monad_core.engine.physics.core.{RayIntersectedAMissingEntity, RayIntersectedNothing}
-import monad_core.engine.helper.DummyEntityHelper.{
-  makeMovingEntityCircle,
-  makeMovingEntityRectangle
-}
+import helpers.dummies.DummyEntityHelper.{makeMovingEntityCircle, makeMovingEntityRectangle}
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.compatible.Assertion

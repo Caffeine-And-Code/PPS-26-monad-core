@@ -1,11 +1,17 @@
 package monad_core.simulator.infrastructure.ai
 
 import monad_core.engine.model.*
-import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.errors.BaseError
 
+/** Formats world operations as stable plain text responses for the assistant. */
 object Langchain4jToolResponse:
 
+  /**
+   * Convert in plain text a save operation result or an error.
+   *
+   * @param result operation result
+   * @param successMessage description used on success @return formatted success or error response
+   */
   def save(
       result: Either[BaseError, Unit],
       successMessage: String
@@ -16,6 +22,14 @@ object Langchain4jToolResponse:
       case Right(_) =>
         s"Success: $successMessage"
 
+  /**
+   * Convert in plain text a value of type `A` or an error.
+   *
+   * @tparam A successful value type
+   * @param result operation result
+   * @param format successful value renderer
+   * @return formatted result or error response
+   */
   def render[A](
       result: Either[BaseError, A]
   )(
@@ -26,6 +40,15 @@ object Langchain4jToolResponse:
       value => s"Result:\n${format(value)}"
     )
 
+  /**
+   * Convert in plain text a list of values.
+   *
+   * @tparam A element type
+   * @param values elements to render
+   * @param elementName plural display name
+   * @param format element renderer
+   * @return plain text list
+   */
   def renderList[A](
       values: List[A],
       elementName: String
@@ -40,6 +63,12 @@ object Langchain4jToolResponse:
 
       s"Result: ${values.size} $elementName found.\n$renderedValues"
 
+  /**
+   * Convert in plain text an [[monad_core.engine.model.Entity]].
+   *
+   * @param entity entity to render
+   * @return plain text entity description
+   */
   def renderEntity(entity: Entity): String =
     List(
       s"id: ${entity.id.value}",
@@ -50,9 +79,16 @@ object Langchain4jToolResponse:
       s"angularSpeed: ${entity.angularSpeed.fold("none")(_.toString)}",
       s"weight: ${entity.weight.fold("none")(_.toString)}",
       s"health: ${entity.health.fold("none")(_.value.toString)}",
+      s"damage: ${entity.damage.fold("none")(_.value.toString)}",
       s"team: ${entity.teamId.fold("none")(_.value)}"
     ).mkString("\n")
 
+  /**
+   * Convert in plain text a [[monad_core.engine.model.Surface]]
+   *
+   * @param surface surface to render
+   * @return plain text surface description
+   */
   def renderSurface(surface: Surface): String =
     List(
       s"id: ${surface.id.value}",
@@ -60,9 +96,16 @@ object Langchain4jToolResponse:
       s"shape: ${renderShape(surface.shape)}",
       s"rotation: ${surface.rotation}",
       s"frictionIndex: ${surface.frictionIndex.fold("none")(_.toString)}",
-      s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}"
+      s"appliedForce: ${surface.appliedForce.fold("none")(renderVector)}",
+      s"damageOverTime: ${surface.damageOverTime.fold("none")(_.value.toString)}"
     ).mkString("\n")
 
+  /**
+   * Convert in plain text a [[monad_core.engine.model.Team]]
+   *
+   * @param team team to render
+   * @return plain text team description
+   */
   def renderTeam(team: Team): String =
     val enemies =
       if team.enemies.isEmpty then "none"
@@ -73,47 +116,12 @@ object Langchain4jToolResponse:
       s"enemies: $enemies"
     ).mkString("\n")
 
-  def renderShape(shape: Shape2D): String =
+  private def renderShape(shape: Shape2D): String =
     shape match
       case Shape2D.Circle(radius) =>
         s"circle, radius: $radius"
       case Shape2D.Rectangle(height, length) =>
         s"rectangle, height: $height, length: $length"
 
-  def renderVector(vector: Vector2D): String =
+  private def renderVector(vector: Vector2D): String =
     s"(${vector.x}, ${vector.y})"
-
-  def withOptionalEntityFields(
-      entity: Entity,
-      teamId: String,
-      weight: Integer,
-      speedX: java.lang.Double,
-      speedY: java.lang.Double,
-      angularSpeed: java.lang.Double
-  ): Either[BaseError, Entity] =
-    for
-      entityWithTeam <- Option(teamId)
-        .fold(Right(entity): Either[EngineError, Entity])(entity.withTeamId)
-        .adaptError()
-      entityWithWeight <- Option(weight)
-        .fold(Right(entityWithTeam): Either[EngineError, Entity])(value =>
-          entityWithTeam.withWeight(value.intValue())
-        )
-        .adaptError()
-      completeEntity <- (
-        (Option(speedX), Option(speedY)) match
-          case (None, None) =>
-            Right(entityWithWeight)
-          case (Some(horizontal), Some(vertical)) =>
-            Right(
-              entityWithWeight.withSpeed(
-                Vector2D(horizontal.doubleValue(), vertical.doubleValue())
-              )
-            )
-          case _ =>
-            Left(IncompleteEntitySpeed())
-      ): Either[BaseError, Entity]
-    yield withOptionalAngularSpeed(completeEntity, angularSpeed)
-
-  def withOptionalAngularSpeed(entity: Entity, angularSpeed: java.lang.Double): Entity =
-    Option(angularSpeed).fold(entity)(value => entity.withAngularSpeed(value.doubleValue()))

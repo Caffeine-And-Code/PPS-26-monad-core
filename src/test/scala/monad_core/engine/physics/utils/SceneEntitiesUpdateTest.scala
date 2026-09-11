@@ -8,8 +8,8 @@ import monad_core.engine.core.{
 }
 import monad_core.engine.model.Vector2D
 import monad_core.engine.physics.core.PhysicsDomainError
-import monad_core.engine.helper.DummyEntityHelper.makeMovingEntityCircle
-import monad_core.engine.helper.MockStateHelper
+import helpers.dummies.DummyEntityHelper.makeMovingEntityCircle
+import helpers.mocks.MockStateHelper
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues.convertEitherToValuable
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -48,7 +48,7 @@ class SceneEntitiesUpdateTest
 
   test("this function should update entities in the scene"):
 
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Some(Vector2D(2, 2)))
 
     val initialScene = stateWithEntities(List(Entity1))
 
@@ -62,7 +62,7 @@ class SceneEntitiesUpdateTest
 
   test("this function should only update entities that are in the updated list"):
 
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Some(Vector2D(2, 2)))
 
     val initialScene = stateWithEntities(List(Entity1, Entity2))
 
@@ -81,8 +81,8 @@ class SceneEntitiesUpdateTest
 
   test("this function should update multiple entities that are in the updated list"):
 
-    val updatedEntity1 = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
-    val updatedEntity2 = Entity2.moveTo(Vector2D(21, 21)).withSpeed(Vector2D(3, 3))
+    val updatedEntity1 = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Some(Vector2D(2, 2)))
+    val updatedEntity2 = Entity2.moveTo(Vector2D(21, 21)).withSpeed(Some(Vector2D(3, 3)))
 
     val initialScene = stateWithEntities(List(Entity1, Entity2))
 
@@ -101,7 +101,7 @@ class SceneEntitiesUpdateTest
 
   test("this function should return an error if an entity in the updated list is not in the scene"):
 
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Some(Vector2D(2, 2)))
 
     val initialScene = stateWithEntities(List(Entity2))
 
@@ -119,7 +119,7 @@ class SceneEntitiesUpdateTest
     "this function should return an error if it tries to add an entity that is already in the scene"
   ):
 
-    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Vector2D(2, 2))
+    val updatedEntity = Entity1.moveTo(Vector2D(11, 11)).withSpeed(Some(Vector2D(2, 2)))
 
     val initialScene = stateWithEntitiesNotRemoving(List(Entity1))
 

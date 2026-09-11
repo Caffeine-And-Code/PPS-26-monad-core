@@ -5,6 +5,7 @@
 | Membro | Attività svolte | Problemi riscontrati |
 | - | - | - |
 | Fattori | Avvio dello sviluppo degli snapshot test per l'interfaccia grafica | |
+| Tonelli | Revisione del Physics Engine | |
 
 **Data: 22/07/2026**
 
@@ -12,6 +13,7 @@
 | - | - | - |
 | Senni | Refactoring dei componenti dell'agente AI e completamento dei relativi test | |
 | Fattori | Completamento degli snapshot test e avvio dello sviluppo dello Scene Renderer | |
+| Tonelli | Avvio delle regole fisiche | |
 
 **Data: 23/07/2026**
 

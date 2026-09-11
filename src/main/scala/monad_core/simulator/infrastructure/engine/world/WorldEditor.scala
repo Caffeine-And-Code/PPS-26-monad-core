@@ -7,8 +7,28 @@ import monad_core.simulator.application.engine.errors.ErrorsAdapter.adaptError
 import monad_core.simulator.errors.BaseError
 import monad_core.simulator.infrastructure.engine.world.WorldEdit.*
 
+/**
+ * Pure interpreter for [[WorldEdit]] commands.
+ *
+ * Edits are accepted only in `LoopMode.EditMode`. Successful operations return a new
+ * immutable scene and any engine events produced by the mutation; the input scene is never
+ * modified in place.
+ */
 object WorldEditor:
 
+  /**
+   * Applies one edit command to a scene when the engine is in edit mode.
+   *
+   * Entity creation, update, and removal emit the corresponding lifecycle event. Surface
+   * and team operations update the scene without emitting events.
+   *
+   * @param mode current engine loop mode
+   * @param scene scene on which the command is interpreted
+   * @param edit mutation to apply
+   * @return `Right(WorldEditResult)` containing the updated scene on success;
+   *         `Left(SceneEditingNotAllowed)` in simulation mode, or another `Left(BaseError)`
+   *         when domain validation fails
+   */
   def apply(
       mode: LoopMode,
       scene: Scene,

@@ -4,11 +4,20 @@ import monad_core.engine.geometry.Collision
 import monad_core.engine.model.*
 import monad_core.engine.physics.pathfinding.RectangleVertexes.vertexes
 
+/**
+ * Synthetic wall and collision generated for one crossed world border.
+ *
+ * @param wall
+ *   fixed entity representing the crossed border
+ * @param collision
+ *   contact information between the entity and the border
+ */
 private[engine] case class BorderWallResult(
     wall: Entity,
     collision: Collision
 )
 
+/** Builds synthetic wall contacts for entities crossing the world bounds. */
 private[engine] object BorderWall:
 
   private val LeftWallId   = "left-wall"
@@ -24,6 +33,24 @@ private[engine] object BorderWall:
 
   private val WallStartPosition = Vector2D(0, 0)
 
+  /**
+   * Creates the wall and collision associated with one crossed border.
+   *
+   * @param entity
+   *   entity crossing the world boundary
+   * @param horizontalHalfSize
+   *   half of the entity's horizontal extent
+   * @param verticalHalfSize
+   *   half of the entity's vertical extent
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param lowerRight
+   *   lower-right world boundary
+   * @param borderSide
+   *   crossed border
+   * @return
+   *   generated contact, or the error produced while building its wall entity
+   */
   def apply(
       entity: Entity,
       horizontalHalfSize: Double,
@@ -48,6 +75,20 @@ private[engine] object BorderWall:
       val point = collisionPoint(entity, upperLeft, lowerRight, borderSide)
       BorderWallResult(wall, Collision(normal, depth, point))
 
+  /**
+   * Calculates the inward collision normal and penetration depth for a border.
+   *
+   * @param wall
+   *   synthetic wall crossing the selected border
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param lowerRight
+   *   lower-right world boundary
+   * @param borderSide
+   *   crossed border
+   * @return
+   *   inward unit normal and positive penetration depth
+   */
   private def collisionVectorDepht(
       wall: Entity,
       upperLeft: Vector2D,
@@ -76,6 +117,21 @@ private[engine] object BorderWall:
           math.abs(wall.position.y - lowerRight.y)
         )
 
+  /**
+   * Calculates the world-space contact point on the selected border.
+   * For rectangles, equally extreme support vertices are averaged before projection.
+   *
+   * @param entity
+   *   entity crossing the border
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param lowerRight
+   *   lower-right world boundary
+   * @param borderSide
+   *   crossed border
+   * @return
+   *   contact point projected onto the border
+   */
   private def collisionPoint(
       entity: Entity,
       upperLeft: Vector2D,
@@ -109,6 +165,16 @@ private[engine] object BorderWall:
       case BorderSide.Top    => supportCentre.copy(y = upperLeft.y)
       case BorderSide.Bottom => supportCentre.copy(y = lowerRight.y)
 
+  /**
+   * Moves a successfully constructed wall while preserving construction errors.
+   *
+   * @param wall
+   *   wall construction result
+   * @param position
+   *   desired wall center
+   * @return
+   *   moved wall, or the original construction error
+   */
   private def moveWall(
       wall: Either[EngineError, Entity],
       position: Vector2D
@@ -117,6 +183,20 @@ private[engine] object BorderWall:
       case Right(w)  => Right(w.moveTo(position))
       case Left(err) => Left(err)
 
+  /**
+   * Builds the synthetic wall extending beyond the left border.
+   *
+   * @param position
+   *   crossing entity center
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param horizontal
+   *   entity horizontal half-size
+   * @param vertical
+   *   entity vertical half-size
+   * @return
+   *   synthetic wall, or an [[EngineError]]
+   */
   private def leftWall(
       position: Vector2D,
       upperLeft: Vector2D,
@@ -135,6 +215,20 @@ private[engine] object BorderWall:
 
     moveWall(wall, Vector2D(muchExternalPoint, position.y))
 
+  /**
+   * Builds the synthetic wall extending beyond the right border.
+   *
+   * @param position
+   *   crossing entity center
+   * @param lowerRight
+   *   lower-right world boundary
+   * @param horizontal
+   *   entity horizontal half-size
+   * @param vertical
+   *   entity vertical half-size
+   * @return
+   *   synthetic wall, or an [[EngineError]]
+   */
   private def rightWall(
       position: Vector2D,
       lowerRight: Vector2D,
@@ -153,6 +247,20 @@ private[engine] object BorderWall:
 
     moveWall(wall, Vector2D(muchExternalPoint, position.y))
 
+  /**
+   * Builds the synthetic wall extending beyond the top border.
+   *
+   * @param position
+   *   crossing entity center
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param horizontal
+   *   entity horizontal half-size
+   * @param vertical
+   *   entity vertical half-size
+   * @return
+   *   synthetic wall, or an [[EngineError]]
+   */
   private def topWall(
       position: Vector2D,
       upperLeft: Vector2D,
@@ -170,6 +278,20 @@ private[engine] object BorderWall:
 
     moveWall(wall, Vector2D(position.x, muchExternalPoint))
 
+  /**
+   * Builds the synthetic wall extending beyond the bottom border.
+   *
+   * @param position
+   *   crossing entity center
+   * @param lowerRight
+   *   lower-right world boundary
+   * @param horizontal
+   *   entity horizontal half-size
+   * @param vertical
+   *   entity vertical half-size
+   * @return
+   *   synthetic wall, or an [[EngineError]]
+   */
   private def bottomWall(
       position: Vector2D,
       lowerRight: Vector2D,
@@ -187,6 +309,24 @@ private[engine] object BorderWall:
 
     moveWall(wall, Vector2D(position.x, muchExternalPoint))
 
+  /**
+   * Selects the synthetic wall constructor associated with a border side.
+   *
+   * @param position
+   *   crossing entity center
+   * @param upperLeft
+   *   upper-left world boundary
+   * @param lowerRight
+   *   lower-right world boundary
+   * @param horizontal
+   *   entity horizontal half-size
+   * @param vertical
+   *   entity vertical half-size
+   * @param borderSide
+   *   crossed border
+   * @return
+   *   selected synthetic wall, or an [[EngineError]]
+   */
   private def wallSelector(
       position: Vector2D,
       upperLeft: Vector2D,

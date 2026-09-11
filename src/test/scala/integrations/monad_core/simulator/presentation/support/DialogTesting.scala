@@ -12,13 +12,15 @@ trait DialogTesting
     with ScalaFxInit
     with SnapshotTesting:
 
-  override def beforeEach(): Unit =
-    if getActiveStage.isDefined then
-      onFxThread {
-        getRequiredActiveStage.close()
+  private def closeAllWindows(): Unit =
+    onFxThread {
+      javafx.stage.Window.getWindows.asScala.toList.foreach(_.hide())
+    }
 
-        javafx.stage.Window.getWindows.asScala.toList
-          .collect { case s: javafx.stage.Stage => s }
-          .foreach(_.close())
-      }
+  override def beforeEach(): Unit =
+    closeAllWindows()
     super.beforeEach()
+
+  override def afterEach(): Unit =
+    try closeAllWindows()
+    finally super.afterEach()

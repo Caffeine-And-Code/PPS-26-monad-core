@@ -1,14 +1,14 @@
 package integrations.monad_core.simulator
 
 import helpers.mocks.MockImage
-import integrations.monad_core.simulator.presentation.support.{ScalaFxInit, SnapshotTesting}
+import integrations.monad_core.simulator.presentation.support.DialogTesting
 import monad_core.Launcher
 import monad_core.simulator.{CannotBuildStage, ImageResourceNotFound}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scalafx.Includes.{jfxNode2sfx, jfxStage2sfx}
 
-class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with ScalaFxInit:
+class LauncherTest extends AnyFunSuite with Matchers with DialogTesting:
 
   test("outcomeFor returns a success outcome and message when the launcher succeeds"):
     val response = Launcher.outcomeFor(Right(()))
@@ -45,6 +45,29 @@ class LauncherTest extends AnyFunSuite with Matchers with SnapshotTesting with S
 
     assertMatchesVisualSnapshot(
       "launcher_scene_snapshot",
+      mainWindow.get.getScene.getRoot,
+      maxDiffPercentage = 8.5
+    )
+
+  test("the performance launcher matches its architectural snapshot"):
+    Launcher.main(Array("--performance"))
+
+    val mainWindow = tryGetMainWindow
+
+    mainWindow shouldBe defined
+    assertMatchesArchitecturalSnapshotOfStage(
+      "performance_launcher_scene_snapshot",
+      mainWindow.get
+    )
+
+  test("the performance launcher matches its visual snapshot"):
+    Launcher.main(Array("--performance"))
+
+    val mainWindow = tryGetMainWindow
+
+    mainWindow shouldBe defined
+    assertMatchesVisualSnapshot(
+      "performance_launcher_scene_snapshot",
       mainWindow.get.getScene.getRoot,
       maxDiffPercentage = 8.5
     )

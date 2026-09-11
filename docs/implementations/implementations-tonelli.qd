@@ -1,8 +1,159 @@
-### Game Loop
+### Ambiti di competenza e collaborazioni
 
-Per garantire il corretto funzionamento del sistema, sono definite delle caratteristiche che il Game Loop deve rispettare, per garantire una simulazione corretta.
-- **Configurazione e Indipendenza del Tick-Time**: il motore deve aggiornare la fisica a intervalli di tempo costanti e prefissati, indipendentemente da quanti frame al secondo il computer riesca effettivamente a renderizzare. Viene così garantito il **determinismo della simulazione**, a priori delle capacità computazionali della macchina su cui viene eseguito.
-- **Accumulo del Tempo Reale**: il loop deve misurare il tempo reale trascorso tra il frame precedente e quello corrente e aggiungerlo a un contatore interno, così da non perdere frazioni di tempo.
-- **Clamp del frame time**: il tempo massimo registrabile da un singolo frame deve essere limitato superiormente. Se il sistema subisce un blocco improvviso (es. caricamento pesante o lag della GUI), l'accumulatore non deve sovraccaricarsi. Senza questo blocco, al riavvio il motore cercherebbe di calcolare centinaia di tick fisici tutti insieme, causando ulteriore lag.
-- **Consumo dei Tick Fisici (Fixed Update)**: un ciclo interno che consuma l'accumulatore a passi di lunghezza esattamente pari al Tick-Time. Ad ogni ciclo viene invocata la funzione pura di aggiornamento dello stato fisico del mondo. Garantisce un rilevamento delle collisioni accurato. Impedisce il fenomeno del _tunneling_ (oggetti veloci che attraversano le pareti perché il frame ci ha messo troppo tempo ad aggiornarsi).
-- **Calcolo dell'Alpha di Interpolazione (Variable Render)**: il loop deve calcolare il rapporto $\alpha$ tra il tempo rimasto nell'accumulatore e il passo del tick. Questo valore (compreso tra $0.0$ e $1.0$) deve essere passato alla funzione di rendering. Se lo schermo renderizza a frequenze diverse rispetto alla fisica, il renderer usa l'alfa per stimare la posizione visiva corretta di un solido tra il tick precedente e il successivo, eliminando _stuttering_ (scatti).
+Il mio contributo al progetto ha riguardato principalmente i seguenti campi, con relativi sorgenti:
+
+- Game loop e interpolazione della scena
+  - `engine/core/GameLoop.scala`
+  - `engine/core/GameLoopImpl.scala`
+  - `engine/core/GameLoopError.scala`
+  - `engine/core/LoopMode.scala`
+  - `engine/simulator/StateInterpolator.scala`
+  - `engine/model/WorldBounds.scala`
+- Motore fisico e sistema di ray casting
+  - la totalità del package `engine/physics`, ad eccezione dei contributi di Fabio Fattori a `PhysicsContext` e `DamageApplicationRule`, successivamente integrati nel sottosistema
+- Performance testing
+  - i package `performance` nei layer `simulator/domain`,
+    `simulator/application`, `simulator/infrastructure` e `simulator/presentation`
+
+A questi ambiti si aggiunge la collaborazione con Mattia Senni, che ha interessato il modello delle entità e
+la collision detection originaria. Su quella base, sono stati aggiunti supporto
+alla rotazione, collision point e algoritmi per forme ruotate. I tool e gli
+adapter LangChain4j sono stati estesi affinché rotazione e velocità angolare attraversassero anche il
+canale LLM.
+
+Una modifica sostanziale in questi termini è stata operata su `ShapeCollision.scala`,
+dove sono stati introdotti o rielaborati:
+
+- collisioni fra rettangoli ruotati mediante Separating Axis Theorem
+- punto di contatto tra rettangoli mediante clipping dei poligoni
+- collisione tra cerchio e rettangolo ruotato
+- gestione di un cerchio completamente interno a un rettangolo
+- normali deterministiche per casi degeneri
+- simmetria dei risultati quando l'ordine delle forme viene invertito
+- tolleranze numeriche sui contatti e sui bordi del clipping
+
+Anche `Collision.scala` è stato esteso con il punto di contatto necessario alla
+risposta angolare. In `Entity.scala`, `Surface.scala`, `Locatable.scala` e
+`Vector2D.scala` sono state introdotte o propagate le parti riguardanti rotazione,
+velocità angolare e operazioni vettoriali richieste dai nuovi
+algoritmi.
+
+### Aspetti implementativi rilevanti
+
+#### Aggiornamento immutabile e gestione degli errori
+
+Le trasformazioni principali non modificano la scena ricevuta. `GameLoop`,
+`PhysicsManager`, regole e piani restituiscono valori successivi. Gli errori
+attesi attraversano `Either`, mentre `Option` esprime proprietà assenti o
+intersezioni non trovate.
+
+Le for-comprehension compongono validazioni e trasformazioni conservando il primo
+`Left`. Nei fold su collezioni, l'accumulatore stesso è un `Either`, per cui, una volta
+raggiunto un errore, gli elementi successivi non producono effetti.
+
+#### Tipi opachi e smart constructor
+
+Quantità semanticamente diverse ma rappresentate da interi sono state definite come opaque type.
+Ne sono un esempio `EntityCount`, `IterationCount`, `WarmupCount` e `GrowthFactor`.
+La validità può essere ottenuta soltanto tramite `from`. Fuori
+dal companion la rappresentazione rimane nascosta.
+
+La regola comune ai conteggi positivi è centralizzata in `PositiveCount`, mentre Warm-up e
+crescita mantengono costruttori distinti perché hanno limiti differenti.
+
+#### ADT e pattern matching
+
+`LoopMode`, `PerformanceKind`, `PerformancePlan` ed errori chiusi rappresentano
+insiemi finiti di casi. Il pattern matching rende visibile la totalità dei
+casi e lascia al compilatore il controllo di esaustività.
+
+La scelta di un ADT per `PerformancePlan` risolve anche una proprietà funzionale:
+uno stato non valido o privo di significato non è rappresentabile. Un Load non
+può contenere massimo e fattore inutilizzati, come uno Spike non può contenere un
+fattore che non verrà letto.
+
+#### Dipendenze contestuali
+
+`PhysicsEngine`, `CollisionDetector`, `NanoClock` e `PerformanceExecutor` vengono
+forniti con `given` e `using`. Le funzioni dichiarano il collaboratore necessario
+senza legarlo a un singleton concreto. Nei test la stessa firma riceve mock,
+detector, clock o executor controllati.
+
+`PerformanceExecutor` costituisce il port del layer Application usato da
+Presentation per avviare gli esperimenti. `PerformanceCli`, collocato in
+Infrastructure, lo implementa. `Launcher` effettua il collegamento nel composition
+root. La GUI può quindi usare `runWithRules` e i dati condivisi dei comandi senza
+importare l'adapter concreto.
+
+#### Funzioni come valori
+
+Nel nucleo del performance runner il workload resta rappresentato come funzione,
+poiché il contratto interno è formato da una sola operazione. I due alias
+principali sono equivalenti a:
+
+```scala
+type Operation = () => Either[PerformanceError, Unit]
+type PrepareWorkload =
+  EntityCount => Either[PerformanceError, Operation]
+```
+
+La funzione restituita può essere invocata per warm-up e campioni,
+mentre il runner rimane indipendente dal tipo di workload.
+
+Lo stesso uso di funzioni di ordine superiore compare nelle regole del motore fisico.
+
+#### Ricorsione in coda
+
+Il consumo dei tick, la ripetizione dei workload e la generazione della
+progressione sono implementati con funzioni annotate `@tailrec`. L'annotazione
+chiede al compilatore di verificare che la ricorsione possa essere trasformata in
+un ciclo a stack costante.
+
+#### Extension method, infix e union type
+
+Le extension method aggiungono operazioni ai tipi opachi e ai valori geometrici.
+Un esempio esplicativo è l'individuazione dei vertici della `Shape2D` associata a un'entità nel contesto del pathfinding.
+
+Il combinatore infix `+` esprime la concatenazione di due regole. Operazioni come
+prodotto scalare, prodotto vettoriale, distanza e rotazione mantengono le formule
+vicine al dominio.
+
+`MenuButtonEntry` è una union type tra azione semplice e voce selezionabile. Il
+pattern matching converte entrambe nello specifico controllo JavaFX senza
+costringerle in una gerarchia mutabile.
+
+#### Collezioni
+
+Durante lo sviluppo ne sono state usate di vario tipo:
+
+- `List` viene usata dove il dominio espone già sequenze lineari di entità e
+vertici
+- `Vector` dove contano indicizzazione, accumulo ordinato e accesso ai
+campioni
+- `Set` per l'appartenenza delle regole abilitate
+- `Seq` per l'ordine delle regole nel `PhysicsManager`
+- `Map` per lookup per identificatore nell'aggiornamento delle entità nella scena
+- `Array[String]` resta al confine della JVM perché è il tipo della firma `main`, venendo convertito o attraversato
+ senza usarlo come struttura di dominio.
+
+I combinatori `map`, `flatMap`, `filter`, `collect`, `foldLeft`, `groupMap`,
+`zip`, `minByOption` e `sortBy` sostituiscono buffer condivisi e cicli con stato
+esterno.
+
+#### Confinamento degli effetti
+
+`PerformanceClock` è l'unico punto che legge `System.nanoTime()`. La stampa del
+report resta confinata al routing in Presentation, mentre `PerformanceCli`
+restituisce il testo tramite `Either`. La GUI esegue il lavoro computazionale in
+un `Future` e usa `Platform.runLater` per aggiornare i controlli. `Try` converte le
+eccezioni impreviste di costruzione JavaFX in errori applicativi.
+
+Il runtime del simulatore contiene mutabilità e sincronizzazione perché integra
+un toolkit a eventi e conserva una sessione interattiva. Tale mutabilità non viene
+propagata nel modello o nelle regole pure.
+
+#### Visibilità qualificata
+
+Modificatori come `private[physics]`, `private[pathfinding]` e
+`private[performance]` permettono ai test e ai collaboratori del sottosistema di
+usare componenti mirati senza trasformarli in API pubblica dell'engine.

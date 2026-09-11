@@ -6,6 +6,13 @@ import scalafx.beans.property.ObjectProperty
 
 import scala.concurrent.ExecutionContext
 
+/**
+ * Connect the chat panel actions to the state and preserve the state of the chat panel.
+ *
+ * @param aiAgent agent used to answer prompts and clear history
+ * @param runOnUiThread schedules an action on the ScalaFX thread
+ * @param executionContext execution context used by asynchronous responses
+ */
 final class ChatPanelViewModel(
     aiAgent: AiAgent,
     runOnUiThread: (() => Unit) => Unit
@@ -13,12 +20,19 @@ final class ChatPanelViewModel(
 
   private val defaultConversationId = "chat1"
 
+  /** Observable chat state consumed by the panel. */
   val state: ObjectProperty[ChatPanelState] =
     ObjectProperty(ChatPanelState.initial)
 
+  /**
+   * Event trigger on user prompt TextField change
+   *
+   * @param newPrompt current contents of the prompt field
+   */
   def onPromptChange(newPrompt: String): Unit =
     update(ChatPanelActions.onPromptChange(_, newPrompt))
 
+  /** Submits the current prompt when the state allows it. */
   def onSubmit(): Unit =
     Option.when(state.value.canSend)(state.value.prompt.trim).foreach { prompt =>
       update(ChatPanelActions.onSubmit)
@@ -37,6 +51,7 @@ final class ChatPanelViewModel(
       }
     }
 
+  /** Clears the active conversation when messages exist and no response is pending. */
   def onClearHistory(): Unit =
     if state.value.messages.nonEmpty && !state.value.isWaiting then
       ConversationId.from(defaultConversationId).map(CleanHistoryCommand.apply).foreach { command =>

@@ -8,21 +8,48 @@ import scalafx.util.Duration
 
 import scala.collection.immutable.Queue
 
+/** Visual category used to distinguish notifications. */
 sealed trait NotificationType
-case object Info    extends NotificationType
-case object Success extends NotificationType
-case object Error   extends NotificationType
 
+/** Neutral informational notification. */
+case object Info extends NotificationType
+
+/** Notification reporting a successful operation. */
+case object Success extends NotificationType
+
+/** Notification reporting a failed operation. */
+case object Error extends NotificationType
+
+/**
+ * Message displayed by the notification manager.
+ *
+ * @param message
+ *   text shown to the user
+ * @param severity
+ *   visual category of the notification
+ */
 case class Notification(
     message: String,
     severity: NotificationType
 )
 
+/**
+ * Manages transient snackbar notifications on a JavaFX overlay.
+ *
+ * An overlay must first be registered with `attach`. Notifications are stacked in the top-right corner and, when
+ * animations are enabled, are automatically dismissed after their entrance animation and display interval. Calling
+ * `show` without an attached overlay has no effect.
+ */
 object NotificationManager:
 
   private val NotificationHeight             = 40
   private val PaddingTopBetweenNotifications = 10
 
+  /**
+   * Controls notification entrance and dismissal animations.
+   *
+   * When disabled, new notifications are displayed immediately and automatic dismissal is skipped.
+   */
   var animationsEnabled: Boolean = true
 
   private case class NotificationManagerState(
@@ -47,12 +74,31 @@ object NotificationManager:
 
   private var state: NotificationManagerState = NotificationManagerState()
 
+  /**
+   * Registers the overlay on which subsequent notifications are displayed.
+   *
+   * @param rootOverlay
+   *   container that receives notification nodes
+   */
   def attach(rootOverlay: StackPane): Unit =
     state = state.withOverlay(rootOverlay)
 
+  /**
+   * Detaches the current overlay and clears the internal notification queue.
+   *
+   * Nodes already added to the previous overlay are not removed.
+   */
   def detach(): Unit =
     state = state.cleared
 
+  /**
+   * Returns the CSS background color associated with a notification category.
+   *
+   * @param severity
+   *   notification category; defaults to `Info`
+   * @return
+   *   color encoded as a CSS hexadecimal string
+   */
   private[components] def getNotificationColor(severity: NotificationType = Info): String =
     severity match
       case Info    => "#333333"
@@ -62,6 +108,16 @@ object NotificationManager:
   private def notificationPosition(index: Int): Double =
     NotificationHeight * index + PaddingTopBetweenNotifications * index
 
+  /**
+   * Displays a notification on the attached overlay.
+   *
+   * If no overlay is attached, the call has no effect.
+   *
+   * @param message
+   *   text shown to the user
+   * @param severity
+   *   visual category of the notification; defaults to `Info`
+   */
   def show(message: String, severity: NotificationType = Info): Unit =
     state.overlay.foreach { root =>
       val notification = Notification(message, severity)
