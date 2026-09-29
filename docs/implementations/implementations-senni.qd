@@ -1,5 +1,3 @@
-# Contributo individuale: Senni Mattia
-
 Nella realizzazione del progetto, le parti sviluppate da Senni Mattia sono:
 - sviluppo e rappresentazione delle entità del game engine (pacchetto `model`),
 - sviluppo del sistema di rilevamento delle collisioni del game engine,
